@@ -61,7 +61,7 @@ export function useGame(userId: string | undefined) {
       ...INITIAL_STATE,
       phase: 'playing',
       events,
-      sessionId: session.id,
+      sessionId: (session as { id: string }).id,
     })
   }, [userId])
 
