@@ -214,7 +214,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
         // Vytvoř nejdřív bez souboru, abychom dostali ID
         const { data, error } = await createEvent({ ...payload, panorama_url: 'pending' })
         if (error || !data) throw error ?? new Error('Nepodařilo se vytvořit.')
-        savedId = data.id
+        savedId = (data as { id: string }).id
       }
 
       // Upload souborů
