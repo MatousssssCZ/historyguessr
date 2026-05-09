@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame } from '@/hooks/useGame'
@@ -162,10 +163,10 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
           {/* Mini mapa */}
           <div>
             <div className="label">Místo události</div>
-            <SimpleMap
+            <GuessMap
               guessLat={guessLat}
               guessLng={guessLng}
-              onChange={onLocationChange}
+              onGuess={onLocationChange}
             />
             {guessLat !== null && (
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
@@ -194,85 +195,6 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
   )
 }
 
-// ── Simple interactive map ────────────────────────────────
-function SimpleMap({ guessLat, guessLng, onChange }: {
-  guessLat: number | null; guessLng: number | null; onChange: (lat: number, lng: number) => void
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = ref.current!.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width
-    const y = (e.clientY - rect.top) / rect.height
-    const lat = 90 - y * 180
-    const lng = x * 360 - 180
-    onChange(lat, lng)
-  }
-
-  // Převod lat/lng na % pro zobrazení pinu
-  const pinX = guessLat !== null && guessLng !== null ? ((guessLng! + 180) / 360) * 100 : null
-  const pinY = guessLat !== null ? ((90 - guessLat) / 180) * 100 : null
-
-  return (
-    <div
-      ref={ref}
-      onClick={handleClick}
-      style={{
-        width: '100%', height: 140,
-        background: '#c8d8e8',
-        borderRadius: 8,
-        border: '1px solid var(--line)',
-        cursor: 'crosshair',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Světová mapa jako SVG */}
-      <svg width="100%" height="100%" viewBox="0 0 360 180" preserveAspectRatio="xMidYMid meet" style={{ opacity: 0.7 }}>
-        {/* Zjednodušené kontinenty */}
-        <rect width="360" height="180" fill="#c8d8e8"/>
-        {/* Severní Amerika */}
-        <path d="M40 20 L90 15 L105 35 L95 65 L70 80 L45 75 L30 55 Z" fill="#c9b99a"/>
-        {/* Jižní Amerika */}
-        <path d="M75 95 L100 90 L110 120 L95 155 L70 160 L60 140 L65 110 Z" fill="#c9b99a"/>
-        {/* Evropa */}
-        <path d="M155 15 L190 12 L200 35 L185 45 L165 42 L150 30 Z" fill="#c9b99a"/>
-        {/* Afrika */}
-        <path d="M160 50 L195 48 L205 90 L195 130 L170 140 L148 120 L145 80 Z" fill="#c9b99a"/>
-        {/* Asie */}
-        <path d="M195 10 L310 8 L320 50 L295 75 L240 80 L200 60 L195 35 Z" fill="#c9b99a"/>
-        {/* Austrálie */}
-        <path d="M265 110 L310 105 L320 135 L295 150 L265 145 L255 125 Z" fill="#c9b99a"/>
-      </svg>
-
-      {/* Pin */}
-      {pinX !== null && pinY !== null && (
-        <div style={{
-          position: 'absolute',
-          left: `${pinX}%`, top: `${pinY}%`,
-          transform: 'translate(-50%, -100%)',
-          pointerEvents: 'none',
-        }}>
-          <svg width="18" height="24" viewBox="0 0 22 28" fill="none">
-            <path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="var(--accent)" stroke="var(--accent-deep)" strokeWidth="1"/>
-            <circle cx="11" cy="11" r="3" fill="#fff"/>
-          </svg>
-        </div>
-      )}
-
-      {/* Hint text */}
-      {pinX === null && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)',
-          background: 'rgba(245,241,232,0.6)',
-        }}>
-          KLIKNI PRO UMÍSTĚNÍ PINU
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ── Year slider ───────────────────────────────────────────
 function YearSlider({ value, onChange }: { value: number; onChange: (y: number) => void }) {
