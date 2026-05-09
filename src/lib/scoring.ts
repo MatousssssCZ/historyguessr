@@ -4,8 +4,7 @@
  * Max celkové skóre: 50 000 bodů (5 kol)
  */
 
-const MAX_LOCATION_SCORE = 5_000
-const MAX_YEAR_SCORE = 5_000
+const MAX_SCORE = 5_000
 
 /** Haversine vzdálenost mezi dvěma body v kilometrech */
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -22,24 +21,44 @@ function toRad(deg: number) {
   return (deg * Math.PI) / 180
 }
 
-/** Skóre za polohu — exponenciální pokles, max ~5 000 */
-export function locationScore(distKm: number): number {
-  if (distKm < 0.05) return MAX_LOCATION_SCORE   // do 50 m = perfektní
-  if (distKm > 10_000) return 0
-  return Math.round(MAX_LOCATION_SCORE * Math.exp(-distKm / 500))
+/**
+ * Skóre za polohu
+ * - Pokud je distKm <= radius → 5000 bodů (plný počet)
+ * - Pak -1 bod za každý km nad radius, minimum 0
+ * - Pokud radius = 0, počítá se přesná vzdálenost (exponenciála)
+ */
+export function locationScore(distKm: number, radiusKm = 0): number {
+  if (radiusKm > 0) {
+    const over = Math.max(0, distKm - radiusKm)
+    return Math.max(0, MAX_SCORE - Math.round(over))
+  }
+  // Původní exponenciální výpočet pro přesné místo
+  if (distKm < 0.05) return MAX_SCORE
+  if (distKm > 5_000) return 0
+  return Math.round(MAX_SCORE * Math.exp(-distKm / 500))
 }
 
-/** Skóre za rok — exponenciální pokles, max 5 000 */
-export function yearScore(yearDiff: number): number {
-  if (yearDiff === 0) return MAX_YEAR_SCORE
+/**
+ * Skóre za rok
+ * - Pokud je yearDiff <= yearRange → 5000 bodů (plný počet)
+ * - Pak -1 bod za každý rok nad yearRange, minimum 0
+ * - Pokud yearRange = 0, počítá se přesný rok (exponenciála)
+ */
+export function yearScore(yearDiff: number, yearRange = 0): number {
+  if (yearRange > 0) {
+    const over = Math.max(0, yearDiff - yearRange)
+    return Math.max(0, MAX_SCORE - Math.round(over))
+  }
+  // Původní exponenciální výpočet pro přesný rok
+  if (yearDiff === 0) return MAX_SCORE
   if (yearDiff > 2000) return 0
-  return Math.round(MAX_YEAR_SCORE * Math.exp(-yearDiff / 100))
+  return Math.round(MAX_SCORE * Math.exp(-yearDiff / 100))
 }
 
 /** Celkové skóre za jedno kolo */
-export function roundScore(distKm: number, yearDiff: number) {
-  const loc = locationScore(distKm)
-  const yr = yearScore(yearDiff)
+export function roundScore(distKm: number, yearDiff: number, radiusKm = 0, yearRange = 0) {
+  const loc = locationScore(distKm, radiusKm)
+  const yr = yearScore(yearDiff, yearRange)
   return {
     location_score: loc,
     year_score: yr,
