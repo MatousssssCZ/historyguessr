@@ -135,7 +135,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
   return (
     <div style={{
       position: 'absolute', bottom: 20, right: 20,
-      width: 680,
+      width: 510,
       background: 'rgba(245,241,232,0.97)',
       backdropFilter: 'blur(12px)',
       borderRadius: 16,
