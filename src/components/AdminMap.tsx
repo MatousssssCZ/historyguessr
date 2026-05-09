@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 
-// Vlastní terracotta pin
+// Fix Leaflet marker ikonek pro Vite
+// (Vite nezpracovává default Leaflet icon URLs správně)
 const accentIcon = L.divIcon({
   className: '',
   html: `<svg width="26" height="34" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -10,6 +11,7 @@ const accentIcon = L.divIcon({
   </svg>`,
   iconSize: [26, 34],
   iconAnchor: [13, 34],
+  popupAnchor: [0, -34],
 })
 
 interface AdminMapProps {
@@ -33,23 +35,26 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
       zoom: 4,
     })
 
+    // OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map)
 
+    // Marker s vlastní ikonou
     const marker = L.marker([lat, lng], { icon: accentIcon, draggable: true }).addTo(map)
+
     marker.on('dragend', () => {
       const pos = marker.getLatLng()
       onLocationChange(pos.lat, pos.lng)
     })
-    markerRef.current = marker
 
     map.on('click', (e: L.LeafletMouseEvent) => {
       marker.setLatLng(e.latlng)
       onLocationChange(e.latlng.lat, e.latlng.lng)
     })
 
+    markerRef.current = marker
     mapRef.current = map
 
     return () => {
@@ -73,7 +78,10 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
   // Kružnice radiusu
   useEffect(() => {
     if (!mapRef.current) return
-    if (circleRef.current) { circleRef.current.remove(); circleRef.current = null }
+    if (circleRef.current) {
+      circleRef.current.remove()
+      circleRef.current = null
+    }
     if (radiusKm > 0) {
       circleRef.current = L.circle([lat, lng], {
         radius: radiusKm * 1000,
@@ -89,7 +97,16 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
 
   return (
     <div style={{ position: 'relative' }}>
-      <div ref={containerRef} style={{ width: '100%', height: 340, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden' }}/>
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          height: 340,
+          borderRadius: 10,
+          border: '1px solid var(--line)',
+          overflow: 'hidden',
+        }}
+      />
       <div style={{
         position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
         fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em',
@@ -101,4 +118,3 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
     </div>
   )
 }
-
