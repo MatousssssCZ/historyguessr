@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage } from '@/lib/supabase'
 import type { Event } from '@/types/database'
+import AdminMap from '@/components/AdminMap'
 
 type Panel = 'list' | 'new' | 'edit'
 
@@ -143,101 +144,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
 }
 
 // ── Admin mapa s kružnicí ─────────────────────────────────
-function AdminMap({ lat, lng, radiusKm, onLocationChange }: {
-  lat: number; lng: number; radiusKm: number
-  onLocationChange: (lat: number, lng: number) => void
-}) {
-  const ref = useRef<HTMLDivElement>(null)
 
-  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = ref.current!.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width
-    const y = (e.clientY - rect.top) / rect.height
-    onLocationChange(90 - y * 180, x * 360 - 180)
-  }
-
-  const pinX = ((lng + 180) / 360) * 100
-  const pinY = ((90 - lat) / 180) * 100
-
-  // Přibližný radius jako % šířky mapy (1° ≈ 111 km)
-  const radiusPctW = radiusKm > 0 ? (radiusKm / (360 * 111)) * 100 : 0
-  const radiusPctH = radiusKm > 0 ? (radiusKm / (180 * 111)) * 100 : 0
-
-  return (
-    <div
-      ref={ref}
-      onClick={handleClick}
-      style={{
-        width: '100%', height: 300,
-        background: '#c8d8e8',
-        borderRadius: 10,
-        border: '1px solid var(--line)',
-        cursor: 'crosshair',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* SVG světová mapa */}
-      <svg width="100%" height="100%" viewBox="0 0 360 180" preserveAspectRatio="xMidYMid meet" style={{ opacity: 0.75 }}>
-        <rect width="360" height="180" fill="#c8d8e8"/>
-        {/* Mřížka */}
-        {[0,60,120,180,240,300,360].map(x => (
-          <line key={`v${x}`} x1={x} y1={0} x2={x} y2={180} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5"/>
-        ))}
-        {[0,45,90,135,180].map(y => (
-          <line key={`h${y}`} x1={0} y1={y} x2={360} y2={y} stroke="rgba(255,255,255,0.3)" strokeWidth="0.5"/>
-        ))}
-        {/* Kontinenty — zjednodušené */}
-        <path d="M40 20 L90 15 L105 35 L95 65 L70 80 L45 75 L30 55 Z" fill="#c9b99a"/>
-        <path d="M75 95 L100 90 L110 120 L95 155 L70 160 L60 140 L65 110 Z" fill="#c9b99a"/>
-        <path d="M155 15 L190 12 L200 35 L185 45 L165 42 L150 30 Z" fill="#c9b99a"/>
-        <path d="M160 50 L195 48 L205 90 L195 130 L170 140 L148 120 L145 80 Z" fill="#c9b99a"/>
-        <path d="M195 10 L310 8 L320 50 L295 75 L240 80 L200 60 L195 35 Z" fill="#c9b99a"/>
-        <path d="M265 110 L310 105 L320 135 L295 150 L265 145 L255 125 Z" fill="#c9b99a"/>
-      </svg>
-
-      {/* Kružnice radiusu */}
-      {radiusKm > 0 && (
-        <div style={{
-          position: 'absolute',
-          left: `${pinX}%`,
-          top: `${pinY}%`,
-          width: `${radiusPctW * 2}%`,
-          height: `${radiusPctH * 2}%`,
-          transform: 'translate(-50%, -50%)',
-          border: '2px solid rgba(217,119,87,0.7)',
-          borderRadius: '50%',
-          background: 'rgba(217,119,87,0.1)',
-          pointerEvents: 'none',
-        }}/>
-      )}
-
-      {/* Pin */}
-      <div style={{
-        position: 'absolute',
-        left: `${pinX}%`, top: `${pinY}%`,
-        transform: 'translate(-50%, -100%)',
-        pointerEvents: 'none',
-        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-      }}>
-        <svg width="22" height="28" viewBox="0 0 22 28" fill="none">
-          <path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="var(--accent)" stroke="var(--accent-deep)" strokeWidth="1"/>
-          <circle cx="11" cy="11" r="3" fill="#fff"/>
-        </svg>
-      </div>
-
-      {/* Hint */}
-      <div style={{
-        position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
-        fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em',
-        color: 'var(--ink-3)', background: 'rgba(245,241,232,0.9)',
-        padding: '3px 10px', borderRadius: 999, pointerEvents: 'none',
-      }}>
-        KLIKNI PRO VÝBĚR MÍSTA
-      </div>
-    </div>
-  )
-}
 
 // ── Event form ────────────────────────────────────────────
 type FormData = {
