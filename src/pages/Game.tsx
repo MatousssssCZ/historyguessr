@@ -134,9 +134,9 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
 
   return (
     <div style={{
-      position: 'absolute', bottom: 20, right: 20, left: 20,
-      maxWidth: 380, marginLeft: 'auto',
-      background: 'rgba(245,241,232,0.96)',
+      position: 'absolute', bottom: 20, right: 20,
+      width: 340,
+      background: 'rgba(245,241,232,0.97)',
       backdropFilter: 'blur(12px)',
       borderRadius: 16,
       border: '1px solid var(--line)',
@@ -144,7 +144,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       overflow: 'hidden',
     }}>
       <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', cursor: 'pointer', borderBottom: expanded ? '1px solid var(--line)' : 'none' }}
         onClick={() => setExpanded(e => !e)}
       >
         <span className="eyebrow" style={{ fontSize: 10 }}>Tvůj tip</span>
@@ -152,20 +152,21 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       </div>
 
       {expanded && (
-        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Mapa */}
           <div>
-            <div className="label">Místo události</div>
+            <div className="label" style={{ marginBottom: 6 }}>Místo události</div>
             <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
             {guessLat !== null && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 5 }}>
                 {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
               </div>
             )}
           </div>
-          <div>
-            <div className="label">Rok události</div>
-            <YearSlider value={guessYear} onChange={onYearChange}/>
-          </div>
+
+          {/* Rok */}
+          <YearPicker value={guessYear} onChange={onYearChange}/>
+
           <button
             className="btn btn-accent"
             style={{ width: '100%', fontSize: 14 }}
@@ -180,34 +181,94 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
   )
 }
 
-// ── Year slider ───────────────────────────────────────────
-function YearSlider({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+// ── Year picker — slider + input + krokovací tlačítka ────
+function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
   const min = -3000; const max = 2025
   const pct = ((value - min) / (max - min)) * 100
   const label = value < 0 ? `${Math.abs(value)} př. n. l.` : `${value} n. l.`
 
+  function step(delta: number) {
+    onChange(Math.max(min, Math.min(max, value + delta)))
+  }
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'baseline' }}>
-        <span className="eyebrow" style={{ fontSize: 9 }}>Rok</span>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em' }}>{label}</span>
-      </div>
-      <div style={{ position: 'relative', height: 24 }}>
-        <div style={{ position: 'absolute', top: 11, left: 0, right: 0, height: 2, background: 'var(--line-strong)', borderRadius: 2 }}/>
-        <div style={{ position: 'absolute', top: 11, left: 0, width: `${pct}%`, height: 2, background: 'var(--accent)', borderRadius: 2 }}/>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="label" style={{ marginBottom: 0 }}>Rok události</div>
+
+      {/* Slider + input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ flex: 1, position: 'relative', height: 24 }}>
+          <div style={{ position: 'absolute', top: 11, left: 0, right: 0, height: 3, background: 'var(--line-strong)', borderRadius: 2 }}/>
+          <div style={{ position: 'absolute', top: 11, left: 0, width: `${pct}%`, height: 3, background: 'var(--accent)', borderRadius: 2 }}/>
+          <input
+            type="range" min={min} max={max} value={value}
+            onChange={e => onChange(parseInt(e.target.value))}
+            style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', margin: 0 }}
+          />
+          <div style={{
+            position: 'absolute', left: `${pct}%`, top: 4,
+            transform: 'translateX(-50%)',
+            width: 16, height: 16, borderRadius: '50%',
+            background: 'var(--accent)',
+            boxShadow: '0 0 0 3px rgba(217,119,87,0.25)',
+            pointerEvents: 'none',
+          }}/>
+        </div>
         <input
-          type="range" min={min} max={max} value={value}
-          onChange={e => onChange(parseInt(e.target.value))}
-          style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', margin: 0 }}
+          type="number"
+          value={Math.abs(value)}
+          min={0} max={max}
+          onChange={e => {
+            const v = parseInt(e.target.value) || 0
+            onChange(value < 0 ? -v : v)
+          }}
+          style={{
+            width: 72, textAlign: 'center',
+            fontFamily: 'var(--font-serif)', fontSize: 18,
+            border: '1px solid var(--line-strong)',
+            borderRadius: 8, padding: '5px 6px',
+            color: 'var(--ink)', background: 'var(--surface)',
+          }}
         />
-        <div style={{
-          position: 'absolute', left: `${pct}%`, top: 5,
-          transform: 'translateX(-50%)',
-          width: 14, height: 14, borderRadius: '50%',
-          background: 'var(--accent)',
-          boxShadow: '0 0 0 3px rgba(217,119,87,0.25)',
-          pointerEvents: 'none',
-        }}/>
+      </div>
+
+      {/* Krokovací tlačítka + BCE/CE */}
+      <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+        {([-100, -10, -1, 1, 10, 100] as number[]).map(d => (
+          <button
+            key={d}
+            onClick={() => step(d)}
+            style={{
+              flex: 1, padding: '5px 0',
+              borderRadius: 7,
+              border: '1px solid var(--line-strong)',
+              background: 'transparent',
+              fontSize: 11, color: 'var(--ink-2)',
+              cursor: 'pointer', fontFamily: 'var(--font-mono)',
+            }}
+          >
+            {d > 0 ? `+${d}` : d}
+          </button>
+        ))}
+        <button
+          onClick={() => onChange(-value)}
+          style={{
+            padding: '5px 8px',
+            borderRadius: 7,
+            border: `1px solid ${value < 0 ? 'var(--accent)' : 'var(--line-strong)'}`,
+            background: value < 0 ? 'rgba(217,119,87,0.1)' : 'transparent',
+            fontSize: 10, color: value < 0 ? 'var(--accent-deep)' : 'var(--ink-3)',
+            cursor: 'pointer', fontFamily: 'var(--font-mono)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {value < 0 ? 'BCE' : 'CE'}
+        </button>
+      </div>
+
+      {/* Label */}
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', letterSpacing: '-0.01em', textAlign: 'center' }}>
+        {label}
       </div>
     </div>
   )
