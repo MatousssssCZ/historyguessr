@@ -83,7 +83,7 @@ export function useGame(userId: string | undefined) {
     const event = events[currentRound]
     const distKm = haversineKm(guessLat, guessLng, event.lat, event.lng)
     const yearDiff = Math.abs(guessYear - event.year)
-    const scores = roundScore(distKm, yearDiff)
+    const scores = roundScore(distKm, yearDiff, event.location_radius_km ?? 0, event.year_range ?? 0)
 
     const roundResult: RoundResult = {
       event_id: event.id,
