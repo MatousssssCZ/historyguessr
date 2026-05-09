@@ -26,6 +26,8 @@ export interface Event {
   created_by: string | null
   created_at: string
   updated_at: string
+  location_radius_km: number
+  year_range: number
 }
 
 export interface EventInsert {
@@ -40,6 +42,8 @@ export interface EventInsert {
   difficulty?: 1 | 2 | 3
   published?: boolean
   created_by?: string | null
+  location_radius_km?: number
+  year_range?: number
 }
 
 export interface EventUpdate {
@@ -54,6 +58,8 @@ export interface EventUpdate {
   difficulty?: 1 | 2 | 3
   published?: boolean
   updated_at?: string
+  location_radius_km?: number
+  year_range?: number
 }
 
 export interface GameSession {
