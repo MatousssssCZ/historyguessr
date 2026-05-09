@@ -77,7 +77,7 @@ export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
     <div style={{ position: 'relative' }}>
       <div
         ref={containerRef}
-        style={{ width: '100%', height: 200, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden' }}
+        style={{ width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden' }}
       />
       {guessLat === null && (
         <div style={{
