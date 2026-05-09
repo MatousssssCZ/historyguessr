@@ -101,3 +101,4 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
     </div>
   )
 }
+
