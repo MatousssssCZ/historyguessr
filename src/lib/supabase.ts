@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Event, EventInsert, EventUpdate, RoundResult } from '@/types/database'
+import type { Event, EventInsert, EventUpdate, Profile, RoundResult } from '@/types/database'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -86,6 +86,16 @@ export async function updateEvent(id: string, updates: EventUpdate) {
 }
 
 export async function deleteEvent(id: string) {
+  // Smaž soubory ze Storage (panorama + event image)
+  // Zkusíme všechny možné přípony
+  const extensions = ['jpg', 'jpeg', 'png', 'webp']
+  const panoramaPaths = extensions.map(ext => `${id}/panorama.${ext}`)
+  const coverPaths = extensions.map(ext => `${id}/cover.${ext}`)
+
+  await supabase.storage.from('panorama').remove(panoramaPaths)
+  await supabase.storage.from('events').remove(coverPaths)
+
+  // Smaž záznam z DB
   return supabase.from('events').delete().eq('id', id)
 }
 
