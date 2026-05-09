@@ -6,7 +6,6 @@ import { useGame } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
 import type { Event } from '@/types/database'
 
-// Pannellum je globální (načteno z CDN v index.html)
 declare const pannellum: {
   viewer: (container: string | HTMLElement, config: object) => { destroy: () => void }
 }
@@ -19,7 +18,6 @@ export default function GamePage() {
     startGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
 
-  // Spustit hru hned po načtení
   useEffect(() => {
     if (state.phase === 'idle') startGame()
   }, [])
@@ -38,16 +36,13 @@ export default function GamePage() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d0906' }}>
-
-      {/* HUD — top bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 20px',
         background: 'rgba(13,9,6,0.85)',
         backdropFilter: 'blur(8px)',
         borderBottom: '1px solid rgba(245,241,232,0.08)',
-        zIndex: 10,
-        flexShrink: 0,
+        zIndex: 10, flexShrink: 0,
       }}>
         <div>
           <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 9 }}>
@@ -74,16 +69,16 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* Panorama viewer — zabere zbytek výšky */}
       <div style={{ flex: 1, position: 'relative' }}>
-        {state.phase === 'playing' && (
-          <PanoramaViewer url={currentEvent.panorama_url}/>
-        )}
+        {state.phase === 'playing' && <PanoramaViewer url={currentEvent.panorama_url}/>}
         {state.phase === 'round_result' && lastRound && (
-          <RoundResult event={currentEvent} round={lastRound} onNext={nextRound} isLast={state.currentRound === roundsCount - 1}/>
+          <RoundResult
+            event={currentEvent}
+            round={lastRound}
+            onNext={nextRound}
+            isLast={state.currentRound === roundsCount - 1}
+          />
         )}
-
-        {/* Guess panel (pouze při hraní) */}
         {state.phase === 'playing' && (
           <GuessPanel
             guessLat={state.guessLat}
@@ -107,7 +102,6 @@ function PanoramaViewer({ url }: { url: string }) {
 
   useEffect(() => {
     if (!containerRef.current) return
-    // Zničit předchozí viewer
     if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null }
 
     viewerRef.current = pannellum.viewer(containerRef.current, {
@@ -116,7 +110,7 @@ function PanoramaViewer({ url }: { url: string }) {
       autoLoad: true,
       showControls: false,
       mouseZoom: true,
-      hfov: 100,
+      hfov: 75,
       pitch: 0,
       yaw: 0,
     })
@@ -149,7 +143,6 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       boxShadow: 'var(--shadow-lg)',
       overflow: 'hidden',
     }}>
-      {/* Header panelu */}
       <div
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}
         onClick={() => setExpanded(e => !e)}
@@ -160,27 +153,19 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
 
       {expanded && (
         <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Mini mapa */}
           <div>
             <div className="label">Místo události</div>
-            <GuessMap
-              guessLat={guessLat}
-              guessLng={guessLng}
-              onGuess={onLocationChange}
-            />
+            <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
             {guessLat !== null && (
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
                 {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
               </div>
             )}
           </div>
-
-          {/* Year slider */}
           <div>
             <div className="label">Rok události</div>
             <YearSlider value={guessYear} onChange={onYearChange}/>
           </div>
-
           <button
             className="btn btn-accent"
             style={{ width: '100%', fontSize: 14 }}
@@ -194,7 +179,6 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
     </div>
   )
 }
-
 
 // ── Year slider ───────────────────────────────────────────
 function YearSlider({ value, onChange }: { value: number; onChange: (y: number) => void }) {
@@ -235,74 +219,143 @@ function RoundResult({ event, round, onNext, isLast }: {
   onNext: () => void; isLast: boolean
 }) {
   if (!round) return null
+
+  const yearDiffLabel = round.year_diff === 0 ? 'Přesný tip!' : `${round.year_diff} let`
+
   return (
     <div style={{
       position: 'absolute', inset: 0,
       background: 'rgba(13,9,6,0.92)',
       backdropFilter: 'blur(4px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 20,
-      padding: 20,
+      zIndex: 20, padding: 20, overflowY: 'auto',
     }}>
-      <div style={{ background: 'var(--paper-50)', borderRadius: 20, padding: 36, maxWidth: 520, width: '100%', boxShadow: 'var(--shadow-lg)' }}>
-        <p className="eyebrow" style={{ marginBottom: 8 }}>Výsledek kola</p>
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 24px', letterSpacing: '-0.01em' }}>{event.title}</h2>
+      <div style={{
+        background: 'var(--paper-50)',
+        borderRadius: 20,
+        maxWidth: 660, width: '100%',
+        boxShadow: 'var(--shadow-lg)',
+        overflow: 'hidden',
+      }}>
 
-        {/* Skóre */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
-          <ScoreStat label="Poloha" value={round.location_score} max={5000}/>
-          <ScoreStat label="Rok" value={round.year_score} max={5000}/>
-          <ScoreStat label="Celkem" value={round.round_score} max={10000} accent/>
-        </div>
-
-        {/* Detail */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24, padding: 16, background: 'var(--paper-200)', borderRadius: 10 }}>
+        {/* Hlavička */}
+        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Vzdálenost</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>{formatDistance(round.distance_km)}</div>
+            <p className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</p>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
           </div>
-          <div>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Rozdíl v rocích</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>{round.year_diff} let</div>
-          </div>
-          <div>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Správný rok</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>{formatYear(event.year)}</div>
-          </div>
-          <div>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Tvůj tip</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>{formatYear(round.guess_year)}</div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Celkem</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {round.round_score.toLocaleString('cs-CZ')}
+            </div>
           </div>
         </div>
 
-        {/* Popis události */}
-        {event.description && (
-          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 24px' }}>
-            {event.description}
-          </p>
-        )}
+        {/* Mapa — plná šířka */}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)' }}>
+          <ResultMap
+            guessLat={round.guess_lat}
+            guessLng={round.guess_lng}
+            truthLat={event.lat}
+            truthLng={event.lng}
+            radiusKm={event.location_radius_km ?? 0}
+          />
+        </div>
 
-        {event.event_image_url && (
-          <img src={event.event_image_url} alt={event.title} style={{ width: '100%', borderRadius: 8, marginBottom: 20, maxHeight: 180, objectFit: 'cover' }}/>
-        )}
+        {/* Spodní 2 sloupce */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
 
-        <button className="btn btn-accent" style={{ width: '100%' }} onClick={onNext}>
-          {isLast ? 'Zobrazit výsledky →' : 'Další kolo →'}
-        </button>
+          {/* Levý — skóre */}
+          <div style={{ padding: '20px 24px', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p className="eyebrow" style={{ margin: 0 }}>Bodování</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
+                <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Poloha</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em' }}>
+                  {round.location_score.toLocaleString('cs-CZ')}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.location_score / 50)} %</div>
+              </div>
+              <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
+                <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Rok</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em' }}>
+                  {round.year_score.toLocaleString('cs-CZ')}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.year_score / 50)} %</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <DetailRow label="Vzdálenost" value={formatDistance(round.distance_km)}/>
+              <DetailRow label="Rozdíl v rocích" value={yearDiffLabel} highlight={round.year_diff === 0}/>
+              <div style={{ height: 1, background: 'var(--line)' }}/>
+              <DetailRow label="Správný rok" value={formatYear(event.year)} strong/>
+              <DetailRow label="Tvůj tip" value={formatYear(round.guess_year)}/>
+            </div>
+          </div>
+
+          {/* Pravý — obrázek + popis */}
+          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p className="eyebrow" style={{ margin: 0 }}>O události</p>
+            {event.event_image_url ? (
+              <img
+                src={event.event_image_url}
+                alt={event.title}
+                style={{ width: '100%', borderRadius: 10, height: 130, objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{
+                width: '100%', height: 80,
+                background: 'var(--paper-200)', borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>BEZ OBRÁZKU</span>
+              </div>
+            )}
+            {event.description && (
+              <p style={{
+                fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, margin: 0,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 6,
+                WebkitBoxOrient: 'vertical' as const,
+              }}>
+                {event.description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)' }}>
+          <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
+            {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-function ScoreStat({ label, value, max, accent }: { label: string; value: number; max: number; accent?: boolean }) {
-  const pct = Math.round((value / max) * 100)
+// ── Helper komponenty ─────────────────────────────────────
+function DetailRow({ label, value, highlight, strong }: {
+  label: string; value: string; highlight?: boolean; strong?: boolean
+}) {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div className="eyebrow" style={{ fontSize: 9, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: accent ? 28 : 22, color: accent ? 'var(--accent)' : 'var(--ink)', letterSpacing: '-0.02em' }}>
-        {value.toLocaleString('cs-CZ')}
-      </div>
-      <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{pct}%</div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--ink-3)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+      <span style={{
+        fontFamily: 'var(--font-serif)',
+        fontSize: strong ? 16 : 14,
+        color: highlight ? 'var(--accent)' : strong ? 'var(--ink)' : 'var(--ink-2)',
+        whiteSpace: 'nowrap',
+      }}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -337,7 +390,7 @@ function FinishedScreen({ totalScore, rounds, onPlayAgain, onMenu }: {
         {totalScore.toLocaleString('cs-CZ')}
       </div>
       <p style={{ color: 'var(--ink-3)', marginBottom: 40, fontFamily: 'var(--font-mono)', fontSize: 14 }}>
-        bodů · {pct}% přesnost
+        bodů · {pct} % přesnost
       </p>
       <div style={{ display: 'flex', gap: 12 }}>
         <button className="btn btn-ghost" onClick={onMenu}>Menu</button>
