@@ -233,43 +233,44 @@ function RoundResult({ event, round, onNext, isLast }: {
       <div style={{
         background: 'var(--paper-50)',
         borderRadius: 20,
-        maxWidth: 660, width: '100%',
+        maxWidth: 900, width: '100%',
         boxShadow: 'var(--shadow-lg)',
         overflow: 'hidden',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        maxHeight: 'calc(100vh - 40px)',
       }}>
 
-        {/* Hlavička */}
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <p className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</p>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Celkem</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {round.round_score.toLocaleString('cs-CZ')}
+        {/* ── LEVÁ polovina — mapa + skóre ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'hidden' }}>
+
+          {/* Hlavička levé strany */}
+          <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
+            <div>
+              <p className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</p>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Celkem</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                {round.round_score.toLocaleString('cs-CZ')}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mapa — plná šířka */}
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)' }}>
-          <ResultMap
-            guessLat={round.guess_lat}
-            guessLng={round.guess_lng}
-            truthLat={event.lat}
-            truthLng={event.lng}
-            radiusKm={event.location_radius_km ?? 0}
-          />
-        </div>
+          {/* Mapa výsledku */}
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+            <ResultMap
+              guessLat={round.guess_lat}
+              guessLng={round.guess_lng}
+              truthLat={event.lat}
+              truthLng={event.lng}
+              radiusKm={event.location_radius_km ?? 0}
+            />
+          </div>
 
-        {/* Spodní 2 sloupce */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-
-          {/* Levý — skóre */}
-          <div style={{ padding: '20px 24px', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <p className="eyebrow" style={{ margin: 0 }}>Bodování</p>
-
+          {/* Skóre + detaily */}
+          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
                 <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Poloha</div>
@@ -296,44 +297,53 @@ function RoundResult({ event, round, onNext, isLast }: {
             </div>
           </div>
 
-          {/* Pravý — obrázek + popis */}
-          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <p className="eyebrow" style={{ margin: 0 }}>O události</p>
-            {event.event_image_url ? (
-              <img
-                src={event.event_image_url}
-                alt={event.title}
-                style={{ width: '100%', borderRadius: 10, height: 130, objectFit: 'cover', flexShrink: 0 }}
-              />
-            ) : (
-              <div style={{
-                width: '100%', height: 80,
-                background: 'var(--paper-200)', borderRadius: 10,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>BEZ OBRÁZKU</span>
-              </div>
-            )}
+          {/* CTA */}
+          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+            <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
+              {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
+            </button>
+          </div>
+        </div>
+
+        {/* ── PRAVÁ polovina — info o události ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Obrázek */}
+          {event.event_image_url ? (
+            <img
+              src={event.event_image_url}
+              alt={event.title}
+              style={{ width: '100%', height: 220, objectFit: 'cover', flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{
+              width: '100%', height: 120, flexShrink: 0,
+              background: 'var(--paper-300)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>BEZ OBRÁZKU</span>
+            </div>
+          )}
+
+          {/* Popis */}
+          <div style={{ padding: '20px 24px', flex: 1, overflowY: 'auto' }}>
+            <p className="eyebrow" style={{ marginBottom: 10 }}>O události</p>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: '0 0 12px', letterSpacing: '-0.01em' }}>{event.title}</h3>
             {event.description && (
-              <p style={{
-                fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, margin: 0,
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 6,
-                WebkitBoxOrient: 'vertical' as const,
-              }}>
+              <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
                 {event.description}
               </p>
+            )}
+            {event.category && (
+              <div style={{ marginTop: 16 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999 }}>
+                  {event.category}
+                </span>
+              </div>
             )}
           </div>
         </div>
 
-        {/* CTA */}
-        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)' }}>
-          <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
-            {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
-          </button>
-        </div>
       </div>
     </div>
   )
