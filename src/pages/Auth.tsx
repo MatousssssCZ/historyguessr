@@ -61,7 +61,7 @@ export default function AuthPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--paper-200)' }} className="auth-grid">
 
-      {/* ── Levá strana — dekorativní ── */}
+      {/* ── Levá strana — dekorativní (skrytá na mobilu) ── */}
       <div style={{
         background: 'var(--sepia-900)',
         padding: 48,
@@ -70,7 +70,7 @@ export default function AuthPage() {
         justifyContent: 'space-between',
         position: 'relative',
         overflow: 'hidden',
-      }}>
+      }} className="auth-left-panel">
         {/* Dekorativní pozadí */}
         <svg style={{ position: 'absolute', inset: 0, opacity: 0.06 }} width="100%" height="100%">
           <defs>
