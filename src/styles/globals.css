@@ -190,3 +190,13 @@ body {
 @container screen (min-width: 601px) {
   .hide-desktop { display: none !important; }
 }
+
+/* ── Auth — mobile: skryj levou stranu ─────────────────── */
+@media (max-width: 640px) {
+  .auth-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .auth-left-panel {
+    display: none !important;
+  }
+}
