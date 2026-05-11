@@ -35,7 +35,7 @@ export default function GamePage() {
   if (!currentEvent) return <LoadingScreen/>
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d0906' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906' }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 20px',
@@ -130,54 +130,120 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
   canSubmit: boolean; onLocationChange: (lat: number, lng: number) => void
   onYearChange: (y: number) => void; onSubmit: () => void
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
+  const [tab, setTab] = useState<'map' | 'year'>('map')
+
+  if (collapsed) {
+    return (
+      <div
+        onClick={() => setCollapsed(false)}
+        style={{
+          position: 'absolute', bottom: 20, right: 16,
+          background: 'rgba(245,241,232,0.97)',
+          borderRadius: 12, padding: '10px 18px',
+          border: '1px solid var(--line)',
+          boxShadow: 'var(--shadow-lg)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+        }}
+      >
+        <span className="eyebrow" style={{ fontSize: 10 }}>TVŮJ TIP</span>
+        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>▼</span>
+      </div>
+    )
+  }
 
   return (
     <div style={{
-      position: 'absolute', bottom: 20, right: 16, left: 16, marginLeft: 'auto',
-      width: 510, maxWidth: 'calc(100vw - 32px)',
-      background: 'rgba(245,241,232,0.97)',
-      backdropFilter: 'blur(12px)',
-      borderRadius: 16,
-      border: '1px solid var(--line)',
-      boxShadow: 'var(--shadow-lg)',
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      background: 'rgba(245,241,232,0.98)',
+      backdropFilter: 'blur(16px)',
+      borderTop: '1px solid var(--line)',
+      borderRadius: '18px 18px 0 0',
+      boxShadow: '0 -8px 32px rgba(42,31,23,0.12)',
       overflow: 'hidden',
+      // Na desktopu — vpravo dole
+      maxWidth: 'min(510px, 100%)',
+      marginLeft: 'auto',
+      borderRadius: 'clamp(0px, (100vw - 520px) * 999, 18px) clamp(0px, (100vw - 520px) * 999, 18px) 0 0',
     }}>
-      <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', cursor: 'pointer', borderBottom: expanded ? '1px solid var(--line)' : 'none' }}
-        onClick={() => setExpanded(e => !e)}
-      >
-        <span className="eyebrow" style={{ fontSize: 10 }}>Tvůj tip</span>
-        <span style={{ color: 'var(--ink-3)', fontSize: 12 }}>{expanded ? '▲' : '▼'}</span>
+      {/* Header s tab přepínačem */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px 0', gap: 8 }}>
+        <span className="eyebrow" style={{ fontSize: 10, flex: 1 }}>TVŮJ TIP</span>
+        {/* Tab přepínač */}
+        <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 8, padding: 3, gap: 3 }}>
+          <TabBtn active={tab === 'map'} onClick={() => setTab('map')}>🗺 Mapa</TabBtn>
+          <TabBtn active={tab === 'year'} onClick={() => setTab('year')}>📅 Rok</TabBtn>
+        </div>
+        <button
+          onClick={() => setCollapsed(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 18, padding: '0 0 0 8px', lineHeight: 1 }}
+        >
+          ▼
+        </button>
       </div>
 
-      {expanded && (
-        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Mapa */}
-          <div>
-            <div className="label" style={{ marginBottom: 6 }}>Místo události</div>
+      <div style={{ padding: '12px 16px 16px' }}>
+        {/* Mapa tab */}
+        {tab === 'map' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
             {guessLat !== null && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 5 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center' }}>
                 {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
               </div>
             )}
+            <button
+              className="btn btn-ghost"
+              style={{ width: '100%', fontSize: 13 }}
+              onClick={() => setTab('year')}
+            >
+              Dále: zadat rok →
+            </button>
           </div>
+        )}
 
-          {/* Rok */}
-          <YearPicker value={guessYear} onChange={onYearChange}/>
-
-          <button
-            className="btn btn-accent"
-            style={{ width: '100%', fontSize: 14 }}
-            disabled={!canSubmit}
-            onClick={onSubmit}
-          >
-            Odeslat odpověď →
-          </button>
-        </div>
-      )}
+        {/* Rok tab */}
+        {tab === 'year' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <YearPicker value={guessYear} onChange={onYearChange}/>
+            <button
+              className="btn btn-accent"
+              style={{ width: '100%', fontSize: 15, padding: '14px 0' }}
+              disabled={!canSubmit}
+              onClick={onSubmit}
+            >
+              Odeslat odpověď →
+            </button>
+            {!canSubmit && (
+              <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)' }}>
+                ← Nejdřív vyber místo na mapě
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '5px 12px',
+        borderRadius: 6,
+        border: 'none',
+        background: active ? 'var(--surface)' : 'transparent',
+        boxShadow: active ? 'var(--shadow-sm)' : 'none',
+        fontSize: 12, fontWeight: 500,
+        color: active ? 'var(--ink)' : 'var(--ink-3)',
+        cursor: 'pointer',
+        transition: 'all 150ms',
+      }}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -239,12 +305,13 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
             key={d}
             onClick={() => step(d)}
             style={{
-              flex: 1, padding: '5px 0',
-              borderRadius: 7,
+              flex: 1, padding: '10px 0',
+              borderRadius: 8,
               border: '1px solid var(--line-strong)',
               background: 'transparent',
-              fontSize: 11, color: 'var(--ink-2)',
+              fontSize: 13, color: 'var(--ink-2)',
               cursor: 'pointer', fontFamily: 'var(--font-mono)',
+              minHeight: 44,
             }}
           >
             {d > 0 ? `+${d}` : d}
@@ -253,13 +320,13 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
         <button
           onClick={() => onChange(-value)}
           style={{
-            padding: '5px 8px',
-            borderRadius: 7,
+            padding: '10px 10px',
+            borderRadius: 8,
             border: `1px solid ${value < 0 ? 'var(--accent)' : 'var(--line-strong)'}`,
             background: value < 0 ? 'rgba(217,119,87,0.1)' : 'transparent',
-            fontSize: 10, color: value < 0 ? 'var(--accent-deep)' : 'var(--ink-3)',
+            fontSize: 11, color: value < 0 ? 'var(--accent-deep)' : 'var(--ink-3)',
             cursor: 'pointer', fontFamily: 'var(--font-mono)',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap', minHeight: 44,
           }}
         >
           {value < 0 ? 'BCE' : 'CE'}
@@ -434,7 +501,7 @@ function DetailRow({ label, value, highlight, strong }: {
 // ── Loading / Error / Finished screens ───────────────────
 function LoadingScreen() {
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#0d0906' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#0d0906' }}>
       <div className="spinner" style={{ width: 32, height: 32 }}/>
       <p style={{ color: 'var(--paper-300)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.16em' }}>NAČÍTÁM HISTORII…</p>
     </div>
@@ -443,7 +510,7 @@ function LoadingScreen() {
 
 function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 32, background: '#0d0906' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 32, background: '#0d0906' }}>
       <p style={{ color: 'var(--paper-200)', fontSize: 16 }}>{msg}</p>
       <button className="btn btn-accent" onClick={onRetry}>Zkusit znovu</button>
     </div>
@@ -455,7 +522,7 @@ function FinishedScreen({ totalScore, rounds, onPlayAgain, onMenu }: {
 }) {
   const pct = Math.round((totalScore / (rounds * 10000)) * 100)
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--paper-100)' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--paper-100)' }}>
       <p className="eyebrow" style={{ marginBottom: 16 }}>Konec hry</p>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 80, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--accent)', marginBottom: 8 }}>
         {totalScore.toLocaleString('cs-CZ')}
