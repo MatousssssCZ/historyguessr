@@ -200,3 +200,11 @@ body {
     display: none !important;
   }
 }
+
+/* ── Game — mobile fixes ────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Pannellum viewer výška bez Safari lišty */
+  .pnlm-container {
+    height: 100% !important;
+  }
+}
