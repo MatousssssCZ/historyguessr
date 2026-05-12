@@ -133,6 +133,15 @@ export async function addScoreToProfile(userId: string, score: number) {
   })
 }
 
+// ─── Ratings ──────────────────────────────────────────────
+
+export async function addEventRating(eventId: string, rating: number) {
+  return supabase.rpc('add_event_rating', {
+    p_event_id: eventId,
+    p_rating: rating,
+  })
+}
+
 // ─── Storage ──────────────────────────────────────────────
 
 export async function uploadPanorama(file: File, eventId: string) {
