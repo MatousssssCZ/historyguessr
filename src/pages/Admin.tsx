@@ -1,3 +1,17 @@
+// ── CSV šablona ke stažení ───────────────────────────────
+function downloadCSVTemplate() {
+  const csv = [
+    'title,description,year,lat,lng,category,difficulty,year_range,location_radius_km,panorama_filename,image_filename',
+    '"Bitva na Bílé hoře","Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.",1620,50.0755,14.2836,war,2,0,0,bila_hora_360.jpg,bila_hora.jpg',
+    '"Výbuch Vesuvu","Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",-79,40.8210,14.4260,science,3,5,10,vesuvius_360.jpg,vesuvius.jpg',
+  ].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'historyguessr_import_sablona.csv'
+  a.click(); URL.revokeObjectURL(url)
+}
+
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -61,7 +75,11 @@ export default function AdminPage() {
           <span className="badge badge-neutral">{events.length} událostí</span>
         </div>
         {panel === 'list' && (
-          <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadCSVTemplate}>↓ CSV šablona</button>
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/import')}>↑ Hromadný import</button>
+            <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
+          </div>
         )}
         {panel !== 'list' && (
           <button className="btn btn-ghost" onClick={closePanel}>← Zpět na seznam</button>
