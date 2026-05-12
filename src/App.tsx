@@ -5,6 +5,7 @@ import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
 import AccountPage from '@/pages/Account'
 import AdminPage from '@/pages/Admin'
+import AdminImportPage from '@/pages/AdminImport'
 
 // ── Auth guard ────────────────────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/game"    element={<RequireAuth><GamePage/></RequireAuth>}/>
           <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
           <Route path="/admin"   element={<RequireAuth><AdminPage/></RequireAuth>}/>
+          <Route path="/admin/import" element={<RequireAuth><AdminImportPage/></RequireAuth>}/>
           <Route path="*"        element={<Navigate to="/" replace/>}/>
         </Routes>
       </BrowserRouter>
