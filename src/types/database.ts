@@ -28,6 +28,8 @@ export interface Event {
   updated_at: string
   location_radius_km: number
   year_range: number
+  rating_sum: number
+  rating_count: number
 }
 
 export interface EventInsert {
