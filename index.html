@@ -2,16 +2,24 @@
 <html lang="cs">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>HistoryGuessr</title>
     <meta name="description" content="Uhádni místo a rok historické události. Vzdělávací geolokační hra." />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2a1f17" />
+
+    <!-- Apple PWA (přidat na plochu = fullscreen bez Safari lišty) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HistoryGuessr" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-    <!-- Leaflet -->
 
     <!-- Pannellum 360° viewer -->
     <link rel="stylesheet" href="https://cdn.pannellum.org/2.5/pannellum.css" />
