@@ -177,7 +177,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
-            {['Název', 'Rok', 'Radius', 'Obtížnost', 'Stav', 'Akce'].map(h => (
+            {['Název', 'Rok', 'Radius', 'Obtížnost', 'Hodnocení', 'Stav', 'Akce'].map(h => (
               <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>
                 {h}
               </th>
@@ -199,6 +199,18 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
                 {ev.location_radius_km > 0 ? `${ev.location_radius_km} km` : '—'}
               </td>
               <td style={{ padding: '12px 16px' }}>{'★'.repeat(ev.difficulty)}{'☆'.repeat(3 - ev.difficulty)}</td>
+              <td style={{ padding: '12px 16px' }}>
+                {ev.rating_count > 0 ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ color: '#d97757', fontSize: 14 }}>{'★'.repeat(Math.round(ev.rating_sum / ev.rating_count))}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
+                      {(ev.rating_sum / ev.rating_count).toFixed(1)} ({ev.rating_count}×)
+                    </span>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>–</span>
+                )}
+              </td>
               <td style={{ padding: '12px 16px' }}>
                 <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`}>
                   {ev.published ? 'Publikováno' : 'Skrytá'}
