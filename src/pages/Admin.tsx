@@ -13,7 +13,15 @@ function downloadCSVTemplate() {
 }
 
 async function downloadXLSTemplate() {
-  const XLSX = await import('xlsx')
+  if (!(window as any).XLSX) {
+    await new Promise<void>((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+      s.onload = () => resolve(); s.onerror = reject
+      document.head.appendChild(s)
+    })
+  }
+  const XLSX = (window as any).XLSX
 
   const headers = ['title', 'description', 'year', 'lat', 'lng', 'category', 'difficulty', 'year_range', 'location_radius_km', 'panorama_filename', 'image_filename']
 
