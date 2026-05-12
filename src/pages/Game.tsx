@@ -43,7 +43,7 @@ export default function GamePage() {
         backdropFilter: 'blur(8px)',
         borderBottom: '1px solid rgba(245,241,232,0.08)',
         zIndex: 10, flexShrink: 0,
-      }}>
+      }} className="game-hud">
         <div>
           <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 9 }}>
             Kolo {state.currentRound + 1} / {roundsCount}
@@ -182,7 +182,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
         </button>
       </div>
 
-      <div style={{ padding: '12px 16px 16px' }}>
+      <div style={{ padding: '12px 16px 16px' }} className="game-panel-bottom">
         {/* Mapa tab */}
         {tab === 'map' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
