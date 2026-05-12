@@ -18,7 +18,15 @@ function downloadTemplate() {
 }
 
 async function downloadXLSTemplate() {
-  const XLSX = await import('xlsx')
+  if (!(window as any).XLSX) {
+    await new Promise<void>((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+      s.onload = () => resolve(); s.onerror = reject
+      document.head.appendChild(s)
+    })
+  }
+  const XLSX = (window as any).XLSX
   const headers = ['title','description','year','lat','lng','category','difficulty','year_range','location_radius_km','panorama_filename','image_filename']
   const rows = [
     ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.',1620,50.0755,14.2836,'war',2,0,0,'bila_hora_360.jpg','bila_hora.jpg'],
@@ -161,7 +169,15 @@ export default function AdminImportPage() {
       reader.readAsText(file, 'UTF-8')
     } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
       try {
-        const XLSX = await import('xlsx')
+        if (!(window as any).XLSX) {
+        await new Promise<void>((resolve, reject) => {
+          const s = document.createElement('script')
+          s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+          s.onload = () => resolve(); s.onerror = reject
+          document.head.appendChild(s)
+        })
+      }
+      const XLSX = (window as any).XLSX
         const buffer = await file.arrayBuffer()
         const wb = XLSX.read(buffer, { type: 'array' })
         const ws = wb.Sheets[wb.SheetNames[0]]
