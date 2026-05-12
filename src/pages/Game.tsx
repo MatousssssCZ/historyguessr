@@ -347,7 +347,20 @@ function RoundResult({ event, round, onNext, isLast }: {
 }) {
   if (!round) return null
   const [tab, setTab] = useState<'score' | 'info'>('score')
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
   const yearDiffLabel = round.year_diff === 0 ? 'Přesný tip!' : `${round.year_diff} let`
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  const nextBtn = (
+    <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
+      {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
+    </button>
+  )
 
   return (
     <div style={{
@@ -360,7 +373,8 @@ function RoundResult({ event, round, onNext, isLast }: {
       <div style={{
         background: 'var(--paper-50)',
         borderRadius: 20,
-        maxWidth: 900, width: '100%',
+        maxWidth: isMobile ? '100%' : 900,
+        width: '100%',
         boxShadow: 'var(--shadow-lg)',
         overflow: 'hidden',
         display: 'flex',
@@ -382,32 +396,34 @@ function RoundResult({ event, round, onNext, isLast }: {
           </div>
         </div>
 
-        {/* Obsah — desktop: 2 sloupce, mobil: záložky */}
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-
-          {/* Desktop layout (skrytý na mobilu) */}
-          <div className="result-desktop" style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        {/* ── DESKTOP: 2 sloupce ── */}
+        {!isMobile && (
+          <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 0 }}>
             {/* Levý — mapa + skóre */}
             <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
               <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)' }}>
                 <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
               </div>
-              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ padding: '16px 24px', flex: 1 }}>
                 <ScoreContent round={round} yearDiffLabel={yearDiffLabel} event={event}/>
+              </div>
+              <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)' }}>
+                {nextBtn}
               </div>
             </div>
             {/* Pravý — info */}
-            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+            <div style={{ overflow: 'auto' }}>
               <InfoContent event={event}/>
             </div>
           </div>
+        )}
 
-          {/* Mobil layout — záložky */}
-          <div className="result-mobile" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {/* Tab obsah */}
+        {/* ── MOBIL: záložky ── */}
+        {isMobile && (
+          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {tab === 'score' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
                     <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
                   </div>
@@ -416,68 +432,36 @@ function RoundResult({ event, round, onNext, isLast }: {
                   </div>
                 </div>
               )}
-              {tab === 'info' && (
-                <InfoContent event={event}/>
-              )}
+              {tab === 'info' && <InfoContent event={event}/>}
             </div>
 
-            {/* Tab přepínač dole */}
+            {/* CTA */}
+            <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+              {nextBtn}
+            </div>
+
+            {/* Tab bar */}
             <div style={{ flexShrink: 0, borderTop: '1px solid var(--line)', display: 'flex', background: 'var(--surface)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-              <button
-                onClick={() => setTab('score')}
-                style={{
-                  flex: 1, padding: '14px 0',
-                  border: 'none', background: 'none',
-                  borderBottom: tab === 'score' ? '3px solid var(--accent)' : '3px solid transparent',
-                  color: tab === 'score' ? 'var(--accent)' : 'var(--ink-3)',
-                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                }}
-              >
-                <span style={{ fontSize: 18 }}>🏆</span>
-                Skóre
-              </button>
-              <button
-                onClick={() => setTab('info')}
-                style={{
-                  flex: 1, padding: '14px 0',
-                  border: 'none', background: 'none',
-                  borderBottom: tab === 'info' ? '3px solid var(--accent)' : '3px solid transparent',
-                  color: tab === 'info' ? 'var(--accent)' : 'var(--ink-3)',
-                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                }}
-              >
-                <span style={{ fontSize: 18 }}>📖</span>
-                O události
-              </button>
+              {([['score', '🏆', 'Skóre'], ['info', '📖', 'O události']] as const).map(([key, icon, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  style={{
+                    flex: 1, padding: '12px 0',
+                    border: 'none', background: 'none',
+                    borderBottom: tab === key ? '3px solid var(--accent)' : '3px solid transparent',
+                    color: tab === key ? 'var(--accent)' : 'var(--ink-3)',
+                    fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>{icon}</span>
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* CTA — desktop */}
-        <div className="result-desktop" style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
-          <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
-            {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
-          </button>
-        </div>
-
-        {/* CTA — mobil (nad tab barem, pouze na score tabu) */}
-        {tab === 'score' && (
-          <div className="result-mobile" style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
-            <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
-              {isLast ? 'Zobrazit výsledky →' : 'Další kolo →'}
-            </button>
-          </div>
         )}
-        {tab === 'info' && (
-          <div className="result-mobile" style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
-            <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
-              {isLast ? 'Zobrazit výsledky →' : 'Další kolo →'}
-            </button>
-          </div>
-        )}
-
       </div>
     </div>
   )
