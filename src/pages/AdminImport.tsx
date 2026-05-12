@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { createEvent, uploadPanorama, uploadEventImage } from '@/lib/supabase'
@@ -15,6 +15,37 @@ function downloadTemplate() {
   const a = document.createElement('a')
   a.href = url; a.download = 'historyguessr_import_sablona.csv'
   a.click(); URL.revokeObjectURL(url)
+}
+
+async function downloadXLSTemplate() {
+  const XLSX = await import('xlsx')
+  const headers = ['title','description','year','lat','lng','category','difficulty','year_range','location_radius_km','panorama_filename','image_filename']
+  const rows = [
+    ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.',1620,50.0755,14.2836,'war',2,0,0,'bila_hora_360.jpg','bila_hora.jpg'],
+    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.',-79,40.8210,14.4260,'science',3,5,10,'vesuvius_360.jpg','vesuvius.jpg'],
+  ]
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+  ws['!cols'] = [{wch:30},{wch:50},{wch:8},{wch:10},{wch:10},{wch:12},{wch:10},{wch:12},{wch:20},{wch:25},{wch:20}]
+  const helpRows = [
+    ['Sloupec','Povinný','Popis','Příklady'],
+    ['title','ANO','Název historické události','Bitva na Bílé hoře'],
+    ['description','ANO','Popis události','Bitva proběhla...'],
+    ['year','ANO','Rok (záporné = př. n. l.)','1620, -79'],
+    ['lat','ANO','Zeměpisná šířka (-90 až 90)','50.0755'],
+    ['lng','ANO','Zeměpisná délka (-180 až 180)','14.4378'],
+    ['category','NE','Kategorie','war, culture, science, politics, religion, exploration'],
+    ['difficulty','NE','Obtížnost 1–3 (výchozí: 2)','1, 2, 3'],
+    ['year_range','NE','Tolerance roku v letech','0, 5, 10'],
+    ['location_radius_km','NE','Tolerance polohy v km','0, 5, 20'],
+    ['panorama_filename','NE','Název souboru 360° panoramy','panorama.jpg'],
+    ['image_filename','NE','Název doplňkového obrázku','cover.jpg'],
+  ]
+  const wsHelp = XLSX.utils.aoa_to_sheet(helpRows)
+  wsHelp['!cols'] = [{wch:22},{wch:10},{wch:40},{wch:40}]
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Události')
+  XLSX.utils.book_append_sheet(wb, wsHelp, 'Nápověda')
+  XLSX.writeFile(wb, 'historyguessr_import_sablona.xlsx')
 }
 
 // ── CSV parser ────────────────────────────────────────────
@@ -113,19 +144,42 @@ export default function AdminImportPage() {
 
   if (!loading && !isAdmin) { navigate('/menu'); return null }
 
-  // ── CSV nahrání ──────────────────────────────────────────
-  function handleCSV(file: File) {
+  // ── Nahrání souboru (CSV nebo XLS/XLSX) ─────────────────
+  async function handleFile(file: File) {
     setCsvError(null)
-    if (!file.name.endsWith('.csv')) { setCsvError('Soubor musí být ve formátu CSV.'); return }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      const parsed = parseCSV(text)
-      if (!parsed.length) { setCsvError('CSV je prázdné nebo nemá správné hlavičky.'); return }
-      setRows(parsed.map(rowFromCSV))
-      setStep('preview')
+    const name = file.name.toLowerCase()
+
+    if (name.endsWith('.csv')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const text = e.target?.result as string
+        const parsed = parseCSV(text)
+        if (!parsed.length) { setCsvError('CSV je prázdné nebo nemá správné hlavičky.'); return }
+        setRows(parsed.map(rowFromCSV))
+        setStep('preview')
+      }
+      reader.readAsText(file, 'UTF-8')
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      try {
+        const XLSX = await import('xlsx')
+        const buffer = await file.arrayBuffer()
+        const wb = XLSX.read(buffer, { type: 'array' })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' })
+        if (!data.length) { setCsvError('XLS soubor je prázdný nebo nemá správné sloupce.'); return }
+        const parsed = data.map(row => {
+          const str: Record<string, string> = {}
+          Object.entries(row).forEach(([k, v]) => { str[k.trim()] = String(v ?? '').trim() })
+          return str
+        })
+        setRows(parsed.map(rowFromCSV))
+        setStep('preview')
+      } catch (e) {
+        setCsvError('Nepodařilo se načíst XLS soubor. Ujisti se že jde o platný Excel formát.')
+      }
+    } else {
+      setCsvError('Podporované formáty: .csv, .xlsx, .xls')
     }
-    reader.readAsText(file, 'UTF-8')
   }
 
   // ── Přiřazení panorama souborů ───────────────────────────
@@ -244,20 +298,21 @@ export default function AdminImportPage() {
             <div className="card" style={{ padding: 28 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div>
-                  <p className="eyebrow" style={{ marginBottom: 6 }}>Krok 1 — CSV soubor</p>
+                  <p className="eyebrow" style={{ marginBottom: 6 }}>Krok 1 — Nahrát soubor</p>
                   <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: 0 }}>
-                    Stáhni šablonu, vyplň data v Excelu nebo Google Sheets a nahraj zpět.
+                    Stáhni šablonu (CSV nebo XLS), vyplň data v Excelu nebo Google Sheets a nahraj zpět.
                   </p>
                 </div>
-                <button className="btn btn-ghost" style={{ fontSize: 13, flexShrink: 0 }} onClick={downloadTemplate}>
-                  ↓ Stáhnout šablonu CSV
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadTemplate}>↓ CSV</button>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS</button>
+                </div>
               </div>
 
               <div
                 onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
-                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleCSV(f) }}
+                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
                 onClick={() => csvRef.current?.click()}
                 style={{
                   border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-strong)'}`,
@@ -266,10 +321,10 @@ export default function AdminImportPage() {
                   transition: 'all 160ms',
                 }}
               >
-                <input ref={csvRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCSV(f) }}/>
+                <input ref={csvRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}/>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>📄</div>
-                <p style={{ fontWeight: 500, fontSize: 15, margin: '0 0 4px' }}>Přetáhni CSV soubor nebo klikni pro výběr</p>
-                <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>Maximálně 500 řádků · UTF-8 kódování</p>
+                <p style={{ fontWeight: 500, fontSize: 15, margin: '0 0 4px' }}>Přetáhni soubor nebo klikni pro výběr</p>
+                <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>CSV · XLSX · XLS · maximálně 500 řádků</p>
               </div>
 
               {csvError && <div className="alert alert-error" style={{ marginTop: 12 }}>{csvError}</div>}
