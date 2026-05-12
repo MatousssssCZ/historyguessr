@@ -161,10 +161,8 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       borderRadius: '18px 18px 0 0',
       boxShadow: '0 -8px 32px rgba(42,31,23,0.12)',
       overflow: 'hidden',
-      // Na desktopu — vpravo dole
       maxWidth: 'min(510px, 100%)',
       marginLeft: 'auto',
-      borderRadius: 'clamp(0px, (100vw - 520px) * 999, 18px) clamp(0px, (100vw - 520px) * 999, 18px) 0 0',
     }}>
       {/* Header s tab přepínačem */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px 0', gap: 8 }}>
@@ -347,7 +345,7 @@ function RoundResult({ event, round, onNext, isLast }: {
   onNext: () => void; isLast: boolean
 }) {
   if (!round) return null
-
+  const [tab, setTab] = useState<'score' | 'info'>('score')
   const yearDiffLabel = round.year_diff === 0 ? 'Přesný tip!' : `${round.year_diff} let`
 
   return (
@@ -356,7 +354,7 @@ function RoundResult({ event, round, onNext, isLast }: {
       background: 'rgba(13,9,6,0.92)',
       backdropFilter: 'blur(4px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 20, padding: 20, overflowY: 'auto',
+      zIndex: 20, padding: '20px',
     }}>
       <div style={{
         background: 'var(--paper-50)',
@@ -364,114 +362,175 @@ function RoundResult({ event, round, onNext, isLast }: {
         maxWidth: 900, width: '100%',
         boxShadow: 'var(--shadow-lg)',
         overflow: 'hidden',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        maxHeight: 'calc(100vh - 40px)',
+        display: 'flex',
+        flexDirection: 'column',
+        maxHeight: 'calc(100dvh - 40px)',
       }}>
 
-        {/* ── LEVÁ polovina — mapa + skóre ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'hidden' }}>
-
-          {/* Hlavička levé strany */}
-          <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
-            <div>
-              <p className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</p>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
+        {/* Hlavička */}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
+          <div>
+            <p className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</p>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Celkem</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {round.round_score.toLocaleString('cs-CZ')}
             </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Celkem</div>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-                {round.round_score.toLocaleString('cs-CZ')}
+          </div>
+        </div>
+
+        {/* Obsah — desktop: 2 sloupce, mobil: záložky */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+
+          {/* Desktop layout (skrytý na mobilu) */}
+          <div className="result-desktop" style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            {/* Levý — mapa + skóre */}
+            <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
+              <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)' }}>
+                <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <ScoreContent round={round} yearDiffLabel={yearDiffLabel} event={event}/>
               </div>
             </div>
+            {/* Pravý — info */}
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+              <InfoContent event={event}/>
+            </div>
           </div>
 
-          {/* Mapa výsledku */}
-          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-            <ResultMap
-              guessLat={round.guess_lat}
-              guessLng={round.guess_lng}
-              truthLat={event.lat}
-              truthLng={event.lng}
-              radiusKm={event.location_radius_km ?? 0}
-            />
-          </div>
-
-          {/* Skóre + detaily */}
-          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
-                <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Poloha</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em' }}>
-                  {round.location_score.toLocaleString('cs-CZ')}
+          {/* Mobil layout — záložky */}
+          <div className="result-mobile" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            {/* Tab obsah */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {tab === 'score' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+                    <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+                  </div>
+                  <div style={{ padding: '16px' }}>
+                    <ScoreContent round={round} yearDiffLabel={yearDiffLabel} event={event}/>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.location_score / 50)} %</div>
-              </div>
-              <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
-                <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Rok</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em' }}>
-                  {round.year_score.toLocaleString('cs-CZ')}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.year_score / 50)} %</div>
-              </div>
+              )}
+              {tab === 'info' && (
+                <InfoContent event={event}/>
+              )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <DetailRow label="Vzdálenost" value={formatDistance(round.distance_km)}/>
-              <DetailRow label="Rozdíl v rocích" value={yearDiffLabel} highlight={round.year_diff === 0}/>
-              <div style={{ height: 1, background: 'var(--line)' }}/>
-              <DetailRow label="Správný rok" value={formatYear(event.year)} strong/>
-              <DetailRow label="Tvůj tip" value={formatYear(round.guess_year)}/>
+            {/* Tab přepínač dole */}
+            <div style={{ flexShrink: 0, borderTop: '1px solid var(--line)', display: 'flex', background: 'var(--surface)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              <button
+                onClick={() => setTab('score')}
+                style={{
+                  flex: 1, padding: '14px 0',
+                  border: 'none', background: 'none',
+                  borderBottom: tab === 'score' ? '3px solid var(--accent)' : '3px solid transparent',
+                  color: tab === 'score' ? 'var(--accent)' : 'var(--ink-3)',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                }}
+              >
+                <span style={{ fontSize: 18 }}>🏆</span>
+                Skóre
+              </button>
+              <button
+                onClick={() => setTab('info')}
+                style={{
+                  flex: 1, padding: '14px 0',
+                  border: 'none', background: 'none',
+                  borderBottom: tab === 'info' ? '3px solid var(--accent)' : '3px solid transparent',
+                  color: tab === 'info' ? 'var(--accent)' : 'var(--ink-3)',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                }}
+              >
+                <span style={{ fontSize: 18 }}>📖</span>
+                O události
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* CTA */}
-          <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+        {/* CTA — desktop */}
+        <div className="result-desktop" style={{ padding: '14px 24px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+          <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
+            {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
+          </button>
+        </div>
+
+        {/* CTA — mobil (nad tab barem, pouze na score tabu) */}
+        {tab === 'score' && (
+          <div className="result-mobile" style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
             <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
-              {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
+              {isLast ? 'Zobrazit výsledky →' : 'Další kolo →'}
             </button>
           </div>
-        </div>
-
-        {/* ── PRAVÁ polovina — info o události ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-          {/* Obrázek */}
-          {event.event_image_url ? (
-            <img
-              src={event.event_image_url}
-              alt={event.title}
-              style={{ width: '100%', height: 220, objectFit: 'cover', flexShrink: 0 }}
-            />
-          ) : (
-            <div style={{
-              width: '100%', height: 120, flexShrink: 0,
-              background: 'var(--paper-300)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>BEZ OBRÁZKU</span>
-            </div>
-          )}
-
-          {/* Popis */}
-          <div style={{ padding: '20px 24px', flex: 1, overflowY: 'auto' }}>
-            <p className="eyebrow" style={{ marginBottom: 10 }}>O události</p>
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: '0 0 12px', letterSpacing: '-0.01em' }}>{event.title}</h3>
-            {event.description && (
-              <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
-                {event.description}
-              </p>
-            )}
-            {event.category && (
-              <div style={{ marginTop: 16 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999 }}>
-                  {event.category}
-                </span>
-              </div>
-            )}
+        )}
+        {tab === 'info' && (
+          <div className="result-mobile" style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+            <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
+              {isLast ? 'Zobrazit výsledky →' : 'Další kolo →'}
+            </button>
           </div>
-        </div>
+        )}
 
+      </div>
+    </div>
+  )
+}
+
+// ── Sdílený obsah skóre ───────────────────────────────────
+function ScoreContent({ round, yearDiffLabel, event }: {
+  round: NonNullable<ReturnType<typeof useGame>['lastRound']>
+  yearDiffLabel: string
+  event: Event
+}) {
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+        <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
+          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Poloha</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, letterSpacing: '-0.02em' }}>{round.location_score.toLocaleString('cs-CZ')}</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.location_score / 50)} %</div>
+        </div>
+        <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
+          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Rok</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, letterSpacing: '-0.02em' }}>{round.year_score.toLocaleString('cs-CZ')}</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.year_score / 50)} %</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <DetailRow label="Vzdálenost" value={formatDistance(round.distance_km)}/>
+        <DetailRow label="Rozdíl v rocích" value={yearDiffLabel} highlight={round.year_diff === 0}/>
+        <div style={{ height: 1, background: 'var(--line)' }}/>
+        <DetailRow label="Správný rok" value={formatYear(event.year)} strong/>
+        <DetailRow label="Tvůj tip" value={formatYear(round.guess_year)}/>
+      </div>
+    </>
+  )
+}
+
+// ── Sdílený obsah info ────────────────────────────────────
+function InfoContent({ event }: { event: Event }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {event.event_image_url && (
+        <img src={event.event_image_url} alt={event.title} style={{ width: '100%', height: 200, objectFit: 'cover', flexShrink: 0 }}/>
+      )}
+      <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <p className="eyebrow" style={{ margin: 0 }}>O události</p>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h3>
+        {event.description && (
+          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>{event.description}</p>
+        )}
+        {event.category && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
+            {event.category}
+          </span>
+        )}
       </div>
     </div>
   )
