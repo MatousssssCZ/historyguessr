@@ -12,6 +12,57 @@ function downloadCSVTemplate() {
   a.click(); URL.revokeObjectURL(url)
 }
 
+async function downloadXLSTemplate() {
+  const XLSX = await import('xlsx')
+
+  const headers = ['title', 'description', 'year', 'lat', 'lng', 'category', 'difficulty', 'year_range', 'location_radius_km', 'panorama_filename', 'image_filename']
+
+  const exampleRows = [
+    ['Bitva na Bílé hoře', 'Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.', 1620, 50.0755, 14.2836, 'war', 2, 0, 0, 'bila_hora_360.jpg', 'bila_hora.jpg'],
+    ['Výbuch Vesuvu', 'Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.', -79, 40.8210, 14.4260, 'science', 3, 5, 10, 'vesuvius_360.jpg', 'vesuvius.jpg'],
+  ]
+
+  const wsData = [headers, ...exampleRows]
+  const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+  // Šířky sloupců
+  ws['!cols'] = [
+    { wch: 30 }, { wch: 50 }, { wch: 8 }, { wch: 10 }, { wch: 10 },
+    { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 20 },
+  ]
+
+  // Styl hlavičky (tučně)
+  headers.forEach((_, i) => {
+    const cell = XLSX.utils.encode_cell({ r: 0, c: i })
+    if (!ws[cell]) return
+    ws[cell].s = { font: { bold: true }, fill: { fgColor: { rgb: 'F5F1E8' } } }
+  })
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Události')
+
+  // Druhý list s nápovědou
+  const helpData = [
+    ['Sloupec', 'Povinný', 'Popis', 'Příklady hodnot'],
+    ['title', 'ANO', 'Název historické události', 'Bitva na Bílé hoře'],
+    ['description', 'ANO', 'Popis události (zobrazí se hráčovi po odeslání tipu)', 'Bitva proběhla...'],
+    ['year', 'ANO', 'Rok události (záporné = př. n. l.)', '1620, -79, 1912'],
+    ['lat', 'ANO', 'Zeměpisná šířka (-90 až 90)', '50.0755'],
+    ['lng', 'ANO', 'Zeměpisná délka (-180 až 180)', '14.4378'],
+    ['category', 'NE', 'Kategorie události', 'war, culture, science, politics, religion, exploration'],
+    ['difficulty', 'NE', 'Obtížnost 1–3 (výchozí: 2)', '1, 2, 3'],
+    ['year_range', 'NE', 'Tolerance roku v letech (výchozí: 0)', '0, 5, 10, 50'],
+    ['location_radius_km', 'NE', 'Tolerance polohy v km (výchozí: 0)', '0, 5, 20'],
+    ['panorama_filename', 'NE', 'Název souboru 360° panoramy', 'bila_hora_360.jpg'],
+    ['image_filename', 'NE', 'Název doplňkového obrázku', 'bila_hora.jpg'],
+  ]
+  const wsHelp = XLSX.utils.aoa_to_sheet(helpData)
+  wsHelp['!cols'] = [{ wch: 22 }, { wch: 10 }, { wch: 50 }, { wch: 40 }]
+  XLSX.utils.book_append_sheet(wb, wsHelp, 'Nápověda')
+
+  XLSX.writeFile(wb, 'historyguessr_import_sablona.xlsx')
+}
+
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -77,6 +128,7 @@ export default function AdminPage() {
         {panel === 'list' && (
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadCSVTemplate}>↓ CSV šablona</button>
+            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS šablona</button>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/import')}>↑ Hromadný import</button>
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
