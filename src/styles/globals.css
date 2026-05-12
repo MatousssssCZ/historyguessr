@@ -231,3 +231,5 @@ html, body, #root {
 .game-panel-bottom {
   padding-bottom: calc(16px + var(--safe-bottom)) !important;
 }
+
+}
