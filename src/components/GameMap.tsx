@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import L from 'leaflet'
 
 const guessIcon = L.divIcon({
@@ -22,80 +22,83 @@ const truthIcon = L.divIcon({
 const CARTO = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
 const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
-function initMap(container: HTMLDivElement, options: L.MapOptions): L.Map {
-  const map = L.map(container, { ...options, preferCanvas: true })
-  L.tileLayer(CARTO, { attribution: ATTR, maxZoom: 19 }).addTo(map)
-
-  // ResizeObserver — invalidateSize kdykoliv se změní velikost kontejneru
-  const ro = new ResizeObserver(() => map.invalidateSize())
-  ro.observe(container)
-  ;(map as any)._ro = ro
-
-  return map
+// ── Herní mapa — s externím invalidateSize ────────────────
+export interface GuessMapHandle {
+  invalidate: () => void
 }
 
-// ── Herní mapa pro tipování ───────────────────────────────
 interface GuessMapProps {
   onGuess: (lat: number, lng: number) => void
   guessLat: number | null
   guessLng: number | null
 }
 
-export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const markerRef = useRef<L.Marker | null>(null)
-  const onGuessRef = useRef(onGuess)
-  onGuessRef.current = onGuess
+export const GuessMap = forwardRef<GuessMapHandle, GuessMapProps>(
+  function GuessMap({ onGuess, guessLat, guessLng }, ref) {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const mapRef = useRef<L.Map | null>(null)
+    const markerRef = useRef<L.Marker | null>(null)
+    const onGuessRef = useRef(onGuess)
+    onGuessRef.current = onGuess
 
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container || mapRef.current) return
+    // Exponuje invalidate() pro volání z GuessPanel
+    useImperativeHandle(ref, () => ({
+      invalidate: () => mapRef.current?.invalidateSize(),
+    }))
 
-    const map = initMap(container, { center: [20, 0], zoom: 2, minZoom: 1, maxZoom: 12 })
+    useEffect(() => {
+      const container = containerRef.current
+      if (!container || mapRef.current) return
 
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      if (markerRef.current) {
-        markerRef.current.setLatLng(e.latlng)
-      } else {
-        markerRef.current = L.marker(e.latlng, { icon: guessIcon, draggable: true }).addTo(map)
-        markerRef.current.on('dragend', () => {
-          const pos = markerRef.current!.getLatLng()
-          onGuessRef.current(pos.lat, pos.lng)
-        })
+      const map = L.map(container, {
+        center: [20, 0], zoom: 2, minZoom: 1, maxZoom: 12,
+      })
+
+      L.tileLayer(CARTO, { attribution: ATTR, maxZoom: 19 }).addTo(map)
+
+      map.on('click', (e: L.LeafletMouseEvent) => {
+        if (markerRef.current) {
+          markerRef.current.setLatLng(e.latlng)
+        } else {
+          markerRef.current = L.marker(e.latlng, { icon: guessIcon, draggable: true }).addTo(map)
+          markerRef.current.on('dragend', () => {
+            const pos = markerRef.current!.getLatLng()
+            onGuessRef.current(pos.lat, pos.lng)
+          })
+        }
+        onGuessRef.current(e.latlng.lat, e.latlng.lng)
+      })
+
+      mapRef.current = map
+
+      return () => {
+        map.remove()
+        mapRef.current = null
+        markerRef.current = null
       }
-      onGuessRef.current(e.latlng.lat, e.latlng.lng)
-    })
+    }, [])
 
-    mapRef.current = map
-
-    return () => {
-      ;(map as any)._ro?.disconnect()
-      map.remove()
-      mapRef.current = null
-      markerRef.current = null
-    }
-  }, [])
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <div
-        ref={containerRef}
-        style={{ width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)' }}
-      />
-      {guessLat === null && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-          color: 'var(--ink-3)', background: 'rgba(245,241,232,0.55)',
-          borderRadius: 10, pointerEvents: 'none',
-        }}>
-          KLIKNI PRO UMÍSTĚNÍ PINU
-        </div>
-      )}
-    </div>
-  )
-}
+    return (
+      <div style={{ position: 'relative' }}>
+        <div
+          ref={containerRef}
+          style={{ width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)' }}
+        />
+        {guessLat === null && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
+            color: 'var(--ink-3)', background: 'rgba(245,241,232,0.55)',
+            borderRadius: 10, pointerEvents: 'none',
+          }}>
+            KLIKNI PRO UMÍSTĚNÍ PINU
+          </div>
+        )}
+      </div>
+    )
+  }
+)
 
 // ── Výsledková mapa ───────────────────────────────────────
 interface ResultMapProps {
@@ -114,7 +117,8 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
     const container = containerRef.current
     if (!container || mapRef.current) return
 
-    const map = initMap(container, {})
+    const map = L.map(container)
+    L.tileLayer(CARTO, { attribution: ATTR, maxZoom: 19 }).addTo(map)
 
     L.marker([guessLat, guessLng], { icon: guessIcon })
       .addTo(map)
@@ -136,13 +140,17 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
       }).addTo(map)
     }
 
-    const bounds = L.latLngBounds([guessLat, guessLng], [truthLat, truthLng])
-    map.fitBounds(bounds, { padding: [60, 60] })
+    map.fitBounds(
+      L.latLngBounds([guessLat, guessLng], [truthLat, truthLng]),
+      { padding: [60, 60] }
+    )
+
+    // InvalidateSize po render
+    requestAnimationFrame(() => map.invalidateSize())
 
     mapRef.current = map
 
     return () => {
-      ;(map as any)._ro?.disconnect()
       map.remove()
       mapRef.current = null
     }
