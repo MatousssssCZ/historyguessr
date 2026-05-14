@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { GuessMap, ResultMap } from '@/components/GameMap'
+import { GuessMap, ResultMap, type GuessMapHandle } from '@/components/GameMap'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame } from '@/hooks/useGame'
@@ -133,6 +133,14 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
 }) {
   const [collapsed, setCollapsed] = useState(false)
   const [tab, setTab] = useState<'map' | 'year'>('map')
+  const mapRef = useRef<GuessMapHandle>(null)
+
+  // Při přepnutí na mapu zavolej invalidateSize — opraví rozdělené dlaždice
+  useEffect(() => {
+    if (tab === 'map') {
+      requestAnimationFrame(() => mapRef.current?.invalidate())
+    }
+  }, [tab])
 
   if (collapsed) {
     return (
@@ -183,7 +191,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       <div style={{ padding: '12px 16px 16px' }} className="game-panel-bottom">
         {/* Mapa tab — vždy v DOM, jen skrytá přes display */}
         <div style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection: 'column', gap: 8 }}>
-          <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
+          <GuessMap ref={mapRef} guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
           {guessLat !== null && (
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center' }}>
               {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
