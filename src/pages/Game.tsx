@@ -161,7 +161,6 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       borderTop: '1px solid var(--line)',
       borderRadius: '18px 18px 0 0',
       boxShadow: '0 -8px 32px rgba(42,31,23,0.12)',
-      overflow: 'hidden',
       maxWidth: 'min(510px, 100%)',
       marginLeft: 'auto',
     }}>
@@ -182,44 +181,40 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
       </div>
 
       <div style={{ padding: '12px 16px 16px' }} className="game-panel-bottom">
-        {/* Mapa tab */}
-        {tab === 'map' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
-            {guessLat !== null && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center' }}>
-                {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
-              </div>
-            )}
-            <button
-              className="btn btn-ghost"
-              style={{ width: '100%', fontSize: 13 }}
-              onClick={() => setTab('year')}
-            >
-              Dále: zadat rok →
-            </button>
-          </div>
-        )}
+        {/* Mapa tab — vždy v DOM, jen skrytá přes display */}
+        <div style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection: 'column', gap: 8 }}>
+          <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
+          {guessLat !== null && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center' }}>
+              {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
+            </div>
+          )}
+          <button
+            className="btn btn-ghost"
+            style={{ width: '100%', fontSize: 13 }}
+            onClick={() => setTab('year')}
+          >
+            Dále: zadat rok →
+          </button>
+        </div>
 
         {/* Rok tab */}
-        {tab === 'year' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <YearPicker value={guessYear} onChange={onYearChange}/>
-            <button
-              className="btn btn-accent"
-              style={{ width: '100%', fontSize: 15, padding: '14px 0' }}
-              disabled={!canSubmit}
-              onClick={onSubmit}
-            >
-              Odeslat odpověď →
-            </button>
-            {!canSubmit && (
-              <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)' }}>
-                ← Nejdřív vyber místo na mapě
-              </div>
-            )}
-          </div>
-        )}
+        <div style={{ display: tab === 'year' ? 'flex' : 'none', flexDirection: 'column', gap: 12 }}>
+          <YearPicker value={guessYear} onChange={onYearChange}/>
+          <button
+            className="btn btn-accent"
+            style={{ width: '100%', fontSize: 15, padding: '14px 0' }}
+            disabled={!canSubmit}
+            onClick={onSubmit}
+          >
+            Odeslat odpověď →
+          </button>
+          {!canSubmit && (
+            <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)' }}>
+              ← Nejdřív vyber místo na mapě
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
