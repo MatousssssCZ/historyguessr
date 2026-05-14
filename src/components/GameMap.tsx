@@ -22,6 +22,18 @@ const truthIcon = L.divIcon({
 const CARTO = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
 const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
+function initMap(container: HTMLDivElement, options: L.MapOptions): L.Map {
+  const map = L.map(container, { ...options, preferCanvas: true })
+  L.tileLayer(CARTO, { attribution: ATTR, maxZoom: 19 }).addTo(map)
+
+  // ResizeObserver — invalidateSize kdykoliv se změní velikost kontejneru
+  const ro = new ResizeObserver(() => map.invalidateSize())
+  ro.observe(container)
+  ;(map as any)._ro = ro
+
+  return map
+}
+
 // ── Herní mapa pro tipování ───────────────────────────────
 interface GuessMapProps {
   onGuess: (lat: number, lng: number) => void
@@ -33,50 +45,35 @@ export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
+  const onGuessRef = useRef(onGuess)
+  onGuessRef.current = onGuess
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    // Krátké timeout zajistí že kontejner má správnou velikost
-    const timer = setTimeout(() => {
-      if (!containerRef.current || mapRef.current) return
+    const map = initMap(container, { center: [20, 0], zoom: 2, minZoom: 1, maxZoom: 12 })
 
-      const map = L.map(containerRef.current, {
-        center: [20, 0],
-        zoom: 2,
-        minZoom: 1,
-        maxZoom: 12,
-        preferCanvas: true,
-      })
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      if (markerRef.current) {
+        markerRef.current.setLatLng(e.latlng)
+      } else {
+        markerRef.current = L.marker(e.latlng, { icon: guessIcon, draggable: true }).addTo(map)
+        markerRef.current.on('dragend', () => {
+          const pos = markerRef.current!.getLatLng()
+          onGuessRef.current(pos.lat, pos.lng)
+        })
+      }
+      onGuessRef.current(e.latlng.lat, e.latlng.lng)
+    })
 
-      L.tileLayer(CARTO, { attribution: ATTR, maxZoom: 19 }).addTo(map)
-
-      // Důležité — přepočítá velikost po renderování
-      setTimeout(() => map.invalidateSize(), 100)
-
-      map.on('click', (e: L.LeafletMouseEvent) => {
-        if (markerRef.current) {
-          markerRef.current.setLatLng(e.latlng)
-        } else {
-          markerRef.current = L.marker(e.latlng, { icon: guessIcon, draggable: true }).addTo(map)
-          markerRef.current.on('dragend', () => {
-            const pos = markerRef.current!.getLatLng()
-            onGuess(pos.lat, pos.lng)
-          })
-        }
-        onGuess(e.latlng.lat, e.latlng.lng)
-      })
-
-      mapRef.current = map
-    }, 50)
+    mapRef.current = map
 
     return () => {
-      clearTimeout(timer)
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-        markerRef.current = null
-      }
+      ;(map as any)._ro?.disconnect()
+      map.remove()
+      mapRef.current = null
+      markerRef.current = null
     }
   }, [])
 
@@ -84,7 +81,7 @@ export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
     <div style={{ position: 'relative' }}>
       <div
         ref={containerRef}
-        style={{ width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden' }}
+        style={{ width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)' }}
       />
       {guessLat === null && (
         <div style={{
@@ -114,56 +111,47 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
   const mapRef = useRef<L.Map | null>(null)
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
+    const container = containerRef.current
+    if (!container || mapRef.current) return
 
-    const timer = setTimeout(() => {
-      if (!containerRef.current || mapRef.current) return
+    const map = initMap(container, {})
 
-      const map = L.map(containerRef.current, { preferCanvas: true })
+    L.marker([guessLat, guessLng], { icon: guessIcon })
+      .addTo(map)
+      .bindTooltip('Tvůj tip', { permanent: true, direction: 'top', offset: [0, -34] })
 
-      L.tileLayer(CARTO, { attribution: ATTR, maxZoom: 19 }).addTo(map)
+    L.marker([truthLat, truthLng], { icon: truthIcon })
+      .addTo(map)
+      .bindTooltip('Správné místo', { permanent: true, direction: 'top', offset: [0, -34] })
 
-      L.marker([guessLat, guessLng], { icon: guessIcon })
-        .addTo(map)
-        .bindTooltip('Tvůj tip', { permanent: true, direction: 'top', offset: [0, -34] })
+    L.polyline([[guessLat, guessLng], [truthLat, truthLng]], {
+      color: '#d97757', weight: 2, dashArray: '6 4', opacity: 0.8,
+    }).addTo(map)
 
-      L.marker([truthLat, truthLng], { icon: truthIcon })
-        .addTo(map)
-        .bindTooltip('Správné místo', { permanent: true, direction: 'top', offset: [0, -34] })
-
-      L.polyline([[guessLat, guessLng], [truthLat, truthLng]], {
-        color: '#d97757', weight: 2, dashArray: '6 4', opacity: 0.8,
+    if (radiusKm > 0) {
+      L.circle([truthLat, truthLng], {
+        radius: radiusKm * 1000,
+        color: '#2a1f17', fillColor: '#2a1f17',
+        fillOpacity: 0.06, weight: 1.5, dashArray: '4 4',
       }).addTo(map)
+    }
 
-      if (radiusKm > 0) {
-        L.circle([truthLat, truthLng], {
-          radius: radiusKm * 1000,
-          color: '#2a1f17', fillColor: '#2a1f17',
-          fillOpacity: 0.06, weight: 1.5, dashArray: '4 4',
-        }).addTo(map)
-      }
+    const bounds = L.latLngBounds([guessLat, guessLng], [truthLat, truthLng])
+    map.fitBounds(bounds, { padding: [60, 60] })
 
-      const bounds = L.latLngBounds([guessLat, guessLng], [truthLat, truthLng])
-      map.fitBounds(bounds, { padding: [60, 60] })
-
-      setTimeout(() => map.invalidateSize(), 100)
-
-      mapRef.current = map
-    }, 50)
+    mapRef.current = map
 
     return () => {
-      clearTimeout(timer)
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
+      ;(map as any)._ro?.disconnect()
+      map.remove()
+      mapRef.current = null
     }
   }, [])
 
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: 260, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden' }}
+      style={{ width: '100%', height: 260, borderRadius: 10, border: '1px solid var(--line)' }}
     />
   )
 }
