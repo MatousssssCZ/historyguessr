@@ -81,32 +81,15 @@ export default function GamePage() {
           />
         )}
         {state.phase === 'playing' && (
-          <>
-            {/* Mapa — vlevo dole, mimo panel, vždy viditelná */}
-            <div style={{
-              position: 'absolute', bottom: 20, left: 16,
-              width: 280, height: 220,
-              zIndex: 20,
-              borderRadius: 12,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-              overflow: 'hidden',
-              border: '1px solid rgba(245,241,232,0.2)',
-            }}>
-              <GuessMap
-                guessLat={state.guessLat}
-                guessLng={state.guessLng}
-                onGuess={setGuessLocation}
-              />
-            </div>
-            {/* Panel s rokem — vpravo dole */}
-            <YearPanel
-              guessLat={state.guessLat}
-              guessYear={state.guessYear}
-              canSubmit={canSubmit}
-              onYearChange={setGuessYear}
-              onSubmit={submitRound}
-            />
-          </>
+          <GuessPanel
+            guessLat={state.guessLat}
+            guessLng={state.guessLng}
+            guessYear={state.guessYear}
+            canSubmit={canSubmit}
+            onLocationChange={setGuessLocation}
+            onYearChange={setGuessYear}
+            onSubmit={submitRound}
+          />
         )}
       </div>
     </div>
