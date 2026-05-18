@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ResultMap } from '@/components/GameMap'
+import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame } from '@/hooks/useGame'
@@ -81,15 +81,31 @@ export default function GamePage() {
           />
         )}
         {state.phase === 'playing' && (
-          <GuessPanel
-            guessLat={state.guessLat}
-            guessLng={state.guessLng}
-            guessYear={state.guessYear}
-            canSubmit={canSubmit}
-            onLocationChange={setGuessLocation}
-            onYearChange={setGuessYear}
-            onSubmit={submitRound}
-          />
+          <>
+            {/* Mapa — vlevo dole, mimo panel, vždy viditelná */}
+            <div style={{
+              position: 'absolute', bottom: 20, left: 16,
+              width: 280, zIndex: 20,
+              borderRadius: 12,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              overflow: 'hidden',
+              border: '1px solid rgba(245,241,232,0.2)',
+            }}>
+              <GuessMap
+                guessLat={state.guessLat}
+                guessLng={state.guessLng}
+                onGuess={setGuessLocation}
+              />
+            </div>
+            {/* Panel s rokem — vpravo dole */}
+            <YearPanel
+              guessLat={state.guessLat}
+              guessYear={state.guessYear}
+              canSubmit={canSubmit}
+              onYearChange={setGuessYear}
+              onSubmit={submitRound}
+            />
+          </>
         )}
       </div>
     </div>
@@ -125,240 +141,45 @@ function PanoramaViewer({ url }: { url: string }) {
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
 }
 
-// ── Guess panel ───────────────────────────────────────────
-function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange, onYearChange, onSubmit }: {
-  guessLat: number | null; guessLng: number | null; guessYear: number
-  canSubmit: boolean; onLocationChange: (lat: number, lng: number) => void
-  onYearChange: (y: number) => void; onSubmit: () => void
+// ── Year panel — vpravo dole ─────────────────────────────
+function YearPanel({ guessLat, guessYear, canSubmit, onYearChange, onSubmit }: {
+  guessLat: number | null
+  guessYear: number
+  canSubmit: boolean
+  onYearChange: (y: number) => void
+  onSubmit: () => void
 }) {
-  const [collapsed, setCollapsed] = useState(false)
-  const [tab, setTab] = useState<'map' | 'year'>('map')
-
-  if (collapsed) {
-    return (
-      <div
-        onClick={() => setCollapsed(false)}
-        style={{
-          position: 'absolute', bottom: 20, right: 16,
-          background: 'rgba(245,241,232,0.97)',
-          borderRadius: 12, padding: '10px 18px',
-          border: '1px solid var(--line)',
-          boxShadow: 'var(--shadow-lg)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
-        }}
-      >
-        <span className="eyebrow" style={{ fontSize: 10 }}>TVŮJ TIP</span>
-        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>▼</span>
-      </div>
-    )
-  }
-
   return (
     <div style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0,
-      background: 'rgba(245,241,232,0.98)',
-      backdropFilter: 'blur(16px)',
-      borderTop: '1px solid var(--line)',
-      borderRadius: '18px 18px 0 0',
-      boxShadow: '0 -8px 32px rgba(42,31,23,0.12)',
-      maxWidth: 'min(510px, 100%)',
-      marginLeft: 'auto',
+      position: 'absolute', bottom: 20, right: 16,
+      width: 260,
+      background: 'rgba(245,241,232,0.97)',
+      backdropFilter: 'blur(12px)',
+      borderRadius: 14,
+      border: '1px solid var(--line)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      padding: '14px 16px',
+      display: 'flex', flexDirection: 'column', gap: 12,
+      zIndex: 20,
     }}>
-      {/* Header s tab přepínačem */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px 0', gap: 8 }}>
-        <span className="eyebrow" style={{ fontSize: 10, flex: 1 }}>TVŮJ TIP</span>
-        {/* Tab přepínač */}
-        <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 8, padding: 3, gap: 3 }}>
-          <TabBtn active={tab === 'map'} onClick={() => setTab('map')}>🗺 Mapa</TabBtn>
-          <TabBtn active={tab === 'year'} onClick={() => setTab('year')}>📅 Rok</TabBtn>
-        </div>
-        <button
-          onClick={() => setCollapsed(true)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 18, padding: '0 0 0 8px', lineHeight: 1 }}
-        >
-          ▼
-        </button>
-      </div>
-
-      <div style={{ padding: '12px 16px 16px' }} className="game-panel-bottom">
-        {/* Mapa tab — vždy v DOM, jen skrytá přes display */}
-        <div style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection: 'column', gap: 8 }}>
-          <SVGWorldMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
-          {guessLat !== null && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center' }}>
-              {guessLat.toFixed(2)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(2)}° {guessLng! >= 0 ? 'E' : 'W'}
-            </div>
-          )}
-          <button
-            className="btn btn-ghost"
-            style={{ width: '100%', fontSize: 13 }}
-            onClick={() => setTab('year')}
-          >
-            Dále: zadat rok →
-          </button>
-        </div>
-
-        {/* Rok tab */}
-        <div style={{ display: tab === 'year' ? 'flex' : 'none', flexDirection: 'column', gap: 12 }}>
-          <YearPicker value={guessYear} onChange={onYearChange}/>
-          <button
-            className="btn btn-accent"
-            style={{ width: '100%', fontSize: 15, padding: '14px 0' }}
-            disabled={!canSubmit}
-            onClick={onSubmit}
-          >
-            Odeslat odpověď →
-          </button>
-          {!canSubmit && (
-            <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)' }}>
-              ← Nejdřív vyber místo na mapě
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '5px 12px',
-        borderRadius: 6,
-        border: 'none',
-        background: active ? 'var(--surface)' : 'transparent',
-        boxShadow: active ? 'var(--shadow-sm)' : 'none',
-        fontSize: 12, fontWeight: 500,
-        color: active ? 'var(--ink)' : 'var(--ink-3)',
-        cursor: 'pointer',
-        transition: 'all 150ms',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-
-// ── SVG světová mapa pro tipování (bez Leaflet) ───────────
-function SVGWorldMap({ onGuess, guessLat, guessLng }: {
-  onGuess: (lat: number, lng: number) => void
-  guessLat: number | null
-  guessLng: number | null
-}) {
-  const svgRef = useRef<SVGSVGElement>(null)
-
-  function handleClick(e: React.MouseEvent<SVGSVGElement>) {
-    const svg = svgRef.current
-    if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width
-    const y = (e.clientY - rect.top) / rect.height
-    const lat = 90 - y * 180
-    const lng = x * 360 - 180
-    onGuess(lat, lng)
-  }
-
-  const pinX = guessLng !== null ? ((guessLng + 180) / 360) * 100 : null
-  const pinY = guessLat !== null ? ((90 - guessLat) / 180) * 100 : null
-
-  return (
-    <div style={{ position: 'relative', width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden', cursor: 'crosshair' }}>
-      <svg
-        ref={svgRef}
-        viewBox="0 0 1000 500"
-        width="100%"
-        height="100%"
-        style={{ display: 'block', background: '#a8c8d8' }}
-        onClick={handleClick}
-        preserveAspectRatio="xMidYMid slice"
+      <YearPicker value={guessYear} onChange={onYearChange}/>
+      <button
+        className="btn btn-accent"
+        style={{ width: '100%', fontSize: 14 }}
+        disabled={!canSubmit}
+        onClick={onSubmit}
       >
-        {/* Oceány */}
-        <rect width="1000" height="500" fill="#a8c8d8"/>
-        {/* Mřížka */}
-        {[0,100,200,300,400,500,600,700,800,900,1000].map(x => (
-          <line key={`v${x}`} x1={x} y1={0} x2={x} y2={500} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5"/>
-        ))}
-        {[0,100,200,300,400,500].map(y => (
-          <line key={`h${y}`} x1={0} y1={y} x2={1000} y2={y} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5"/>
-        ))}
-        {/* Rovník */}
-        <line x1={0} y1={250} x2={1000} y2={250} stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeDasharray="8,4"/>
-
-        {/* ── Kontinenty (zjednodušené ale rozpoznatelné) ── */}
-        {/* Severní Amerika */}
-        <path d="M80,60 L180,50 L220,80 L240,140 L220,200 L180,220 L140,230 L100,200 L60,160 L50,100 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Střední Amerika */}
-        <path d="M180,220 L200,250 L190,270 L170,260 L160,240 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Jižní Amerika */}
-        <path d="M180,270 L230,260 L270,290 L280,360 L250,430 L210,450 L180,420 L160,360 L150,300 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Grónsko */}
-        <path d="M240,20 L300,15 L320,40 L300,60 L260,55 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Evropa */}
-        <path d="M440,60 L510,50 L540,70 L530,110 L500,130 L460,125 L440,100 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Skandinávie */}
-        <path d="M470,30 L510,25 L520,55 L490,65 L460,55 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Britské ostrovy */}
-        <path d="M425,65 L445,60 L448,80 L430,85 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Afrika */}
-        <path d="M445,130 L520,125 L550,160 L560,240 L540,320 L510,370 L480,375 L450,340 L430,260 L420,180 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Madagaskar */}
-        <path d="M565,290 L575,280 L580,310 L570,325 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Asie - západ + střed */}
-        <path d="M540,50 L700,40 L750,70 L740,130 L700,150 L640,155 L580,140 L550,110 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Asie - východ */}
-        <path d="M700,40 L820,45 L850,90 L840,150 L790,170 L740,160 L740,130 L750,70 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Indie */}
-        <path d="M620,150 L660,145 L670,200 L645,230 L620,210 L605,175 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Jihovýchodní Asie */}
-        <path d="M760,160 L820,155 L830,190 L800,200 L765,185 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Japonsko */}
-        <path d="M845,90 L860,85 L865,110 L850,115 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Austrálie */}
-        <path d="M760,290 L860,285 L890,320 L880,380 L840,400 L790,395 L755,360 L745,320 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Nový Zéland */}
-        <path d="M900,360 L910,350 L915,375 L905,385 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-        {/* Rusko - Sibiř */}
-        <path d="M540,30 L820,20 L850,45 L820,45 L700,40 L540,50 Z" fill="#c9b99a" stroke="#b8a888" strokeWidth="1"/>
-
-        {/* Pin hráče */}
-        {pinX !== null && pinY !== null && (
-          <g transform={`translate(${pinX * 10}, ${pinY * 5})`}>
-            <path d="M0,-18 C-7,-18 -12,-12 -12,-5 C-12,4 0,18 0,18 C0,18 12,4 12,-5 C12,-12 7,-18 0,-18 Z"
-              fill="#d97757" stroke="#b85a3e" strokeWidth="1"/>
-            <circle cy="-5" r="4" fill="white"/>
-          </g>
-        )}
-      </svg>
-
-      {/* Hint */}
-      {guessLat === null && (
-        <div style={{
-          position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
-          fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em',
-          color: 'var(--ink-3)', background: 'rgba(245,241,232,0.92)',
-          padding: '3px 12px', borderRadius: 999, pointerEvents: 'none', whiteSpace: 'nowrap',
-        }}>
-          KLIKNI PRO UMÍSTĚNÍ PINU
-        </div>
-      )}
-
-      {/* Souřadnice */}
-      {guessLat !== null && (
-        <div style={{
-          position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
-          fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)',
-          background: 'rgba(245,241,232,0.92)', padding: '3px 10px', borderRadius: 999,
-          pointerEvents: 'none', whiteSpace: 'nowrap',
-        }}>
-          {guessLat.toFixed(1)}° {guessLat >= 0 ? 'N' : 'S'} · {guessLng?.toFixed(1)}° {guessLng! >= 0 ? 'E' : 'W'}
+        Odeslat odpověď →
+      </button>
+      {!canSubmit && guessLat === null && (
+        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)' }}>
+          ← Nejdřív klikni na mapu
         </div>
       )}
     </div>
   )
 }
+
 
 // ── Year picker — slider + input + krokovací tlačítka ────
 function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
