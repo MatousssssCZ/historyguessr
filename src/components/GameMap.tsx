@@ -107,10 +107,10 @@ export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
   }, [])
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{ position: 'relative', width: '100%', height: 220 }}>
       <div
         ref={wrapRef}
-        style={{ width: '100%', height: '100%', minHeight: 200 }}
+        style={{ width: '100%', height: 220 }}
       />
       {guessLat === null && (
         <div style={{
