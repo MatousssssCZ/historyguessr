@@ -85,7 +85,8 @@ export default function GamePage() {
             {/* Mapa — vlevo dole, mimo panel, vždy viditelná */}
             <div style={{
               position: 'absolute', bottom: 20, left: 16,
-              width: 280, zIndex: 20,
+              width: 280, height: 220,
+              zIndex: 20,
               borderRadius: 12,
               boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
               overflow: 'hidden',
