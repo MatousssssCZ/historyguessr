@@ -142,45 +142,140 @@ function PanoramaViewer({ url }: { url: string }) {
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
 }
 
-// ── Year panel — vpravo dole ─────────────────────────────
-function YearPanel({ guessLat, guessYear, canSubmit, onYearChange, onSubmit }: {
-  guessLat: number | null
-  guessYear: number
-  canSubmit: boolean
-  onYearChange: (y: number) => void
-  onSubmit: () => void
+// ── Guess panel — mapa + rok + odeslat ──────────────────
+function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange, onYearChange, onSubmit }: {
+  guessLat: number | null; guessLng: number | null; guessYear: number
+  canSubmit: boolean; onLocationChange: (lat: number, lng: number) => void
+  onYearChange: (y: number) => void; onSubmit: () => void
 }) {
+  const [tab, setTab] = useState<'map' | 'year'>('map')
+  const [expanded, setExpanded] = useState(false)
+  const isMobile = window.innerWidth <= 640
+
+  const mapPin = guessLat !== null
+    ? `${guessLat.toFixed(1)}° ${guessLat >= 0 ? 'N' : 'S'} · ${guessLng?.toFixed(1)}° ${guessLng! >= 0 ? 'E' : 'W'}`
+    : null
+
+  const mapHeight = expanded ? 340 : (isMobile ? 200 : 240)
+
   return (
     <div style={{
-      position: 'absolute', bottom: 20, right: 16,
-      width: 260,
-      background: 'rgba(245,241,232,0.97)',
-      backdropFilter: 'blur(12px)',
-      borderRadius: 14,
-      border: '1px solid var(--line)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      padding: '14px 16px',
-      display: 'flex', flexDirection: 'column', gap: 12,
+      position: 'absolute',
+      bottom: 0, left: 0, right: 0,
+      maxWidth: isMobile ? '100%' : 380,
+      marginLeft: isMobile ? 0 : 'auto',
+      marginRight: isMobile ? 0 : 16,
+      background: 'rgba(245,241,232,0.98)',
+      backdropFilter: 'blur(16px)',
+      borderRadius: isMobile ? '18px 18px 0 0' : 14,
+      border: '0.5px solid rgba(42,31,23,0.15)',
+      boxShadow: '0 -4px 24px rgba(0,0,0,0.25)',
+      overflow: 'hidden',
       zIndex: 20,
+      marginBottom: isMobile ? 0 : 20,
     }}>
-      <YearPicker value={guessYear} onChange={onYearChange}/>
-      <button
-        className="btn btn-accent"
-        style={{ width: '100%', fontSize: 14 }}
-        disabled={!canSubmit}
-        onClick={onSubmit}
-      >
-        Odeslat odpověď →
-      </button>
-      {!canSubmit && guessLat === null && (
-        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)' }}>
-          ← Nejdřív klikni na mapu
+
+      {/* Header */}
+      <div style={{
+        background: '#1a1208',
+        padding: '9px 14px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'rgba(245,241,232,0.5)' }}>
+          TVŮJ TIP
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {mapPin && (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(245,241,232,0.4)' }}>
+              {mapPin} ✓
+            </span>
+          )}
+          <button
+            onClick={() => setExpanded(e => !e)}
+            style={{
+              background: 'rgba(255,255,255,0.1)', border: '0.5px solid rgba(255,255,255,0.18)',
+              borderRadius: 6, padding: '3px 8px', fontSize: 11,
+              color: 'rgba(245,241,232,0.7)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 3,
+            }}
+          >
+            {expanded ? '↙ Sbalit' : '↗ Rozbalit'}
+          </button>
+        </div>
+      </div>
+
+      {/* Obsah záložky */}
+      {tab === 'map' && (
+        <div style={{ position: 'relative', height: mapHeight, transition: 'height 250ms ease' }}>
+          <GuessMap
+            guessLat={guessLat}
+            guessLng={guessLng}
+            onGuess={onLocationChange}
+          />
         </div>
       )}
+
+      {tab === 'year' && (
+        <div style={{ padding: '18px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>ROK UDÁLOSTI</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 40, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)' }}>
+              {Math.abs(guessYear)}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 3 }}>
+              {guessYear < 0 ? 'př. n. l.' : 'n. l.'}
+            </div>
+          </div>
+          <YearPicker value={guessYear} onChange={onYearChange}/>
+        </div>
+      )}
+
+      {/* Přepínač + Odeslat */}
+      <div style={{ borderTop: '0.5px solid var(--line)' }}>
+        {/* Tab bar */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+          {([['map', '📍', 'Mapa'], ['year', '📅', 'Rok']] as const).map(([key, icon, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                padding: '11px 0',
+                border: 'none',
+                borderBottom: tab === key ? '2.5px solid var(--accent)' : '2.5px solid transparent',
+                background: 'transparent',
+                fontSize: 13,
+                fontWeight: tab === key ? 500 : 400,
+                color: tab === key ? 'var(--accent)' : 'var(--ink-3)',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'all 150ms',
+              }}
+            >
+              <span style={{ fontSize: 15 }}>{icon}</span> {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Odeslat */}
+        <div style={{ padding: '10px 14px', paddingBottom: `calc(10px + env(safe-area-inset-bottom, 0px))` }}>
+          <button
+            className="btn btn-accent"
+            style={{ width: '100%', fontSize: 14, opacity: canSubmit ? 1 : 0.4 }}
+            disabled={!canSubmit}
+            onClick={onSubmit}
+          >
+            Odeslat odpověď →
+          </button>
+          {!canSubmit && (
+            <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
+              {guessLat === null ? 'Klikni na mapu pro výběr místa' : 'Nastav rok události'}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
-
 
 // ── Year picker — slider + input + krokovací tlačítka ────
 function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
