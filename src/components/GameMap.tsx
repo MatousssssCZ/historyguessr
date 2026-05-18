@@ -82,7 +82,7 @@ export const GuessMap = forwardRef<GuessMapHandle, GuessMapProps>(
       <div style={{ position: 'relative' }}>
         <div
           ref={containerRef}
-          style={{ width: '100%', height: 240, borderRadius: 10, border: '1px solid var(--line)' }}
+          style={{ width: '100%', height: 200 }}
         />
         {guessLat === null && (
           <div style={{
