@@ -406,16 +406,16 @@ function RoundResult({ event, round, onNext, isLast }: {
         maxHeight: 'calc(100dvh - 40px)',
       }}>
 
-        {/* Hlavička */}
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
-          <div>
-            <p className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</p>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Celkem</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {round.round_score.toLocaleString('cs-CZ')}
+        {/* Hlavička — varianta A */}
+        <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+          <p className="eyebrow" style={{ marginBottom: 4 }}>Výsledek kola</p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                {round.round_score.toLocaleString('cs-CZ')}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>z 10 000 bodů</div>
             </div>
           </div>
         </div>
@@ -491,34 +491,61 @@ function RoundResult({ event, round, onNext, isLast }: {
   )
 }
 
-// ── Sdílený obsah skóre ───────────────────────────────────
+// ── Sdílený obsah skóre — varianta A ─────────────────────
 function ScoreContent({ round, yearDiffLabel, event }: {
   round: NonNullable<ReturnType<typeof useGame>['lastRound']>
   yearDiffLabel: string
   event: Event
 }) {
+  const locPct = Math.round(round.location_score / 50)
+  const yrPct = Math.round(round.year_score / 50)
+
   return (
-    <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-        <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
-          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Poloha</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, letterSpacing: '-0.02em' }}>{round.location_score.toLocaleString('cs-CZ')}</div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.location_score / 50)} %</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* 2 score karty s progress barem */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {/* Poloha */}
+        <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
+          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>Poloha</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 6 }}>
+            {round.location_score.toLocaleString('cs-CZ')}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div style={{ flex: 1, height: 3, background: 'var(--line-strong)', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ width: `${locPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
+            </div>
+            <span style={{ fontSize: 10, color: 'var(--ink-3)', flexShrink: 0 }}>{locPct}%</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{formatDistance(round.distance_km)}</div>
         </div>
-        <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 12px' }}>
-          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Rok</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, letterSpacing: '-0.02em' }}>{round.year_score.toLocaleString('cs-CZ')}</div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{Math.round(round.year_score / 50)} %</div>
+        {/* Rok */}
+        <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
+          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>Rok</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 6 }}>
+            {round.year_score.toLocaleString('cs-CZ')}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div style={{ flex: 1, height: 3, background: 'var(--line-strong)', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ width: `${yrPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
+            </div>
+            <span style={{ fontSize: 10, color: 'var(--ink-3)', flexShrink: 0 }}>{yrPct}%</span>
+          </div>
+          <div style={{ fontSize: 11, color: round.year_diff === 0 ? '#1d6b3a' : 'var(--ink-3)' }}>
+            {round.year_diff === 0 ? '✓ Přesný tip!' : yearDiffLabel}
+          </div>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <DetailRow label="Vzdálenost" value={formatDistance(round.distance_km)}/>
-        <DetailRow label="Rozdíl v rocích" value={yearDiffLabel} highlight={round.year_diff === 0}/>
-        <div style={{ height: 1, background: 'var(--line)' }}/>
-        <DetailRow label="Správný rok" value={formatYear(event.year)} strong/>
-        <DetailRow label="Tvůj tip" value={formatYear(round.guess_year)}/>
+
+      {/* Rok detail */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '8px 0', borderTop: '1px solid var(--line)' }}>
+        <span style={{ color: 'var(--ink-3)' }}>Správný rok</span>
+        <span style={{ fontWeight: 500 }}>{formatYear(event.year)}</span>
       </div>
-    </>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: -8 }}>
+        <span style={{ color: 'var(--ink-3)' }}>Tvůj tip</span>
+        <span>{formatYear(round.guess_year)}</span>
+      </div>
+    </div>
   )
 }
 
