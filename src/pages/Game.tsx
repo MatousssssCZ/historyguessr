@@ -241,19 +241,29 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
 
         {/* Odeslat */}
         <div style={{ padding: '10px 14px', paddingBottom: `calc(10px + env(safe-area-inset-bottom, 0px))` }}>
-          <button
-            className="btn btn-accent"
-            style={{ width: '100%', fontSize: 14, opacity: canSubmit ? 1 : 0.4 }}
-            disabled={!canSubmit}
-            onClick={onSubmit}
-          >
-            Odeslat odpověď →
-          </button>
-          {!canSubmit && (
-            <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
-              {guessLat === null ? 'Klikni na mapu pro výběr místa' : 'Nastav rok události'}
-            </div>
-          )}
+          {(() => {
+            const missingLocation = guessLat === null
+            const missingYear = !canSubmit && !missingLocation
+            const hint = missingLocation && missingYear
+              ? 'Zbývá vybrat místo a rok'
+              : missingLocation
+              ? 'Zbývá vybrat místo'
+              : missingYear
+              ? 'Zbývá vybrat rok'
+              : null
+            return (
+              <>
+                <button
+                  className="btn btn-accent"
+                  style={{ width: '100%', fontSize: 14, opacity: canSubmit ? 1 : 0.45 }}
+                  disabled={!canSubmit}
+                  onClick={onSubmit}
+                >
+                  {hint ?? 'Odeslat odpověď →'}
+                </button>
+              </>
+            )
+          })()}
         </div>
       </div>
     </div>
