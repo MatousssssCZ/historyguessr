@@ -18,6 +18,7 @@ export interface GameState {
   guessLat: number | null
   guessLng: number | null
   guessYear: number
+  guessYearSet: boolean
   error: string | null
 }
 
@@ -31,6 +32,7 @@ const INITIAL_STATE: GameState = {
   guessLat: null,
   guessLng: null,
   guessYear: 1900,
+  guessYearSet: false,
   error: null,
 }
 
@@ -72,7 +74,7 @@ export function useGame(userId: string | undefined) {
 
   /** Nastaví tip roku */
   const setGuessYear = useCallback((year: number) => {
-    update({ guessYear: year })
+    update({ guessYear: year, guessYearSet: true })
   }, [])
 
   /** Odešle odpověď pro aktuální kolo */
@@ -127,6 +129,7 @@ export function useGame(userId: string | undefined) {
         guessLat: null,
         guessLng: null,
         guessYear: 1900,
+        guessYearSet: false,
       })
     }
   }, [state])
@@ -138,7 +141,7 @@ export function useGame(userId: string | undefined) {
 
   const currentEvent = state.events[state.currentRound] ?? null
   const lastRound = state.rounds[state.rounds.length - 1] ?? null
-  const canSubmit = state.guessLat !== null && state.guessLng !== null
+  const canSubmit = state.guessLat !== null && state.guessLng !== null && state.guessYearSet
 
   return {
     state,
