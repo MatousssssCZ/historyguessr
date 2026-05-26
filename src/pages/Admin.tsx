@@ -247,7 +247,6 @@ type FormData = {
   lat: string; lng: string
   location_radius_km: string
   category: string; difficulty: string; published: boolean
-  hfov: string
 }
 
 function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
@@ -263,7 +262,6 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
     category: event?.category ?? '',
     difficulty: String(event?.difficulty ?? 2),
     published: event?.published ?? false,
-    hfov: String(event?.hfov ?? 100),
   })
   const [panoramaFile, setPanoramaFile] = useState<File | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -307,7 +305,6 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
         panorama_url: event?.panorama_url ?? '',
         event_image_url: event?.event_image_url ?? null,
         created_by: user.id,
-        hfov: parseInt(form.hfov) || 100,
       }
 
       let savedId = event?.id
@@ -349,7 +346,6 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const yearFrom = parseInt(form.year_from) || 1900
   const yearTo = parseInt(form.year_to) || 1900
   const yearMid = Math.round((yearFrom + yearTo) / 2)
-  const hfov = parseInt(form.hfov) || 100
 
   return (
     <div style={{ maxWidth: 780 }}>
@@ -458,33 +454,6 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           </div>
           <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
             Tip: klikni na mapu pro výběr místa, nebo zadej souřadnice ručně. Souřadnice zkopíruješ z Google Maps (pravý klik na místo).
-          </p>
-        </div>
-
-        {/* Zoom panoramy */}
-        <div className="card" style={{ padding: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 8 }}>Výchozí zoom 360° panoramy</p>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>
-            Nižší = přiblíženo, vyšší = oddáleno (širší záběr).
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>🔍 Přiblíženo</span>
-            <input type="range" min={50} max={120} value={form.hfov} onChange={set('hfov')} style={{ flex: 1 }}/>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>🌐 Oddáleno</span>
-            <div style={{ padding: '6px 14px', background: 'var(--paper-200)', borderRadius: 8, fontFamily: 'var(--font-mono)', fontSize: 16, minWidth: 52, textAlign: 'center', fontWeight: 500 }}>
-              {form.hfov}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-            {[{v:'60',l:'Interiér'},{v:'90',l:'Doporučeno'},{v:'110',l:'Krajina'},{v:'120',l:'Max'}].map(p => (
-              <button key={p.v} type="button" onClick={() => setForm(f => ({ ...f, hfov: p.v }))}
-                style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${hfov === parseInt(p.v) ? 'var(--accent)' : 'var(--line-strong)'}`, background: hfov === parseInt(p.v) ? 'rgba(217,119,87,0.1)' : 'transparent', color: hfov === parseInt(p.v) ? 'var(--accent-deep)' : 'var(--ink-3)', cursor: 'pointer' }}>
-                {p.v} — {p.l}
-              </button>
-            ))}
-          </div>
-          <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 10 }}>
-            💡 Ideální rozlišení panoramy: <strong>4096×2048 px</strong>, JPG 85%, ~3–8 MB
           </p>
         </div>
 
