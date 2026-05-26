@@ -192,8 +192,12 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
                 <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{ev.category ?? '—'}</div>
               </td>
               <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                {ev.year < 0 ? `${Math.abs(ev.year)} př.` : ev.year}
-                {ev.year_range > 0 && <span style={{ color: 'var(--ink-3)' }}> ±{ev.year_range}</span>}
+                {(ev.year_from ?? ev.year) < 0 ? `${Math.abs(ev.year_from ?? ev.year)} př.` : (ev.year_from ?? ev.year)}
+                {ev.year_from !== ev.year_to && ev.year_to && (
+                  <span style={{ color: 'var(--ink-3)' }}>
+                    {' '}— {ev.year_to < 0 ? `${Math.abs(ev.year_to)} př.` : ev.year_to}
+                  </span>
+                )}
               </td>
               <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                 {ev.location_radius_km > 0 ? `${ev.location_radius_km} km` : '—'}
@@ -238,10 +242,12 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
 
 // ── Event form ────────────────────────────────────────────
 type FormData = {
-  title: string; description: string; year: string
+  title: string; description: string
+  year_from: string; year_to: string
   lat: string; lng: string
-  location_radius_km: string; year_range: string
+  location_radius_km: string
   category: string; difficulty: string; published: boolean
+  hfov: string
 }
 
 function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
@@ -249,14 +255,15 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const [form, setForm] = useState<FormData>({
     title: event?.title ?? '',
     description: event?.description ?? '',
-    year: String(event?.year ?? 1900),
+    year_from: String(event?.year_from ?? event?.year ?? 1900),
+    year_to: String(event?.year_to ?? event?.year ?? 1900),
     lat: String(event?.lat ?? 50.0755),
     lng: String(event?.lng ?? 14.4378),
     location_radius_km: String(event?.location_radius_km ?? 0),
-    year_range: String(event?.year_range ?? 0),
     category: event?.category ?? '',
     difficulty: String(event?.difficulty ?? 2),
     published: event?.published ?? false,
+    hfov: String(event?.hfov ?? 100),
   })
   const [panoramaFile, setPanoramaFile] = useState<File | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -280,20 +287,27 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
     setError(null); setSaving(true)
 
     try {
+      const yearFrom = parseInt(form.year_from) || 1900
+      const yearTo = parseInt(form.year_to) || 1900
+      if (yearFrom > yearTo) { setError('Rok od musí být ≤ roku do.'); setSaving(false); return }
+      const yearMid = Math.round((yearFrom + yearTo) / 2)
       const payload = {
         title: form.title,
         description: form.description,
-        year: parseInt(form.year),
+        year: yearMid,
+        year_from: yearFrom,
+        year_to: yearTo,
+        year_range: Math.round((yearTo - yearFrom) / 2),
         lat: parseFloat(form.lat),
         lng: parseFloat(form.lng),
         location_radius_km: parseInt(form.location_radius_km) || 0,
-        year_range: parseInt(form.year_range) || 0,
         category: form.category || null,
         difficulty: parseInt(form.difficulty) as 1 | 2 | 3,
         published: form.published,
         panorama_url: event?.panorama_url ?? '',
         event_image_url: event?.event_image_url ?? null,
         created_by: user.id,
+        hfov: parseInt(form.hfov) || 100,
       }
 
       let savedId = event?.id
@@ -332,6 +346,10 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const lat = parseFloat(form.lat) || 50.0755
   const lng = parseFloat(form.lng) || 14.4378
   const radiusKm = parseInt(form.location_radius_km) || 0
+  const yearFrom = parseInt(form.year_from) || 1900
+  const yearTo = parseInt(form.year_to) || 1900
+  const yearMid = Math.round((yearFrom + yearTo) / 2)
+  const hfov = parseInt(form.hfov) || 100
 
   return (
     <div style={{ maxWidth: 780 }}>
@@ -382,22 +400,34 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           </div>
         </div>
 
-        {/* Rok + rozptyl */}
+        {/* Rok od / do */}
         <div className="card" style={{ padding: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 20 }}>Rok události</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <p className="eyebrow" style={{ marginBottom: 8 }}>Rok události</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 16 }}>
+            Zadej rozsah let. Hráč dostane plný počet bodů za libovolný rok v tomto rozsahu. Záporné = př. n. l.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, alignItems: 'end' }}>
             <div>
-              <label className="label">Rok * (záporné = př. n. l.)</label>
-              <input className="input" type="number" value={form.year} onChange={set('year')} required min={-3000} max={2025} placeholder="např. -79 nebo 1618"/>
+              <label className="label">Rok od *</label>
+              <input className="input" type="number" value={form.year_from} onChange={set('year_from')} required min={-3000} max={2025} placeholder="-1200"/>
             </div>
             <div>
-              <label className="label">Časový rozptyl ±roků (volitelné)</label>
-              <input className="input" type="number" value={form.year_range} onChange={set('year_range')} min={0} max={500} placeholder="0 = přesný rok"/>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
-                Hráč dostane plný počet bodů pokud trefí rok ±{form.year_range || 0} let. Pak -1 bod za každý rok.
-              </p>
+              <label className="label">Rok do *</label>
+              <input className="input" type="number" value={form.year_to} onChange={set('year_to')} required min={-3000} max={2025} placeholder="-1100"/>
+            </div>
+            <div style={{ padding: '10px 14px', background: 'var(--paper-200)', borderRadius: 8 }}>
+              <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Střed</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>
+                {yearMid < 0 ? `${Math.abs(yearMid)} př. n. l.` : `${yearMid} n. l.`}
+              </div>
+              {yearFrom !== yearTo && (
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>±{Math.round((yearTo - yearFrom) / 2)} let</div>
+              )}
             </div>
           </div>
+          {yearFrom > yearTo && (
+            <div className="alert alert-error" style={{ marginTop: 12 }}>Rok od musí být ≤ roku do.</div>
+          )}
         </div>
 
         {/* Poloha + mapa */}
@@ -428,6 +458,33 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           </div>
           <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
             Tip: klikni na mapu pro výběr místa, nebo zadej souřadnice ručně. Souřadnice zkopíruješ z Google Maps (pravý klik na místo).
+          </p>
+        </div>
+
+        {/* Zoom panoramy */}
+        <div className="card" style={{ padding: 24 }}>
+          <p className="eyebrow" style={{ marginBottom: 8 }}>Výchozí zoom 360° panoramy</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>
+            Nižší = přiblíženo, vyšší = oddáleno (širší záběr).
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>🔍 Přiblíženo</span>
+            <input type="range" min={50} max={120} value={form.hfov} onChange={set('hfov')} style={{ flex: 1 }}/>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>🌐 Oddáleno</span>
+            <div style={{ padding: '6px 14px', background: 'var(--paper-200)', borderRadius: 8, fontFamily: 'var(--font-mono)', fontSize: 16, minWidth: 52, textAlign: 'center', fontWeight: 500 }}>
+              {form.hfov}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+            {[{v:'60',l:'Interiér'},{v:'90',l:'Doporučeno'},{v:'110',l:'Krajina'},{v:'120',l:'Max'}].map(p => (
+              <button key={p.v} type="button" onClick={() => setForm(f => ({ ...f, hfov: p.v }))}
+                style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: `1px solid ${hfov === parseInt(p.v) ? 'var(--accent)' : 'var(--line-strong)'}`, background: hfov === parseInt(p.v) ? 'rgba(217,119,87,0.1)' : 'transparent', color: hfov === parseInt(p.v) ? 'var(--accent-deep)' : 'var(--ink-3)', cursor: 'pointer' }}>
+                {p.v} — {p.l}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 10 }}>
+            💡 Ideální rozlišení panoramy: <strong>4096×2048 px</strong>, JPG 85%, ~3–8 MB
           </p>
         </div>
 
