@@ -30,7 +30,6 @@ export interface Event {
   year_range: number
   rating_sum: number
   rating_count: number
-  hfov: number
 }
 
 export interface EventInsert {
@@ -49,7 +48,6 @@ export interface EventInsert {
   created_by?: string | null
   location_radius_km?: number
   year_range?: number
-  hfov?: number
 }
 
 export interface EventUpdate {
@@ -68,7 +66,6 @@ export interface EventUpdate {
   updated_at?: string
   location_radius_km?: number
   year_range?: number
-  hfov?: number
 }
 
 export interface GameSession {
