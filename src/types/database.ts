@@ -1,5 +1,3 @@
-// Typy pro HistoryGuessr databázi
-
 export interface Profile {
   id: string
   username: string | null
@@ -15,6 +13,8 @@ export interface Event {
   title: string
   description: string
   year: number
+  year_from: number
+  year_to: number
   lat: number
   lng: number
   panorama_url: string
@@ -30,12 +30,15 @@ export interface Event {
   year_range: number
   rating_sum: number
   rating_count: number
+  hfov: number
 }
 
 export interface EventInsert {
   title: string
   description: string
   year: number
+  year_from: number
+  year_to: number
   lat: number
   lng: number
   panorama_url: string
@@ -46,12 +49,15 @@ export interface EventInsert {
   created_by?: string | null
   location_radius_km?: number
   year_range?: number
+  hfov?: number
 }
 
 export interface EventUpdate {
   title?: string
   description?: string
   year?: number
+  year_from?: number
+  year_to?: number
   lat?: number
   lng?: number
   panorama_url?: string
@@ -62,6 +68,7 @@ export interface EventUpdate {
   updated_at?: string
   location_radius_km?: number
   year_range?: number
+  hfov?: number
 }
 
 export interface GameSession {
