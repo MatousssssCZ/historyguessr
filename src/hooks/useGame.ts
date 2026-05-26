@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
-import { haversineKm, roundScore } from '@/lib/scoring'
+import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
 import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile } from '@/lib/supabase'
 
 const ROUNDS_PER_GAME = 5
@@ -10,11 +10,10 @@ export type GamePhase = 'idle' | 'loading' | 'playing' | 'round_result' | 'finis
 export interface GameState {
   phase: GamePhase
   events: Event[]
-  currentRound: number        // 0-indexed
+  currentRound: number
   sessionId: string | null
   rounds: RoundResult[]
   totalScore: number
-  // Aktuální kolo
   guessLat: number | null
   guessLng: number | null
   guessYear: number
@@ -38,54 +37,42 @@ const INITIAL_STATE: GameState = {
 
 export function useGame(userId: string | undefined) {
   const [state, setState] = useState<GameState>(INITIAL_STATE)
+  const update = (patch: Partial<GameState>) => setState(prev => ({ ...prev, ...patch }))
 
-  const update = (patch: Partial<GameState>) =>
-    setState(prev => ({ ...prev, ...patch }))
-
-  /** Zahájí novou hru */
   const startGame = useCallback(async () => {
     if (!userId) return
     update({ phase: 'loading', error: null })
-
     const events = await getRandomEvents(ROUNDS_PER_GAME)
     if (events.length < ROUNDS_PER_GAME) {
       update({ phase: 'idle', error: 'Není dostatek událostí. Přidej je v admin panelu.' })
       return
     }
-
-    const { data: session, error } = await createGameSession(userId)
-    if (error || !session) {
+    const { data: sessionData, error } = await createGameSession(userId)
+    if (error || !sessionData) {
       update({ phase: 'idle', error: 'Nepodařilo se spustit hru.' })
       return
     }
-
-    setState({
-      ...INITIAL_STATE,
-      phase: 'playing',
-      events,
-      sessionId: (session as { id: string }).id,
-    })
+    setState({ ...INITIAL_STATE, phase: 'playing', events, sessionId: (sessionData as { id: string }).id })
   }, [userId])
 
-  /** Nastaví tip polohy */
   const setGuessLocation = useCallback((lat: number, lng: number) => {
     update({ guessLat: lat, guessLng: lng })
   }, [])
 
-  /** Nastaví tip roku */
   const setGuessYear = useCallback((year: number) => {
     update({ guessYear: year, guessYearSet: true })
   }, [])
 
-  /** Odešle odpověď pro aktuální kolo */
   const submitRound = useCallback(async () => {
     const { events, currentRound, guessLat, guessLng, guessYear, rounds, sessionId } = state
     if (guessLat === null || guessLng === null) return
 
     const event = events[currentRound]
+    const yearFrom = event.year_from ?? event.year
+    const yearTo = event.year_to ?? event.year
     const distKm = haversineKm(guessLat, guessLng, event.lat, event.lng)
-    const yearDiff = Math.abs(guessYear - event.year)
-    const scores = roundScore(distKm, yearDiff, event.location_radius_km ?? 0, event.year_range ?? 0)
+    const ydiff = yearDiff(guessYear, yearFrom, yearTo)
+    const scores = roundScore(distKm, guessYear, yearFrom, yearTo, event.location_radius_km ?? 0)
 
     const roundResult: RoundResult = {
       event_id: event.id,
@@ -93,7 +80,7 @@ export function useGame(userId: string | undefined) {
       guess_lng: guessLng,
       guess_year: guessYear,
       distance_km: distKm,
-      year_diff: yearDiff,
+      year_diff: ydiff,
       ...scores,
     }
 
@@ -101,25 +88,17 @@ export function useGame(userId: string | undefined) {
     const newTotal = newRounds.reduce((s, r) => s + r.round_score, 0)
     const isLast = currentRound === ROUNDS_PER_GAME - 1
 
-    setState(prev => ({
-      ...prev,
-      rounds: newRounds,
-      totalScore: newTotal,
-      phase: isLast ? 'round_result' : 'round_result', // vždy round_result nejdříve
-    }))
+    setState(prev => ({ ...prev, rounds: newRounds, totalScore: newTotal, phase: 'round_result' }))
 
-    // Pokud poslední kolo, uložíme výsledek do DB
     if (isLast && sessionId && userId) {
       await finishGameSession(sessionId, newRounds, newTotal)
       await addScoreToProfile(userId, newTotal)
     }
   }, [state, userId])
 
-  /** Přechod na další kolo */
   const nextRound = useCallback(() => {
-    const { currentRound, rounds } = state
+    const { currentRound } = state
     const isLast = currentRound === ROUNDS_PER_GAME - 1
-
     if (isLast) {
       update({ phase: 'finished' })
     } else {
@@ -134,26 +113,16 @@ export function useGame(userId: string | undefined) {
     }
   }, [state])
 
-  /** Reset hry */
-  const resetGame = useCallback(() => {
-    setState(INITIAL_STATE)
-  }, [])
+  const resetGame = useCallback(() => setState(INITIAL_STATE), [])
 
   const currentEvent = state.events[state.currentRound] ?? null
   const lastRound = state.rounds[state.rounds.length - 1] ?? null
   const canSubmit = state.guessLat !== null && state.guessLng !== null && state.guessYearSet
 
   return {
-    state,
-    currentEvent,
-    lastRound,
-    canSubmit,
-    startGame,
-    setGuessLocation,
-    setGuessYear,
-    submitRound,
-    nextRound,
-    resetGame,
+    state, currentEvent, lastRound, canSubmit,
+    startGame, setGuessLocation, setGuessYear,
+    submitRound, nextRound, resetGame,
     roundsCount: ROUNDS_PER_GAME,
   }
 }
