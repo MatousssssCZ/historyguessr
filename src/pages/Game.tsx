@@ -132,139 +132,102 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
   onYearChange: (y: number) => void; onSubmit: () => void
 }) {
   const [tab, setTab] = useState<'map' | 'year'>('map')
-  const [expanded, setExpanded] = useState(false)
   const isMobile = window.innerWidth <= 640
 
-  const mapPin = guessLat !== null
-    ? `${guessLat.toFixed(1)}° ${guessLat >= 0 ? 'N' : 'S'} · ${guessLng?.toFixed(1)}° ${guessLng! >= 0 ? 'E' : 'W'}`
-    : null
+  const missingLocation = guessLat === null
+  const missingYear = !canSubmit && !missingLocation
+  const submitLabel = missingLocation && missingYear
+    ? 'Vyber místo a rok'
+    : missingLocation ? 'Zbývá vybrat místo'
+    : missingYear ? 'Zbývá vybrat rok'
+    : 'Odeslat odpověď →'
 
-  const mapHeight = expanded ? 340 : (isMobile ? 200 : 240)
+  const mapHeight = isMobile ? 220 : 260
 
   return (
     <div style={{
       position: 'absolute',
       bottom: 0, left: 0, right: 0,
-      maxWidth: isMobile ? '100%' : 380,
+      maxWidth: isMobile ? '100%' : 400,
       marginLeft: isMobile ? 0 : 'auto',
-      marginRight: isMobile ? 0 : 16,
-      background: 'rgba(245,241,232,0.98)',
-      backdropFilter: 'blur(16px)',
-      borderRadius: isMobile ? '18px 18px 0 0' : 14,
-      border: '0.5px solid rgba(42,31,23,0.15)',
-      boxShadow: '0 -4px 24px rgba(0,0,0,0.25)',
+      marginRight: isMobile ? 0 : 20,
+      marginBottom: isMobile ? 0 : 20,
+      background: 'rgba(245,241,232,0.97)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: isMobile ? '20px 20px 0 0' : 16,
+      boxShadow: isMobile ? '0 -8px 40px rgba(0,0,0,0.3)' : '0 8px 40px rgba(0,0,0,0.3)',
       overflow: 'hidden',
       zIndex: 20,
-      marginBottom: isMobile ? 0 : 20,
     }}>
 
-      {/* Header */}
-      <div style={{
-        background: '#1a1208',
-        padding: '9px 14px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'rgba(245,241,232,0.5)' }}>
-          TVŮJ TIP
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {mapPin && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(245,241,232,0.4)' }}>
-              {mapPin} ✓
-            </span>
-          )}
-          <button
-            onClick={() => setExpanded(e => !e)}
-            style={{
-              background: 'rgba(255,255,255,0.1)', border: '0.5px solid rgba(255,255,255,0.18)',
-              borderRadius: 6, padding: '3px 8px', fontSize: 11,
-              color: 'rgba(245,241,232,0.7)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 3,
-            }}
-          >
-            {expanded ? '↙ Sbalit' : '↗ Rozbalit'}
-          </button>
-        </div>
+      {/* Mapa nebo rok */}
+      <div style={{ display: tab === 'map' ? 'block' : 'none', height: mapHeight }}>
+        <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
       </div>
 
-      {/* Obsah záložky */}
-      {tab === 'map' && (
-        <div style={{ position: 'relative', height: mapHeight, transition: 'height 250ms ease' }}>
-          <GuessMap
-            guessLat={guessLat}
-            guessLng={guessLng}
-            onGuess={onLocationChange}
-          />
-        </div>
-      )}
-
       {tab === 'year' && (
-        <div style={{ padding: '18px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>ROK UDÁLOSTI</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 40, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)' }}>
+        <div style={{ padding: '20px 16px 8px' }}>
+          {/* Velký rok display */}
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 52, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)' }}>
               {Math.abs(guessYear)}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 3 }}>
-              {guessYear < 0 ? 'př. n. l.' : 'n. l.'}
+            <div style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+              {guessYear < 0 ? 'PŘ. N. L.' : 'N. L.'}
             </div>
           </div>
           <YearPicker value={guessYear} onChange={onYearChange}/>
         </div>
       )}
 
-      {/* Přepínač + Odeslat */}
-      <div style={{ borderTop: '0.5px solid var(--line)' }}>
-        {/* Tab bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-          {([['map', '📍', 'Mapa'], ['year', '📅', 'Rok']] as const).map(([key, icon, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              style={{
-                padding: '11px 0',
-                border: 'none',
-                borderBottom: tab === key ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-                background: 'transparent',
-                fontSize: 13,
-                fontWeight: tab === key ? 500 : 400,
-                color: tab === key ? 'var(--accent)' : 'var(--ink-3)',
-                cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                transition: 'all 150ms',
-              }}
-            >
-              <span style={{ fontSize: 15 }}>{icon}</span> {label}
-            </button>
-          ))}
-        </div>
+      {/* Tab přepínač */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        borderTop: '0.5px solid var(--line)',
+        background: 'rgba(245,241,232,0.5)',
+      }}>
+        {([['map', '🗺', 'Mapa', guessLat !== null ? '✓' : ''] ,
+           ['year', '📅', 'Rok', !missingYear && canSubmit || (!missingYear && guessLat !== null) ? '✓' : '']] as const).map(([key, icon, label, check]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key as 'map' | 'year')}
+            style={{
+              padding: '10px 0',
+              border: 'none',
+              borderTop: tab === key ? '2px solid var(--accent)' : '2px solid transparent',
+              background: 'transparent',
+              fontSize: 13,
+              fontWeight: tab === key ? 600 : 400,
+              color: tab === key ? 'var(--accent)' : 'var(--ink-3)',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            }}
+          >
+            <span style={{ fontSize: 14 }}>{icon}</span>
+            {label}
+            {check && <span style={{ fontSize: 10, color: '#1d6b3a', fontWeight: 700 }}>{check}</span>}
+          </button>
+        ))}
+      </div>
 
-        {/* Odeslat */}
-        <div style={{ padding: '10px 14px', paddingBottom: `calc(10px + env(safe-area-inset-bottom, 0px))` }}>
-          {(() => {
-            const missingLocation = guessLat === null
-            const missingYear = !canSubmit && !missingLocation
-            const hint = missingLocation && missingYear
-              ? 'Zbývá vybrat místo a rok'
-              : missingLocation
-              ? 'Zbývá vybrat místo'
-              : missingYear
-              ? 'Zbývá vybrat rok'
-              : null
-            return (
-              <>
-                <button
-                  className="btn btn-accent"
-                  style={{ width: '100%', fontSize: 14, opacity: canSubmit ? 1 : 0.45 }}
-                  disabled={!canSubmit}
-                  onClick={onSubmit}
-                >
-                  {hint ?? 'Odeslat odpověď →'}
-                </button>
-              </>
-            )
-          })()}
-        </div>
+      {/* Submit */}
+      <div style={{ padding: `10px 14px calc(10px + env(safe-area-inset-bottom, 0px))` }}>
+        <button
+          className="btn btn-accent"
+          style={{
+            width: '100%', fontSize: 15,
+            padding: '13px 0',
+            opacity: canSubmit ? 1 : 0.5,
+            background: canSubmit ? 'var(--accent)' : 'var(--paper-400)',
+            borderColor: canSubmit ? 'var(--accent)' : 'transparent',
+            color: canSubmit ? '#fff' : 'var(--ink-2)',
+            transition: 'all 200ms',
+          }}
+          disabled={!canSubmit}
+          onClick={onSubmit}
+        >
+          {submitLabel}
+        </button>
       </div>
     </div>
   )
@@ -372,179 +335,157 @@ function RoundResult({ event, round, onNext, isLast }: {
   if (!round) return null
   const [tab, setTab] = useState<'score' | 'info'>('score')
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
-  const yearDiffLabel = round.year_diff === 0 ? 'Přesný tip!' : `${round.year_diff} let`
+  const yearDiffLabel = round.year_diff === 0 ? '✓ Přesný tip!' : `${round.year_diff} let mimo`
+  const locPct = Math.round(round.location_score / 50)
+  const yrPct = Math.round(round.year_score / 50)
 
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 640)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    const h = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
   }, [])
 
   const nextBtn = (
-    <button className="btn btn-accent" style={{ width: '100%', fontSize: 15 }} onClick={onNext}>
+    <button
+      className="btn btn-accent"
+      style={{ width: '100%', fontSize: 15, padding: '13px 0' }}
+      onClick={onNext}
+    >
       {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
     </button>
   )
 
-  return (
-    <div style={{
-      position: 'absolute', inset: 0,
-      background: 'rgba(13,9,6,0.92)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 20, padding: '20px',
-    }}>
+  if (isMobile) {
+    return (
       <div style={{
-        background: 'var(--paper-50)',
-        borderRadius: 20,
-        maxWidth: isMobile ? '100%' : 900,
-        width: '100%',
-        boxShadow: 'var(--shadow-lg)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        maxHeight: 'calc(100dvh - 40px)',
+        position: 'absolute', inset: 0,
+        background: 'rgba(13,9,6,0.88)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'flex-end',
+        zIndex: 20,
       }}>
-
-        {/* Hlavička — varianta A */}
-        <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-          <p className="eyebrow" style={{ marginBottom: 4 }}>Výsledek kola</p>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h2>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                {round.round_score.toLocaleString('cs-CZ')}
+        <div style={{
+          background: 'var(--paper-50)',
+          borderRadius: '20px 20px 0 0',
+          width: '100%',
+          maxHeight: '92dvh',
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
+        }}>
+          {/* Header */}
+          <div style={{ padding: '16px 18px 12px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Výsledek kola</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1, paddingRight: 12 }}>{event.title}</div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 10 000</div>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>z 10 000 bodů</div>
             </div>
           </div>
-        </div>
 
-        {/* ── DESKTOP: 2 sloupce ── */}
-        {!isMobile && (
-          <div style={{ flex: 1, overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 0 }}>
-            {/* Levý — mapa + skóre */}
-            <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--line)' }}>
-                <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
-              </div>
-              <div style={{ padding: '16px 24px', flex: 1 }}>
-                <ScoreContent round={round} yearDiffLabel={yearDiffLabel} event={event}/>
-              </div>
-              <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line)' }}>
-                {nextBtn}
-              </div>
-            </div>
-            {/* Pravý — info */}
-            <div style={{ overflow: 'auto' }}>
-              <InfoContent event={event}/>
-            </div>
-          </div>
-        )}
-
-        {/* ── MOBIL: záložky ── */}
-        {isMobile && (
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {tab === 'score' && (
-                <div>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-                    <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+          {/* Scrollovatelný obsah */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {tab === 'score' && (
+              <div>
+                {/* Mapa */}
+                <div style={{ height: 200 }}>
+                  <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+                </div>
+                {/* Skóre karty */}
+                <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
+                    <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
                   </div>
-                  <div style={{ padding: '16px' }}>
-                    <ScoreContent round={round} yearDiffLabel={yearDiffLabel} event={event}/>
+                  <div style={{ background: 'var(--paper-200)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                      <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Správný rok</div>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16 }}>{formatYear(event.year)}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Tvůj tip</div>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16 }}>{formatYear(round.guess_year)}</div>
+                    </div>
                   </div>
                 </div>
-              )}
-              {tab === 'info' && <InfoContent event={event}/>}
-            </div>
+              </div>
+            )}
+            {tab === 'info' && (
+              <InfoContent event={event}/>
+            )}
+          </div>
 
-            {/* CTA */}
-            <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
-              {nextBtn}
-            </div>
-
-            {/* Tab bar */}
-            <div style={{ flexShrink: 0, borderTop: '1px solid var(--line)', display: 'flex', background: 'var(--surface)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          {/* Tab + tlačítko — pevně dole */}
+          <div style={{ flexShrink: 0, borderTop: '0.5px solid var(--line)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
               {([['score', '🏆', 'Skóre'], ['info', '📖', 'O události']] as const).map(([key, icon, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  style={{
-                    flex: 1, padding: '12px 0',
-                    border: 'none', background: 'none',
-                    borderBottom: tab === key ? '3px solid var(--accent)' : '3px solid transparent',
-                    color: tab === key ? 'var(--accent)' : 'var(--ink-3)',
-                    fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  }}
-                >
-                  <span style={{ fontSize: 18 }}>{icon}</span>
-                  {label}
+                <button key={key} onClick={() => setTab(key)}
+                  style={{ padding: '10px 0', border: 'none', borderTop: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 13, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  <span style={{ fontSize: 15 }}>{icon}</span>{label}
                 </button>
               ))}
             </div>
+            <div style={{ padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))` }}>
+              {nextBtn}
+            </div>
           </div>
-        )}
+        </div>
+      </div>
+    )
+  }
+
+  // Desktop — 2 sloupce
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,9,6,0.92)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, padding: 20 }}>
+      <div style={{ background: 'var(--paper-50)', borderRadius: 20, maxWidth: 860, width: '100%', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', maxHeight: 'calc(100dvh - 40px)' }}>
+        {/* Levý — mapa + skóre */}
+        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
+          <div style={{ padding: '18px 24px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+            <div className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{event.title}</h2>
+              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>z 10 000 bodů</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ borderBottom: '1px solid var(--line)' }}>
+            <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+          </div>
+          <div style={{ padding: '16px 24px', flex: 1 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+              <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
+              <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-3)', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+              <span>Správný rok: <strong style={{ color: 'var(--ink)' }}>{formatYear(event.year)}</strong></span>
+              <span>Tvůj tip: <strong style={{ color: 'var(--ink)' }}>{formatYear(round.guess_year)}</strong></span>
+            </div>
+          </div>
+          <div style={{ padding: '12px 24px 16px', borderTop: '1px solid var(--line)' }}>{nextBtn}</div>
+        </div>
+        {/* Pravý — info */}
+        <div style={{ overflow: 'auto' }}><InfoContent event={event}/></div>
       </div>
     </div>
   )
 }
 
-// ── Sdílený obsah skóre — varianta A ─────────────────────
-function ScoreContent({ round, yearDiffLabel, event }: {
-  round: NonNullable<ReturnType<typeof useGame>['lastRound']>
-  yearDiffLabel: string
-  event: Event
-}) {
-  const locPct = Math.round(round.location_score / 50)
-  const yrPct = Math.round(round.year_score / 50)
-
+// ── Score karta ───────────────────────────────────────────
+function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score: number; pct: number; sub: string; highlight?: boolean }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* 2 score karty s progress barem */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        {/* Poloha */}
-        <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
-          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>Poloha</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 6 }}>
-            {round.location_score.toLocaleString('cs-CZ')}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <div style={{ flex: 1, height: 3, background: 'var(--line-strong)', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ width: `${locPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
-            </div>
-            <span style={{ fontSize: 10, color: 'var(--ink-3)', flexShrink: 0 }}>{locPct}%</span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{formatDistance(round.distance_km)}</div>
-        </div>
-        {/* Rok */}
-        <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
-          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>Rok</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 6 }}>
-            {round.year_score.toLocaleString('cs-CZ')}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-            <div style={{ flex: 1, height: 3, background: 'var(--line-strong)', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ width: `${yrPct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
-            </div>
-            <span style={{ fontSize: 10, color: 'var(--ink-3)', flexShrink: 0 }}>{yrPct}%</span>
-          </div>
-          <div style={{ fontSize: 11, color: round.year_diff === 0 ? '#1d6b3a' : 'var(--ink-3)' }}>
-            {round.year_diff === 0 ? '✓ Přesný tip!' : yearDiffLabel}
-          </div>
-        </div>
+    <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
+      <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>
+        {score.toLocaleString('cs-CZ')}
       </div>
-
-      {/* Rok detail */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '8px 0', borderTop: '1px solid var(--line)' }}>
-        <span style={{ color: 'var(--ink-3)' }}>Správný rok</span>
-        <span style={{ fontWeight: 500 }}>{formatYear(event.year)}</span>
+      <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: -8 }}>
-        <span style={{ color: 'var(--ink-3)' }}>Tvůj tip</span>
-        <span>{formatYear(round.guess_year)}</span>
-      </div>
+      <div style={{ fontSize: 11, color: highlight ? '#1d6b3a' : 'var(--ink-3)' }}>{sub}</div>
     </div>
   )
 }
