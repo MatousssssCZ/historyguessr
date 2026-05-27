@@ -51,14 +51,50 @@ export async function updateProfile(userId: string, updates: { username?: string
 
 // ─── Events ───────────────────────────────────────────────
 
+// Klíč do localStorage pro historii zahraných událostí
+const PLAYED_KEY = 'hg_played_ids'
+const MAX_HISTORY = 50  // pamatujeme max 50 posledních
+
+function getPlayedIds(): string[] {
+  try { return JSON.parse(localStorage.getItem(PLAYED_KEY) ?? '[]') } catch { return [] }
+}
+
+function addPlayedIds(ids: string[]) {
+  const prev = getPlayedIds()
+  const next = [...prev, ...ids].slice(-MAX_HISTORY)  // drž max 50
+  localStorage.setItem(PLAYED_KEY, JSON.stringify(next))
+}
+
 export async function getRandomEvents(count = 5): Promise<Event[]> {
-  const { data } = await supabase
+  const playedIds = getPlayedIds()
+
+  // Nejdřív zkus vzít pouze neozkoušené eventy
+  const { data: fresh } = await supabase
     .from('events')
     .select('*')
     .eq('published', true)
-    .limit(count * 4)
-  if (!data) return []
-  return shuffleArray(data).slice(0, count) as Event[]
+    .not('id', 'in', `(${playedIds.length > 0 ? playedIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
+    .limit(count * 6)
+
+  let pool = fresh ?? []
+
+  // Pokud nemáme dost, doplň ze zahraných (seřazeny od nejstarších)
+  if (pool.length < count) {
+    const { data: fallback } = await supabase
+      .from('events')
+      .select('*')
+      .eq('published', true)
+      .order('play_count', { ascending: true })
+      .limit(count * 4)
+    const extra = (fallback ?? []).filter(e => !pool.find(p => p.id === e.id))
+    pool = [...pool, ...extra]
+  }
+
+  if (pool.length < count) return []
+
+  const selected = shuffleArray(pool).slice(0, count) as Event[]
+  addPlayedIds(selected.map(e => e.id))
+  return selected
 }
 
 export async function getAdminEvents() {
