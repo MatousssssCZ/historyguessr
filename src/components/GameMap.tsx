@@ -30,9 +30,10 @@ interface GuessMapProps {
   onGuess: (lat: number, lng: number) => void
   guessLat: number | null
   guessLng: number | null
+  compact?: boolean  // miniaturní mód pro kruhový puck
 }
 
-export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
+export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
@@ -58,10 +59,16 @@ export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
       // Inicializuj mapu
       const map = L.map(wrap, {
         center: [20, 0],
-        zoom: 2,
+        zoom: compact ? 1 : 2,
         minZoom: 1,
         maxZoom: 18,
-        zoomControl: true,
+        zoomControl: !compact,
+        dragging: !compact,
+        scrollWheelZoom: !compact,
+        doubleClickZoom: !compact,
+        boxZoom: !compact,
+        keyboard: !compact,
+        attributionControl: !compact,
       })
 
       L.tileLayer(TILE_URL, {
@@ -106,11 +113,20 @@ export function GuessMap({ onGuess, guessLat, guessLng }: GuessMapProps) {
     }
   }, [])
 
-  return (
-    <div style={{ position: 'relative', width: '100%', height: 220 }}>
+  if (compact) {
+    return (
       <div
         ref={wrapRef}
-        style={{ width: '100%', height: 220 }}
+        style={{ width: '100%', height: '100%' }}
+      />
+    )
+  }
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div
+        ref={wrapRef}
+        style={{ width: '100%', height: '100%', minHeight: 200 }}
       />
       {guessLat === null && (
         <div style={{
