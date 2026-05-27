@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signIn, signUp } from '@/lib/supabase'
 
@@ -24,6 +24,12 @@ export default function AuthPage() {
 
   const passwordValid = PASSWORD_RULES.every(r => r.test(password))
   const isRegister = mode === 'register'
+  const [windowWidth, setWindowWidth] = React.useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+  React.useEffect(() => {
+    const h = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -53,6 +59,105 @@ export default function AuthPage() {
     } finally { setLoading(false) }
   }
 
+  const isMobile = windowWidth < 768
+
+  if (!isMobile) {
+    // ── Desktop: split layout ──────────────────────────────
+    return (
+      <div style={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--sepia-900)' }}>
+
+        {/* Levá — branding */}
+        <div style={{ position: 'relative', padding: 56, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+          <svg style={{ position: 'absolute', inset: 0, opacity: 0.05 }} width="100%" height="100%">
+            <defs><pattern id="auth-grid-d" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="#f5f1e8" strokeWidth="0.5"/></pattern></defs>
+            <rect width="100%" height="100%" fill="url(#auth-grid-d)"/>
+          </svg>
+          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '70%', height: '70%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.12) 0%, transparent 70%)', pointerEvents: 'none' }}/>
+          <svg width="320" height="320" viewBox="0 0 120 120" style={{ position: 'absolute', bottom: -40, right: -60, opacity: 0.06 }}>
+            <circle cx="60" cy="60" r="52" stroke="#f5f1e8" strokeWidth="0.8" fill="none"/>
+            <ellipse cx="60" cy="60" rx="26" ry="52" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
+            <ellipse cx="60" cy="60" rx="48" ry="20" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
+            <line x1="8" y1="60" x2="112" y2="60" stroke="#f5f1e8" strokeWidth="0.5"/>
+            <line x1="60" y1="8" x2="60" y2="112" stroke="#f5f1e8" strokeWidth="0.5"/>
+          </svg>
+          <div style={{ position: 'relative' }}><Wordmark/></div>
+          <div style={{ position: 'relative' }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 20px', textTransform: 'uppercase' }}>Vzdělávací geolokační hra</p>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--paper-50)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              Hádej historii.<br/><span style={{ color: 'var(--accent)' }}>Trefuj čas a místo.</span>
+            </h1>
+            <p style={{ fontSize: 16, color: 'rgba(245,241,232,0.45)', margin: '0 0 40px', lineHeight: 1.6 }}>
+              5 kol · 360° panoramy · tip místa + roku
+            </p>
+            <blockquote style={{ margin: 0, borderLeft: '2px solid rgba(217,119,87,0.4)', paddingLeft: 20 }}>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'rgba(245,241,232,0.6)', margin: '0 0 8px', lineHeight: 1.5 }}>
+                "Kdo nezná historii, je odsouzen ji znovu prožívat."
+              </p>
+              <cite style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(245,241,232,0.3)', letterSpacing: '0.1em' }}>— George Santayana</cite>
+            </blockquote>
+          </div>
+          <div style={{ position: 'relative' }}/>
+        </div>
+
+        {/* Pravá — formulář */}
+        <div style={{ background: 'var(--paper-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
+          <div style={{ width: '100%', maxWidth: 400 }}>
+            {/* Tab */}
+            <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 3, marginBottom: 36 }}>
+              {(['login', 'register'] as Mode[]).map(m => (
+                <button key={m} onClick={() => { setMode(m); setError(null); setSuccess(null) }}
+                  style={{ flex: 1, padding: '9px 0', border: 'none', borderRadius: 10, background: mode === m ? 'var(--surface)' : 'transparent', boxShadow: mode === m ? 'var(--shadow-sm)' : 'none', fontSize: 14, fontWeight: 500, color: mode === m ? 'var(--ink)' : 'var(--ink-3)', cursor: 'pointer', transition: 'all 200ms' }}>
+                  {m === 'login' ? 'Přihlásit se' : 'Registrovat'}
+                </button>
+              ))}
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+              {isRegister ? 'Vytvoř si účet' : 'Vítej zpět'}
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--ink-3)', margin: '0 0 28px' }}>
+              {isRegister ? 'Zaregistruj se a začni hádat historii.' : 'Přihlaš se a pokračuj ve hře.'}
+            </p>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div>
+                <label className="label">E-mail</label>
+                <input className="input" type="email" placeholder="jan@example.cz" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email"/>
+              </div>
+              <div>
+                <label className="label">Heslo</label>
+                <div style={{ position: 'relative' }}>
+                  <input className="input" type={showPassword ? 'text' : 'password'} placeholder={isRegister ? 'Silné heslo…' : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isRegister ? 'new-password' : 'current-password'} style={{ paddingRight: 48 }}/>
+                  <button type="button" onClick={() => setShowPassword(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 16 }}>{showPassword ? '🙈' : '👁'}</button>
+                </div>
+                {isRegister && password.length > 0 && (
+                  <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
+                    {PASSWORD_RULES.map(rule => (
+                      <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: rule.test(password) ? '#1d6b3a' : 'var(--ink-3)', transition: 'color 200ms' }}>
+                        <span>{rule.test(password) ? '✓' : '○'}</span>{rule.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {isRegister && (
+                <div>
+                  <label className="label">Potvrdit heslo</label>
+                  <input className={`input${confirmPassword && password !== confirmPassword ? ' input-error' : ''}`} type={showPassword ? 'text' : 'password'} placeholder="Zopakuj heslo" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required autoComplete="new-password"/>
+                  {confirmPassword && password !== confirmPassword && <p className="field-error">Hesla se neshodují</p>}
+                </div>
+              )}
+              {error && <div className="alert alert-error">⚠ {error}</div>}
+              {success && <div className="alert alert-success">✓ {success}</div>}
+              <button type="submit" className="btn btn-accent" disabled={loading} style={{ width: '100%', padding: '14px 0', fontSize: 16, marginTop: 4, borderRadius: 12 }}>
+                {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> Moment…</> : isRegister ? 'Vytvořit účet →' : 'Přihlásit se →'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Mobil: fullscreen immersive ────────────────────────
   return (
     <div style={{
       minHeight: '100dvh',
