@@ -7,10 +7,13 @@ export default function MenuPage() {
   const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [mounted, setMounted] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50)
-    return () => clearTimeout(t)
+    const h = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', h)
+    return () => { clearTimeout(t); window.removeEventListener('resize', h) }
   }, [])
 
   async function handleSignOut() {
@@ -22,6 +25,62 @@ export default function MenuPage() {
   const score = profile?.total_score?.toLocaleString('cs-CZ') ?? '0'
   const name = profile?.username ?? 'Hráči'
 
+  const isMobile = windowWidth < 768
+
+  // ── Desktop layout ────────────────────────────────────
+  if (!isMobile) {
+    return (
+      <div style={{ minHeight: '100dvh', background: 'var(--sepia-900)', position: 'relative', overflow: 'hidden' }}>
+        {/* Dekorativní pozadí */}
+        <svg style={{ position: 'absolute', inset: 0, opacity: 0.04, pointerEvents: 'none' }} width="100%" height="100%">
+          <defs><pattern id="menu-grid-d" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M 36 0 L 0 0 0 36" fill="none" stroke="#f5f1e8" strokeWidth="0.5"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#menu-grid-d)"/>
+        </svg>
+        <div style={{ position: 'absolute', top: '-20%', right: '-5%', width: '50vw', height: '50vw', maxWidth: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.08) 0%, transparent 70%)', pointerEvents: 'none' }}/>
+
+        {/* Header */}
+        <header style={{ position: 'relative', zIndex: 1, padding: '20px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <Wordmark/>
+          <button onClick={handleSignOut} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'rgba(245,241,232,0.5)', cursor: 'pointer', transition: 'all 160ms' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
+            Odhlásit
+          </button>
+        </header>
+
+        {/* Centrovaný obsah */}
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 960, margin: '0 auto', padding: '64px 48px 48px' }}>
+          {/* Greeting */}
+          <div style={{ marginBottom: 48, opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(16px)', transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 12px', textTransform: 'uppercase' }}>Vítej zpět</p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24 }}>
+              <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 56, color: 'var(--paper-50)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1 }}>{name}</h1>
+              <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
+                <StatBadge value={String(games)} label="her"/>
+                <StatBadge value={score} label="bodů" accent/>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards grid */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(20px)', transition: 'all 0.5s 0.1s cubic-bezier(0.16,1,0.3,1)' }}>
+            <PlayCard onClick={() => navigate('/game')}/>
+            <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr 1fr' : '1fr 1fr', gap: 16 }}>
+              <SmallCard icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
+              {isAdmin && <SmallCard icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')} accent/>}
+              <SmallCard icon="🏆" title="Skóre" sub={`${games} her · max 50 000`} onClick={() => navigate('/account')}/>
+            </div>
+          </div>
+
+          <p style={{ textAlign: 'center', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'rgba(245,241,232,0.25)', lineHeight: 1.6, marginTop: 40 }}>
+            "Kdo nezná historii, je odsouzen ji znovu prožívat." — <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>George Santayana</span>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Mobil layout ──────────────────────────────────────
   return (
     <div style={{
       minHeight: '100dvh',
