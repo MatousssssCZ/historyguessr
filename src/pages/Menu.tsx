@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { signOut } from '@/lib/supabase'
@@ -5,161 +6,259 @@ import { signOut } from '@/lib/supabase'
 export default function MenuPage() {
   const { profile, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50)
+    return () => clearTimeout(t)
+  }, [])
 
   async function handleSignOut() {
     await signOut()
     navigate('/auth')
   }
 
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
+  const games = profile?.games_played ?? 0
+  const score = profile?.total_score?.toLocaleString('cs-CZ') ?? '0'
+  const name = profile?.username ?? 'Hráči'
 
-      {/* Top bar */}
-      <header style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '18px 32px',
-        background: 'var(--surface)',
-        borderBottom: '1px solid var(--line)',
-      }}>
-        <Wordmark/>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>{profile?.username ?? 'Hráč'}</div>
-            <div className="eyebrow" style={{ fontSize: 10 }}>{profile?.total_score?.toLocaleString('cs-CZ') ?? 0} bodů</div>
-          </div>
-          <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 13 }} onClick={handleSignOut}>
+  return (
+    <div style={{
+      minHeight: '100dvh',
+      display: 'flex', flexDirection: 'column',
+      background: 'var(--sepia-900)',
+      overflow: 'hidden',
+    }}>
+
+      {/* ── Hero — tmavý ── */}
+      <div style={{ position: 'relative', padding: 'calc(var(--safe-top) + 16px) 20px 0', flexShrink: 0 }}>
+
+        {/* Dekorativní pozadí */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+          <svg style={{ position: 'absolute', inset: 0, opacity: 0.04 }} width="100%" height="100%">
+            <defs>
+              <pattern id="menu-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#f5f1e8" strokeWidth="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#menu-grid)"/>
+          </svg>
+          <div style={{
+            position: 'absolute', top: -80, right: -80,
+            width: 280, height: 280, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(217,119,87,0.10) 0%, transparent 70%)',
+          }}/>
+          <svg width="220" height="220" viewBox="0 0 120 120"
+            style={{ position: 'absolute', top: -20, right: -30, opacity: 0.05 }}>
+            <circle cx="60" cy="60" r="52" stroke="#f5f1e8" strokeWidth="0.8" fill="none"/>
+            <ellipse cx="60" cy="60" rx="26" ry="52" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
+            <ellipse cx="60" cy="60" rx="48" ry="20" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
+            <line x1="8" y1="60" x2="112" y2="60" stroke="#f5f1e8" strokeWidth="0.5"/>
+            <line x1="60" y1="8" x2="60" y2="112" stroke="#f5f1e8" strokeWidth="0.5"/>
+          </svg>
+        </div>
+
+        {/* Top bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, position: 'relative' }}>
+          <Wordmark/>
+          <button
+            onClick={handleSignOut}
+            style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 8, padding: '7px 14px', fontSize: 13,
+              color: 'rgba(245,241,232,0.55)', cursor: 'pointer',
+              transition: 'all 160ms',
+            }}
+          >
             Odhlásit
           </button>
         </div>
-      </header>
 
-      {/* Hero */}
-      <div style={{ padding: '56px 32px 32px', maxWidth: 900, margin: '0 auto' }}>
-        <p className="eyebrow" style={{ marginBottom: 10 }}>Vítej zpět</p>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 48, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-          {profile?.username ?? 'Hráči'}
-        </h1>
-        <p style={{ color: 'var(--ink-3)', fontSize: 16, margin: 0 }}>
-          Odehráno her: <strong>{profile?.games_played ?? 0}</strong> · Celkové skóre: <strong>{profile?.total_score?.toLocaleString('cs-CZ') ?? 0}</strong>
-        </p>
+        {/* Greeting */}
+        <div style={{ position: 'relative', paddingBottom: 28 }}>
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em',
+            color: 'var(--accent)', margin: '0 0 8px', textTransform: 'uppercase',
+            opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(8px)',
+            transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}>
+            Vítej zpět
+          </p>
+          <h1 style={{
+            fontFamily: 'var(--font-serif)', fontSize: 'clamp(32px, 9vw, 52px)',
+            color: 'var(--paper-50)', margin: '0 0 20px',
+            letterSpacing: '-0.02em', lineHeight: 1,
+            opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(12px)',
+            transition: 'all 0.45s 0.06s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}>
+            {name}
+          </h1>
+
+          {/* Stats */}
+          <div style={{
+            display: 'flex', gap: 8,
+            opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(8px)',
+            transition: 'all 0.45s 0.12s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}>
+            <StatBadge value={String(games)} label="her"/>
+            <StatBadge value={score} label="bodů" accent/>
+          </div>
+        </div>
       </div>
 
-      {/* Dlaždice */}
-      <div style={{ padding: '0 32px 48px', maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+      {/* ── Spodní část — světlá ── */}
+      <div style={{
+        flex: 1,
+        background: 'var(--paper-200)',
+        borderRadius: '22px 22px 0 0',
+        padding: '20px 16px',
+        paddingBottom: 'max(20px, calc(var(--safe-bottom) + 16px))',
+        display: 'flex', flexDirection: 'column', gap: 10,
+        opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(24px)',
+        transition: 'all 0.45s 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}>
 
-          {/* Hrát */}
-          <TileCard
-            eyebrow="Klasický mód"
-            title="Hrát"
-            description="5 kol · historické panoramy · tip místa + roku"
-            accent
-            icon={<GlobeIcon/>}
-            onClick={() => navigate('/game')}
-          />
+        {/* Hrát */}
+        <PlayCard onClick={() => navigate('/game')}/>
 
-          {/* Účet */}
-          <TileCard
-            eyebrow="Profil"
-            title="Můj účet"
-            description="Nastavení, statistiky a změna hesla"
-            icon={<UserIcon/>}
-            onClick={() => navigate('/account')}
-          />
-
-          {/* Admin (pouze pro adminy) */}
+        {/* Sekundární */}
+        <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr 1fr' : '1fr 1fr', gap: 10 }}>
+          <SmallCard icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
           {isAdmin && (
-            <TileCard
-              eyebrow="Administrace"
-              title="Správa událostí"
-              description="Přidávat, editovat a publikovat historické události"
-              icon={<CogIcon/>}
-              onClick={() => navigate('/admin')}
-            />
+            <SmallCard icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')} accent/>
           )}
+          <SmallCard icon="🏆" title="Skóre" sub={`${games} her · max 50 000`} onClick={() => navigate('/account')}/>
         </div>
+
+        <p style={{
+          textAlign: 'center', fontFamily: 'var(--font-serif)',
+          fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, margin: '4px 0 0',
+        }}>
+          "Kdo nezná historii, je odsouzen ji znovu prožívat."
+          <br/>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em' }}>— George Santayana</span>
+        </p>
       </div>
     </div>
   )
 }
 
-// ── Tile Card ─────────────────────────────────────────────
-interface TileProps {
-  eyebrow: string
-  title: string
-  description: string
-  icon: React.ReactNode
-  onClick: () => void
-  accent?: boolean
-}
-
-function TileCard({ eyebrow, title, description, icon, onClick, accent }: TileProps) {
+function PlayCard({ onClick }: { onClick: () => void }) {
+  const [pressed, setPressed] = useState(false)
   return (
     <button
       onClick={onClick}
+      onTouchStart={() => setPressed(true)} onTouchEnd={() => setPressed(false)}
+      onMouseDown={() => setPressed(true)} onMouseUp={() => setPressed(false)} onMouseLeave={() => setPressed(false)}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: 12,
-        padding: 28,
-        background: accent ? 'var(--sepia-900)' : 'var(--surface)',
-        border: `1px solid ${accent ? 'transparent' : 'var(--line)'}`,
-        borderRadius: 16,
-        cursor: 'pointer',
-        textAlign: 'left',
-        transition: 'transform 160ms, box-shadow 160ms',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'
-        ;(e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow)'
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.transform = ''
-        ;(e.currentTarget as HTMLButtonElement).style.boxShadow = 'var(--shadow-sm)'
+        display: 'flex', alignItems: 'center', gap: 16,
+        padding: '20px 20px',
+        background: 'var(--sepia-900)',
+        border: 'none', borderRadius: 18,
+        cursor: 'pointer', textAlign: 'left', width: '100%',
+        boxShadow: pressed ? '0 2px 8px rgba(42,31,23,0.15)' : '0 6px 28px rgba(42,31,23,0.22)',
+        transform: pressed ? 'scale(0.98)' : 'scale(1)',
+        transition: 'all 140ms cubic-bezier(0.16, 1, 0.3, 1)',
+        position: 'relative', overflow: 'hidden',
       }}
     >
       <div style={{
-        width: 44, height: 44,
-        borderRadius: 12,
-        background: accent ? 'rgba(255,255,255,0.1)' : 'var(--paper-200)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: accent ? 'var(--accent-soft)' : 'var(--accent)',
+        position: 'absolute', top: -30, right: -30,
+        width: 120, height: 120, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(217,119,87,0.12) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }}/>
+      <div style={{
+        width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+        background: 'rgba(217,119,87,0.12)',
+        border: '1px solid rgba(217,119,87,0.18)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
       }}>
-        {icon}
+        🌍
       </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'rgba(217,119,87,0.65)', marginBottom: 4, textTransform: 'uppercase' }}>
+          Klasický mód · 5 kol
+        </div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--paper-50)', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 4 }}>
+          Hrát
+        </div>
+        <div style={{ fontSize: 13, color: 'rgba(245,241,232,0.4)' }}>
+          360° panoramy · tip místa + roku
+        </div>
+      </div>
+      <div style={{
+        width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+        background: 'var(--accent)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 18, color: '#fff',
+        boxShadow: '0 3px 12px rgba(217,119,87,0.35)',
+      }}>→</div>
+    </button>
+  )
+}
+
+function SmallCard({ icon, title, sub, onClick, accent }: {
+  icon: string; title: string; sub: string; onClick: () => void; accent?: boolean
+}) {
+  const [pressed, setPressed] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onTouchStart={() => setPressed(true)} onTouchEnd={() => setPressed(false)}
+      onMouseDown={() => setPressed(true)} onMouseUp={() => setPressed(false)} onMouseLeave={() => setPressed(false)}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+        gap: 10, padding: '16px 14px',
+        background: accent ? 'var(--sepia-800)' : 'var(--surface)',
+        border: `1px solid ${accent ? 'rgba(255,255,255,0.06)' : 'var(--line)'}`,
+        borderRadius: 16, cursor: 'pointer', textAlign: 'left', width: '100%',
+        boxShadow: pressed ? 'none' : 'var(--shadow-sm)',
+        transform: pressed ? 'scale(0.97)' : 'scale(1)',
+        transition: 'all 140ms cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+    >
+      <div style={{
+        width: 38, height: 38, borderRadius: 10,
+        background: accent ? 'rgba(255,255,255,0.07)' : 'var(--paper-200)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+      }}>{icon}</div>
       <div>
-        <div className="eyebrow" style={{ color: accent ? 'rgba(245,241,232,0.5)' : undefined, marginBottom: 4 }}>{eyebrow}</div>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: accent ? 'var(--paper-50)' : 'var(--ink)', letterSpacing: '-0.01em', marginBottom: 6 }}>{title}</div>
-        <div style={{ fontSize: 13, color: accent ? 'rgba(245,241,232,0.6)' : 'var(--ink-3)', lineHeight: 1.5 }}>{description}</div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, letterSpacing: '-0.01em', color: accent ? 'var(--paper-100)' : 'var(--ink)', marginBottom: 2 }}>{title}</div>
+        <div style={{ fontSize: 11, color: accent ? 'rgba(245,241,232,0.4)' : 'var(--ink-3)' }}>{sub}</div>
       </div>
     </button>
   )
 }
 
-function Wordmark() {
+function StatBadge({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M16 2 V30" stroke="currentColor" strokeWidth="0.8" opacity="0.5"/>
-        <path d="M2 16 H30" stroke="currentColor" strokeWidth="0.8" opacity="0.5"/>
-        <path d="M16 2 C8 8 8 24 16 30" stroke="currentColor" strokeWidth="0.8" opacity="0.5" fill="none"/>
-        <path d="M16 2 C24 8 24 24 16 30" stroke="currentColor" strokeWidth="0.8" opacity="0.5" fill="none"/>
-        <circle cx="16" cy="16" r="2.5" fill="currentColor"/>
-      </svg>
-      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em' }}>HistoryGuessr</span>
+    <div style={{
+      display: 'flex', alignItems: 'baseline', gap: 5,
+      background: accent ? 'rgba(217,119,87,0.10)' : 'rgba(255,255,255,0.06)',
+      border: `1px solid ${accent ? 'rgba(217,119,87,0.18)' : 'rgba(255,255,255,0.08)'}`,
+      borderRadius: 999, padding: '6px 14px',
+    }}>
+      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: accent ? 'var(--accent-soft)' : 'var(--paper-200)', letterSpacing: '-0.02em' }}>{value}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{label}</span>
     </div>
   )
 }
 
-function GlobeIcon() {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c3 3 4.5 6.3 4.5 10S15 19 12 22c-3-3-4.5-6.3-4.5-10S9 5 12 2Z"/></svg>
-}
-function UserIcon() {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-}
-function CogIcon() {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+function Wordmark() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14" stroke="#f5f1e8" strokeWidth="1.5"/>
+        <path d="M16 2 V30" stroke="#f5f1e8" strokeWidth="0.8" opacity="0.4"/>
+        <path d="M2 16 H30" stroke="#f5f1e8" strokeWidth="0.8" opacity="0.4"/>
+        <path d="M16 2 C8 8 8 24 16 30" stroke="#f5f1e8" strokeWidth="0.8" opacity="0.4" fill="none"/>
+        <path d="M16 2 C24 8 24 24 16 30" stroke="#f5f1e8" strokeWidth="0.8" opacity="0.4" fill="none"/>
+        <circle cx="16" cy="16" r="2.5" fill="#f5f1e8"/>
+      </svg>
+      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, letterSpacing: '-0.01em', color: 'rgba(245,241,232,0.75)' }}>
+        HistoryGuessr
+      </span>
+    </div>
+  )
 }
