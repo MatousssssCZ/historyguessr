@@ -482,24 +482,32 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
             <div>
               <label className="label">360° panorama * (JPG/PNG, max 50 MB)</label>
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={setPanoramaFile} ref={panoramaRef}/>
-              {/* Preview tlačítko — zobrazí existující nebo nově vybranou panoramu */}
-              {(panoramaFile || (event?.panorama_url && event.panorama_url !== 'pending')) && (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{ marginTop: 8, fontSize: 13 }}
-                  onClick={() => {
-                    if (panoramaFile) {
-                      const url = URL.createObjectURL(panoramaFile)
-                      setPanoramaPreview(url)
-                    } else if (event?.panorama_url && event.panorama_url !== 'pending') {
-                      setPanoramaPreview(event.panorama_url)
-                    }
-                  }}
-                >
-                  👁 Náhled panoramy
-                </button>
-              )}
+              {/* Preview tlačítko */}
+              {(() => {
+                const previewUrl = panoramaFile
+                  ? null  // bude vytvořen při kliknutí
+                  : (event?.panorama_url && event.panorama_url !== 'pending' && event.panorama_url !== '')
+                    ? event.panorama_url
+                    : null
+                const canPreview = !!panoramaFile || !!previewUrl
+                if (!canPreview) return null
+                return (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ marginTop: 8, fontSize: 13 }}
+                    onClick={() => {
+                      if (panoramaFile) {
+                        setPanoramaPreview(URL.createObjectURL(panoramaFile))
+                      } else if (previewUrl) {
+                        setPanoramaPreview(previewUrl)
+                      }
+                    }}
+                  >
+                    👁 Náhled panoramy
+                  </button>
+                )
+              })()}
             </div>
             <div>
               <label className="label">Doplňkový obrázek události (JPG/PNG, max 10 MB)</label>
