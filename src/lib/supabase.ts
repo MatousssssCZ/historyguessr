@@ -1,6 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Event, EventInsert, EventUpdate, Profile, RoundResult } from '@/types/database'
 
+export interface DailyResult {
+  id: string
+  user_id: string
+  date: string
+  score: number
+  guess_lat: number | null
+  guess_lng: number | null
+  guess_year: number | null
+  created_at: string
+  profiles?: { username: string | null }
+}
+
+export interface DailyAssignment {
+  month: number
+  day: number
+  event_id: string | null
+  events?: Event
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
@@ -201,6 +220,172 @@ export async function uploadEventImage(file: File, eventId: string) {
   if (error) return { url: null, error }
   const { data } = supabase.storage.from('events').getPublicUrl(path)
   return { url: data.publicUrl, error: null }
+}
+
+// ─── Analytics ───────────────────────────────────────────
+
+export async function track(
+  eventName: string,
+  properties: Record<string, unknown> = {},
+  userId?: string,
+) {
+  try {
+    await supabase.from('analytics_events').insert({
+      user_id: userId ?? null,
+      event_name: eventName,
+      properties,
+    })
+  } catch {
+    // Analytics nikdy nesmí rozbít UI — tiché selhání
+  }
+}
+
+// ─── Storage — bezpečné nahrazení panoramy ────────────────
+
+/**
+ * Nahraje novou panoramu a smaže starou.
+ * Bezpečný flow:
+ *   1. Upload nového souboru
+ *   2. Update DB
+ *   3. Smaž starý soubor (selhání nevadí — jen logujeme)
+ */
+export async function uploadPanoramaWithCleanup(
+  file: File,
+  eventId: string,
+  oldPanoramaUrl: string | null,
+): Promise<{ url: string | null; error: Error | null }> {
+  // 1. Upload nového souboru
+  const { url, error: uploadError } = await uploadPanorama(file, eventId)
+  if (uploadError || !url) {
+    return { url: null, error: uploadError as Error ?? new Error('Upload selhal') }
+  }
+
+  // 2. Update DB
+  const { error: dbError } = await updateEvent(eventId, { panorama_url: url })
+  if (dbError) {
+    return { url: null, error: dbError as Error }
+  }
+
+  // 3. Smaž starý soubor — selhání je OK
+  if (oldPanoramaUrl && oldPanoramaUrl !== 'pending' && oldPanoramaUrl !== url) {
+    try {
+      // Extrahuj path ze Storage URL
+      const urlObj = new URL(oldPanoramaUrl)
+      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/panorama\/(.+)/)
+      if (pathMatch?.[1]) {
+        const { error: deleteError } = await supabase.storage
+          .from('panorama')
+          .remove([decodeURIComponent(pathMatch[1])])
+        if (deleteError) {
+          console.warn('[Storage] Smazání staré panoramy selhalo:', deleteError.message)
+          track('panorama_delete_failed', { event_id: eventId, old_url: oldPanoramaUrl, error: deleteError.message })
+        } else {
+          track('panorama_replaced', { event_id: eventId })
+        }
+      }
+    } catch (e) {
+      console.warn('[Storage] Chyba při mazání staré panoramy:', e)
+    }
+  }
+
+  return { url, error: null }
+}
+
+// ─── Daily Challenge ──────────────────────────────────────
+
+/** Načte událost pro dnešní den (podle měsíce a dne) */
+export async function getDailyChallenge(): Promise<Event | null> {
+  const today = new Date()
+  const month = today.getMonth() + 1
+  const day = today.getDate()
+
+  const { data } = await supabase
+    .from('daily_challenge_assignments')
+    .select('event_id, events(*)')
+    .eq('month', month)
+    .eq('day', day)
+    .single()
+
+  if (!data?.event_id || !data?.events) return null
+  return data.events as unknown as Event
+}
+
+/** Vrátí výsledek hráče pro dnešní den (pokud již hrál) */
+export async function getTodayDailyResult(userId: string): Promise<DailyResult | null> {
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('daily_results')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('date', today)
+    .single()
+  return data ?? null
+}
+
+/** Uloží výsledek hráče pro dnešní den */
+export async function saveDailyResult(
+  userId: string,
+  score: number,
+  guessLat: number,
+  guessLng: number,
+  guessYear: number,
+): Promise<{ error: Error | null }> {
+  const today = new Date().toISOString().split('T')[0]
+  const { error } = await supabase.from('daily_results').insert({
+    user_id: userId,
+    date: today,
+    score,
+    guess_lat: guessLat,
+    guess_lng: guessLng,
+    guess_year: guessYear,
+  })
+  if (error) return { error: error as Error }
+  track('daily_challenge_completed', { score }, userId)
+  return { error: null }
+}
+
+/** Top 10 hráčů pro dnešní den */
+export async function getDailyLeaderboard(): Promise<DailyResult[]> {
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('daily_results')
+    .select('*, profiles(username)')
+    .eq('date', today)
+    .order('score', { ascending: false })
+    .limit(10)
+  return (data ?? []) as DailyResult[]
+}
+
+// ─── Daily Challenge Admin ────────────────────────────────
+
+/** Načte všechna přiřazení (pro admin kalendář) */
+export async function getDailyAssignments(): Promise<DailyAssignment[]> {
+  const { data } = await supabase
+    .from('daily_challenge_assignments')
+    .select('month, day, event_id, events(id, title)')
+    .order('month')
+    .order('day')
+  return (data ?? []) as DailyAssignment[]
+}
+
+/** Přiřadí nebo odebere událost ke dni */
+export async function setDailyAssignment(
+  month: number,
+  day: number,
+  eventId: string | null,
+): Promise<{ error: Error | null }> {
+  if (eventId === null) {
+    const { error } = await supabase
+      .from('daily_challenge_assignments')
+      .delete()
+      .eq('month', month)
+      .eq('day', day)
+    return { error: error as Error | null }
+  }
+  const { error } = await supabase
+    .from('daily_challenge_assignments')
+    .upsert({ month, day, event_id: eventId, updated_at: new Date().toISOString() })
+  return { error: error as Error | null }
 }
 
 // ─── Utils ────────────────────────────────────────────────
