@@ -204,7 +204,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
 
       // Fit bounds
       const bounds = L.latLngBounds([guessLat, guessLng], [truthLat, truthLng])
-      map.fitBounds(bounds, { padding: [60, 60] })
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
       map.invalidateSize({ animate: false })
       setTimeout(() => map.invalidateSize({ animate: false }), 100)
 
