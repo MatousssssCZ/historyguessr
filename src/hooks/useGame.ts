@@ -30,7 +30,7 @@ const INITIAL_STATE: GameState = {
   totalScore: 0,
   guessLat: null,
   guessLng: null,
-  guessYear: 1900,
+  guessYear: 0,
   guessYearSet: false,
   error: null,
 }
@@ -118,7 +118,7 @@ export function useGame(userId: string | undefined) {
         currentRound: currentRound + 1,
         guessLat: null,
         guessLng: null,
-        guessYear: 1900,
+        guessYear: 0,
         guessYearSet: false,
       })
     }
