@@ -37,26 +37,22 @@ export default function GamePage() {
 
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906' }}>
+      {/* HUD — kompaktní */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 20px',
-        background: 'rgba(13,9,6,0.85)',
+        padding: '10px 16px',
+        background: 'rgba(13,9,6,0.75)',
         backdropFilter: 'blur(8px)',
-        borderBottom: '1px solid rgba(245,241,232,0.08)',
+        borderBottom: '1px solid rgba(245,241,232,0.06)',
         zIndex: 10, flexShrink: 0,
       }} className="game-hud">
-        <div>
-          <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 9 }}>
-            Kolo {state.currentRound + 1} / {roundsCount}
-          </div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--paper-100)', marginTop: 2 }}>
-            {currentEvent.title}
-          </div>
+        <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 10 }}>
+          Kolo {state.currentRound + 1} / {roundsCount}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ textAlign: 'right' }}>
-            <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.4)', fontSize: 9 }}>Skóre</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--paper-100)' }}>
+            <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.35)', fontSize: 9 }}>Skóre</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--paper-100)' }}>
               {state.totalScore.toLocaleString('cs-CZ')}
             </div>
           </div>
@@ -72,6 +68,35 @@ export default function GamePage() {
 
       <div style={{ flex: 1, position: 'relative' }}>
         {state.phase === 'playing' && <PanoramaViewer url={currentEvent.panorama_url}/>}
+
+        {/* Název — výrazný overlay vlevo nahoře na panoramě */}
+        {state.phase === 'playing' && (
+          <div style={{
+            position: 'absolute', top: 14, left: 16, zIndex: 15,
+            maxWidth: 'min(400px, 58vw)', pointerEvents: 'none',
+          }}>
+            <div style={{
+              background: 'rgba(13,9,6,0.6)',
+              backdropFilter: 'blur(14px)',
+              border: '1px solid rgba(245,241,232,0.12)',
+              borderRadius: 12, padding: '10px 16px',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9,
+                letterSpacing: '0.18em', color: 'var(--accent)',
+                textTransform: 'uppercase', marginBottom: 5,
+              }}>Historická událost</div>
+              <div style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(15px, 2.2vw, 22px)',
+                color: 'var(--paper-50)',
+                letterSpacing: '-0.01em', lineHeight: 1.2,
+              }}>
+                {currentEvent.title}
+              </div>
+            </div>
+          </div>
+        )}
         {state.phase === 'round_result' && lastRound && (
           <RoundResult
             event={currentEvent}
