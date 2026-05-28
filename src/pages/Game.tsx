@@ -615,26 +615,18 @@ function RoundResult({ event, round, onNext, isLast }: {
     return (
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'rgba(13,9,6,0.88)',
-        backdropFilter: 'blur(6px)',
-        display: 'flex', alignItems: 'flex-end',
+        background: 'var(--paper-50)',
         zIndex: 20,
+        display: 'flex', flexDirection: 'column',
+        paddingTop: 'var(--safe-top)',
       }}>
-        <div style={{
-          background: 'var(--paper-50)',
-          borderRadius: '20px 20px 0 0',
-          width: '100%',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
-        }}>
           {/* Header — název + skóre */}
-          <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 3 }}>Výsledek kola</div>
+          <div style={{ padding: '14px 16px 12px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Výsledek kola</div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
                 <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 10 000</div>
               </div>
             </div>
@@ -643,22 +635,22 @@ function RoundResult({ event, round, onNext, isLast }: {
           {/* Tab přepínač */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
             {([['score', '🏆', 'Skóre'], ['info', '📖', 'O události']] as const).map(([key, icon, label]) => (
-              <button key={key} onClick={() => setTab(key)}
-                style={{ padding: '9px 0', border: 'none', borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                <span style={{ fontSize: 13 }}>{icon}</span>{label}
+              <button key={key} onClick={() => setTab(key as 'score' | 'info')}
+                style={{ padding: '10px 0', border: 'none', borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 13, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <span style={{ fontSize: 14 }}>{icon}</span>{label}
               </button>
             ))}
           </div>
 
-          {/* Obsah — bez scrollu, pevné výšky */}
+          {/* Skóre tab */}
           {tab === 'score' && (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Mapa — pevná výška s overflow:hidden aby nepřetékala */}
-              <div style={{ height: 120, flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Mapa — flex:1 zabere veškerý dostupný prostor */}
+              <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
                 <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
               </div>
-              {/* Skóre karty */}
-              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {/* Skóre karty — kompaktní, fixní výška */}
+              <div style={{ flexShrink: 0, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--line)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
                   <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
@@ -677,17 +669,17 @@ function RoundResult({ event, round, onNext, isLast }: {
             </div>
           )}
 
+          {/* Info tab */}
           {tab === 'info' && (
-            <div style={{ maxHeight: '45dvh', overflowY: 'auto' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
               <InfoContent event={event}/>
             </div>
           )}
 
           {/* Tlačítko dole */}
-          <div style={{ padding: `10px 14px`, paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)', flexShrink: 0 }}>
+          <div style={{ flexShrink: 0, padding: '10px 14px', paddingBottom: 'max(14px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)' }}>
             {nextBtn}
           </div>
-        </div>
       </div>
     )
   }
