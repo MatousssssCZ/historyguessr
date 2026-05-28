@@ -353,88 +353,106 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
         </div>
       )}
 
-      {/* Kompaktní UI — vždy viditelné dole */}
+      {/* Kompaktní UI — 2 dlaždice + odeslat */}
       {!mapExpanded && !yearExpanded && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-          padding: '0 12px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
           zIndex: 20,
+          padding: '10px 12px',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          {/* Řada s mapou + rok + odeslat */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          {/* 2 dlaždice vedle sebe */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
 
-            {/* Kruh mapy */}
+            {/* Mapa */}
             <button
               onClick={() => setMapExpanded(true)}
               style={{
-                width: 88, height: 88, borderRadius: '50%', flexShrink: 0,
-                overflow: 'hidden', border: '2.5px solid rgba(255,255,255,0.35)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                padding: 0, cursor: 'pointer', background: '#c8d8e8',
+                display: 'flex', flexDirection: 'column',
+                background: 'rgba(245,241,232,0.95)',
+                backdropFilter: 'blur(16px)',
+                border: `1.5px solid ${guessLat !== null ? 'rgba(39,174,96,0.5)' : 'rgba(217,119,87,0.35)'}`,
+                borderRadius: 14, overflow: 'hidden',
+                cursor: 'pointer', padding: 0,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                height: 100,
                 position: 'relative',
               }}
             >
-              <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange} compact/>
-              {guessLat !== null && (
-                <div style={{
-                  position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)',
-                  background: 'rgba(39,174,96,0.9)', borderRadius: 999,
-                  width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, color: '#fff', fontWeight: 700,
-                }}>✓</div>
-              )}
+              {/* Živá mini mapa jako pozadí */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange} compact/>
+              </div>
+              {/* Label dole */}
+              <div style={{
+                padding: '6px 10px',
+                background: guessLat !== null ? 'rgba(39,174,96,0.12)' : 'rgba(245,241,232,0.95)',
+                borderTop: `0.5px solid ${guessLat !== null ? 'rgba(39,174,96,0.2)' : 'var(--line)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: guessLat !== null ? '#1d6b3a' : 'var(--ink-3)', textTransform: 'uppercase' }}>
+                  {guessLat !== null ? 'Místo ✓' : 'Vybrat místo'}
+                </span>
+                <span style={{ fontSize: 14 }}>{guessLat !== null ? '✓' : '›'}</span>
+              </div>
             </button>
 
-            {/* Rok + odeslat */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <button
-                onClick={() => setYearExpanded(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: 'rgba(245,241,232,0.95)',
-                  backdropFilter: 'blur(16px)',
-                  border: `0.5px solid ${!guessYearSet ? 'rgba(217,119,87,0.3)' : 'rgba(42,31,23,0.15)'}`,
-                  borderRadius: 12, padding: '10px 14px',
-                  cursor: 'pointer', width: '100%',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-                }}
-              >
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 2 }}>Rok</div>
-                  {guessYearSet ? (
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>
-                      {Math.abs(guessYear)} <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{guessYear < 0 ? 'př.' : 'n.l.'}</span>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 14, color: 'var(--accent-deep)', fontWeight: 500 }}>Vybrat rok →</div>
-                  )}
+            {/* Rok */}
+            <button
+              onClick={() => setYearExpanded(true)}
+              style={{
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                background: 'rgba(245,241,232,0.95)',
+                backdropFilter: 'blur(16px)',
+                border: `1.5px solid ${guessYearSet ? 'rgba(39,174,96,0.5)' : 'rgba(217,119,87,0.35)'}`,
+                borderRadius: 14,
+                cursor: 'pointer', padding: '14px 16px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                height: 100, textAlign: 'left',
+                gap: 4,
+              }}
+            >
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>Rok</div>
+              {guessYearSet ? (
+                <>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>
+                    {Math.abs(guessYear)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a' }}>
+                      {guessYear < 0 ? 'Př. n. l.' : 'N. l.'} ✓
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500, marginTop: 4 }}>
+                  Vybrat rok →
                 </div>
-                {guessYearSet && <span style={{ color: '#1d6b3a', fontSize: 16 }}>✓</span>}
-              </button>
-
-              <button
-                className="btn btn-accent"
-                style={{
-                  width: '100%', fontSize: 14, padding: '12px 0',
-                  opacity: canSubmit ? 1 : 0.5,
-                  background: canSubmit ? 'var(--accent)' : 'var(--paper-400)',
-                  borderColor: 'transparent',
-                  color: canSubmit ? '#fff' : 'var(--ink-2)',
-                  boxShadow: canSubmit ? '0 4px 16px rgba(217,119,87,0.4)' : 'none',
-                }}
-                onClick={() => {
-                  if (canSubmit) { onSubmit(); return }
-                  if (missingLocation) { setMapExpanded(true); return }
-                  if (missingYear) { setYearExpanded(true) }
-                }}
-              >
-                {submitLabel}
-              </button>
-            </div>
+              )}
+            </button>
           </div>
+
+          {/* Tlačítko odeslat */}
+          <button
+            style={{
+              width: '100%', fontSize: 15, padding: '14px 0',
+              borderRadius: 12, border: 'none', fontWeight: 500,
+              cursor: canSubmit ? 'pointer' : 'default',
+              background: canSubmit ? 'var(--accent)' : 'rgba(245,241,232,0.7)',
+              backdropFilter: 'blur(16px)',
+              color: canSubmit ? '#fff' : 'var(--ink-3)',
+              boxShadow: canSubmit ? '0 4px 20px rgba(217,119,87,0.4)' : 'none',
+              transition: 'all 200ms',
+            }}
+            onClick={() => {
+              if (canSubmit) { onSubmit(); return }
+              if (missingLocation) { setMapExpanded(true); return }
+              if (missingYear) { setYearExpanded(true) }
+            }}
+          >
+            {submitLabel}
+          </button>
         </div>
       )}
     </>
