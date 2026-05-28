@@ -650,15 +650,15 @@ function RoundResult({ event, round, onNext, isLast }: {
             ))}
           </div>
 
-          {/* Obsah — bez scrollu */}
+          {/* Obsah — bez scrollu, pevné výšky */}
           {tab === 'score' && (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Mapa — menší */}
-              <div style={{ height: 130, flexShrink: 0 }}>
+              {/* Mapa — pevná výška s overflow:hidden aby nepřetékala */}
+              <div style={{ height: 120, flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                 <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
               </div>
               {/* Skóre karty */}
-              <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
                   <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
