@@ -63,12 +63,12 @@ export function useGame(userId: string | undefined) {
     update({ guessYear: year, guessYearSet: true })
   }, [])
 
-  // Prefetch panoramy dalšího kola na pozadí
+  // Prefetch panoramy dalšího kola na pozadí přes fetch (funguje pro všechny typy souborů)
   const prefetchNext = useCallback((events: Event[], currentRound: number) => {
     const nextEvent = events[currentRound + 1]
-    if (!nextEvent?.panorama_url) return
-    const img = new Image()
-    img.src = nextEvent.panorama_url
+    if (!nextEvent?.panorama_url || nextEvent.panorama_url === 'pending') return
+    // fetch uloží do browser cache — Pannellum pak načte okamžitě
+    fetch(nextEvent.panorama_url, { method: 'GET', cache: 'force-cache' }).catch(() => {})
   }, [])
 
   const submitRound = useCallback(async () => {
