@@ -74,7 +74,7 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage } from '@/lib/supabase'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -127,6 +127,7 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
+
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/menu')}>← Menu</button>
@@ -267,6 +268,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [panoramaPreview, setPanoramaPreview] = useState<string | null>(null)
   const panoramaRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
 
@@ -320,15 +322,21 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
 
       if (savedId) {
         if (panoramaFile) {
-          const { url, error } = await uploadPanorama(panoramaFile, savedId)
+          // Při editaci použij bezpečné nahrazení (smaže starý soubor)
+          const oldUrl = event?.panorama_url ?? null
+          const { url, error } = event
+            ? await uploadPanoramaWithCleanup(panoramaFile, savedId, oldUrl)
+            : await uploadPanorama(panoramaFile, savedId)
           if (error) throw error
-          await updateEvent(savedId, { panorama_url: url! })
+          if (!event) await updateEvent(savedId, { panorama_url: url! })
         }
         if (imageFile) {
           const { url, error } = await uploadEventImage(imageFile, savedId)
           if (error) throw error
           await updateEvent(savedId, { event_image_url: url! })
         }
+        // Analytics
+        track(event ? 'admin_event_updated' : 'admin_event_created', { event_id: savedId })
       }
 
       onDone()
@@ -349,6 +357,15 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
 
   return (
     <div style={{ maxWidth: 780 }}>
+      {panoramaPreview && (
+        <PanoramaPreviewModal
+          url={panoramaPreview}
+          onClose={() => {
+            if (panoramaPreview.startsWith('blob:')) URL.revokeObjectURL(panoramaPreview)
+            setPanoramaPreview(null)
+          }}
+        />
+      )}
       <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 28px', letterSpacing: '-0.01em' }}>
         {isEdit ? `Editovat: ${event.title}` : 'Nová historická událost'}
       </h2>
@@ -464,6 +481,24 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
             <div>
               <label className="label">360° panorama * (JPG/PNG, max 50 MB)</label>
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={setPanoramaFile} ref={panoramaRef}/>
+              {/* Preview tlačítko — zobrazí existující nebo nově vybranou panoramu */}
+              {(panoramaFile || event?.panorama_url) && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ marginTop: 8, fontSize: 13 }}
+                  onClick={() => {
+                    if (panoramaFile) {
+                      const url = URL.createObjectURL(panoramaFile)
+                      setPanoramaPreview(url)
+                    } else {
+                      setPanoramaPreview(event?.panorama_url ?? null)
+                    }
+                  }}
+                >
+                  👁 Náhled panoramy
+                </button>
+              )}
             </div>
             <div>
               <label className="label">Doplňkový obrázek události (JPG/PNG, max 10 MB)</label>
@@ -546,6 +581,46 @@ const DropZone = forwardRef<HTMLInputElement, {
   )
 })
 DropZone.displayName = 'DropZone'
+
+// ── Panorama Preview Modal ────────────────────────────────
+declare const pannellum: {
+  viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
+}
+
+function PanoramaPreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const viewer = pannellum.viewer(containerRef.current, {
+      type: 'equirectangular',
+      panorama: url,
+      autoLoad: true,
+      showControls: true,
+      hfov: 120,
+    })
+    return () => { viewer.destroy() }
+  }, [url])
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'rgba(0,0,0,0.5)' }}>
+        <span style={{ color: '#f5f1e8', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em' }}>NÁHLED PANORAMY</span>
+        <button
+          onClick={onClose}
+          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '6px 16px', color: '#f5f1e8', fontSize: 13, cursor: 'pointer' }}
+        >
+          ✕ Zavřít
+        </button>
+      </div>
+      <div ref={containerRef} style={{ flex: 1 }}/>
+    </div>
+  )
+}
 
 function AdminLoading() {
   return (
