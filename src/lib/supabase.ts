@@ -68,17 +68,18 @@ function addPlayedIds(ids: string[]) {
 export async function getRandomEvents(count = 5): Promise<Event[]> {
   const playedIds = getPlayedIds()
 
-  // Nejdřív zkus vzít pouze neozkoušené eventy
+  // Nejdřív zkus vzít pouze neozkoušené eventy — náhodně přes Postgres random()
   const { data: fresh } = await supabase
     .from('events')
     .select('*')
     .eq('published', true)
     .not('id', 'in', `(${playedIds.length > 0 ? playedIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
-    .limit(count * 6)
+    .order('play_count', { ascending: true })  // méně hrané mají přednost
+    .limit(count * 8)  // větší pool pro lepší náhodnost
 
   let pool = fresh ?? []
 
-  // Pokud nemáme dost, doplň ze zahraných (seřazeny od nejstarších)
+  // Pokud nemáme dost, doplň ze zahraných
   if (pool.length < count) {
     const { data: fallback } = await supabase
       .from('events')
@@ -206,8 +207,11 @@ export async function uploadEventImage(file: File, eventId: string) {
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr]
+  // Použij crypto.getRandomValues pro kryptograficky silnou náhodnost
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const buf = new Uint32Array(1)
+    crypto.getRandomValues(buf)
+    const j = buf[0] % (i + 1);
     [a[i], a[j]] = [a[j], a[i]]
   }
   return a
