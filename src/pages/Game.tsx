@@ -85,6 +85,7 @@ export default function GamePage() {
             guessLat={state.guessLat}
             guessLng={state.guessLng}
             guessYear={state.guessYear}
+            guessYearSet={state.guessYearSet}
             canSubmit={canSubmit}
             onLocationChange={setGuessLocation}
             onYearChange={setGuessYear}
@@ -171,8 +172,9 @@ function FullscreenButton() {
 }
 
 // ── Guess panel — GeoGuessr styl ─────────────────────────
-function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange, onYearChange, onSubmit }: {
+function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, onLocationChange, onYearChange, onSubmit }: {
   guessLat: number | null; guessLng: number | null; guessYear: number
+  guessYearSet: boolean
   canSubmit: boolean; onLocationChange: (lat: number, lng: number) => void
   onYearChange: (y: number) => void; onSubmit: () => void
 }) {
@@ -369,7 +371,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   background: 'rgba(245,241,232,0.95)',
                   backdropFilter: 'blur(16px)',
-                  border: '0.5px solid rgba(42,31,23,0.15)',
+                  border: `0.5px solid ${!guessYearSet ? 'rgba(217,119,87,0.3)' : 'rgba(42,31,23,0.15)'}`,
                   borderRadius: 12, padding: '10px 14px',
                   cursor: 'pointer', width: '100%',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
@@ -377,12 +379,15 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
               >
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 2 }}>Rok</div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>
-                    {Math.abs(guessYear)} <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{guessYear < 0 ? 'př.' : 'n.l.'}</span>
-                  </div>
+                  {guessYearSet ? (
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>
+                      {Math.abs(guessYear)} <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{guessYear < 0 ? 'př.' : 'n.l.'}</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 14, color: 'var(--accent-deep)', fontWeight: 500 }}>Vybrat rok →</div>
+                  )}
                 </div>
-                {!missingYear && <span style={{ color: '#1d6b3a', fontSize: 16 }}>✓</span>}
-                {missingYear && <span style={{ color: 'var(--ink-3)', fontSize: 13 }}>›</span>}
+                {guessYearSet && <span style={{ color: '#1d6b3a', fontSize: 16 }}>✓</span>}
               </button>
 
               <button
@@ -395,8 +400,11 @@ function GuessPanel({ guessLat, guessLng, guessYear, canSubmit, onLocationChange
                   color: canSubmit ? '#fff' : 'var(--ink-2)',
                   boxShadow: canSubmit ? '0 4px 16px rgba(217,119,87,0.4)' : 'none',
                 }}
-                disabled={!canSubmit}
-                onClick={onSubmit}
+                onClick={() => {
+                  if (canSubmit) { onSubmit(); return }
+                  if (missingLocation) { setMapExpanded(true); return }
+                  if (missingYear) { setYearExpanded(true) }
+                }}
               >
                 {submitLabel}
               </button>
@@ -510,10 +518,11 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
           Zadat přesný rok (− = př. n. l.)
         </div>
         <input
-          type="number"
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
+          pattern="-?[0-9]*"
           min={MIN} max={MAX}
-          value={value}
+          value={value === 0 ? '' : String(value)}
           onChange={e => handleInput(e.target.value)}
           placeholder="-480 nebo 1912"
           style={{
