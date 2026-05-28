@@ -225,8 +225,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
     <div
       ref={wrapRef}
       style={{
-        width: '100%', height: 260,
-        borderRadius: 10, border: '1px solid var(--line)',
+        width: '100%', height: '100%', minHeight: 120,
         overflow: 'hidden',
       }}
     />
