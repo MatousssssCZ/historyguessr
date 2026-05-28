@@ -130,17 +130,19 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
       />
       {guessLat === null && (
         <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'absolute', bottom: 10, left: '50%',
+          transform: 'translateX(-50%)',
           pointerEvents: 'none', zIndex: 1000,
+          whiteSpace: 'nowrap',
         }}>
           <div style={{
-            background: 'rgba(245,241,232,0.9)',
-            padding: '6px 14px', borderRadius: 999,
+            background: 'rgba(42,31,23,0.65)',
+            backdropFilter: 'blur(6px)',
+            padding: '5px 12px', borderRadius: 999,
             fontFamily: 'var(--font-mono)', fontSize: 10,
-            letterSpacing: '0.14em', color: 'var(--ink-3)',
+            letterSpacing: '0.12em', color: 'rgba(245,241,232,0.85)',
           }}>
-            KLIKNI PRO UMÍSTĚNÍ PINU
+            Klikni pro umístění pinu
           </div>
         </div>
       )}
