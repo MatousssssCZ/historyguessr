@@ -139,6 +139,7 @@ export default function AdminPage() {
             <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadCSVTemplate}>↓ CSV šablona</button>
             <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS šablona</button>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/import')}>↑ Hromadný import</button>
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/daily')}>📅 Tento den v historii</button>
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
         )}
@@ -482,7 +483,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
               <label className="label">360° panorama * (JPG/PNG, max 50 MB)</label>
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={setPanoramaFile} ref={panoramaRef}/>
               {/* Preview tlačítko — zobrazí existující nebo nově vybranou panoramu */}
-              {(panoramaFile || event?.panorama_url) && (
+              {(panoramaFile || (event?.panorama_url && event.panorama_url !== 'pending')) && (
                 <button
                   type="button"
                   className="btn btn-ghost"
@@ -491,8 +492,8 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
                     if (panoramaFile) {
                       const url = URL.createObjectURL(panoramaFile)
                       setPanoramaPreview(url)
-                    } else {
-                      setPanoramaPreview(event?.panorama_url ?? null)
+                    } else if (event?.panorama_url && event.panorama_url !== 'pending') {
+                      setPanoramaPreview(event.panorama_url)
                     }
                   }}
                 >
