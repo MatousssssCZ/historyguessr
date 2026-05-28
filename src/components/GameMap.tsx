@@ -182,11 +182,11 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
       // Piny
       L.marker([guessLat, guessLng], { icon: GUESS_ICON })
         .addTo(map)
-        .bindTooltip('Tvůj tip', { permanent: true, direction: 'top', offset: [0, -34] })
+        .bindTooltip('Tvůj tip', { permanent: true, direction: 'right', offset: [8, -16] })
 
       L.marker([truthLat, truthLng], { icon: TRUTH_ICON })
         .addTo(map)
-        .bindTooltip('Správné místo', { permanent: true, direction: 'top', offset: [0, -34] })
+        .bindTooltip('Správné místo', { permanent: true, direction: 'right', offset: [8, -16] })
 
       // Linka
       L.polyline([[guessLat, guessLng], [truthLat, truthLng]], {
