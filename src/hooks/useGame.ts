@@ -63,6 +63,14 @@ export function useGame(userId: string | undefined) {
     update({ guessYear: year, guessYearSet: true })
   }, [])
 
+  // Prefetch panoramy dalšího kola na pozadí
+  const prefetchNext = useCallback((events: Event[], currentRound: number) => {
+    const nextEvent = events[currentRound + 1]
+    if (!nextEvent?.panorama_url) return
+    const img = new Image()
+    img.src = nextEvent.panorama_url
+  }, [])
+
   const submitRound = useCallback(async () => {
     const { events, currentRound, guessLat, guessLng, guessYear, rounds, sessionId } = state
     if (guessLat === null || guessLng === null) return
@@ -89,6 +97,9 @@ export function useGame(userId: string | undefined) {
     const isLast = currentRound === ROUNDS_PER_GAME - 1
 
     setState(prev => ({ ...prev, rounds: newRounds, totalScore: newTotal, phase: 'round_result' }))
+
+    // Prefetchni panoramu dalšího kola na pozadí
+    prefetchNext(state.events, currentRound)
 
     if (isLast && sessionId && userId) {
       await finishGameSession(sessionId, newRounds, newTotal)
