@@ -142,25 +142,50 @@ export default function GamePage() {
 function PanoramaViewer({ url }: { url: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<{ destroy: () => void } | null>(null)
+  const [error, setError] = useState<'loading' | 'failed' | null>(null)
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || !url || url === 'pending') {
+      setError('failed')
+      return
+    }
+    setError('loading')
     if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null }
 
-    viewerRef.current = pannellum.viewer(containerRef.current, {
-      type: 'equirectangular',
-      panorama: url,
-      autoLoad: true,
-      showControls: false,
-      mouseZoom: true,
-      hfov: 120,
-      pitch: 0,
-      yaw: 0,
-    })
+    try {
+      const viewer = pannellum.viewer(containerRef.current, {
+        type: 'equirectangular',
+        panorama: url,
+        autoLoad: true,
+        showControls: false,
+        mouseZoom: true,
+        hfov: 120,
+        pitch: 0,
+        yaw: 0,
+      })
 
-    return () => {
-      viewerRef.current?.destroy()
-      viewerRef.current = null
+      // Pannellum error callback
+      ;(viewer as unknown as { on: (e: string, cb: () => void) => void })
+        .on?.('error', () => setError('failed'))
+
+      // Timeout — pokud se panorama nenačte do 15s → fallback
+      const timeout = setTimeout(() => {
+        if (error === 'loading') setError('failed')
+      }, 15000)
+
+      // Úspěšné načtení
+      ;(viewer as unknown as { on: (e: string, cb: () => void) => void })
+        .on?.('load', () => { setError(null); clearTimeout(timeout) })
+
+      viewerRef.current = viewer
+      return () => {
+        clearTimeout(timeout)
+        viewerRef.current?.destroy()
+        viewerRef.current = null
+      }
+    } catch (e) {
+      console.error('[Panorama] Init error:', e)
+      setError('failed')
     }
   }, [url])
 
@@ -168,6 +193,28 @@ function PanoramaViewer({ url }: { url: string }) {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
       <FullscreenButton/>
+
+      {/* Fallback overlay — zobrazí se jen při chybě */}
+      {error === 'failed' && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'var(--sepia-900)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 12, padding: 32, zIndex: 5,
+        }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(245,241,232,0.3)" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'rgba(245,241,232,0.6)', margin: 0, textAlign: 'center' }}>
+            Panorama není dostupná
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(245,241,232,0.35)', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
+            Tuto událost přeskočíme — pokračuj tipováním roku a místa.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
