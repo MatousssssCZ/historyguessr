@@ -74,6 +74,7 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { compressPanorama, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
@@ -270,6 +271,8 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [panoramaPreview, setPanoramaPreview] = useState<string | null>(null)
+  const [compressionInfo, setCompressionInfo] = useState<string | null>(null)
+  const [compressing, setCompressing] = useState(false)
   const panoramaRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
 
@@ -323,11 +326,29 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
 
       if (savedId) {
         if (panoramaFile) {
+          setSaving(false)
+          setCompressing(true)
+          // Komprimuj panoramu před uploadem
+          let fileToUpload = panoramaFile
+          try {
+            const result = await compressPanorama(panoramaFile, (msg) => {
+              setCompressionInfo(msg)
+            })
+            fileToUpload = result.file
+            if (result.savings > 0) {
+              setCompressionInfo(`Zkomprimováno: ${formatFileSize(result.originalSize)} → ${formatFileSize(result.compressedSize)} (−${result.savings}%)`)
+            }
+          } catch (e) {
+            console.warn('[Upload] Komprimace selhala, nahrávám originál:', e)
+          }
+          setCompressing(false)
+          setSaving(true)
+
           // Při editaci použij bezpečné nahrazení (smaže starý soubor)
           const oldUrl = event?.panorama_url ?? null
           const { url, error } = event
-            ? await uploadPanoramaWithCleanup(panoramaFile, savedId, oldUrl)
-            : await uploadPanorama(panoramaFile, savedId)
+            ? await uploadPanoramaWithCleanup(fileToUpload, savedId, oldUrl)
+            : await uploadPanorama(fileToUpload, savedId)
           if (error) throw error
           if (!event) await updateEvent(savedId, { panorama_url: url! })
         }
@@ -481,33 +502,30 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label className="label">360° panorama * (JPG/PNG, max 50 MB)</label>
-              <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={setPanoramaFile} ref={panoramaRef}/>
-              {/* Preview tlačítko */}
-              {(() => {
-                const previewUrl = panoramaFile
-                  ? null  // bude vytvořen při kliknutí
-                  : (event?.panorama_url && event.panorama_url !== 'pending' && event.panorama_url !== '')
-                    ? event.panorama_url
-                    : null
-                const canPreview = !!panoramaFile || !!previewUrl
-                if (!canPreview) return null
-                return (
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    style={{ marginTop: 8, fontSize: 13 }}
-                    onClick={() => {
-                      if (panoramaFile) {
-                        setPanoramaPreview(URL.createObjectURL(panoramaFile))
-                      } else if (previewUrl) {
-                        setPanoramaPreview(previewUrl)
-                      }
-                    }}
-                  >
-                    👁 Náhled panoramy
-                  </button>
-                )
-              })()}
+              <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={(f) => { setPanoramaFile(f); setCompressionInfo(f ? `Vybráno: ${formatFileSize(f.size)} — bude zkomprimováno` : null) }} ref={panoramaRef}/>
+              {compressionInfo && (
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>
+                  {compressing ? <><span className="spinner" style={{ width: 12, height: 12 }}/> </> : '💾 '}{compressionInfo}
+                </div>
+              )}
+              {/* Preview tlačítko — zobrazí existující nebo nově vybranou panoramu */}
+              {(panoramaFile || (event?.panorama_url && event.panorama_url !== 'pending')) && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ marginTop: 8, fontSize: 13 }}
+                  onClick={() => {
+                    if (panoramaFile) {
+                      const url = URL.createObjectURL(panoramaFile)
+                      setPanoramaPreview(url)
+                    } else if (event?.panorama_url && event.panorama_url !== 'pending') {
+                      setPanoramaPreview(event.panorama_url)
+                    }
+                  }}
+                >
+                  👁 Náhled panoramy
+                </button>
+              )}
             </div>
             <div>
               <label className="label">Doplňkový obrázek události (JPG/PNG, max 10 MB)</label>
