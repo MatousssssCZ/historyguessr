@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
-import { addEventRating } from '@/lib/supabase'
+import { addEventRating, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 
 declare const pannellum: {
