@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { signIn, signUp, track } from '@/lib/supabase'
 
 type Mode = 'login' | 'register'
@@ -391,6 +391,14 @@ export default function AuthPage() {
               }
             </button>
           </form>
+
+          {/* Legal links */}
+          <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: 20, lineHeight: 1.6 }}>
+            Používáním aplikace souhlasíš s{' '}
+            <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>podmínkami použití</Link>
+            {' '}a{' '}
+            <Link to="/privacy" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>zásadami ochrany údajů</Link>.
+          </p>
         </div>
       </div>
     </div>
