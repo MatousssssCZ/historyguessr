@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile } from '@/lib/supabase'
+import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, track } from '@/lib/supabase'
 
 const ROUNDS_PER_GAME = 5
 
@@ -53,6 +53,7 @@ export function useGame(userId: string | undefined) {
       return
     }
     setState({ ...INITIAL_STATE, phase: 'playing', events, sessionId: (sessionData as { id: string }).id })
+    track('game_started', { rounds: ROUNDS_PER_GAME }, userId)
   }, [userId])
 
   const setGuessLocation = useCallback((lat: number, lng: number) => {
@@ -98,12 +99,21 @@ export function useGame(userId: string | undefined) {
 
     setState(prev => ({ ...prev, rounds: newRounds, totalScore: newTotal, phase: 'round_result' }))
 
+    track('guess_submitted', {
+      round: currentRound + 1,
+      event_id: event.id,
+      distance_km: Math.round(distKm),
+      year_diff: ydiff,
+      round_score: scores.round_score,
+    }, userId)
+
     // Prefetchni panoramu dalšího kola na pozadí
     prefetchNext(state.events, currentRound)
 
     if (isLast && sessionId && userId) {
       await finishGameSession(sessionId, newRounds, newTotal)
       await addScoreToProfile(userId, newTotal)
+      track('game_completed', { total_score: newTotal, rounds: ROUNDS_PER_GAME }, userId)
     }
   }, [state, userId])
 
