@@ -36,7 +36,7 @@ export default function GamePage() {
   if (!currentEvent) return <LoadingScreen/>
 
   return (
-    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906', position: 'relative', overflow: 'hidden' }}>
       {/* HUD — kompaktní */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -104,14 +104,7 @@ export default function GamePage() {
             </div>
           </div>
         )}
-        {state.phase === 'round_result' && lastRound && (
-          <RoundResult
-            event={currentEvent}
-            round={lastRound}
-            onNext={nextRound}
-            isLast={state.currentRound === roundsCount - 1}
-          />
-        )}
+
         {state.phase === 'playing' && (
           <GuessPanel
             guessLat={state.guessLat}
@@ -159,6 +152,21 @@ function PanoramaViewer({ url }: { url: string }) {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
       <FullscreenButton/>
+      {/* RoundResult — renderuje se mimo flex layout, jako overlay přes celou stránku */}
+      {state.phase === 'round_result' && lastRound && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 100,
+        }}>
+          <RoundResult
+            event={currentEvent}
+            round={lastRound}
+            onNext={nextRound}
+            isLast={state.currentRound === roundsCount - 1}
+          />
+        </div>
+      )}
     </div>
   )
 }
