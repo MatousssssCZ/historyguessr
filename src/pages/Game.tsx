@@ -118,6 +118,22 @@ export default function GamePage() {
           />
         )}
       </div>
+
+      {/* RoundResult — jako sibling HUDu, pokrývá celou obrazovku */}
+      {state.phase === 'round_result' && lastRound && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 100,
+        }}>
+          <RoundResult
+            event={currentEvent}
+            round={lastRound}
+            onNext={nextRound}
+            isLast={state.currentRound === roundsCount - 1}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -152,21 +168,6 @@ function PanoramaViewer({ url }: { url: string }) {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
       <FullscreenButton/>
-      {/* RoundResult — renderuje se mimo flex layout, jako overlay přes celou stránku */}
-      {state.phase === 'round_result' && lastRound && (
-        <div style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          zIndex: 100,
-        }}>
-          <RoundResult
-            event={currentEvent}
-            round={lastRound}
-            onNext={nextRound}
-            isLast={state.currentRound === roundsCount - 1}
-          />
-        </div>
-      )}
     </div>
   )
 }
