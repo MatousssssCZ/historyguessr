@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, lazy, Suspense } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import AuthPage from '@/pages/Auth'
 import MenuPage from '@/pages/Menu'
@@ -7,6 +7,9 @@ import AccountPage from '@/pages/Account'
 import AdminPage from '@/pages/Admin'
 import AdminImportPage from '@/pages/AdminImport'
 import AdminDailyChallengePage from '@/pages/AdminDailyChallenge'
+import DailyChallengePage from '@/pages/Daily'
+import PrivacyPage from '@/pages/Privacy'
+import TermsPage from '@/pages/Terms'
 
 // ── Auth guard ────────────────────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -51,6 +54,9 @@ export default function App() {
           <Route path="/admin"   element={<RequireAuth><AdminPage/></RequireAuth>}/>
           <Route path="/admin/import" element={<RequireAuth><AdminImportPage/></RequireAuth>}/>
           <Route path="/admin/daily" element={<RequireAuth><AdminDailyChallengePage/></RequireAuth>}/>
+          <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
+          <Route path="/privacy" element={<PrivacyPage/>}/>
+          <Route path="/terms"   element={<TermsPage/>}/>
           <Route path="*"        element={<Navigate to="/" replace/>}/>
         </Routes>
       </BrowserRouter>
