@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { signIn, signUp } from '@/lib/supabase'
+import { signIn, signUp, track } from '@/lib/supabase'
 
 type Mode = 'login' | 'register'
 
@@ -45,9 +45,11 @@ export default function AuthPage() {
         if (error) throw error
         setSuccess('Registrace úspěšná! Zkontroluj svůj e-mail.')
         setPassword(''); setConfirmPassword('')
+        track('sign_up', { email })
       } else {
         const { error } = await signIn(email, password)
         if (error) throw error
+        track('login', { email })
         navigate('/menu')
       }
     } catch (err: unknown) {
