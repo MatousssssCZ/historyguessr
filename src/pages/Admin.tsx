@@ -167,6 +167,20 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
   onToggle: (id: string, published: boolean) => void
   onDelete: (id: string) => void
 }) {
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+
+  // Unikátní kategorie z událostí
+  const categories = Array.from(new Set(events.map(e => e.category).filter(Boolean))) as string[]
+
+  const filtered = events.filter(ev => {
+    const matchSearch = !search || ev.title.toLowerCase().includes(search.toLowerCase())
+    const matchCategory = !categoryFilter || ev.category === categoryFilter
+    const matchStatus = !statusFilter || (statusFilter === 'published' ? ev.published : !ev.published)
+    return matchSearch && matchCategory && matchStatus
+  })
+
   if (events.length === 0) {
     return (
       <div className="card" style={{ padding: 48, textAlign: 'center' }}>
@@ -177,6 +191,55 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
 
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
+      {/* Filtry */}
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', background: 'var(--paper-100)' }}>
+        <input
+          className="input"
+          placeholder="Hledat název…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ width: 200, padding: '7px 12px', fontSize: 13 }}
+        />
+        <select
+          className="input"
+          value={categoryFilter}
+          onChange={e => setCategoryFilter(e.target.value)}
+          style={{ width: 160, padding: '7px 12px', fontSize: 13 }}
+        >
+          <option value="">Všechny kategorie</option>
+          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          className="input"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          style={{ width: 140, padding: '7px 12px', fontSize: 13 }}
+        >
+          <option value="">Všechny stavy</option>
+          <option value="published">Publikované</option>
+          <option value="draft">Drafty</option>
+        </select>
+        {(search || categoryFilter || statusFilter) && (
+          <button
+            className="btn btn-ghost"
+            style={{ padding: '7px 12px', fontSize: 13 }}
+            onClick={() => { setSearch(''); setCategoryFilter(''); setStatusFilter('') }}
+          >
+            ✕ Zrušit filtry
+          </button>
+        )}
+        <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
+          {filtered.length} / {events.length}
+        </span>
+      </div>
+
+      {filtered.length === 0 && (
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+          Žádné události neodpovídají filtru.
+        </div>
+      )}
+
+      {filtered.length > 0 && (
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
@@ -188,7 +251,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
           </tr>
         </thead>
         <tbody>
-          {events.map((ev, i) => (
+          {filtered.map((ev, i) => (
             <tr key={ev.id} style={{ borderBottom: '1px solid var(--line)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
               <td style={{ padding: '12px 16px' }}>
                 <div style={{ fontWeight: 500, marginBottom: 2 }}>{ev.title}</div>
@@ -236,6 +299,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
           ))}
         </tbody>
       </table>
+      )}
     </div>
   )
 }
