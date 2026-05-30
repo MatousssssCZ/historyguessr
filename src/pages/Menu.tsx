@@ -65,7 +65,7 @@ export default function MenuPage() {
           {/* Cards grid */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(20px)', transition: 'all 0.5s 0.1s cubic-bezier(0.16,1,0.3,1)' }}>
             <PlayCard onClick={() => navigate('/game')}/>
-            <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(4, 1fr)' : '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <SmallCard icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
               {isAdmin && <SmallCard icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')} accent/>}
               <SmallCard icon="📅" title="Tento den" sub="Denní výzva v historii" onClick={() => navigate('/daily')}/>
@@ -183,7 +183,7 @@ export default function MenuPage() {
         <PlayCard onClick={() => navigate('/game')}/>
 
         {/* Sekundární */}
-        <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(4, 1fr)' : '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <SmallCard icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
           {isAdmin && (
             <SmallCard icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')} accent/>
