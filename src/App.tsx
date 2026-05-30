@@ -8,6 +8,8 @@ import AdminPage from '@/pages/Admin'
 import AdminImportPage from '@/pages/AdminImport'
 import AdminDailyChallengePage from '@/pages/AdminDailyChallenge'
 import DailyChallengePage from '@/pages/Daily'
+import MultiplayerLobbyPage from '@/pages/MultiplayerLobby'
+import MultiplayerGamePage from '@/pages/MultiplayerGame'
 import PrivacyPage from '@/pages/Privacy'
 import TermsPage from '@/pages/Terms'
 
@@ -55,6 +57,8 @@ export default function App() {
           <Route path="/admin/import" element={<RequireAuth><AdminImportPage/></RequireAuth>}/>
           <Route path="/admin/daily" element={<RequireAuth><AdminDailyChallengePage/></RequireAuth>}/>
           <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
+          <Route path="/multiplayer/lobby" element={<RequireAuth><MultiplayerLobbyPage/></RequireAuth>}/>
+          <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>
           <Route path="/privacy" element={<PrivacyPage/>}/>
           <Route path="/terms"   element={<TermsPage/>}/>
           <Route path="*"        element={<Navigate to="/" replace/>}/>
