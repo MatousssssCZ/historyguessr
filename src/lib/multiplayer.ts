@@ -248,15 +248,23 @@ export async function submitAnswer(
   })
   if (error) return { error: error as Error }
 
-  // Aktualizuj celkové skóre hráče
-  await supabase.rpc('increment_multiplayer_score', {
+  // Aktualizuj celkové skóre hráče — atomicky přes RPC
+  const { error: rpcError } = await supabase.rpc('increment_multiplayer_score', {
     p_room_id: roomId, p_user_id: userId, p_score: answer.round_score,
-  }).catch(() => {
-    // Fallback pokud RPC neexistuje — ruční update
-    supabase.from('multiplayer_players')
-      .update({ total_score: answer.round_score })
-      .eq('room_id', roomId).eq('user_id', userId)
   })
+
+  // Fallback pokud RPC v DB neexistuje — read-modify-write (přičti, ne přepiš)
+  if (rpcError) {
+    const { data: player } = await supabase
+      .from('multiplayer_players')
+      .select('total_score')
+      .eq('room_id', roomId).eq('user_id', userId)
+      .single()
+
+    await supabase.from('multiplayer_players')
+      .update({ total_score: (player?.total_score ?? 0) + answer.round_score })
+      .eq('room_id', roomId).eq('user_id', userId)
+  }
 
   return { error: null }
 }

@@ -181,7 +181,7 @@ export default function AdminImportPage() {
         const buffer = await file.arrayBuffer()
         const wb = XLSX.read(buffer, { type: 'array' })
         const ws = wb.Sheets[wb.SheetNames[0]]
-        const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' })
+        const data = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Record<string, unknown>[]
         if (!data.length) { setCsvError('XLS soubor je prázdný nebo nemá správné sloupce.'); return }
         const parsed = data.map(row => {
           const str: Record<string, string> = {}
@@ -228,6 +228,8 @@ export default function AdminImportPage() {
           title: row.title,
           description: row.description,
           year: row.year,
+          year_from: row.year - row.year_range,
+          year_to: row.year + row.year_range,
           lat: row.lat,
           lng: row.lng,
           category: row.category || null,
