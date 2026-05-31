@@ -268,17 +268,26 @@ function YearRange({ from, to, onFrom, onTo }: { from: number; to: number; onFro
   const leftPct = ((lo - YEAR_MIN) / span) * 100
   const rightPct = ((hi - YEAR_MIN) / span) * 100
 
+  // Když se úchyty kříží, „od" řídí spodní hodnotu a „do" horní
+  function handleFrom(v: number) { v <= to ? onFrom(v) : (onFrom(to), onTo(v)) }
+  function handleTo(v: number) { v >= from ? onTo(v) : (onTo(from), onFrom(v)) }
+
   return (
     <div>
-      {/* Vizuální indikátor zvoleného rozsahu */}
-      <div style={{ position: 'relative', height: 6, margin: '6px 4px 14px', background: 'var(--paper-300)', borderRadius: 99 }}>
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${leftPct}%`, right: `${100 - rightPct}%`, background: 'linear-gradient(90deg, #5b7fa6, var(--accent))', borderRadius: 99 }}/>
+      {/* Tažitelný dvojitý posuvník */}
+      <div className="range-dual" style={{ margin: '4px 2px 14px' }}>
+        {/* podkladová dráha */}
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'var(--paper-300)', borderRadius: 99 }}/>
+        {/* vybraný rozsah */}
+        <div style={{ position: 'absolute', top: '50%', height: 6, transform: 'translateY(-50%)', left: `${leftPct}%`, right: `${100 - rightPct}%`, background: 'linear-gradient(90deg, #5b7fa6, var(--accent))', borderRadius: 99 }}/>
+        <input type="range" min={YEAR_MIN} max={YEAR_MAX} value={from} onChange={e => handleFrom(Number(e.target.value))} aria-label="Rok od"/>
+        <input type="range" min={YEAR_MIN} max={YEAR_MAX} value={to} onChange={e => handleTo(Number(e.target.value))} aria-label="Rok do"/>
       </div>
       {/* Číselná pole */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <YearBox label="Od" value={from} onChange={onFrom}/>
+        <YearBox label="Od" value={from} onChange={handleFrom}/>
         <span style={{ color: 'var(--ink-3)' }}>→</span>
-        <YearBox label="Do" value={to} onChange={onTo}/>
+        <YearBox label="Do" value={to} onChange={handleTo}/>
       </div>
     </div>
   )
