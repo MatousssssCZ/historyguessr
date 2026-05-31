@@ -84,26 +84,53 @@ function addPlayedIds(ids: string[]) {
   localStorage.setItem(PLAYED_KEY, JSON.stringify(next))
 }
 
-export async function getRandomEvents(count = 5): Promise<Event[]> {
-  const playedIds = getPlayedIds()
+export interface EventFilters {
+  categories?: string[]
+  yearFrom?: number
+  yearTo?: number
+  excludeIds?: string[]
+}
 
-  // Nejdřív zkus vzít pouze neozkoušené eventy — náhodně přes Postgres random()
-  const { data: fresh } = await supabase
-    .from('events')
-    .select('*')
-    .eq('published', true)
-    .not('id', 'in', `(${playedIds.length > 0 ? playedIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
+/** Aplikuje filtry předsálí na dotaz nad tabulkou events */
+function applyEventFilters<T>(query: T, filters?: EventFilters): T {
+  let q = query as any
+  if (filters?.categories?.length) q = q.in('category', filters.categories)
+  if (typeof filters?.yearFrom === 'number') q = q.gte('year', filters.yearFrom)
+  if (typeof filters?.yearTo === 'number') q = q.lte('year', filters.yearTo)
+  return q as T
+}
+
+/** Sestaví seznam ID, které se mají z losování vynechat (zahrané + ručně vyloučené) */
+function buildExcludeList(extra?: string[]): string {
+  const ids = [...getPlayedIds(), ...(extra ?? [])]
+  return ids.length > 0 ? ids.join(',') : '00000000-0000-0000-0000-000000000000'
+}
+
+export async function getRandomEvents(count = 5, filters?: EventFilters): Promise<Event[]> {
+  // Nejdřív zkus vzít pouze neozkoušené (a nevyloučené) eventy
+  const { data: fresh } = await applyEventFilters(
+    supabase
+      .from('events')
+      .select('*')
+      .eq('published', true)
+      .not('id', 'in', `(${buildExcludeList(filters?.excludeIds)})`),
+    filters,
+  )
     .order('play_count', { ascending: true })  // méně hrané mají přednost
     .limit(count * 8)  // větší pool pro lepší náhodnost
 
   let pool = fresh ?? []
 
-  // Pokud nemáme dost, doplň ze zahraných
+  // Pokud nemáme dost, doplň ze zahraných (ručně vyloučené ale respektuj vždy)
   if (pool.length < count) {
-    const { data: fallback } = await supabase
-      .from('events')
-      .select('*')
-      .eq('published', true)
+    let fb = applyEventFilters(
+      supabase.from('events').select('*').eq('published', true),
+      filters,
+    )
+    if (filters?.excludeIds?.length) {
+      fb = fb.not('id', 'in', `(${filters.excludeIds.join(',')})`)
+    }
+    const { data: fallback } = await fb
       .order('play_count', { ascending: true })
       .limit(count * 4)
     const extra = (fallback ?? []).filter(e => !pool.find(p => p.id === e.id))
@@ -115,6 +142,24 @@ export async function getRandomEvents(count = 5): Promise<Event[]> {
   const selected = shuffleArray(pool).slice(0, count) as Event[]
   addPlayedIds(selected.map(e => e.id))
   return selected
+}
+
+export interface CandidateEvent {
+  id: string
+  title: string
+  year: number
+  category: string | null
+}
+
+/** Načte seznam událostí odpovídajících filtrům (pro „vyladit" v předsálí) */
+export async function getCandidateEvents(filters?: EventFilters): Promise<CandidateEvent[]> {
+  const { data } = await applyEventFilters(
+    supabase.from('events').select('id, title, year, category').eq('published', true),
+    filters,
+  )
+    .order('year', { ascending: true })
+    .limit(500)
+  return (data ?? []) as CandidateEvent[]
 }
 
 export async function getAdminEvents() {

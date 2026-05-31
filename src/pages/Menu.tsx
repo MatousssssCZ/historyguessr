@@ -84,7 +84,7 @@ export default function MenuPage() {
                   360° panoramy · tipni místo + rok
                 </p>
               </div>
-              <button onClick={() => navigate('/game')} style={heroPlayBtn}
+              <button onClick={() => navigate('/play')} style={heroPlayBtn}
                 onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
                 onMouseLeave={e => (e.currentTarget.style.transform = 'none')}>
                 Hrát
@@ -158,7 +158,7 @@ export default function MenuPage() {
       </div>
 
       {/* Upoutávka na hru */}
-      <button onClick={() => navigate('/game')} style={{
+      <button onClick={() => navigate('/play')} style={{
         position: 'relative', margin: '4px 22px 18px', borderRadius: 20, overflow: 'hidden',
         border: 'none', height: 162, display: 'flex', alignItems: 'flex-end', cursor: 'pointer',
         boxShadow: 'var(--shadow-lg)', textAlign: 'left',
