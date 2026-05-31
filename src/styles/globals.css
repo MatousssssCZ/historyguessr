@@ -18,6 +18,10 @@
   --accent-deep: #b85a3e;
   --accent-glow: rgba(217, 119, 87, 0.3);
 
+  --success: #5c9468;
+  --success-soft: #e3efe2;
+  --success-deep: #3f7a4d;
+
   --bg: var(--paper-100);
   --surface: var(--paper-50);
   --surface-2: var(--paper-200);

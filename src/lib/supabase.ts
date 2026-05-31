@@ -365,7 +365,11 @@ export async function getDailyAssignments(): Promise<DailyAssignment[]> {
     .select('month, day, event_id, events(id, title)')
     .order('month')
     .order('day')
-  return (data ?? []) as DailyAssignment[]
+  // Supabase vrací embedded `events` jako pole — narovnej na jeden objekt
+  return (data ?? []).map((r: any) => ({
+    ...r,
+    events: Array.isArray(r.events) ? r.events[0] : r.events,
+  })) as DailyAssignment[]
 }
 
 /** Přiřadí nebo odebere událost ke dni */

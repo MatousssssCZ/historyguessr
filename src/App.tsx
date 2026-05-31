@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, lazy, Suspense } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import AuthPage from '@/pages/Auth'
 import MenuPage from '@/pages/Menu'
