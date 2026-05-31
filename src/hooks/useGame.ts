@@ -1,9 +1,13 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, track } from '@/lib/supabase'
+import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, track, type EventFilters } from '@/lib/supabase'
 
-const ROUNDS_PER_GAME = 5
+const DEFAULT_ROUNDS = 5
+
+export interface GameOptions extends EventFilters {
+  rounds?: number
+}
 
 export type GamePhase = 'idle' | 'loading' | 'playing' | 'round_result' | 'finished'
 
@@ -11,6 +15,7 @@ export interface GameState {
   phase: GamePhase
   events: Event[]
   currentRound: number
+  totalRounds: number
   sessionId: string | null
   rounds: RoundResult[]
   totalScore: number
@@ -25,6 +30,7 @@ const INITIAL_STATE: GameState = {
   phase: 'idle',
   events: [],
   currentRound: 0,
+  totalRounds: DEFAULT_ROUNDS,
   sessionId: null,
   rounds: [],
   totalScore: 0,
@@ -39,12 +45,19 @@ export function useGame(userId: string | undefined) {
   const [state, setState] = useState<GameState>(INITIAL_STATE)
   const update = (patch: Partial<GameState>) => setState(prev => ({ ...prev, ...patch }))
 
-  const startGame = useCallback(async () => {
+  const startGame = useCallback(async (options?: GameOptions) => {
     if (!userId) return
+    const rounds = options?.rounds ?? DEFAULT_ROUNDS
+    const filters: EventFilters = {
+      categories: options?.categories,
+      yearFrom: options?.yearFrom,
+      yearTo: options?.yearTo,
+      excludeIds: options?.excludeIds,
+    }
     update({ phase: 'loading', error: null })
-    const events = await getRandomEvents(ROUNDS_PER_GAME)
-    if (events.length < ROUNDS_PER_GAME) {
-      update({ phase: 'idle', error: 'Není dostatek událostí. Přidej je v admin panelu.' })
+    const events = await getRandomEvents(rounds, filters)
+    if (events.length < rounds) {
+      update({ phase: 'idle', error: 'Není dostatek událostí pro zvolená kritéria. Uprav výběr nebo přidej události v admin panelu.' })
       return
     }
     const { data: sessionData, error } = await createGameSession(userId)
@@ -52,8 +65,8 @@ export function useGame(userId: string | undefined) {
       update({ phase: 'idle', error: 'Nepodařilo se spustit hru.' })
       return
     }
-    setState({ ...INITIAL_STATE, phase: 'playing', events, sessionId: (sessionData as { id: string }).id })
-    track('game_started', { rounds: ROUNDS_PER_GAME }, userId)
+    setState({ ...INITIAL_STATE, phase: 'playing', totalRounds: rounds, events, sessionId: (sessionData as { id: string }).id })
+    track('game_started', { rounds, categories: filters.categories ?? [], year_from: filters.yearFrom, year_to: filters.yearTo }, userId)
   }, [userId])
 
   const setGuessLocation = useCallback((lat: number, lng: number) => {
@@ -95,7 +108,7 @@ export function useGame(userId: string | undefined) {
 
     const newRounds = [...rounds, roundResult]
     const newTotal = newRounds.reduce((s, r) => s + r.round_score, 0)
-    const isLast = currentRound === ROUNDS_PER_GAME - 1
+    const isLast = currentRound === state.totalRounds - 1
 
     setState(prev => ({ ...prev, rounds: newRounds, totalScore: newTotal, phase: 'round_result' }))
 
@@ -113,13 +126,13 @@ export function useGame(userId: string | undefined) {
     if (isLast && sessionId && userId) {
       await finishGameSession(sessionId, newRounds, newTotal)
       await addScoreToProfile(userId, newTotal)
-      track('game_completed', { total_score: newTotal, rounds: ROUNDS_PER_GAME }, userId)
+      track('game_completed', { total_score: newTotal, rounds: state.totalRounds }, userId)
     }
   }, [state, userId])
 
   const nextRound = useCallback(() => {
     const { currentRound } = state
-    const isLast = currentRound === ROUNDS_PER_GAME - 1
+    const isLast = currentRound === state.totalRounds - 1
     if (isLast) {
       update({ phase: 'finished' })
     } else {
@@ -144,6 +157,6 @@ export function useGame(userId: string | undefined) {
     state, currentEvent, lastRound, canSubmit,
     startGame, setGuessLocation, setGuessYear,
     submitRound, nextRound, resetGame,
-    roundsCount: ROUNDS_PER_GAME,
+    roundsCount: state.totalRounds,
   }
 }

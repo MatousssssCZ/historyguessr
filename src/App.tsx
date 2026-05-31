@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import AuthPage from '@/pages/Auth'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
+import PreGameLobbyPage from '@/pages/PreGameLobby'
 import AccountPage from '@/pages/Account'
 import AdminPage from '@/pages/Admin'
 import AdminImportPage from '@/pages/AdminImport'
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/" element={<RootRedirect/>}/>
           <Route path="/auth" element={<AuthPage/>}/>
           <Route path="/menu"    element={<RequireAuth><MenuPage/></RequireAuth>}/>
+          <Route path="/play"    element={<RequireAuth><PreGameLobbyPage/></RequireAuth>}/>
           <Route path="/game"    element={<RequireAuth><GamePage/></RequireAuth>}/>
           <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
           <Route path="/admin"   element={<RequireAuth><AdminPage/></RequireAuth>}/>

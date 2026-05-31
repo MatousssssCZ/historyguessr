@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { GuessMap, ResultMap } from '@/components/GameMap'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { useGame } from '@/hooks/useGame'
+import { useGame, type GameOptions } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
@@ -14,22 +14,24 @@ declare const pannellum: {
 export default function GamePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const options = (location.state as GameOptions | null) ?? undefined
   const {
     state, currentEvent, lastRound, canSubmit,
     startGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
 
   useEffect(() => {
-    if (state.phase === 'idle') startGame()
+    if (state.phase === 'idle') startGame(options)
   }, [])
 
   if (state.phase === 'loading') return <LoadingScreen/>
-  if (state.error) return <ErrorScreen msg={state.error} onRetry={startGame}/>
+  if (state.error) return <ErrorScreen msg={state.error} onRetry={() => startGame(options)}/>
   if (state.phase === 'finished') return (
     <FinishedScreen
       totalScore={state.totalScore}
       rounds={state.rounds.length}
-      onPlayAgain={() => { resetGame(); startGame() }}
+      onPlayAgain={() => { resetGame(); startGame(options) }}
       onMenu={() => navigate('/menu')}
     />
   )
