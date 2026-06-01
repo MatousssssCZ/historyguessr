@@ -303,7 +303,8 @@ function MapTile({ guessLat, guessLng, mapPin, onClick, height }: {
       border: set ? `3px solid ${GREEN}` : '1.5px solid rgba(217,119,87,0.35)',
       boxShadow: '0 6px 22px rgba(0,0,0,0.28)',
     }}>
-      <div style={{ flex: 1, position: 'relative' }}>
+      {/* Pevná výška v px (ne flex) — iOS Safari jinak nevyřeší výšku mapy */}
+      <div style={{ height: height - 30, position: 'relative' }}>
         <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={() => {}} compact/>
       </div>
       {set && <div style={tileBadge}>✓</div>}
