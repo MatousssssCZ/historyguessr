@@ -363,28 +363,30 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   // ── MOBIL: GeoGuessr styl ─────────────────────────────
   return (
     <>
-      {/* Rozbalená mapa — spodní panel přes ~62 % obrazovky */}
+      {/* Rozbalená mapa — spodní panel přes ~50 % obrazovky */}
       {mapExpanded && (
         <div style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0, height: '62dvh', zIndex: 30,
+          position: 'absolute', left: 0, right: 0, bottom: 0, height: '50dvh', zIndex: 30,
           display: 'flex', flexDirection: 'column',
           borderRadius: '16px 16px 0 0', overflow: 'hidden',
           boxShadow: '0 -10px 44px rgba(0,0,0,0.45)',
         }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { onLocationChange(lat, lng) }}/>
-            {/* Sbalit tlačítko */}
+            {/* Sbalit zpět na nativní zobrazení — vlevo nahoře v rohu */}
             <button
               onClick={() => setMapExpanded(false)}
+              aria-label="Zmenšit mapu"
               style={{
-                position: 'absolute', top: 12, right: 12, zIndex: 10,
+                position: 'absolute', top: 10, left: 10, zIndex: 10,
                 background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(245,241,232,0.2)',
-                borderRadius: 8, padding: '8px 14px',
+                borderRadius: 8, padding: '8px 12px',
+                display: 'flex', alignItems: 'center', gap: 6,
                 fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer',
               }}
             >
-              ✕ Sbalit
+              <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> Zmenšit
             </button>
           </div>
           {/* Potvrzení místa */}
@@ -416,39 +418,23 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
 
       {/* Rozbalený rok */}
       {yearExpanded && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 30,
-          background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'flex-end',
-        }}>
-          <div style={{
-            width: '100%',
-            background: 'var(--paper-50)',
-            borderRadius: '20px 20px 0 0',
-            padding: '12px 16px',
-            paddingBottom: 'max(14px, calc(env(safe-area-inset-bottom) + 12px))',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.35)',
+        <div
+          onClick={() => setYearExpanded(false)}
+          style={{
+            position: 'absolute', inset: 0, zIndex: 30,
+            background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'flex-end',
           }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)' }}>
-                  {Math.abs(guessYear)}
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
-                  {guessYear < 0 ? 'Př. n. l.' : 'N. l.'}
-                </div>
-              </div>
-              <button
-                onClick={() => setYearExpanded(false)}
-                style={{
-                  background: 'var(--paper-200)', border: 'none', borderRadius: 8,
-                  padding: '7px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)',
-                }}
-              >
-                ✕ Sbalit
-              </button>
-            </div>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              background: 'var(--paper-50)',
+              borderRadius: '20px 20px 0 0',
+              padding: '14px 16px',
+              paddingBottom: 'max(14px, calc(env(safe-area-inset-bottom) + 12px))',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.35)',
+            }}>
             <YearPicker value={guessYear} onChange={onYearChange}/>
             <button
               onClick={() => setYearExpanded(false)}
@@ -599,6 +585,13 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
 
   const inputValue = draft !== null ? draft : (value === 0 ? '' : String(value))
 
+  const stepBtnStyle: React.CSSProperties = {
+    flex: '0 0 44px', padding: '9px 0', borderRadius: 9,
+    border: '0.5px solid var(--line-strong)', background: 'var(--paper-100)',
+    fontSize: 13, fontFamily: 'var(--font-mono)', fontWeight: 500,
+    color: 'var(--ink)', cursor: 'pointer',
+  }
+
   const thumbColor = value < 0 ? '#7aa8cc' : '#d97757'
 
   return (
@@ -653,51 +646,37 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
         </div>
       </div>
 
-      {/* Krokovací tlačítka — pořadí -1 -10 +10 +1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-        {([-1, -10, 10, 1] as const).map(d => (
-          <button
-            key={d}
-            onClick={() => step(d)}
+      {/* Ovládací řádek (návrh A) — steppery kolem pole pro přesný rok */}
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 6 }}>
+        <button onClick={() => step(-10)} style={stepBtnStyle}>−10</button>
+        <button onClick={() => step(-1)} style={stepBtnStyle}>−1</button>
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          border: '1px solid var(--line-strong)', borderRadius: 9, background: 'var(--surface)',
+        }}>
+          <input
+            type="text"
+            inputMode="text"
+            pattern="-?[0-9]*"
+            value={inputValue}
+            onChange={e => handleInput(e.target.value)}
+            onBlur={() => setDraft(null)}
+            placeholder="rok"
             style={{
-              padding: '9px 0',
-              borderRadius: 9,
-              border: '0.5px solid var(--line-strong)',
-              background: 'var(--paper-100)',
-              fontSize: 14, fontFamily: 'var(--font-mono)', fontWeight: 500,
-              color: 'var(--ink)',
-              cursor: 'pointer',
-              transition: 'background 100ms',
+              width: 78, textAlign: 'right', border: 'none', background: 'transparent',
+              fontFamily: 'var(--font-mono)', fontSize: 17, color: 'var(--ink)',
+              outline: 'none', padding: '9px 0',
             }}
-          >
-            {d > 0 ? `+${d}` : d}
-          </button>
-        ))}
-      </div>
-
-      {/* Přesný input */}
-      <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>
-          Zadat přesný rok (− = př. n. l.)
+          />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
+            {value < 0 ? 'př.n.l.' : 'n.l.'}
+          </span>
         </div>
-        <input
-          type="text"
-          inputMode="text"
-          pattern="-?[0-9]*"
-          value={inputValue}
-          onChange={e => handleInput(e.target.value)}
-          onBlur={() => setDraft(null)}
-          placeholder="-480 nebo 1912"
-          style={{
-            width: '100%', textAlign: 'center',
-            fontFamily: 'var(--font-mono)', fontSize: 16,
-            padding: '9px 14px',
-            border: '1px solid var(--line-strong)',
-            borderRadius: 10,
-            color: 'var(--ink)', background: 'var(--surface)',
-            outline: 'none',
-          }}
-        />
+        <button onClick={() => step(1)} style={stepBtnStyle}>+1</button>
+        <button onClick={() => step(10)} style={stepBtnStyle}>+10</button>
+      </div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--ink-3)', textTransform: 'uppercase', textAlign: 'center' }}>
+        − = př. n. l.
       </div>
     </div>
   )

@@ -40,6 +40,7 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       maxZoom: 19,
     }).addTo(map)
+    map.attributionControl?.setPrefix(false)
 
     // Marker s vlastní ikonou
     const marker = L.marker([lat, lng], { icon: accentIcon, draggable: true }).addTo(map)
