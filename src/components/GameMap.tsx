@@ -46,6 +46,7 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
   const wrapRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
+  const roRef = useRef<ResizeObserver | null>(null)
   const onGuessRef = useRef(onGuess)
   onGuessRef.current = onGuess
 
@@ -115,12 +116,19 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
       })
 
       mapRef.current = map
+
+      // Překresli mapu při změně velikosti kontejneru (roztahování panelu)
+      const ro = new ResizeObserver(() => map.invalidateSize({ animate: false }))
+      ro.observe(wrap)
+      roRef.current = ro
     }
 
     // Spusť inicializaci po prvním frame
     requestAnimationFrame(initWhenReady)
 
     return () => {
+      roRef.current?.disconnect()
+      roRef.current = null
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null

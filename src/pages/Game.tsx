@@ -273,6 +273,26 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   const [yearExpanded, setYearExpanded] = useState(false)
   const isMobile = window.innerWidth <= 640
 
+  // Desktop — uživatelské roztažení panelu (šířka + výška mapy)
+  const [panelW, setPanelW] = useState(360)
+  const [mapH, setMapH] = useState(240)
+  function startResize(e: React.PointerEvent) {
+    e.preventDefault()
+    const startX = e.clientX, startY = e.clientY
+    const startW = panelW, startH = mapH
+    const onMove = (ev: PointerEvent) => {
+      // Panel je ukotvený vpravo dole → tažení vlevo/nahoru zvětšuje
+      setPanelW(Math.max(320, Math.min(window.innerWidth - 48, startW - (ev.clientX - startX))))
+      setMapH(Math.max(180, Math.min(window.innerHeight - 240, startH - (ev.clientY - startY))))
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
   const missingLocation = guessLat === null
   const missingYear = !canSubmit && !missingLocation
   const submitLabel = missingLocation && missingYear
@@ -286,18 +306,31 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
     : null
 
   if (!isMobile) {
-    // Desktop — původní layout vpravo dole
+    // Desktop — panel vpravo dole, roztažitelný za úchyt vlevo nahoře
     return (
       <div style={{
         position: 'absolute', bottom: 20, right: 20,
-        width: 360,
+        width: panelW,
         background: 'rgba(245,241,232,0.97)',
         backdropFilter: 'blur(20px)',
         borderRadius: 16,
         boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
         overflow: 'hidden', zIndex: 20,
       }}>
-        <div style={{ height: 240 }}>
+        {/* Úchyt pro roztažení (levý horní roh) */}
+        <div
+          onPointerDown={startResize}
+          title="Táhni pro zvětšení mapy"
+          style={{
+            position: 'absolute', top: 0, left: 0, zIndex: 30,
+            width: 26, height: 26, cursor: 'nwse-resize',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(13,9,6,0.55)', borderBottomRightRadius: 10,
+            color: 'rgba(245,241,232,0.9)', fontSize: 13, lineHeight: 1,
+            userSelect: 'none', touchAction: 'none',
+          }}
+        >⤢</div>
+        <div style={{ height: mapH }}>
           <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
         </div>
         <div style={{ padding: '14px 16px 8px' }}>
