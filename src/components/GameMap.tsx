@@ -103,23 +103,39 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
       setTimeout(() => { map.invalidateSize({ animate: false }) }, 300)
       setTimeout(() => { map.invalidateSize({ animate: false }) }, 600)
 
-      // Click handler — normalizuj délku, ať pin sedí na „primárním" světě
-      map.on('click', (e: L.LeafletMouseEvent) => {
-        const ll = L.latLng(e.latlng.lat, wrapLng(e.latlng.lng))
-        if (markerRef.current) {
-          markerRef.current.setLatLng(ll)
-        } else {
-          const m = L.marker(ll, { icon: GUESS_ICON, draggable: true }).addTo(map)
-          m.on('dragend', () => {
-            const pos = m.getLatLng()
+      // Click handler jen u plné mapy; compact je jen náhled
+      if (!compact) {
+        map.on('click', (e: L.LeafletMouseEvent) => {
+          const ll = L.latLng(e.latlng.lat, wrapLng(e.latlng.lng))
+          if (markerRef.current) {
+            markerRef.current.setLatLng(ll)
+          } else {
+            const m = L.marker(ll, { icon: GUESS_ICON, draggable: true }).addTo(map)
+            m.on('dragend', () => {
+              const pos = m.getLatLng()
+              const wrapped = L.latLng(pos.lat, wrapLng(pos.lng))
+              m.setLatLng(wrapped)
+              onGuessRef.current(wrapped.lat, wrapped.lng)
+            })
+            markerRef.current = m
+          }
+          onGuessRef.current(ll.lat, ll.lng)
+        })
+      }
+
+      // Pokud už pin existuje, vykresli ho a vycentruj na něj
+      if (guessLat != null && guessLng != null) {
+        markerRef.current = L.marker([guessLat, guessLng], { icon: GUESS_ICON, draggable: !compact }).addTo(map)
+        if (!compact) {
+          markerRef.current.on('dragend', () => {
+            const pos = markerRef.current!.getLatLng()
             const wrapped = L.latLng(pos.lat, wrapLng(pos.lng))
-            m.setLatLng(wrapped)
+            markerRef.current!.setLatLng(wrapped)
             onGuessRef.current(wrapped.lat, wrapped.lng)
           })
-          markerRef.current = m
         }
-        onGuessRef.current(ll.lat, ll.lng)
-      })
+        map.setView([guessLat, guessLng], compact ? 4 : 5, { animate: false })
+      }
 
       mapRef.current = map
 
@@ -143,11 +159,32 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
     }
   }, [])
 
+  // Synchronizuj pin podle props (compact náhled na dlaždici se posune k pinu)
+  useEffect(() => {
+    let raf = 0
+    function apply() {
+      const map = mapRef.current
+      if (!map) { raf = requestAnimationFrame(apply); return }
+      if (guessLat != null && guessLng != null) {
+        const ll = L.latLng(guessLat, guessLng)
+        if (markerRef.current) markerRef.current.setLatLng(ll)
+        else markerRef.current = L.marker(ll, { icon: GUESS_ICON, draggable: !compact }).addTo(map)
+        if (compact) map.setView(ll, 4, { animate: false })
+      } else if (markerRef.current) {
+        markerRef.current.remove()
+        markerRef.current = null
+        if (compact) map.setView([20, 0], 1, { animate: false })
+      }
+    }
+    apply()
+    return () => cancelAnimationFrame(raf)
+  }, [guessLat, guessLng, compact])
+
   if (compact) {
     return (
       <div
         ref={wrapRef}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
       />
     )
   }
