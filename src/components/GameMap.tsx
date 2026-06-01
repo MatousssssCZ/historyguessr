@@ -90,6 +90,10 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         noWrap: true,
       }).addTo(map)
 
+      // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
+      // atribuci dat (OpenStreetMap, CARTO)
+      map.attributionControl?.setPrefix(false)
+
       // Oprav offset — zavolej invalidateSize IHNED po inicializaci
       // a pak ještě 3x s různými delays
       map.invalidateSize({ animate: false })
@@ -202,6 +206,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
 
       const map = L.map(wrap, { maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 })
       L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19, noWrap: true }).addTo(map)
+      map.attributionControl?.setPrefix(false)
 
       // Normalizuj délky (i pro starší uložené tipy „o mapu vedle")
       const gLng = wrapLng(guessLng)
