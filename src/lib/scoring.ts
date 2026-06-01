@@ -1,5 +1,9 @@
 const MAX_SCORE = 5_000
 
+// Ladicí konstanty exponenciálního poklesu (vyšší = mírnější)
+const DIST_DECAY_KM = 1500   // poloha: skóre = MAX · e^(−km / 1500)
+const YEAR_DECAY = 120       // rok:    skóre = MAX · e^(−roky / 120)
+
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
   const dLat = toRad(lat2 - lat1)
@@ -12,13 +16,14 @@ function toRad(deg: number) { return (deg * Math.PI) / 180 }
 
 export function locationScore(distKm: number, radiusKm = 0): number {
   const over = Math.max(0, distKm - radiusKm)
-  return Math.max(0, MAX_SCORE - Math.round(over))
+  // Exponenciální pokles — přesnost se vyplácí, velké omyly se propadnou
+  return Math.round(MAX_SCORE * Math.exp(-over / DIST_DECAY_KM))
 }
 
 export function yearScore(guessYear: number, yearFrom: number, yearTo: number): number {
   if (guessYear >= yearFrom && guessYear <= yearTo) return MAX_SCORE
   const over = guessYear < yearFrom ? yearFrom - guessYear : guessYear - yearTo
-  return Math.max(0, MAX_SCORE - over)
+  return Math.round(MAX_SCORE * Math.exp(-over / YEAR_DECAY))
 }
 
 export function yearDiff(guessYear: number, yearFrom: number, yearTo: number): number {
