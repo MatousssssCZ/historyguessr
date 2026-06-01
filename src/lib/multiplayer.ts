@@ -231,6 +231,27 @@ export async function startNextRound(
   return { error: error as Error | null }
 }
 
+/**
+ * Časově řízený, idempotentní posun kola — může volat kterýkoli hráč.
+ * Primárně přes RPC (zámek řádku v DB). Když RPC ještě není nasazená,
+ * spadne to na starou host-only logiku jako pojistka.
+ */
+export async function advanceRound(
+  roomId: string,
+  expectedRound: number,
+  totalRounds: number,
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase.rpc('advance_multiplayer_round', {
+    p_room_id: roomId,
+    p_expected_round: expectedRound,
+  })
+  if (error) {
+    // Fallback (RPC chybí) — staré chování přes přímý zápis
+    return startNextRound(roomId, expectedRound + 1, totalRounds)
+  }
+  return { error: null }
+}
+
 // ── Odpovědi ──────────────────────────────────────────────
 
 export async function submitAnswer(

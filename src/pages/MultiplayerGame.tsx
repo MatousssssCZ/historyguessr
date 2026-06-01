@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getRound, getPlayers, subscribeToRoom, submitAnswer,
-  updatePlayerTotalScore, getRoundAnswers, startNextRound,
+  updatePlayerTotalScore, getRoundAnswers, advanceRound,
 } from '@/lib/multiplayer'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
@@ -54,6 +54,12 @@ export default function MultiplayerGamePage() {
   const [nextRoundCountdown, setNextRoundCountdown] = useState(NEXT_ROUND_DELAY / 1000)
   const nextRoundTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const unsubRef = useRef<(() => void) | null>(null)
+
+  // Časově řízený postup — bez závislosti na hostovi
+  const phaseRef = useRef<Phase>(phase)
+  useEffect(() => { phaseRef.current = phase }, [phase])
+  const advancedRoundRef = useRef<number | null>(null)
+  const shownResultsRef = useRef<number | null>(null)
 
   const isHost = room?.host_id === user?.id
 
@@ -184,26 +190,47 @@ export default function MultiplayerGamePage() {
 
   async function handleShowRoundResults() {
     if (!roomId || !currentRound) return
+    shownResultsRef.current = currentRound.round_number
     const answers = await getRoundAnswers(roomId, currentRound.round_number)
     setRoundAnswers(answers)
     setActiveTab('round')
     setPhase('round_results')
-
-    // Odpočet pro hostitele
-    if (isHost && room) {
-      let count = NEXT_ROUND_DELAY / 1000
-      setNextRoundCountdown(count)
-      nextRoundTimerRef.current = setInterval(async () => {
-        count--
-        setNextRoundCountdown(count)
-        if (count <= 0) {
-          clearInterval(nextRoundTimerRef.current!)
-          const nextRound = currentRound.round_number + 1
-          await startNextRound(roomId, nextRound, room.settings.rounds)
-        }
-      }, 1000)
-    }
+    // Postup do dalšího kola řeší časový „director" efekt níže (advanceRound)
   }
+
+  // ── Director: časově řízený, idempotentní postup kola ──────
+  // Kterýkoli připojený klient po vypršení okna výsledků zavolá
+  // advanceRound; díky guardu v DB se posun provede jen jednou.
+  useEffect(() => {
+    if (!room || !currentRound?.started_at || !roomId) return
+    const startedMs = new Date(currentRound.started_at).getTime()
+    const playEnd = startedMs + room.settings.time_limit * 1000
+    const advanceAt = playEnd + NEXT_ROUND_DELAY
+    const roundNo = currentRound.round_number
+    const total = room.settings.rounds
+
+    const id = setInterval(() => {
+      const now = Date.now()
+      const p = phaseRef.current
+
+      // Po konci hracího času ukaž žebříček i tomu, kdo neklikl / je AFK
+      if (now >= playEnd && p === 'my_results' && shownResultsRef.current !== roundNo) {
+        handleShowRoundResults()
+      }
+      // Odpočet do dalšího kola během žebříčku
+      if (p === 'round_results') {
+        setNextRoundCountdown(Math.max(0, Math.ceil((advanceAt - now) / 1000)))
+      }
+      // Posuň kolo (idempotentně) po vypršení okna výsledků
+      if (now >= advanceAt && advancedRoundRef.current !== roundNo) {
+        advancedRoundRef.current = roundNo
+        advanceRound(roomId, roundNo, total)
+      }
+    }, 250)
+
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRound?.round_number, currentRound?.started_at, room?.id])
 
   const event = currentRound?.events as Event | undefined
   const canSubmit = guessLat !== null && guessYearSet
