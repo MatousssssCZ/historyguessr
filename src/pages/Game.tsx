@@ -363,11 +363,13 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   // ── MOBIL: GeoGuessr styl ─────────────────────────────
   return (
     <>
-      {/* Rozbalená mapa — fullscreen overlay */}
+      {/* Rozbalená mapa — spodní panel přes ~62 % obrazovky */}
       {mapExpanded && (
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 30,
+          position: 'absolute', left: 0, right: 0, bottom: 0, height: '62dvh', zIndex: 30,
           display: 'flex', flexDirection: 'column',
+          borderRadius: '16px 16px 0 0', overflow: 'hidden',
+          boxShadow: '0 -10px 44px rgba(0,0,0,0.45)',
         }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { onLocationChange(lat, lng) }}/>
@@ -423,17 +425,17 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
             width: '100%',
             background: 'var(--paper-50)',
             borderRadius: '20px 20px 0 0',
-            padding: '20px 18px',
-            paddingBottom: 'max(20px, calc(env(safe-area-inset-bottom) + 16px))',
+            padding: '12px 16px',
+            paddingBottom: 'max(14px, calc(env(safe-area-inset-bottom) + 12px))',
             boxShadow: '0 -8px 32px rgba(0,0,0,0.35)',
           }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 44, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)' }}>
                   {Math.abs(guessYear)}
                 </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
                   {guessYear < 0 ? 'Př. n. l.' : 'N. l.'}
                 </div>
               </div>
@@ -441,7 +443,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 onClick={() => setYearExpanded(false)}
                 style={{
                   background: 'var(--paper-200)', border: 'none', borderRadius: 8,
-                  padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)',
+                  padding: '7px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)',
                 }}
               >
                 ✕ Sbalit
@@ -451,9 +453,9 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
             <button
               onClick={() => setYearExpanded(false)}
               style={{
-                marginTop: 16, width: '100%',
+                marginTop: 10, width: '100%',
                 background: 'var(--accent)', border: 'none', borderRadius: 10,
-                padding: '13px 0', fontSize: 15, fontWeight: 500, color: '#fff', cursor: 'pointer',
+                padding: '11px 0', fontSize: 15, fontWeight: 500, color: '#fff', cursor: 'pointer',
               }}
             >
               Potvrdit rok ✓
@@ -575,6 +577,9 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
   const pct = ((value - MIN) / TOTAL) * 100
   const zeroPct = ((0 - MIN) / TOTAL) * 100  // 59.7%
 
+  // Lokální koncept psaní — umožní začít znakem „−" i prázdné pole
+  const [draft, setDraft] = useState<string | null>(null)
+
   function step(d: number) {
     let next = value + d
     if (next === 0) next = d > 0 ? 1 : -1
@@ -582,16 +587,22 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
   }
 
   function handleInput(raw: string) {
-    const n = parseInt(raw)
+    // Povol mezistavy: prázdno a samotné „−"
+    if (raw === '' || raw === '-') { setDraft(raw); return }
+    if (!/^-?\d+$/.test(raw)) return  // jen čísla a volitelný mínus
+    setDraft(raw)
+    const n = parseInt(raw, 10)
     if (isNaN(n)) return
     const clamped = Math.max(MIN, Math.min(MAX, n))
     onChange(clamped === 0 ? -1 : clamped)
   }
 
+  const inputValue = draft !== null ? draft : (value === 0 ? '' : String(value))
+
   const thumbColor = value < 0 ? '#7aa8cc' : '#d97757'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
       {/* Barevný slider */}
       <div>
@@ -642,14 +653,14 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
         </div>
       </div>
 
-      {/* Krokovací tlačítka */}
+      {/* Krokovací tlačítka — pořadí -1 -10 +10 +1 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-        {([-10, -1, 1, 10] as const).map(d => (
+        {([-1, -10, 10, 1] as const).map(d => (
           <button
             key={d}
             onClick={() => step(d)}
             style={{
-              padding: '12px 0',
+              padding: '9px 0',
               borderRadius: 9,
               border: '0.5px solid var(--line-strong)',
               background: 'var(--paper-100)',
@@ -666,21 +677,21 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
 
       {/* Přesný input */}
       <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 6 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>
           Zadat přesný rok (− = př. n. l.)
         </div>
         <input
           type="text"
-          inputMode="decimal"
+          inputMode="text"
           pattern="-?[0-9]*"
-          min={MIN} max={MAX}
-          value={value === 0 ? '' : String(value)}
+          value={inputValue}
           onChange={e => handleInput(e.target.value)}
+          onBlur={() => setDraft(null)}
           placeholder="-480 nebo 1912"
           style={{
             width: '100%', textAlign: 'center',
-            fontFamily: 'var(--font-mono)', fontSize: 18,
-            padding: '11px 14px',
+            fontFamily: 'var(--font-mono)', fontSize: 16,
+            padding: '9px 14px',
             border: '1px solid var(--line-strong)',
             borderRadius: 10,
             color: 'var(--ink)', background: 'var(--surface)',
