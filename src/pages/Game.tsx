@@ -263,6 +263,13 @@ function FullscreenButton() {
 }
 
 // ── Guess panel — GeoGuessr styl ─────────────────────────
+function readStored(key: string, fallback: number): number {
+  try {
+    const v = Number(localStorage.getItem(key))
+    return Number.isFinite(v) && v > 0 ? v : fallback
+  } catch { return fallback }
+}
+
 function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, onLocationChange, onYearChange, onSubmit }: {
   guessLat: number | null; guessLng: number | null; guessYear: number
   guessYearSet: boolean
@@ -274,8 +281,11 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   const isMobile = window.innerWidth <= 640
 
   // Desktop — uživatelské roztažení panelu (šířka + výška mapy)
-  const [panelW, setPanelW] = useState(360)
-  const [mapH, setMapH] = useState(240)
+  // Uloženo v localStorage → vydrží napříč koly i po znovuotevření
+  const [panelW, setPanelW] = useState(() => readStored('hg_map_w', 360))
+  const [mapH, setMapH] = useState(() => readStored('hg_map_h', 240))
+  useEffect(() => { try { localStorage.setItem('hg_map_w', String(panelW)) } catch { /* ignore */ } }, [panelW])
+  useEffect(() => { try { localStorage.setItem('hg_map_h', String(mapH)) } catch { /* ignore */ } }, [mapH])
   function startResize(e: React.PointerEvent) {
     e.preventDefault()
     const startX = e.clientX, startY = e.clientY

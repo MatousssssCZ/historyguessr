@@ -2,7 +2,7 @@ const MAX_SCORE = 5_000
 
 // Ladicí konstanty exponenciálního poklesu (vyšší = mírnější)
 const DIST_DECAY_KM = 1500   // poloha: skóre = MAX · e^(−km / 1500)
-const YEAR_DECAY = 60        // rok:    skóre = MAX · e^(−roky / 60)
+const YEAR_DECAY = 120       // rok:    skóre = MAX · e^(−roky / 120)
 
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
