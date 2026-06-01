@@ -4,6 +4,8 @@ import L from 'leaflet'
 // Leaflet tile URL a attributace
 // {r} + detectRetina → na HiDPI displejích načte ostré @2x dlaždice
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+// Prostá URL bez {r} — pro mini náhled na dlaždici (minimální konfigurace)
+const TILE_URL_PLAIN = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
 // Custom ikony (SVG inline — bez externích PNG souborů)
@@ -67,7 +69,7 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         return
       }
 
-      // Inicializuj mapu
+      // Inicializuj mapu — compact používá minimální (jistou) konfiguraci
       const map = L.map(wrap, {
         center: [20, 0],
         zoom: compact ? 1 : 2,
@@ -80,16 +82,13 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         boxZoom: !compact,
         keyboard: !compact,
         attributionControl: !compact,
-        worldCopyJump: true,
-        maxBounds: WORLD_BOUNDS,
-        maxBoundsViscosity: 1.0,
+        ...(compact ? {} : { worldCopyJump: true, maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 }),
       })
 
-      L.tileLayer(TILE_URL, {
+      L.tileLayer(compact ? TILE_URL_PLAIN : TILE_URL, {
         attribution: TILE_ATTR,
         maxZoom: 19,
-        noWrap: true,
-        detectRetina: true,
+        ...(compact ? {} : { noWrap: true, detectRetina: true }),
       }).addTo(map)
 
       // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
@@ -181,10 +180,11 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
   }, [guessLat, guessLng, compact])
 
   if (compact) {
+    // absolute inset:0 → spolehlivá velikost na všech prohlížečích (i iOS Safari)
     return (
       <div
         ref={wrapRef}
-        style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       />
     )
   }
