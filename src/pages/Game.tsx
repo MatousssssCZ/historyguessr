@@ -41,12 +41,13 @@ export default function GamePage() {
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906', position: 'relative', overflow: 'hidden' }}>
       {/* HUD — kompaktní */}
       <div style={{
+        position: 'relative',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 16px',
         background: 'rgba(13,9,6,0.75)',
         backdropFilter: 'blur(8px)',
         borderBottom: '1px solid rgba(245,241,232,0.06)',
-        zIndex: 10, flexShrink: 0,
+        zIndex: 25, flexShrink: 0,
       }} className="game-hud">
         <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 10 }}>
           Kolo {state.currentRound + 1} / {roundsCount}
@@ -682,7 +683,8 @@ function RoundResult({ event, round, onNext, isLast }: {
         position: 'absolute', inset: 0,
         background: 'rgba(13,9,6,0.88)',
         backdropFilter: 'blur(6px)',
-        display: 'flex', alignItems: 'flex-end',
+        display: 'flex', alignItems: 'stretch',
+        paddingTop: 'calc(var(--safe-top) + 48px)',
         zIndex: 20,
       }}>
         <div style={{
@@ -690,7 +692,7 @@ function RoundResult({ event, round, onNext, isLast }: {
           borderRadius: '20px 20px 0 0',
           width: '100%',
           display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
+          overflow: 'hidden', flex: 1, minHeight: 0,
           boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
         }}>
           {/* Header — název + skóre */}
@@ -717,13 +719,13 @@ function RoundResult({ event, round, onNext, isLast }: {
 
           {/* Obsah — bez scrollu, pevné výšky */}
           {tab === 'score' && (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Mapa — pevná výška s overflow:hidden aby nepřetékala */}
-              <div style={{ height: 120, flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              {/* Mapa — roztažená přes dostupný prostor */}
+              <div style={{ flex: 1, minHeight: 180, overflow: 'hidden', position: 'relative' }}>
                 <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
               </div>
               {/* Skóre karty */}
-              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
                   <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
@@ -743,7 +745,7 @@ function RoundResult({ event, round, onNext, isLast }: {
           )}
 
           {tab === 'info' && (
-            <div style={{ maxHeight: '45dvh', overflowY: 'auto' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
               <InfoContent event={event}/>
             </div>
           )}

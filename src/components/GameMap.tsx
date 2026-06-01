@@ -20,6 +20,15 @@ const makeIcon = (color: string) => L.divIcon({
 const GUESS_ICON = makeIcon('#d97757')
 const TRUTH_ICON = makeIcon('#2a1f17')
 
+// Normalizuj zeměpisnou délku do <-180, 180> — zabrání tipu „o mapu vedle"
+// při posunu mapy přes okraj světa (Leaflet jinak vrací např. 300° nebo -300°)
+function wrapLng(lng: number): number {
+  return ((lng + 180) % 360 + 360) % 360 - 180
+}
+
+// Omezení mapy na jediný svět (žádné nekonečné kopie)
+const WORLD_BOUNDS: L.LatLngBoundsExpression = [[-85, -180], [85, 180]]
+
 // ─────────────────────────────────────────────────────────
 // GuessMap — herní mapa pro tipování
 // Klíčový fix: Leaflet se inicializuje SYNCHRONNĚ v useEffect
@@ -69,11 +78,15 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         boxZoom: !compact,
         keyboard: !compact,
         attributionControl: !compact,
+        worldCopyJump: true,
+        maxBounds: WORLD_BOUNDS,
+        maxBoundsViscosity: 1.0,
       })
 
       L.tileLayer(TILE_URL, {
         attribution: TILE_ATTR,
         maxZoom: 19,
+        noWrap: true,
       }).addTo(map)
 
       // Oprav offset — zavolej invalidateSize IHNED po inicializaci
@@ -83,19 +96,22 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
       setTimeout(() => { map.invalidateSize({ animate: false }) }, 300)
       setTimeout(() => { map.invalidateSize({ animate: false }) }, 600)
 
-      // Click handler
+      // Click handler — normalizuj délku, ať pin sedí na „primárním" světě
       map.on('click', (e: L.LeafletMouseEvent) => {
+        const ll = L.latLng(e.latlng.lat, wrapLng(e.latlng.lng))
         if (markerRef.current) {
-          markerRef.current.setLatLng(e.latlng)
+          markerRef.current.setLatLng(ll)
         } else {
-          const m = L.marker(e.latlng, { icon: GUESS_ICON, draggable: true }).addTo(map)
+          const m = L.marker(ll, { icon: GUESS_ICON, draggable: true }).addTo(map)
           m.on('dragend', () => {
             const pos = m.getLatLng()
-            onGuessRef.current(pos.lat, pos.lng)
+            const wrapped = L.latLng(pos.lat, wrapLng(pos.lng))
+            m.setLatLng(wrapped)
+            onGuessRef.current(wrapped.lat, wrapped.lng)
           })
           markerRef.current = m
         }
-        onGuessRef.current(e.latlng.lat, e.latlng.lng)
+        onGuessRef.current(ll.lat, ll.lng)
       })
 
       mapRef.current = map
@@ -176,26 +192,30 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
         return
       }
 
-      const map = L.map(wrap)
-      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map)
+      const map = L.map(wrap, { maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 })
+      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19, noWrap: true }).addTo(map)
+
+      // Normalizuj délky (i pro starší uložené tipy „o mapu vedle")
+      const gLng = wrapLng(guessLng)
+      const tLng = wrapLng(truthLng)
 
       // Piny
-      L.marker([guessLat, guessLng], { icon: GUESS_ICON })
+      L.marker([guessLat, gLng], { icon: GUESS_ICON })
         .addTo(map)
         .bindTooltip('Tvůj tip', { permanent: true, direction: 'right', offset: [8, -16] })
 
-      L.marker([truthLat, truthLng], { icon: TRUTH_ICON })
+      L.marker([truthLat, tLng], { icon: TRUTH_ICON })
         .addTo(map)
         .bindTooltip('Správné místo', { permanent: true, direction: 'right', offset: [8, -16] })
 
       // Linka
-      L.polyline([[guessLat, guessLng], [truthLat, truthLng]], {
+      L.polyline([[guessLat, gLng], [truthLat, tLng]], {
         color: '#d97757', weight: 2, dashArray: '6 4', opacity: 0.8,
       }).addTo(map)
 
       // Radius
       if (radiusKm > 0) {
-        L.circle([truthLat, truthLng], {
+        L.circle([truthLat, tLng], {
           radius: radiusKm * 1000,
           color: '#2a1f17', fillColor: '#2a1f17', fillOpacity: 0.06,
           weight: 1.5, dashArray: '4 4',
@@ -203,7 +223,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
       }
 
       // Fit bounds
-      const bounds = L.latLngBounds([guessLat, guessLng], [truthLat, truthLng])
+      const bounds = L.latLngBounds([guessLat, gLng], [truthLat, tLng])
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
       map.invalidateSize({ animate: false })
       setTimeout(() => map.invalidateSize({ animate: false }), 100)
