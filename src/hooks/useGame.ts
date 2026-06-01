@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, track, type EventFilters } from '@/lib/supabase'
+import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, track, type EventFilters } from '@/lib/supabase'
+import { XP_BONUS_GAME } from '@/lib/leveling'
 
 const DEFAULT_ROUNDS = 5
 
@@ -126,6 +127,8 @@ export function useGame(userId: string | undefined) {
     if (isLast && sessionId && userId) {
       await finishGameSession(sessionId, newRounds, newTotal)
       await addScoreToProfile(userId, newTotal)
+      // XP: body + bonus za dohranou hru
+      await addXp(userId, newTotal + XP_BONUS_GAME)
       track('game_completed', { total_score: newTotal, rounds: state.totalRounds }, userId)
     }
   }, [state, userId])

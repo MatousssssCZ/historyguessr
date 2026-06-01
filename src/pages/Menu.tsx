@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { signOut, getTodayDailyResult, type DailyResult } from '@/lib/supabase'
+import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -42,6 +43,7 @@ export default function MenuPage() {
   const score = profile?.total_score?.toLocaleString('cs-CZ') ?? '0'
   const name = profile?.username ?? 'Hráči'
   const isMobile = windowWidth < 768
+  const lvl = levelFromXp(profile?.xp ?? 0)
 
   // Podtitul + stav pro denní výzvu
   const dailySub =
@@ -95,7 +97,7 @@ export default function MenuPage() {
 
           {/* ── Greeting strip ── */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 6px 18px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 6px 14px',
             opacity: mounted ? 1 : 0, transition: 'all 0.5s 0.08s cubic-bezier(0.16,1,0.3,1)',
           }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--paper-50)' }}>Vítej zpět, {name}</div>
@@ -103,6 +105,11 @@ export default function MenuPage() {
               <StatBadge value={String(games)} label="her"/>
               <StatBadge value={score} label="bodů" accent/>
             </div>
+          </div>
+
+          {/* ── Level + XP ── */}
+          <div style={{ padding: '0 6px 18px', opacity: mounted ? 1 : 0, transition: 'all 0.5s 0.1s cubic-bezier(0.16,1,0.3,1)' }}>
+            <LevelBar lvl={lvl} dark/>
           </div>
 
           {/* ── Režimy ── */}
@@ -151,10 +158,11 @@ export default function MenuPage() {
       }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: 0 }}>Vítej zpět</p>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(34px, 11vw, 46px)', color: 'var(--ink)', letterSpacing: '-0.025em', lineHeight: 1, margin: '10px 0 18px' }}>{name}</h1>
-        <div style={{ display: 'flex', gap: 26 }}>
+        <div style={{ display: 'flex', gap: 26, marginBottom: 18 }}>
           <MobileStat value={String(games)} label="odehraných her"/>
           <MobileStat value={score} label="celkem bodů"/>
         </div>
+        <LevelBar lvl={lvl}/>
       </div>
 
       {/* Upoutávka na hru */}
@@ -312,6 +320,39 @@ function ListItem({ icon, title, sub, onClick, dailyState }: {
 }
 
 // ─── Drobné komponenty ────────────────────────────────────
+function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
+  const into = lvl.into.toLocaleString('cs-CZ')
+  const need = lvl.need.toLocaleString('cs-CZ')
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      {/* Medailon */}
+      <div style={{
+        width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        background: 'radial-gradient(circle at 50% 35%, #e89a82, #b85a3e)', color: '#fff',
+        boxShadow: '0 4px 14px rgba(217,119,87,0.4)', border: '2px solid rgba(255,255,255,0.25)',
+      }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', opacity: 0.85 }}>LVL</span>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, lineHeight: 1 }}>{lvl.level}</span>
+      </div>
+      {/* Progres */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+          <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: dark ? 'var(--paper-50)' : 'var(--ink)' }}>
+            Level {lvl.level}
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'rgba(245,241,232,0.5)' : 'var(--ink-3)' }}>
+            {into} / {need} XP
+          </span>
+        </div>
+        <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: dark ? 'rgba(255,255,255,0.1)' : 'var(--paper-300)' }}>
+          <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)', borderRadius: 999, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function StatBadge({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <div style={{
