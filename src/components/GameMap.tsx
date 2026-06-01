@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 
 // Leaflet tile URL a attributace
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+// {r} + detectRetina → na HiDPI displejích načte ostré @2x dlaždice
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
 // Custom ikony (SVG inline — bez externích PNG souborů)
@@ -88,6 +89,7 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         attribution: TILE_ATTR,
         maxZoom: 19,
         noWrap: true,
+        detectRetina: true,
       }).addTo(map)
 
       // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
@@ -205,7 +207,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
       }
 
       const map = L.map(wrap, { maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 })
-      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19, noWrap: true }).addTo(map)
+      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19, noWrap: true, detectRetina: true }).addTo(map)
       map.attributionControl?.setPrefix(false)
 
       // Normalizuj délky (i pro starší uložené tipy „o mapu vedle")
