@@ -324,30 +324,17 @@ function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
   const into = lvl.into.toLocaleString('cs-CZ')
   const need = lvl.need.toLocaleString('cs-CZ')
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      {/* Medailon */}
-      <div style={{
-        width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: 'radial-gradient(circle at 50% 35%, #e89a82, #b85a3e)', color: '#fff',
-        boxShadow: '0 4px 14px rgba(217,119,87,0.4)', border: '2px solid rgba(255,255,255,0.25)',
-      }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', opacity: 0.85 }}>LVL</span>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, lineHeight: 1 }}>{lvl.level}</span>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: dark ? 'var(--paper-50)' : 'var(--ink)' }}>
+          Level {lvl.level}
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'rgba(245,241,232,0.5)' : 'var(--ink-3)' }}>
+          {into} / {need} XP
+        </span>
       </div>
-      {/* Progres */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-          <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: dark ? 'var(--paper-50)' : 'var(--ink)' }}>
-            Level {lvl.level}
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'rgba(245,241,232,0.5)' : 'var(--ink-3)' }}>
-            {into} / {need} XP
-          </span>
-        </div>
-        <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: dark ? 'rgba(255,255,255,0.1)' : 'var(--paper-300)' }}>
-          <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)', borderRadius: 999, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
-        </div>
+      <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: dark ? 'rgba(255,255,255,0.1)' : 'var(--paper-300)' }}>
+        <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)', borderRadius: 999, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
       </div>
     </div>
   )

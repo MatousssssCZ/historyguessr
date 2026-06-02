@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, track, type EventFilters } from '@/lib/supabase'
+import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, track, type EventFilters } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 
 const DEFAULT_ROUNDS = 5
@@ -110,6 +110,9 @@ export function useGame(userId: string | undefined) {
     const newRounds = [...rounds, roundResult]
     const newTotal = newRounds.reduce((s, r) => s + r.round_score, 0)
     const isLast = currentRound === state.totalRounds - 1
+
+    // Statistika obtížnosti události
+    recordEventScore(event.id, scores.location_score, scores.year_score)
 
     setState(prev => ({ ...prev, rounds: newRounds, totalScore: newTotal, phase: 'round_result' }))
 

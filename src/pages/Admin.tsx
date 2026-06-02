@@ -243,7 +243,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
-            {['Název', 'Rok', 'Radius', 'Obtížnost', 'Hodnocení', 'Stav', 'Akce'].map(h => (
+            {['Název', 'Rok', 'Radius', 'Obtížnost', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
               <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>
                 {h}
               </th>
@@ -280,6 +280,9 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
                 ) : (
                   <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>–</span>
                 )}
+              </td>
+              <td style={{ padding: '12px 16px' }}>
+                <EventScoreStat ev={ev}/>
               </td>
               <td style={{ padding: '12px 16px' }}>
                 <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`}>
@@ -717,6 +720,34 @@ function AdminLoading() {
   return (
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <span className="spinner" style={{ width: 28, height: 28 }}/>
+    </div>
+  )
+}
+
+// ── Statistika obtížnosti události (Ø zahrané skóre) ──────
+function EventScoreStat({ ev }: { ev: Event }) {
+  const n = ev.score_count ?? 0
+  if (n < 5) {
+    return <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{n > 0 ? `${n}× · málo dat` : '–'}</span>
+  }
+  const avg = Math.round((ev.score_sum ?? 0) / n)
+  const avgLoc = Math.round((ev.score_loc_sum ?? 0) / n)
+  const avgYear = Math.round((ev.score_year_sum ?? 0) / n)
+  // avg je z max 1000 (500 poloha + 500 rok); nižší = těžší
+  const tier = avg >= 650
+    ? { label: 'Lehká', color: '#1d6b3a', bg: 'rgba(39,174,96,0.12)' }
+    : avg >= 400
+      ? { label: 'Střední', color: 'var(--accent-deep)', bg: 'rgba(217,119,87,0.12)' }
+      : { label: 'Těžká', color: '#b3261e', bg: 'rgba(192,57,43,0.12)' }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)' }}>{avg}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase', color: tier.color, background: tier.bg, padding: '2px 7px', borderRadius: 999 }}>{tier.label}</span>
+      </div>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>
+        📍 {avgLoc} · 📅 {avgYear} · {n}×
+      </span>
     </div>
   )
 }

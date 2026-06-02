@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
-  saveDailyResult, getDailyLeaderboard, track,
+  saveDailyResult, getDailyLeaderboard, recordEventScore, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
 import type { Event } from '@/types/database'
@@ -151,6 +151,7 @@ export default function DailyChallengePage() {
     setGuessYear(year)
     setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: total, yrDiff: yrDiff_ })
 
+    recordEventScore(event.id, locSc, yrSc)
     await saveDailyResult(user.id, total, lat ?? 0, lng ?? 0, year)
     const lb = await getDailyLeaderboard()
     setLeaderboard(lb)
