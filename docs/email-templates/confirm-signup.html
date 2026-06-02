@@ -1,0 +1,63 @@
+<!-- HistoryGuessr · Potvrzení registrace
+     Supabase → Authentication → Email Templates → "Confirm signup"
+     Předmět: Potvrď svou registraci do HistoryGuessr -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0;padding:0;background-color:#1a130d;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background-color:#faf7f0;border-radius:16px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background-color:#2a1f17;padding:26px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+              <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:#f5f1e8;letter-spacing:-0.3px;">
+                &#127757;&nbsp; HistoryGuessr
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:38px 32px 8px;">
+            <p style="margin:0 0 6px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#b85a3e;">Vítej na palubě</p>
+            <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.2;color:#2a1f17;">Potvrď svou registraci</h1>
+            <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#5a4632;">
+              Díky, že ses přidal/a do <strong>HistoryGuessr</strong> — hry, kde hádáš místo a rok historických událostí podle 360° panoramat.
+              Pro dokončení registrace potvrď svůj e-mail kliknutím na tlačítko níže.
+            </p>
+
+            <!-- Button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr>
+              <td align="center" bgcolor="#d97757" style="border-radius:12px;">
+                <a href="{{ .ConfirmationURL }}" target="_blank"
+                   style="display:inline-block;padding:15px 34px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:12px;">
+                  Potvrdit e-mail &rarr;
+                </a>
+              </td>
+            </tr></table>
+
+            <p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:#8a7a5d;">
+              Pokud tlačítko nefunguje, zkopíruj si tento odkaz do prohlížeče:
+            </p>
+            <p style="margin:0 0 24px;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#b85a3e;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:18px 32px 30px;border-top:1px solid #ebe4d4;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#b8a888;">
+              Tento e-mail jsi dostal/a, protože byla na tvou adresu vytvořena registrace do HistoryGuessr.
+              Pokud to nebyl/a ty, e-mail klidně ignoruj.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      <p style="margin:18px 0 0;font-family:Georgia,serif;font-size:12px;color:#6b5a45;">HistoryGuessr · hádej historii</p>
+    </td>
+  </tr>
+</table>
