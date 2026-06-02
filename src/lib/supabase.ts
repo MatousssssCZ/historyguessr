@@ -241,6 +241,16 @@ export async function addXp(userId: string, amount: number) {
   await supabase.rpc('add_xp', { p_user_id: userId, p_amount: Math.round(amount) })
 }
 
+/** Zaznamená zahrané skóre kola k události (pro statistiky obtížnosti) */
+export async function recordEventScore(eventId: string, locationScore: number, yearScore: number) {
+  if (!eventId) return
+  await supabase.rpc('record_event_score', {
+    p_event_id: eventId,
+    p_location: Math.round(locationScore),
+    p_year: Math.round(yearScore),
+  })
+}
+
 // ─── Ratings ──────────────────────────────────────────────
 
 export async function addEventRating(eventId: string, rating: number) {

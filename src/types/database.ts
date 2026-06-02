@@ -32,6 +32,10 @@ export interface Event {
   hfov: number
   rating_sum: number
   rating_count: number
+  score_count: number
+  score_sum: number
+  score_loc_sum: number
+  score_year_sum: number
 }
 
 export interface EventInsert {

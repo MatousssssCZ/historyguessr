@@ -7,7 +7,7 @@ import {
 } from '@/lib/multiplayer'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { supabase } from '@/lib/supabase'
+import { supabase, recordEventScore } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 
@@ -184,6 +184,7 @@ export default function MultiplayerGamePage() {
     setMyResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: total, yrDiff: yrDiff_, guessLat: lat ?? 0, guessLng: lng ?? 0, guessYear: yearSet ? year : 0 })
     setPhase('my_results')
 
+    recordEventScore(event.id, locSc, yrSc)
     await submitAnswer(roomId, currentRound.round_number, user.id, answer)
     await updatePlayerTotalScore(roomId, user.id, total)
   }
