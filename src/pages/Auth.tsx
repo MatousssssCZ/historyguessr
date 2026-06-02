@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { signIn, signUp, track } from '@/lib/supabase'
+import { signIn, signUp, requestPasswordReset, track } from '@/lib/supabase'
+
+const forgotLinkStyle: React.CSSProperties = {
+  alignSelf: 'flex-end', background: 'none', border: 'none', padding: 0,
+  marginTop: -6, color: 'var(--ink-3)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline',
+}
 
 type Mode = 'login' | 'register'
 
@@ -58,6 +63,19 @@ export default function AuthPage() {
       else if (msg.includes('already registered')) setError('Tento e-mail je již zaregistrován.')
       else if (msg.includes('Email not confirmed')) setError('Nejprve potvrď svůj e-mail.')
       else setError(msg)
+    } finally { setLoading(false) }
+  }
+
+  async function handleForgot() {
+    setError(null); setSuccess(null)
+    if (!email) { setError('Zadej nejdřív svůj e-mail.'); return }
+    setLoading(true)
+    try {
+      const { error } = await requestPasswordReset(email)
+      if (error) throw error
+      setSuccess('Poslali jsme ti e-mail s odkazem na obnovu hesla.')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se odeslat e-mail.')
     } finally { setLoading(false) }
   }
 
@@ -140,6 +158,9 @@ export default function AuthPage() {
                   </div>
                 )}
               </div>
+              {!isRegister && (
+                <button type="button" onClick={handleForgot} style={forgotLinkStyle}>Zapomněl jsi heslo?</button>
+              )}
               {isRegister && (
                 <div>
                   <label className="label">Potvrdit heslo</label>
@@ -352,6 +373,9 @@ export default function AuthPage() {
               )}
             </div>
 
+            {!isRegister && (
+              <button type="button" onClick={handleForgot} style={forgotLinkStyle}>Zapomněl jsi heslo?</button>
+            )}
             {isRegister && (
               <div>
                 <label className="label">Potvrdit heslo</label>
