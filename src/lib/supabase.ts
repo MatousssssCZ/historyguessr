@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Event, EventInsert, EventUpdate, Profile, RoundResult } from '@/types/database'
+import { XP_BONUS_DAILY } from './leveling'
 
 export interface DailyResult {
   id: string
@@ -234,6 +235,12 @@ export async function addScoreToProfile(userId: string, score: number) {
   })
 }
 
+/** Přičte XP hráči (atomicky přes RPC; tiše ignoruje chybu) */
+export async function addXp(userId: string, amount: number) {
+  if (!userId || amount <= 0) return
+  await supabase.rpc('add_xp', { p_user_id: userId, p_amount: Math.round(amount) })
+}
+
 // ─── Ratings ──────────────────────────────────────────────
 
 export async function addEventRating(eventId: string, rating: number) {
@@ -385,6 +392,8 @@ export async function saveDailyResult(
     guess_year: guessYear,
   })
   if (error) return { error: error as Error }
+  // XP: skóre + bonus za denní výzvu
+  await addXp(userId, score + XP_BONUS_DAILY)
   track('daily_challenge_completed', { score }, userId)
   return { error: null }
 }

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, addXp } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 
 // ── Typy ─────────────────────────────────────────────────
@@ -286,6 +286,9 @@ export async function submitAnswer(
       .update({ total_score: (player?.total_score ?? 0) + answer.round_score })
       .eq('room_id', roomId).eq('user_id', userId)
   }
+
+  // XP za kolo v multiplayeru
+  await addXp(userId, answer.round_score)
 
   return { error: null }
 }

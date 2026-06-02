@@ -5,6 +5,7 @@ export interface Profile {
   role: 'user' | 'admin'
   total_score: number
   games_played: number
+  xp: number
   created_at: string
 }
 

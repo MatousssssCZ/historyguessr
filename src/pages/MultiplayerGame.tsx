@@ -296,8 +296,8 @@ export default function MultiplayerGamePage() {
 
   // ── My results ────────────────────────────────────────
   if (phase === 'my_results' && myResult && event) {
-    const locPct = Math.round(myResult.locScore / 50)
-    const yrPct = Math.round(myResult.yrScore / 50)
+    const locPct = Math.round(myResult.locScore / 5)
+    const yrPct = Math.round(myResult.yrScore / 5)
     return (
       <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)' }}>
         <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
@@ -308,7 +308,7 @@ export default function MultiplayerGamePage() {
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, flex: 1, lineHeight: 1.2 }}>{event.title}</div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString('cs-CZ')}</div>
-              <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 10 000</div>
+              <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
             </div>
           </div>
         </div>
@@ -407,8 +407,8 @@ export default function MultiplayerGamePage() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {[
-                      { label: 'Poloha', score: myResult.locScore, sub: myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`, pct: Math.round(myResult.locScore / 50) },
-                      { label: 'Rok', score: myResult.yrScore, sub: myResult.yrDiff === 0 ? '✓ Přesný!' : `${myResult.yrDiff} let`, pct: Math.round(myResult.yrScore / 50) },
+                      { label: 'Poloha', score: myResult.locScore, sub: myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`, pct: Math.round(myResult.locScore / 5) },
+                      { label: 'Rok', score: myResult.yrScore, sub: myResult.yrDiff === 0 ? '✓ Přesný!' : `${myResult.yrDiff} let`, pct: Math.round(myResult.yrScore / 5) },
                     ].map(item => (
                       <div key={item.label} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 8, padding: '8px 10px' }}>
                         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 3px' }}>{item.label}</p>

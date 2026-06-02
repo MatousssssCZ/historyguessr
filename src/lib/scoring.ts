@@ -1,4 +1,4 @@
-const MAX_SCORE = 5_000
+const MAX_SCORE = 500
 
 // Ladicí konstanty exponenciálního poklesu (vyšší = mírnější)
 const DIST_DECAY_KM = 1500   // poloha: skóre = MAX · e^(−km / 1500)
@@ -48,6 +48,6 @@ export function formatYear(year: number): string {
   return `${year} n. l.`
 }
 
-export function scorePercent(score: number, maxScore = 10_000): number {
+export function scorePercent(score: number, maxScore = 1_000): number {
   return Math.round((score / maxScore) * 100)
 }
