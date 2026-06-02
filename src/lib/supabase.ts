@@ -50,6 +50,18 @@ export async function signOut() {
   return supabase.auth.signOut()
 }
 
+/** Pošle e-mail s odkazem na reset hesla */
+export async function requestPasswordReset(email: string) {
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+}
+
+/** Nastaví nové heslo (po kliknutí na odkaz z e-mailu) */
+export async function updatePassword(newPassword: string) {
+  return supabase.auth.updateUser({ password: newPassword })
+}
+
 // ─── Profiles ─────────────────────────────────────────────
 
 export async function getProfile(userId: string) {
