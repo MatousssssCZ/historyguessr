@@ -506,11 +506,11 @@ function ScoreHistogram({ leaderboard, myScore }: { leaderboard: DailyResult[]; 
   const BINS = 20
   const bins = Array(BINS).fill(0)
   leaderboard.forEach(r => {
-    const idx = Math.min(BINS - 1, Math.floor((r.score / 10000) * BINS))
+    const idx = Math.min(BINS - 1, Math.floor((r.score / 1000) * BINS))
     bins[idx]++
   })
   const max = Math.max(...bins, 1)
-  const myBin = Math.min(BINS - 1, Math.floor((myScore / 10000) * BINS))
+  const myBin = Math.min(BINS - 1, Math.floor((myScore / 1000) * BINS))
   const rank = leaderboard.filter(r => r.score > myScore).length + 1
   const pct = Math.round((rank / Math.max(leaderboard.length, 1)) * 100)
 
@@ -527,7 +527,7 @@ function ScoreHistogram({ leaderboard, myScore }: { leaderboard: DailyResult[]; 
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-        {['0', '2 500', '5 000', '7 500', '10 000'].map(l => (
+        {['0', '250', '500', '750', '1 000'].map(l => (
           <span key={l} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)' }}>{l}</span>
         ))}
       </div>
@@ -546,8 +546,8 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 }) {
   const [histModal, setHistModal] = useState(false)
   const isMobile = window.innerWidth < 768
-  const locPct = Math.round(result.locScore / 50)
-  const yrPct = Math.round(result.yrScore / 50)
+  const locPct = Math.round(result.locScore / 5)
+  const yrPct = Math.round(result.yrScore / 5)
   const myRank = leaderboard.filter(r => r.score > result.totalScore).length + 1
 
   const scoreSection = (
@@ -621,7 +621,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{event.title}</div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString('cs-CZ')}</div>
-                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 10 000</div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
                 </div>
               </div>
             </div>
@@ -657,7 +657,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString('cs-CZ')}</div>
-            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 10 000</div>
+            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
           </div>
         </div>
       </div>

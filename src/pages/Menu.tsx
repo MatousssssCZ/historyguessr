@@ -122,7 +122,7 @@ export default function MenuPage() {
               dailyState={dailyState}/>
             <ModeTileDark icon="🎮" title="Více hráčů" sub="Zahraj s přáteli" onClick={() => navigate('/multiplayer/lobby')}/>
             <ModeTileDark icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
-            <ModeTileDark icon="🏆" title="Skóre" sub={`${games} her · max 50 000`} onClick={() => navigate('/account')}/>
+            <ModeTileDark icon="🏆" title="Skóre" sub={`${games} her · max 5 000`} onClick={() => navigate('/account')}/>
             {isAdmin && <ModeTileDark icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')}/>}
           </div>
 

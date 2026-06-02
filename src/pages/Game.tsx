@@ -721,8 +721,8 @@ function RoundResult({ event, round, onNext, isLast }: {
   const [tab, setTab] = useState<'score' | 'info'>('score')
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
   const yearDiffLabel = round.year_diff === 0 ? '✓ Přesný tip!' : `${round.year_diff} let mimo`
-  const locPct = Math.round(round.location_score / 50)
-  const yrPct = Math.round(round.year_score / 50)
+  const locPct = Math.round(round.location_score / 5)
+  const yrPct = Math.round(round.year_score / 5)
 
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth <= 640)
@@ -765,7 +765,7 @@ function RoundResult({ event, round, onNext, isLast }: {
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
-                <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 10 000</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
               </div>
             </div>
           </div>
@@ -834,7 +834,7 @@ function RoundResult({ event, round, onNext, isLast }: {
               <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{event.title}</h2>
               <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>z 10 000 bodů</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>z 1 000 bodů</div>
               </div>
             </div>
           </div>
@@ -996,7 +996,7 @@ function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
 function FinishedScreen({ totalScore, rounds, onPlayAgain, onMenu }: {
   totalScore: number; rounds: number; onPlayAgain: () => void; onMenu: () => void
 }) {
-  const pct = Math.round((totalScore / (rounds * 10000)) * 100)
+  const pct = Math.round((totalScore / (rounds * 1000)) * 100)
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--paper-100)' }}>
       <p className="eyebrow" style={{ marginBottom: 16 }}>Konec hry</p>
