@@ -73,16 +73,18 @@ export async function updateProfile(userId: string, updates: { username?: string
 
 // Klíč do localStorage pro historii zahraných událostí
 const PLAYED_KEY = 'hg_played_ids'
-const MAX_HISTORY = 50  // pamatujeme max 50 posledních
+const MAX_HISTORY = 5000  // strop proti nekonečnému růstu (drž celou „kartu")
 
 function getPlayedIds(): string[] {
   try { return JSON.parse(localStorage.getItem(PLAYED_KEY) ?? '[]') } catch { return [] }
 }
 
+function setPlayedIds(ids: string[]) {
+  try { localStorage.setItem(PLAYED_KEY, JSON.stringify(ids.slice(-MAX_HISTORY))) } catch { /* ignore */ }
+}
+
 function addPlayedIds(ids: string[]) {
-  const prev = getPlayedIds()
-  const next = [...prev, ...ids].slice(-MAX_HISTORY)  // drž max 50
-  localStorage.setItem(PLAYED_KEY, JSON.stringify(next))
+  setPlayedIds([...getPlayedIds(), ...ids])
 }
 
 export interface EventFilters {
@@ -101,48 +103,42 @@ function applyEventFilters<T>(query: T, filters?: EventFilters): T {
   return q as T
 }
 
-/** Sestaví seznam ID, které se mají z losování vynechat (zahrané + ručně vyloučené) */
-function buildExcludeList(extra?: string[]): string {
-  const ids = [...getPlayedIds(), ...(extra ?? [])]
-  return ids.length > 0 ? ids.join(',') : '00000000-0000-0000-0000-000000000000'
-}
-
+/**
+ * Vybere `count` událostí jako z „balíčku karet":
+ * než se událost zopakuje, projdou se všechny ostatní z dané (vyfiltrované)
+ * množiny. Ručně vyloučené (excludeIds) se nikdy nenabídnou.
+ */
 export async function getRandomEvents(count = 5, filters?: EventFilters): Promise<Event[]> {
-  // Nejdřív zkus vzít pouze neozkoušené (a nevyloučené) eventy
-  const { data: fresh } = await applyEventFilters(
-    supabase
-      .from('events')
-      .select('*')
-      .eq('published', true)
-      .not('id', 'in', `(${buildExcludeList(filters?.excludeIds)})`),
+  // 1) Načti ID celé způsobilé množiny (filtry + bez ručně vyloučených)
+  let idQuery = applyEventFilters(
+    supabase.from('events').select('id').eq('published', true),
     filters,
   )
-    .order('play_count', { ascending: true })  // méně hrané mají přednost
-    .limit(count * 8)  // větší pool pro lepší náhodnost
-
-  let pool = fresh ?? []
-
-  // Pokud nemáme dost, doplň ze zahraných (ručně vyloučené ale respektuj vždy)
-  if (pool.length < count) {
-    let fb = applyEventFilters(
-      supabase.from('events').select('*').eq('published', true),
-      filters,
-    )
-    if (filters?.excludeIds?.length) {
-      fb = fb.not('id', 'in', `(${filters.excludeIds.join(',')})`)
-    }
-    const { data: fallback } = await fb
-      .order('play_count', { ascending: true })
-      .limit(count * 4)
-    const extra = (fallback ?? []).filter(e => !pool.find(p => p.id === e.id))
-    pool = [...pool, ...extra]
+  if (filters?.excludeIds?.length) {
+    idQuery = idQuery.not('id', 'in', `(${filters.excludeIds.join(',')})`)
   }
-
+  const { data: idRows } = await idQuery.limit(5000)
+  const pool = (idRows ?? []).map(r => (r as { id: string }).id)
   if (pool.length < count) return []
 
-  const selected = shuffleArray(pool).slice(0, count) as Event[]
-  addPlayedIds(selected.map(e => e.id))
-  return selected
+  // 2) „Balíček": ber přednostně nezahrané; když dojdou, zamíchej znovu
+  const poolSet = new Set(pool)
+  const seen = new Set(getPlayedIds())
+  let unseen = pool.filter(id => !seen.has(id))
+
+  if (unseen.length < count) {
+    // Celá tato množina projeta → nový cyklus (zapomeň jen tyto ID, ostatní ponech)
+    setPlayedIds(getPlayedIds().filter(id => !poolSet.has(id)))
+    unseen = [...pool]
+  }
+
+  const selectedIds = shuffleArray(unseen).slice(0, count)
+  addPlayedIds(selectedIds)
+
+  // 3) Načti plné řádky a seřaď je dle pořadí výběru
+  const { data } = await supabase.from('events').select('*').in('id', selectedIds)
+  const byId = new Map((data ?? []).map(e => [(e as Event).id, e as Event]))
+  return selectedIds.map(id => byId.get(id)).filter(Boolean) as Event[]
 }
 
 export interface CandidateEvent {
