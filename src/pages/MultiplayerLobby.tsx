@@ -141,7 +141,7 @@ export default function MultiplayerLobbyPage() {
         <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
           <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'rgba(245,241,232,0.4)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>← Menu</button>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>Více hráčů</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--paper-50)', margin: '0 0 32px', letterSpacing: '-0.02em' }}>Zahraj si s přáteli</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--on-dark)', margin: '0 0 32px', letterSpacing: '-0.02em' }}>Zahraj si s přáteli</h1>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button
@@ -151,7 +151,7 @@ export default function MultiplayerLobbyPage() {
             >
               <span style={{ fontSize: 28 }}>🎮</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--paper-50)', lineHeight: 1 }}>Založit hru</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--on-dark)', lineHeight: 1 }}>Založit hru</div>
                 <div style={{ fontSize: 12, color: 'rgba(245,241,232,0.4)', marginTop: 4 }}>Vytvoř místnost a pozvi přátele</div>
               </div>
             </button>
@@ -162,7 +162,7 @@ export default function MultiplayerLobbyPage() {
             >
               <span style={{ fontSize: 28 }}>🔗</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--paper-50)', lineHeight: 1 }}>Připojit se</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--on-dark)', lineHeight: 1 }}>Připojit se</div>
                 <div style={{ fontSize: 12, color: 'rgba(245,241,232,0.4)', marginTop: 4 }}>Zadej pětimístný kód</div>
               </div>
             </button>
@@ -178,7 +178,7 @@ export default function MultiplayerLobbyPage() {
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--sepia-900)', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 400, margin: '0 auto', width: '100%' }}>
           <button onClick={() => setScreen('menu')} style={{ background: 'none', border: 'none', color: 'rgba(245,241,232,0.4)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>← Zpět</button>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--paper-50)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Připojit se do hry</h2>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Připojit se do hry</h2>
           <p style={{ fontSize: 14, color: 'rgba(245,241,232,0.4)', margin: '0 0 28px' }}>Zadej pětimístný kód od přítele.</p>
 
           <input
@@ -187,7 +187,7 @@ export default function MultiplayerLobbyPage() {
             onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 5))}
             placeholder="NAPŘ. A7K3P"
             maxLength={5}
-            style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 28, letterSpacing: '0.3em', marginBottom: 12, background: 'rgba(255,255,255,0.06)', color: 'var(--paper-50)', border: '1px solid rgba(255,255,255,0.15)', padding: '16px' }}
+            style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 28, letterSpacing: '0.3em', marginBottom: 12, background: 'rgba(255,255,255,0.06)', color: 'var(--on-dark)', border: '1px solid rgba(255,255,255,0.15)', padding: '16px' }}
             onKeyDown={e => e.key === 'Enter' && joinCode.length === 5 && handleJoin()}
           />
 
@@ -215,7 +215,7 @@ export default function MultiplayerLobbyPage() {
         <div>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 2px' }}>Kód místnosti</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 600, letterSpacing: '0.2em', color: 'var(--paper-50)' }}>{room?.code}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 600, letterSpacing: '0.2em', color: 'var(--on-dark)' }}>{room?.code}</span>
             <button
               onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
               style={{ background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'rgba(245,241,232,0.6)', cursor: 'pointer' }}

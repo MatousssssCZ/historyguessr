@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { signOut, getTodayDailyResult, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
+import ThemeToggle from '@/components/ThemeToggle'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -60,11 +61,14 @@ export default function MenuPage() {
         {/* Header */}
         <header style={{ position: 'relative', zIndex: 2, padding: '18px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <Wordmark/>
-          <button onClick={handleSignOut} style={logoutDark}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
-            Odhlásit
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle variant="dark"/>
+            <button onClick={handleSignOut} style={logoutDark}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
+              Odhlásit
+            </button>
+          </div>
         </header>
 
         <div style={{ maxWidth: 1040, margin: '0 auto', padding: '28px 40px 56px' }}>
@@ -79,7 +83,7 @@ export default function MenuPage() {
             <div style={{ position: 'relative', height: 320, display: 'flex', alignItems: 'flex-end', padding: '0 38px 34px' }}>
               <div style={{ flex: 1 }}>
                 <span style={heroTag}>Klasický mód · 5 kol</span>
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: 'var(--paper-50)', margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98 }}>
+                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: 'var(--on-dark)', margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98 }}>
                   Začni novou výpravu
                 </h1>
                 <p style={{ fontSize: 15, color: 'rgba(245,241,232,0.55)', margin: '12px 0 0' }}>
@@ -100,7 +104,7 @@ export default function MenuPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 6px 14px',
             opacity: mounted ? 1 : 0, transition: 'all 0.5s 0.08s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--paper-50)' }}>Vítej zpět, {name}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--on-dark)' }}>Vítej zpět, {name}</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <StatBadge value={String(games)} label="her"/>
               <StatBadge value={score} label="bodů" accent/>
@@ -147,7 +151,10 @@ export default function MenuPage() {
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 0' }}>
         <Wordmark dark/>
-        <button onClick={handleSignOut} style={logoutLight}>Odhlásit</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ThemeToggle variant="light"/>
+          <button onClick={handleSignOut} style={logoutLight}>Odhlásit</button>
+        </div>
       </div>
 
       {/* Hlavička */}
@@ -176,7 +183,7 @@ export default function MenuPage() {
         <HeroBackdrop height={162} sideFade/>
         <div style={{ position: 'relative', padding: '18px 20px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent-soft)', textTransform: 'uppercase' }}>Klasický mód · 5 kol</span>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--paper-50)', lineHeight: 1.04, marginTop: 8 }}>Hrát klasickou hru</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--on-dark)', lineHeight: 1.04, marginTop: 8 }}>Hrát klasickou hru</div>
         </div>
         <div style={{
           position: 'absolute', right: 18, bottom: 18, width: 46, height: 46, borderRadius: 13,
@@ -275,7 +282,7 @@ function ModeTileDark({ icon, title, sub, onClick, dailyState }: {
       }}>
       {dailyState && <DailyBadge state={dailyState} floating/>}
       <div style={{ fontSize: 20 }}>{icon}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--paper-100)', marginTop: 18 }}>{title}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--on-dark)', marginTop: 18 }}>{title}</div>
       <div style={{ fontSize: 11, color: 'rgba(245,241,232,0.42)', marginTop: 2 }}>{sub}</div>
     </button>
   )

@@ -97,10 +97,10 @@ export default function StatsPage() {
           <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'rgba(245,241,232,0.6)', fontSize: 13, cursor: 'pointer', padding: 0 }}>← Zpět do menu</button>
           <button onClick={() => navigate('/account')} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 12px', color: 'rgba(245,241,232,0.7)', fontSize: 12, cursor: 'pointer' }}>⚙ Účet</button>
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--paper-50)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>Tvůj progres</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--on-dark)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>Tvůj progres</h1>
         <div style={{ marginTop: 16, position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--paper-50)' }}>Level {lvl.level}</b>
+            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)' }}>Level {lvl.level}</b>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(245,241,232,0.5)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
           </div>
           <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
