@@ -236,6 +236,29 @@ export async function finishGameSession(sessionId: string, rounds: RoundResult[]
     .single()
 }
 
+export interface SessionRow { rounds: RoundResult[]; total_score: number; finished_at: string }
+
+/** Dohrané hry uživatele (pro statistiky), seřazené chronologicky */
+export async function getUserSessions(userId: string): Promise<SessionRow[]> {
+  const { data } = await supabase
+    .from('game_sessions')
+    .select('rounds, total_score, finished_at')
+    .eq('user_id', userId)
+    .not('finished_at', 'is', null)
+    .order('finished_at', { ascending: true })
+  return (data ?? []) as SessionRow[]
+}
+
+/** Výsledky denních výzev uživatele (pro sérii a počet) */
+export async function getUserDailyResults(userId: string): Promise<{ score: number; date: string }[]> {
+  const { data } = await supabase
+    .from('daily_results')
+    .select('score, date')
+    .eq('user_id', userId)
+    .order('date', { ascending: true })
+  return (data ?? []) as { score: number; date: string }[]
+}
+
 export async function addScoreToProfile(userId: string, score: number) {
   return supabase.rpc('increment_user_score', {
     p_user_id: userId,

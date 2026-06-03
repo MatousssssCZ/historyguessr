@@ -122,7 +122,7 @@ export default function MenuPage() {
               dailyState={dailyState}/>
             <ModeTileDark icon="🎮" title="Více hráčů" sub="Zahraj s přáteli" onClick={() => navigate('/multiplayer/lobby')}/>
             <ModeTileDark icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
-            <ModeTileDark icon="🏆" title="Skóre" sub={`${games} her · max 5 000`} onClick={() => navigate('/account')}/>
+            <ModeTileDark icon="🏆" title="Skóre" sub="Statistiky a progres" onClick={() => navigate('/stats')}/>
             {isAdmin && <ModeTileDark icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')}/>}
           </div>
 
@@ -195,7 +195,7 @@ export default function MenuPage() {
         <ListItem icon="📅" title="Tento den v historii" sub={dailySub}
           onClick={() => navigate('/daily')} dailyState={dailyState}/>
         <ListItem icon="🎮" title="Více hráčů" sub="Zahraj si s přáteli" onClick={() => navigate('/multiplayer/lobby')}/>
-        <ListItem icon="🏆" title="Skóre & profil" sub="Tvoje statistiky" onClick={() => navigate('/account')}/>
+        <ListItem icon="🏆" title="Skóre & progres" sub="Tvoje statistiky" onClick={() => navigate('/stats')}/>
         {isAdmin && <ListItem icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')}/>}
       </div>
 
