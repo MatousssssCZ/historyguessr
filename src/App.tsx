@@ -12,6 +12,7 @@ import DailyChallengePage from '@/pages/Daily'
 import MultiplayerLobbyPage from '@/pages/MultiplayerLobby'
 import MultiplayerGamePage from '@/pages/MultiplayerGame'
 import ResetPasswordPage from '@/pages/ResetPassword'
+import StatsPage from '@/pages/Stats'
 import PrivacyPage from '@/pages/Privacy'
 import TermsPage from '@/pages/Terms'
 
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/play"    element={<RequireAuth><PreGameLobbyPage/></RequireAuth>}/>
           <Route path="/game"    element={<RequireAuth><GamePage/></RequireAuth>}/>
           <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
+          <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
           <Route path="/admin"   element={<RequireAuth><AdminPage/></RequireAuth>}/>
           <Route path="/admin/import" element={<RequireAuth><AdminImportPage/></RequireAuth>}/>
           <Route path="/admin/daily" element={<RequireAuth><AdminDailyChallengePage/></RequireAuth>}/>

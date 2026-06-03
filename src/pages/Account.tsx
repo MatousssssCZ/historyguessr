@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { updateProfile, signOut } from '@/lib/supabase'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function AccountPage() {
   const { profile, user } = useAuth()
@@ -71,6 +72,15 @@ export default function AccountPage() {
               {saving ? 'Ukládám…' : 'Uložit změny'}
             </button>
           </form>
+        </div>
+
+        {/* Vzhled */}
+        <div className="card" style={{ padding: 28, marginBottom: 24 }}>
+          <p className="eyebrow" style={{ marginBottom: 16 }}>Vzhled</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>Světlý / tmavý režim</span>
+            <ThemeToggle/>
+          </div>
         </div>
 
         {/* Odhlášení */}

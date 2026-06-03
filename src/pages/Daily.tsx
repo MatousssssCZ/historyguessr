@@ -181,13 +181,13 @@ export default function DailyChallengePage() {
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--sepia-900)', gap: 16, padding: 24 }}>
         <div style={{ fontSize: 48 }}>📅</div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--paper-50)', margin: 0, textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: 0, textAlign: 'center' }}>
           Dnes žádná výzva není
         </h1>
         <p style={{ color: 'rgba(245,241,232,0.5)', fontSize: 15, textAlign: 'center', margin: 0 }}>
           Zkus to zítra.
         </p>
-        <button className="btn btn-ghost" style={{ color: 'var(--paper-100)', borderColor: 'rgba(245,241,232,0.2)', marginTop: 8 }} onClick={() => navigate('/menu')}>
+        <button className="btn btn-ghost" style={{ color: 'var(--on-dark)', borderColor: 'rgba(245,241,232,0.2)', marginTop: 8 }} onClick={() => navigate('/menu')}>
           ← Menu
         </button>
       </div>
@@ -231,14 +231,14 @@ export default function DailyChallengePage() {
           </div>
 
           {/* Název události */}
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(26px, 6vw, 36px)', color: 'var(--paper-50)', margin: '0 0 28px', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(26px, 6vw, 36px)', color: 'var(--on-dark)', margin: '0 0 28px', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
             {event.title}
           </h1>
 
           {/* Pravidla */}
           <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 20px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <RuleRow icon="⏱" text={<>Máš <strong style={{ color: 'var(--paper-100)' }}>1 minutu</strong> na odpověď</>}/>
-            <RuleRow icon="⚠" text={<>Pouze <strong style={{ color: 'var(--paper-100)' }}>jeden pokus</strong> — odchod ze hry = konec</>}/>
+            <RuleRow icon="⏱" text={<>Máš <strong style={{ color: 'var(--on-dark)' }}>1 minutu</strong> na odpověď</>}/>
+            <RuleRow icon="⚠" text={<>Pouze <strong style={{ color: 'var(--on-dark)' }}>jeden pokus</strong> — odchod ze hry = konec</>}/>
             <RuleRow icon="🏆" text="Po odpovědi uvidíš žebříček a distribuci skóre"/>
           </div>
 
@@ -291,7 +291,7 @@ export default function DailyChallengePage() {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>Tento den v historii</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--paper-100)', marginTop: 2 }}>{event.title}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{event.title}</div>
           </div>
           {/* Timer */}
           <div style={{ textAlign: 'right' }}>

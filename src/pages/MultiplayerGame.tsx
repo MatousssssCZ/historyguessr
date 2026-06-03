@@ -247,7 +247,7 @@ export default function MultiplayerGamePage() {
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase' }}>
           Kolo {currentRound?.round_number} / {room?.settings.rounds}
         </p>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 100, color: 'var(--paper-50)', letterSpacing: '-0.04em', lineHeight: 1, animation: 'pulse 1s ease infinite' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 100, color: 'var(--on-dark)', letterSpacing: '-0.04em', lineHeight: 1, animation: 'pulse 1s ease infinite' }}>
           {secs > 0 ? secs : '→'}
         </div>
         {event && <p style={{ fontSize: 14, color: 'rgba(245,241,232,0.4)', fontFamily: 'var(--font-serif)' }}>{event.title}</p>}
@@ -263,7 +263,7 @@ export default function MultiplayerGamePage() {
       <div style={{ minHeight: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ background: '#1a1208', padding: '20px 20px 16px', paddingTop: 'calc(20px + env(safe-area-inset-top,0px))', textAlign: 'center' }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 6px' }}>konec hry · {room?.settings.rounds} kol</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--paper-50)', margin: 0, letterSpacing: '-0.02em' }}>Výsledky</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: 0, letterSpacing: '-0.02em' }}>Výsledky</h1>
         </div>
         <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((p, i) => {
@@ -361,7 +361,7 @@ export default function MultiplayerGamePage() {
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'rgba(217,119,87,0.6)', textTransform: 'uppercase', margin: '0 0 4px' }}>
                 kolo {currentRound?.round_number} / {room?.settings.rounds}
               </p>
-              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--paper-50)', margin: 0, lineHeight: 1.2 }}>{event.title}</p>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--on-dark)', margin: 0, lineHeight: 1.2 }}>{event.title}</p>
             </div>
             {/* Kruhový timer */}
             <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -376,7 +376,7 @@ export default function MultiplayerGamePage() {
                   />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 600, color: 'var(--paper-50)' }}>{nextRoundCountdown}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 600, color: 'var(--on-dark)' }}>{nextRoundCountdown}</span>
                 </div>
               </div>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>dál</span>
@@ -484,7 +484,7 @@ export default function MultiplayerGamePage() {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>
               Kolo {currentRound?.round_number} / {room?.settings.rounds} · {players.length} hráčů
             </div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--paper-100)', marginTop: 2 }}>{event.title}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{event.title}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>Zbývá</div>

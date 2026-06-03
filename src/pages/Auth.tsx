@@ -103,7 +103,7 @@ export default function AuthPage() {
           <div style={{ position: 'relative' }}><Wordmark/></div>
           <div style={{ position: 'relative' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 20px', textTransform: 'uppercase' }}>Vzdělávací geolokační hra</p>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--paper-50)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--on-dark)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               Hádej historii.<br/><span style={{ color: 'var(--accent)' }}>Trefuj čas a místo.</span>
             </h1>
             <p style={{ fontSize: 16, color: 'rgba(245,241,232,0.45)', margin: '0 0 40px', lineHeight: 1.6 }}>
@@ -245,7 +245,7 @@ export default function AuthPage() {
         <h1 style={{
           fontFamily: 'var(--font-serif)',
           fontSize: 'clamp(28px, 6vw, 42px)',
-          color: 'var(--paper-50)',
+          color: 'var(--on-dark)',
           margin: 0,
           letterSpacing: '-0.02em',
           lineHeight: 1.1,

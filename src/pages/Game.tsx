@@ -55,13 +55,13 @@ export default function GamePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ textAlign: 'right' }}>
             <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.35)', fontSize: 9 }}>Skóre</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--paper-100)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--on-dark)' }}>
               {state.totalScore.toLocaleString('cs-CZ')}
             </div>
           </div>
           <button
             className="btn btn-ghost"
-            style={{ padding: '6px 12px', fontSize: 12, color: 'var(--paper-100)', borderColor: 'rgba(245,241,232,0.2)' }}
+            style={{ padding: '6px 12px', fontSize: 12, color: 'var(--on-dark)', borderColor: 'rgba(245,241,232,0.2)' }}
             onClick={() => { resetGame(); navigate('/menu') }}
           >
             ✕ Skončit
@@ -99,7 +99,7 @@ export default function GamePage() {
               <div style={{
                 fontFamily: 'var(--font-serif)',
                 fontSize: 'clamp(15px, 2.2vw, 22px)',
-                color: 'var(--paper-50)',
+                color: 'var(--on-dark)',
                 letterSpacing: '-0.01em', lineHeight: 1.2,
               }}>
                 {currentEvent.title}
@@ -987,7 +987,7 @@ function LoadingScreen() {
 function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 32, background: '#0d0906' }}>
-      <p style={{ color: 'var(--paper-200)', fontSize: 16 }}>{msg}</p>
+      <p style={{ color: 'var(--on-dark)', fontSize: 16 }}>{msg}</p>
       <button className="btn btn-accent" onClick={onRetry}>Zkusit znovu</button>
     </div>
   )
