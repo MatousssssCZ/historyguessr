@@ -334,7 +334,7 @@ function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: dark ? 'var(--paper-50)' : 'var(--ink)' }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: dark ? 'var(--feature-fg)' : 'var(--ink)' }}>
           Level {lvl.level}
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'var(--feature-fg2)' : 'var(--ink-3)' }}>
