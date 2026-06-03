@@ -91,19 +91,19 @@ export default function StatsPage() {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', paddingBottom: 'max(20px, var(--safe-bottom))' }}>
       {/* Hlavička */}
-      <div style={{ position: 'relative', background: 'var(--sepia-900)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', marginBottom: 14 }}>
-          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'rgba(245,241,232,0.6)', fontSize: 13, cursor: 'pointer', padding: 0 }}>← Zpět do menu</button>
-          <button onClick={() => navigate('/account')} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 12px', color: 'rgba(245,241,232,0.7)', fontSize: 12, cursor: 'pointer' }}>⚙ Účet</button>
+          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0 }}>← Zpět do menu</button>
+          <button onClick={() => navigate('/account')} style={{ background: 'var(--feature-line)', border: '1px solid var(--feature-line)', borderRadius: 8, padding: '6px 12px', color: 'var(--feature-fg2)', fontSize: 12, cursor: 'pointer' }}>⚙ Účet</button>
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--on-dark)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>Tvůj progres</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>Tvůj progres</h1>
         <div style={{ marginTop: 16, position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)' }}>Level {lvl.level}</b>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(245,241,232,0.5)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
+            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--feature-fg)' }}>Level {lvl.level}</b>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--feature-fg2)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
           </div>
-          <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+          <div style={{ height: 8, borderRadius: 999, background: 'var(--feature-line)', overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)' }}/>
           </div>
         </div>

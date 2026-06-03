@@ -53,8 +53,40 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Vždy světlá barva — pro text/prvky na záměrně tmavých plochách */
+  /* Vždy světlá barva — pro text/prvky na trvale tmavých plochách (panorama) */
   --on-dark: #f5f1e8;
+
+  /* „Feature" plochy (hlavičky, hero, předsálí…) — přepínají se s tématem.
+     Light: světlé pozadí + tmavý text. Dark: tmavé pozadí + světlý text. */
+  --feature-bg:   #2a1f17;            /* light default = tmavá chrome (přepíná se níže) */
+  --feature-2:    #1a1208;
+  --feature-fg:   #f5f1e8;
+  --feature-fg2:  rgba(245,241,232,0.55);
+  --feature-fg3:  rgba(245,241,232,0.35);
+  --feature-line: rgba(245,241,232,0.10);
+  --feature-chip: rgba(245,241,232,0.06);
+}
+
+/* SVĚTLÝ režim = světlé feature plochy + tmavý text */
+:root, [data-theme="light"] {
+  --feature-bg:   #efe7d8;
+  --feature-2:    #e7dcc8;
+  --feature-fg:   #2a1f17;
+  --feature-fg2:  rgba(42,31,23,0.60);
+  --feature-fg3:  rgba(42,31,23,0.40);
+  --feature-line: rgba(42,31,23,0.10);
+  --feature-chip: rgba(42,31,23,0.05);
+}
+
+/* TMAVÝ režim = tmavé feature plochy + světlý text */
+[data-theme="dark"] {
+  --feature-bg:   #16100b;
+  --feature-2:    #0f0c08;
+  --feature-fg:   #f2ece0;
+  --feature-fg2:  rgba(245,241,232,0.55);
+  --feature-fg3:  rgba(245,241,232,0.35);
+  --feature-line: rgba(245,241,232,0.10);
+  --feature-chip: rgba(245,241,232,0.06);
 }
 
 /* ── Tmavý režim ──────────────────────────────────────────

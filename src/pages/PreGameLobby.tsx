@@ -93,11 +93,11 @@ export default function PreGameLobbyPage() {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', display: 'flex', flexDirection: 'column', paddingBottom: 'max(16px, var(--safe-bottom))' }}>
       {/* Hlavička */}
-      <div style={{ position: 'relative', background: 'var(--sepia-900)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
-        <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'rgba(245,241,232,0.6)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 14, position: 'relative' }}>← Zpět do menu</button>
+        <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 14, position: 'relative' }}>← Zpět do menu</button>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-soft)', position: 'relative' }}>Klasický mód · sólo</div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--on-dark)', letterSpacing: '-0.02em', margin: '6px 0 0', position: 'relative' }}>Nastav si hru</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', margin: '6px 0 0', position: 'relative' }}>Nastav si hru</h1>
       </div>
 
       {/* Obsah */}

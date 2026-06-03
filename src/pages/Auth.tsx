@@ -84,36 +84,36 @@ export default function AuthPage() {
   if (!isMobile) {
     // ── Desktop: split layout ──────────────────────────────
     return (
-      <div style={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--sepia-900)' }}>
+      <div style={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--feature-bg)' }}>
 
         {/* Levá — branding */}
         <div style={{ position: 'relative', padding: 56, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
           <svg style={{ position: 'absolute', inset: 0, opacity: 0.05 }} width="100%" height="100%">
-            <defs><pattern id="auth-grid-d" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="#f5f1e8" strokeWidth="0.5"/></pattern></defs>
+            <defs><pattern id="auth-grid-d" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--feature-fg)" strokeWidth="0.5"/></pattern></defs>
             <rect width="100%" height="100%" fill="url(#auth-grid-d)"/>
           </svg>
           <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '70%', height: '70%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.12) 0%, transparent 70%)', pointerEvents: 'none' }}/>
           <svg width="320" height="320" viewBox="0 0 120 120" style={{ position: 'absolute', bottom: -40, right: -60, opacity: 0.06 }}>
-            <circle cx="60" cy="60" r="52" stroke="#f5f1e8" strokeWidth="0.8" fill="none"/>
-            <ellipse cx="60" cy="60" rx="26" ry="52" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
-            <ellipse cx="60" cy="60" rx="48" ry="20" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
-            <line x1="8" y1="60" x2="112" y2="60" stroke="#f5f1e8" strokeWidth="0.5"/>
-            <line x1="60" y1="8" x2="60" y2="112" stroke="#f5f1e8" strokeWidth="0.5"/>
+            <circle cx="60" cy="60" r="52" stroke="var(--feature-fg)" strokeWidth="0.8" fill="none"/>
+            <ellipse cx="60" cy="60" rx="26" ry="52" stroke="var(--feature-fg)" strokeWidth="0.5" fill="none"/>
+            <ellipse cx="60" cy="60" rx="48" ry="20" stroke="var(--feature-fg)" strokeWidth="0.5" fill="none"/>
+            <line x1="8" y1="60" x2="112" y2="60" stroke="var(--feature-fg)" strokeWidth="0.5"/>
+            <line x1="60" y1="8" x2="60" y2="112" stroke="var(--feature-fg)" strokeWidth="0.5"/>
           </svg>
           <div style={{ position: 'relative' }}><Wordmark/></div>
           <div style={{ position: 'relative' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 20px', textTransform: 'uppercase' }}>Vzdělávací geolokační hra</p>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--on-dark)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--feature-fg)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               Hádej historii.<br/><span style={{ color: 'var(--accent)' }}>Trefuj čas a místo.</span>
             </h1>
-            <p style={{ fontSize: 16, color: 'rgba(245,241,232,0.45)', margin: '0 0 40px', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 16, color: 'var(--feature-fg2)', margin: '0 0 40px', lineHeight: 1.6 }}>
               5 kol · 360° panoramy · tip místa + roku
             </p>
             <blockquote style={{ margin: 0, borderLeft: '2px solid rgba(217,119,87,0.4)', paddingLeft: 20 }}>
-              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'rgba(245,241,232,0.6)', margin: '0 0 8px', lineHeight: 1.5 }}>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--feature-fg2)', margin: '0 0 8px', lineHeight: 1.5 }}>
                 "Kdo nezná historii, je odsouzen ji znovu prožívat."
               </p>
-              <cite style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(245,241,232,0.3)', letterSpacing: '0.1em' }}>— George Santayana</cite>
+              <cite style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--feature-fg3)', letterSpacing: '0.1em' }}>— George Santayana</cite>
             </blockquote>
           </div>
           <div style={{ position: 'relative' }}/>
@@ -186,7 +186,7 @@ export default function AuthPage() {
       minHeight: '100dvh',
       display: 'flex',
       flexDirection: 'column',
-      background: 'var(--sepia-900)',
+      background: 'var(--feature-bg)',
       position: 'relative',
       overflow: 'hidden',
     }}>
@@ -196,7 +196,7 @@ export default function AuthPage() {
         <svg style={{ position: 'absolute', inset: 0, opacity: 0.05 }} width="100%" height="100%">
           <defs>
             <pattern id="auth-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-              <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#f5f1e8" strokeWidth="0.5"/>
+              <path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--feature-fg)" strokeWidth="0.5"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#auth-grid)"/>
@@ -220,11 +220,11 @@ export default function AuthPage() {
           viewBox="0 0 120 120"
           style={{ position: 'absolute', top: 40, right: -40, opacity: 0.06 }}
         >
-          <circle cx="60" cy="60" r="52" stroke="#f5f1e8" strokeWidth="0.8" fill="none"/>
-          <ellipse cx="60" cy="60" rx="26" ry="52" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
-          <ellipse cx="60" cy="60" rx="48" ry="20" stroke="#f5f1e8" strokeWidth="0.5" fill="none"/>
-          <line x1="8" y1="60" x2="112" y2="60" stroke="#f5f1e8" strokeWidth="0.5"/>
-          <line x1="60" y1="8" x2="60" y2="112" stroke="#f5f1e8" strokeWidth="0.5"/>
+          <circle cx="60" cy="60" r="52" stroke="var(--feature-fg)" strokeWidth="0.8" fill="none"/>
+          <ellipse cx="60" cy="60" rx="26" ry="52" stroke="var(--feature-fg)" strokeWidth="0.5" fill="none"/>
+          <ellipse cx="60" cy="60" rx="48" ry="20" stroke="var(--feature-fg)" strokeWidth="0.5" fill="none"/>
+          <line x1="8" y1="60" x2="112" y2="60" stroke="var(--feature-fg)" strokeWidth="0.5"/>
+          <line x1="60" y1="8" x2="60" y2="112" stroke="var(--feature-fg)" strokeWidth="0.5"/>
         </svg>
       </div>
 
@@ -245,7 +245,7 @@ export default function AuthPage() {
         <h1 style={{
           fontFamily: 'var(--font-serif)',
           fontSize: 'clamp(28px, 6vw, 42px)',
-          color: 'var(--on-dark)',
+          color: 'var(--feature-fg)',
           margin: 0,
           letterSpacing: '-0.02em',
           lineHeight: 1.1,
@@ -254,7 +254,7 @@ export default function AuthPage() {
           <span style={{ color: 'var(--accent)' }}>Trefuj čas a místo.</span>
         </h1>
         <p style={{
-          fontSize: 15, color: 'rgba(245,241,232,0.45)',
+          fontSize: 15, color: 'var(--feature-fg2)',
           margin: 0, lineHeight: 1.5,
           display: 'none', // skrytá — málo místa
         }}>
@@ -429,7 +429,7 @@ export default function AuthPage() {
   )
 }
 
-function Wordmark({ color = '#f5f1e8' }: { color?: string }) {
+function Wordmark({ color = 'var(--feature-fg)' }: { color?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, color }}>
       <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
