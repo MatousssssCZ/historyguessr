@@ -11,6 +11,7 @@ export interface Profile {
 
 export interface Event {
   id: string
+  seq: number
   title: string
   description: string
   year: number
