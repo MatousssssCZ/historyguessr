@@ -57,15 +57,15 @@ export default function MenuPage() {
   // ═══════════════════════════════════════════════════════
   if (!isMobile) {
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--sepia-900)', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--feature-bg)', position: 'relative', overflow: 'hidden' }}>
         {/* Header */}
-        <header style={{ position: 'relative', zIndex: 2, padding: '18px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <header style={{ position: 'relative', zIndex: 2, padding: '18px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--feature-chip)' }}>
           <Wordmark/>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <ThemeToggle variant="dark"/>
             <button onClick={handleSignOut} style={logoutDark}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--feature-line)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--feature-chip)')}>
               Odhlásit
             </button>
           </div>
@@ -75,7 +75,7 @@ export default function MenuPage() {
           {/* ── Filmový hero ── */}
           <div style={{
             position: 'relative', borderRadius: 22, overflow: 'hidden',
-            border: '1px solid rgba(255,255,255,0.07)', marginBottom: 16,
+            border: '1px solid var(--feature-chip)', marginBottom: 16,
             opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(18px)',
             transition: 'all 0.55s cubic-bezier(0.16,1,0.3,1)',
           }}>
@@ -83,10 +83,10 @@ export default function MenuPage() {
             <div style={{ position: 'relative', height: 320, display: 'flex', alignItems: 'flex-end', padding: '0 38px 34px' }}>
               <div style={{ flex: 1 }}>
                 <span style={heroTag}>Klasický mód · 5 kol</span>
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: 'var(--on-dark)', margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98 }}>
+                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: 'var(--feature-fg)', margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98 }}>
                   Začni novou výpravu
                 </h1>
-                <p style={{ fontSize: 15, color: 'rgba(245,241,232,0.55)', margin: '12px 0 0' }}>
+                <p style={{ fontSize: 15, color: 'var(--feature-fg2)', margin: '12px 0 0' }}>
                   360° panoramy · tipni místo + rok
                 </p>
               </div>
@@ -104,7 +104,7 @@ export default function MenuPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 6px 14px',
             opacity: mounted ? 1 : 0, transition: 'all 0.5s 0.08s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--on-dark)' }}>Vítej zpět, {name}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)' }}>Vítej zpět, {name}</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <StatBadge value={String(games)} label="her"/>
               <StatBadge value={score} label="bodů" accent/>
@@ -130,7 +130,7 @@ export default function MenuPage() {
             {isAdmin && <ModeTileDark icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')}/>}
           </div>
 
-          <p style={{ textAlign: 'center', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'rgba(245,241,232,0.25)', lineHeight: 1.6, marginTop: 40 }}>
+          <p style={{ textAlign: 'center', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--feature-fg3)', lineHeight: 1.6, marginTop: 40 }}>
             "Kdo nezná historii, je odsouzen ji znovu prožívat." — <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>George Santayana</span>
           </p>
         </div>
@@ -183,7 +183,7 @@ export default function MenuPage() {
         <HeroBackdrop height={162} sideFade/>
         <div style={{ position: 'relative', padding: '18px 20px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent-soft)', textTransform: 'uppercase' }}>Klasický mód · 5 kol</span>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--on-dark)', lineHeight: 1.04, marginTop: 8 }}>Hrát klasickou hru</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--feature-fg)', lineHeight: 1.04, marginTop: 8 }}>Hrát klasickou hru</div>
         </div>
         <div style={{
           position: 'absolute', right: 18, bottom: 18, width: 46, height: 46, borderRadius: 13,
@@ -218,21 +218,22 @@ export default function MenuPage() {
 function HeroBackdrop({ height, sideFade }: { height: number; sideFade?: boolean }) {
   return (
     <div style={{ position: 'absolute', inset: 0, height, overflow: 'hidden', pointerEvents: 'none' }}>
+      {/* tématický „panorama" podklad */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(130% 95% at 70% 16%, #8a6f50 0%, #3d2f23 58%, #2a1f17 100%)',
+        background: 'linear-gradient(135deg, var(--feature-2) 0%, var(--feature-bg) 100%)',
       }}/>
       {/* jemné diagonální linky evokující panorama */}
       <div style={{
-        position: 'absolute', inset: 0, opacity: 0.14,
-        backgroundImage: 'repeating-linear-gradient(118deg, rgba(245,241,232,0.6) 0 1px, transparent 1px 28px)',
+        position: 'absolute', inset: 0, opacity: 0.10,
+        backgroundImage: 'repeating-linear-gradient(118deg, var(--feature-fg) 0 1px, transparent 1px 28px)',
       }}/>
-      {/* zatmavení dolů / do strany kvůli čitelnosti textu */}
+      {/* jemné zjemnění kvůli čitelnosti textu */}
       <div style={{
         position: 'absolute', inset: 0,
         background: sideFade
-          ? 'linear-gradient(90deg, rgba(42,31,23,0.82) 0%, rgba(42,31,23,0.2) 72%)'
-          : 'linear-gradient(180deg, rgba(42,31,23,0.15) 0%, rgba(42,31,23,0.5) 55%, var(--sepia-900) 100%)',
+          ? 'linear-gradient(90deg, var(--feature-bg) 0%, transparent 72%)'
+          : 'linear-gradient(180deg, transparent 40%, var(--feature-bg) 100%)',
       }}/>
       <div style={{
         position: 'absolute', top: '-22%', right: '-6%', width: 360, height: 360, borderRadius: '50%',
@@ -275,14 +276,14 @@ function ModeTileDark({ icon, title, sub, onClick, dailyState }: {
       onMouseDown={() => setPressed(true)} onMouseUp={() => setPressed(false)} onMouseLeave={() => setPressed(false)}
       style={{
         position: 'relative', textAlign: 'left', cursor: 'pointer', width: '100%',
-        background: active ? 'rgba(217,119,87,0.07)' : done ? 'rgba(92,148,104,0.07)' : 'rgba(255,255,255,0.045)',
-        border: `1px solid ${active ? 'rgba(217,119,87,0.35)' : done ? 'rgba(92,148,104,0.3)' : 'rgba(255,255,255,0.08)'}`,
+        background: active ? 'rgba(217,119,87,0.07)' : done ? 'rgba(92,148,104,0.07)' : 'var(--feature-chip)',
+        border: `1px solid ${active ? 'rgba(217,119,87,0.35)' : done ? 'rgba(92,148,104,0.3)' : 'var(--feature-line)'}`,
         borderRadius: 14, padding: '16px 14px',
         transform: pressed ? 'scale(0.98)' : 'scale(1)', transition: 'all 140ms cubic-bezier(0.16,1,0.3,1)',
       }}>
       {dailyState && <DailyBadge state={dailyState} floating/>}
       <div style={{ fontSize: 20 }}>{icon}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--on-dark)', marginTop: 18 }}>{title}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--feature-fg)', marginTop: 18 }}>{title}</div>
       <div style={{ fontSize: 11, color: 'rgba(245,241,232,0.42)', marginTop: 2 }}>{sub}</div>
     </button>
   )
@@ -336,11 +337,11 @@ function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
         <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: dark ? 'var(--paper-50)' : 'var(--ink)' }}>
           Level {lvl.level}
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'rgba(245,241,232,0.5)' : 'var(--ink-3)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'var(--feature-fg2)' : 'var(--ink-3)' }}>
           {into} / {need} XP
         </span>
       </div>
-      <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: dark ? 'rgba(255,255,255,0.1)' : 'var(--paper-300)' }}>
+      <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: dark ? 'var(--feature-line)' : 'var(--paper-300)' }}>
         <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)', borderRadius: 999, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
       </div>
     </div>
@@ -351,12 +352,12 @@ function StatBadge({ value, label, accent }: { value: string; label: string; acc
   return (
     <div style={{
       display: 'flex', alignItems: 'baseline', gap: 5,
-      background: accent ? 'rgba(217,119,87,0.10)' : 'rgba(255,255,255,0.06)',
-      border: `1px solid ${accent ? 'rgba(217,119,87,0.18)' : 'rgba(255,255,255,0.08)'}`,
+      background: accent ? 'rgba(217,119,87,0.10)' : 'var(--feature-chip)',
+      border: `1px solid ${accent ? 'rgba(217,119,87,0.18)' : 'var(--feature-line)'}`,
       borderRadius: 999, padding: '6px 13px',
     }}>
       <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: accent ? 'var(--accent-soft)' : 'var(--paper-200)', letterSpacing: '-0.02em' }}>{value}</span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'rgba(245,241,232,0.4)', textTransform: 'uppercase' }}>{label}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--feature-fg3)', textTransform: 'uppercase' }}>{label}</span>
     </div>
   )
 }
@@ -371,7 +372,8 @@ function MobileStat({ value, label }: { value: string; label: string }) {
 }
 
 function Wordmark({ dark }: { dark?: boolean }) {
-  const stroke = dark ? '#2a1f17' : '#f5f1e8'
+  // dark = umístěno na běžné (flipující) ploše → var(--ink); jinak na feature ploše
+  const stroke = dark ? 'var(--ink)' : 'var(--feature-fg)'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
@@ -382,7 +384,7 @@ function Wordmark({ dark }: { dark?: boolean }) {
         <path d="M16 2 C24 8 24 24 16 30" stroke={stroke} strokeWidth="0.8" opacity="0.4" fill="none"/>
         <circle cx="16" cy="16" r="2.5" fill={stroke}/>
       </svg>
-      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, letterSpacing: '-0.01em', color: dark ? 'var(--ink-2)' : 'rgba(245,241,232,0.75)' }}>
+      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, letterSpacing: '-0.01em', color: dark ? 'var(--ink-2)' : 'var(--feature-fg2)' }}>
         HistoryGuessr
       </span>
     </div>
@@ -391,8 +393,8 @@ function Wordmark({ dark }: { dark?: boolean }) {
 
 // ─── Sdílené styly ────────────────────────────────────────
 const logoutDark: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'rgba(245,241,232,0.5)',
+  background: 'var(--feature-chip)', border: '1px solid var(--feature-line)',
+  borderRadius: 8, padding: '8px 16px', fontSize: 13, color: 'var(--feature-fg2)',
   cursor: 'pointer', transition: 'all 160ms',
 }
 const logoutLight: React.CSSProperties = {
