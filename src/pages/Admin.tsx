@@ -98,7 +98,7 @@ export default function AdminPage() {
   async function loadEvents() {
     setFetching(true)
     const { data } = await getAdminEvents()
-    setEvents(data ?? [])
+    setEvents((data ?? []).slice().sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0)))
     setFetching(false)
   }
 
@@ -243,7 +243,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
-            {['Název', 'Rok', 'Radius', 'Obtížnost', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
+            {['ID', 'Název', 'Rok', 'Radius', 'Obtížnost', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
               <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>
                 {h}
               </th>
@@ -253,6 +253,9 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
         <tbody>
           {filtered.map((ev, i) => (
             <tr key={ev.id} style={{ borderBottom: '1px solid var(--line)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
+              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-3)' }}>
+                #{ev.seq ?? '—'}
+              </td>
               <td style={{ padding: '12px 16px' }}>
                 <div style={{ fontWeight: 500, marginBottom: 2 }}>{ev.title}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{ev.category ?? '—'}</div>
