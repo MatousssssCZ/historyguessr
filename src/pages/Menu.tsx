@@ -284,7 +284,7 @@ function ModeTileDark({ icon, title, sub, onClick, dailyState }: {
       {dailyState && <DailyBadge state={dailyState} floating/>}
       <div style={{ fontSize: 20 }}>{icon}</div>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--feature-fg)', marginTop: 18 }}>{title}</div>
-      <div style={{ fontSize: 11, color: 'rgba(245,241,232,0.42)', marginTop: 2 }}>{sub}</div>
+      <div style={{ fontSize: 11, color: 'var(--feature-fg2)', marginTop: 2 }}>{sub}</div>
     </button>
   )
 }

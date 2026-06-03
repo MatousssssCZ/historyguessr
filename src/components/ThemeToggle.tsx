@@ -12,8 +12,9 @@ export default function ThemeToggle({ variant = 'light' }: { variant?: 'dark' | 
 
   const style: React.CSSProperties = variant === 'dark'
     ? {
-        background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-        color: 'rgba(245,241,232,0.7)',
+        // na feature ploše — barva i ikona se přizpůsobí tématu
+        background: 'var(--feature-chip)', border: '1px solid var(--feature-line)',
+        color: 'var(--feature-fg2)',
       }
     : {
         background: 'rgba(42,31,23,0.05)', border: '1px solid var(--line)',
