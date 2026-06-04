@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -23,6 +24,7 @@ const CATEGORIES = [
 type Screen = 'menu' | 'join_code' | 'lobby'
 
 export default function MultiplayerLobbyPage() {
+  const { t } = useTranslation()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -38,7 +40,7 @@ export default function MultiplayerLobbyPage() {
   const unsubRef = useRef<(() => void) | null>(null)
 
   const isHost = room?.host_id === user?.id
-  const username = profile?.username ?? 'Hráč'
+  const username = profile?.username ?? t('lobby.defaultPlayer')
 
   // Pokud přišel s kódem v URL
   useEffect(() => {
@@ -96,10 +98,10 @@ export default function MultiplayerLobbyPage() {
     if (!user || !joinCode.trim()) return
     setLoading(true); setError(null)
     const foundRoom = await getRoomByCode(joinCode.trim())
-    if (!foundRoom) { setError('Místnost nenalezena. Zkontroluj kód.'); setLoading(false); return }
-    if (foundRoom.status !== 'waiting') { setError('Tato hra již probíhá nebo skončila.'); setLoading(false); return }
+    if (!foundRoom) { setError(t('lobby.errNotFound')); setLoading(false); return }
+    if (foundRoom.status !== 'waiting') { setError(t('lobby.errInProgress')); setLoading(false); return }
     const currentPlayers = await getPlayers(foundRoom.id)
-    if (currentPlayers.length >= 12) { setError('Místnost je plná (max 12 hráčů).'); setLoading(false); return }
+    if (currentPlayers.length >= 12) { setError(t('lobby.errFull')); setLoading(false); return }
 
     const { error: err } = await joinRoom(foundRoom.id, user.id, username)
     if (err) { setError(err.message); setLoading(false); return }
@@ -139,9 +141,9 @@ export default function MultiplayerLobbyPage() {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--feature-bg)', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
-          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg3)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>← Menu</button>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>Více hráčů</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--feature-fg)', margin: '0 0 32px', letterSpacing: '-0.02em' }}>Zahraj si s přáteli</h1>
+          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg3)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>{t('daily.menu')}</button>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>{t('menu.multiplayer')}</p>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--feature-fg)', margin: '0 0 32px', letterSpacing: '-0.02em' }}>{t('menu.multiplayerSub2')}</h1>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button
@@ -151,8 +153,8 @@ export default function MultiplayerLobbyPage() {
             >
               <span style={{ fontSize: 28 }}>🎮</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)', lineHeight: 1 }}>Založit hru</div>
-                <div style={{ fontSize: 12, color: 'var(--feature-fg3)', marginTop: 4 }}>Vytvoř místnost a pozvi přátele</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)', lineHeight: 1 }}>{t('lobby.create')}</div>
+                <div style={{ fontSize: 12, color: 'var(--feature-fg3)', marginTop: 4 }}>{t('lobby.createSub')}</div>
               </div>
             </button>
 
@@ -162,8 +164,8 @@ export default function MultiplayerLobbyPage() {
             >
               <span style={{ fontSize: 28 }}>🔗</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)', lineHeight: 1 }}>Připojit se</div>
-                <div style={{ fontSize: 12, color: 'var(--feature-fg3)', marginTop: 4 }}>Zadej pětimístný kód</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)', lineHeight: 1 }}>{t('lobby.join')}</div>
+                <div style={{ fontSize: 12, color: 'var(--feature-fg3)', marginTop: 4 }}>{t('lobby.joinSub')}</div>
               </div>
             </button>
           </div>
@@ -177,15 +179,15 @@ export default function MultiplayerLobbyPage() {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--feature-bg)', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 400, margin: '0 auto', width: '100%' }}>
-          <button onClick={() => setScreen('menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg3)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>← Zpět</button>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--feature-fg)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Připojit se do hry</h2>
-          <p style={{ fontSize: 14, color: 'var(--feature-fg3)', margin: '0 0 28px' }}>Zadej pětimístný kód od přítele.</p>
+          <button onClick={() => setScreen('menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg3)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>{t('lobby.back')}</button>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--feature-fg)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>{t('lobby.joinTitle')}</h2>
+          <p style={{ fontSize: 14, color: 'var(--feature-fg3)', margin: '0 0 28px' }}>{t('lobby.joinHint')}</p>
 
           <input
             className="input"
             value={joinCode}
             onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 5))}
-            placeholder="NAPŘ. A7K3P"
+            placeholder={t('lobby.codePlaceholder')}
             maxLength={5}
             style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 28, letterSpacing: '0.3em', marginBottom: 12, background: 'var(--feature-chip)', color: 'var(--feature-fg)', border: '1px solid rgba(255,255,255,0.15)', padding: '16px' }}
             onKeyDown={e => e.key === 'Enter' && joinCode.length === 5 && handleJoin()}
@@ -199,7 +201,7 @@ export default function MultiplayerLobbyPage() {
             disabled={joinCode.length !== 5 || loading}
             onClick={handleJoin}
           >
-            {loading ? 'Připojuji…' : 'Připojit se →'}
+            {loading ? t('lobby.joining') : t('lobby.joinBtn')}
           </button>
         </div>
       </div>
@@ -219,10 +221,10 @@ export default function MultiplayerLobbyPage() {
           </div>
           <span style={{ flex: 1, fontSize: 14, color: 'var(--feature-fg)', fontWeight: p.user_id === user?.id ? 500 : 400 }}>
             {p.username}
-            {p.user_id === user?.id && <span style={{ fontSize: 10, color: 'var(--feature-fg3)', marginLeft: 6 }}>ty</span>}
+            {p.user_id === user?.id && <span style={{ fontSize: 10, color: 'var(--feature-fg3)', marginLeft: 6 }}>{t('lobby.you')}</span>}
           </span>
           {p.is_host
-            ? <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', background: 'rgba(217,119,87,0.15)', color: 'var(--accent-soft)', padding: '2px 8px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.3)' }}>hostitel</span>
+            ? <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', background: 'rgba(217,119,87,0.15)', color: 'var(--accent-soft)', padding: '2px 8px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.3)' }}>{t('lobby.host')}</span>
             : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           }
         </div>
@@ -234,39 +236,39 @@ export default function MultiplayerLobbyPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <label className="label">Počet kol</label>
+          <label className="label">{t('pregame.rounds')}</label>
           <select className="input" style={{ padding: '8px 12px' }} value={settings.rounds} onChange={e => handleSettingChange('rounds', Number(e.target.value))}>
-            <option value={3}>3 kola</option>
-            <option value={5}>5 kol</option>
-            <option value={10}>10 kol</option>
+            <option value={3}>{t('lobby.rounds3')}</option>
+            <option value={5}>{t('lobby.rounds5')}</option>
+            <option value={10}>{t('lobby.rounds10')}</option>
           </select>
         </div>
         <div>
-          <label className="label">Čas na kolo</label>
+          <label className="label">{t('lobby.timeLabel')}</label>
           <select className="input" style={{ padding: '8px 12px' }} value={settings.time_limit} onChange={e => handleSettingChange('time_limit', Number(e.target.value))}>
-            <option value={30}>30 sekund</option>
-            <option value={60}>60 sekund</option>
-            <option value={90}>90 sekund</option>
-            <option value={120}>120 sekund</option>
+            <option value={30}>{t('lobby.sec30')}</option>
+            <option value={60}>{t('lobby.sec60')}</option>
+            <option value={90}>{t('lobby.sec90')}</option>
+            <option value={120}>{t('lobby.sec120')}</option>
           </select>
         </div>
       </div>
       <div>
-        <label className="label">Kategorie (prázdno = vše)</label>
+        <label className="label">{t('lobby.categoriesLabel')}</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {CATEGORIES.map(cat => {
             const active = settings.categories.includes(cat.id)
             return (
               <button key={cat.id} onClick={() => toggleCategory(cat.id)}
                 style={{ padding: '6px 12px', borderRadius: 999, fontSize: 12, cursor: 'pointer', border: active ? '1px solid rgba(217,119,87,0.4)' : '0.5px solid var(--line-strong)', background: active ? 'rgba(217,119,87,0.1)' : 'var(--paper-100)', color: active ? 'var(--accent-deep)' : 'var(--ink-3)', transition: 'all 150ms' }}>
-                {cat.label}
+                {t('cat.' + cat.id)}
               </button>
             )
           })}
         </div>
       </div>
       <div>
-        <label className="label">Věkový rozptyl událostí</label>
+        <label className="label">{t('lobby.yearSpread')}</label>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input type="number" className="input" value={settings.year_from} onChange={e => handleSettingChange('year_from', Number(e.target.value))} style={{ width: 100, padding: '8px 10px', fontFamily: 'var(--font-mono)', fontSize: 13 }}/>
           <span style={{ color: 'var(--ink-3)' }}>–</span>
@@ -274,8 +276,8 @@ export default function MultiplayerLobbyPage() {
         </div>
         {matchingEvents !== null && (
           <p style={{ fontSize: 12, color: matchingEvents >= settings.rounds ? 'var(--ink-3)' : '#c0392b', margin: '6px 0 0', fontFamily: 'var(--font-mono)' }}>
-            {matchingEvents >= settings.rounds ? '✓' : '⚠'} {matchingEvents} událostí odpovídá kritériím
-            {matchingEvents < settings.rounds && ` (min. ${settings.rounds})`}
+            {matchingEvents >= settings.rounds ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
+            {matchingEvents < settings.rounds && t('lobby.minRounds', { min: settings.rounds })}
           </p>
         )}
       </div>
@@ -286,11 +288,11 @@ export default function MultiplayerLobbyPage() {
     <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '14px' }}
       disabled={loading || players.length < 1 || (matchingEvents !== null && matchingEvents < settings.rounds)}
       onClick={handleStart}>
-      {loading ? 'Spouštím…' : `Spustit hru (${players.length} hráč${players.length === 1 ? '' : players.length < 5 ? 'i' : 'ů'}) →`}
+      {loading ? t('lobby.starting') : t('lobby.startGame', { count: players.length })}
     </button>
   ) : (
     <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', padding: '10px 0' }}>
-      Čekáme až hostitel spustí hru…
+      {t('lobby.waiting')}
     </div>
   )
 
@@ -310,7 +312,7 @@ export default function MultiplayerLobbyPage() {
 
           {/* Kód místnosti */}
           <div style={{ padding: '40px 36px 32px', position: 'relative' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 10px' }}>Kód místnosti</p>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 10px' }}>{t('lobby.roomCode')}</p>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 52, fontWeight: 700, letterSpacing: '0.22em', color: 'var(--feature-fg)', lineHeight: 1, marginBottom: 16 }}>
               {room?.code}
             </div>
@@ -347,12 +349,12 @@ export default function MultiplayerLobbyPage() {
         {/* Pravá — světlá: nastavení + start */}
         <div style={{ background: 'var(--paper-100)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 0 4px' }}>Nastavení hry</p>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 32px', letterSpacing: '-0.01em' }}>Přizpůsob hru</h2>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 0 4px' }}>{t('lobby.gameSettings')}</p>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 32px', letterSpacing: '-0.01em' }}>{t('lobby.customize')}</h2>
             {isHost ? <SettingsPanel/> : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 16 }}>
                 <span className="spinner"/>
-                <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>Hostitel nastavuje hru…</p>
+                <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</p>
               </div>
             )}
             {error && <div className="alert alert-error" style={{ marginTop: 16 }}>{error}</div>}
@@ -370,13 +372,13 @@ export default function MultiplayerLobbyPage() {
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex', flexDirection: 'column' }}>
       <header style={{ background: 'var(--feature-bg)', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 'calc(14px + env(safe-area-inset-top,0px))' }}>
         <div>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 2px' }}>Kód místnosti</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 2px' }}>{t('lobby.roomCode')}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 600, letterSpacing: '0.2em', color: 'var(--feature-fg)' }}>{room?.code}</span>
-            <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--feature-line)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--feature-fg2)', cursor: 'pointer' }}>Kopírovat</button>
+            <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--feature-line)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--feature-fg2)', cursor: 'pointer' }}>{t('lobby.copy')}</button>
           </div>
         </div>
-        <button onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }} style={{ background: 'var(--feature-chip)', border: '0.5px solid var(--feature-line)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--feature-fg2)', cursor: 'pointer' }}>Odejít</button>
+        <button onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }} style={{ background: 'var(--feature-chip)', border: '0.5px solid var(--feature-line)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--feature-fg2)', cursor: 'pointer' }}>{t('lobby.leave')}</button>
       </header>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -386,8 +388,8 @@ export default function MultiplayerLobbyPage() {
           </div>
           <div style={{ padding: '8px 12px' }}><PlayerList/></div>
         </div>
-        {isHost && <div className="card" style={{ padding: '16px' }}><p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 14px' }}>Nastavení hry</p><SettingsPanel/></div>}
-        {!isHost && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ink-3)', fontSize: 14 }}>Hostitel nastavuje hru…</div>}
+        {isHost && <div className="card" style={{ padding: '16px' }}><p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 14px' }}>{t('lobby.gameSettings')}</p><SettingsPanel/></div>}
+        {!isHost && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</div>}
         {error && <div className="alert alert-error">{error}</div>}
       </div>
 
