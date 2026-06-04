@@ -1,6 +1,15 @@
 // Překlady (cs / en / de). Klíče přidáváme postupně, jak se překládají obrazovky.
 export const resources = {
   cs: { translation: {
+    stats: { title: 'Tvůj progres', noData: 'Zatím žádná data', noDataSub: 'Zahraj si první hru a sleduj svůj progres tady.', playCta: 'Hrát →',
+      overview: 'Přehled', accuracy: 'Přesnost', daily: 'Denní výzva', trend: 'Vývoj výkonu', achievements: 'Achievementy',
+      games: 'Odehraných her', totalScore: 'Celkové skóre', avgScore: 'Ø skóre / hra', bullseyes: 'Zásahů do černého',
+      avgDistance: 'Ø vzdálenost', avgYear: 'Ø chyba roku', close: 'Trefa do 25 km', exactYear: 'Přesný rok',
+      streak: 'Aktuální série', dailyCount: 'Odehraných výzev',
+      unitKm: ' km', unitYears: ' let', unitDays: ' dní',
+      trendUp: '📈 Zlepšuješ se · +{{pct}} %', trendDown: '📉 Mírný pokles · {{pct}} %', trendStable: '➖ Stabilní výkon',
+      perGame: 'skóre / hra', firstGames: 'prvních her', lastGames: 'posledních her →',
+      soon: 'Již brzy', achSub: 'Sbírej odznaky za série, přesnost a milníky. Připravujeme.' },
     reset: { title: 'Nové heslo', sub: 'Zvol si nové heslo k účtu.', newPassword: 'Nové heslo',
       done: '✓ Heslo změněno. Přesměrovávám…', verifying: 'Ověřuji odkaz z e-mailu… Pokud se nic nestane, odkaz mohl vypršet — požádej o nový na přihlašovací stránce.',
       failed: 'Nepodařilo se změnit heslo. Odkaz mohl vypršet.', submit: 'Nastavit heslo →' },
@@ -59,6 +68,15 @@ export const resources = {
   }},
 
   en: { translation: {
+    stats: { title: 'Your progress', noData: 'No data yet', noDataSub: 'Play your first game and track your progress here.', playCta: 'Play →',
+      overview: 'Overview', accuracy: 'Accuracy', daily: 'Daily challenge', trend: 'Performance trend', achievements: 'Achievements',
+      games: 'Games played', totalScore: 'Total score', avgScore: 'Avg score / game', bullseyes: 'Bullseyes',
+      avgDistance: 'Avg distance', avgYear: 'Avg year error', close: 'Within 25 km', exactYear: 'Exact year',
+      streak: 'Current streak', dailyCount: 'Challenges played',
+      unitKm: ' km', unitYears: ' yrs', unitDays: ' days',
+      trendUp: '📈 Improving · +{{pct}} %', trendDown: '📉 Slight decline · {{pct}} %', trendStable: '➖ Stable performance',
+      perGame: 'score / game', firstGames: 'first games', lastGames: 'recent games →',
+      soon: 'Coming soon', achSub: 'Earn badges for streaks, accuracy and milestones. Coming soon.' },
     reset: { title: 'New password', sub: 'Choose a new password for your account.', newPassword: 'New password',
       done: '✓ Password changed. Redirecting…', verifying: 'Verifying the e-mail link… If nothing happens, the link may have expired — request a new one on the sign-in page.',
       failed: 'Could not change the password. The link may have expired.', submit: 'Set password →' },
@@ -117,6 +135,15 @@ export const resources = {
   }},
 
   de: { translation: {
+    stats: { title: 'Dein Fortschritt', noData: 'Noch keine Daten', noDataSub: 'Spiele dein erstes Spiel und verfolge deinen Fortschritt hier.', playCta: 'Spielen →',
+      overview: 'Überblick', accuracy: 'Genauigkeit', daily: 'Tägliche Challenge', trend: 'Leistungsverlauf', achievements: 'Erfolge',
+      games: 'Gespielte Spiele', totalScore: 'Gesamtpunkte', avgScore: 'Ø Punkte / Spiel', bullseyes: 'Volltreffer',
+      avgDistance: 'Ø Entfernung', avgYear: 'Ø Jahresfehler', close: 'Unter 25 km', exactYear: 'Genaues Jahr',
+      streak: 'Aktuelle Serie', dailyCount: 'Gespielte Challenges',
+      unitKm: ' km', unitYears: ' J.', unitDays: ' Tage',
+      trendUp: '📈 Verbesserung · +{{pct}} %', trendDown: '📉 Leichter Rückgang · {{pct}} %', trendStable: '➖ Stabile Leistung',
+      perGame: 'Punkte / Spiel', firstGames: 'erste Spiele', lastGames: 'letzte Spiele →',
+      soon: 'Demnächst', achSub: 'Sammle Abzeichen für Serien, Genauigkeit und Meilensteine. Demnächst.' },
     reset: { title: 'Neues Passwort', sub: 'Wähle ein neues Passwort für dein Konto.', newPassword: 'Neues Passwort',
       done: '✓ Passwort geändert. Weiterleitung…', verifying: 'E-Mail-Link wird geprüft… Wenn nichts passiert, ist der Link evtl. abgelaufen — fordere auf der Anmeldeseite einen neuen an.',
       failed: 'Passwort konnte nicht geändert werden. Der Link ist evtl. abgelaufen.', submit: 'Passwort festlegen →' },
