@@ -1,6 +1,13 @@
 // Překlady (cs / en / de). Klíče přidáváme postupně, jak se překládají obrazovky.
 export const resources = {
   cs: { translation: {
+    daily: { noChallenge: 'Dnes žádná výzva není', tryTomorrow: 'Zkus to zítra.', menu: '← Menu',
+      rule1: 'Máš 1 minutu na odpověď', rule2: 'Pouze jeden pokus — odchod ze hry = konec', rule3: 'Po odpovědi uvidíš žebříček a distribuci skóre',
+      start: 'Spustit výzvu →', remaining: 'Zbývá', panoramaReady: 'Panorama připravena', panoramaLoading: 'Načítám panoramu…',
+      placeSet: 'Místo ✓', pickPlace: 'Vybrat místo', bc: 'Př. n. l.', exact: '✓ Přesný!', submitting: 'Odesílám…',
+      collapse: '✕ Sbalit', yearPlaceholder: '-480 nebo 1912',
+      leaderboard: 'Žebříček dne', player: 'Hráč', alreadyPlayed: 'Dnes jsi již hrál', resultTitle: 'Výsledek · Tento den v historii',
+      distribution: 'Distribuce skóre', close: '✕ Zavřít', yourScore: 'Tvé skóre' },
     game: { round: 'Kolo {{n}} / {{total}}', score: 'Skóre', quit: '✕ Skončit', histEvent: 'Historická událost',
       place: 'Místo', year: 'Rok', pickYear: 'Vybrat rok →', bc: 'př. n. l.', ad: 'n. l.', bcShort: 'př.n.l.', adShort: 'n.l.',
       submitBoth: 'Vyber místo a rok', submitPlace: 'Zbývá vybrat místo', submitYear: 'Zbývá vybrat rok', submit: 'Odeslat odpověď →',
@@ -81,6 +88,13 @@ export const resources = {
   }},
 
   en: { translation: {
+    daily: { noChallenge: 'No challenge today', tryTomorrow: 'Try again tomorrow.', menu: '← Menu',
+      rule1: 'You have 1 minute to answer', rule2: 'Only one attempt — leaving the game ends it', rule3: 'After answering you see the leaderboard and score distribution',
+      start: 'Start challenge →', remaining: 'Left', panoramaReady: 'Panorama ready', panoramaLoading: 'Loading panorama…',
+      placeSet: 'Place ✓', pickPlace: 'Pick a place', bc: 'BC', exact: '✓ Exact!', submitting: 'Sending…',
+      collapse: '✕ Collapse', yearPlaceholder: '-480 or 1912',
+      leaderboard: 'Daily leaderboard', player: 'Player', alreadyPlayed: 'You already played today', resultTitle: 'Result · This day in history',
+      distribution: 'Score distribution', close: '✕ Close', yourScore: 'Your score' },
     game: { round: 'Round {{n}} / {{total}}', score: 'Score', quit: '✕ Quit', histEvent: 'Historical event',
       place: 'Place', year: 'Year', pickYear: 'Pick year →', bc: 'BC', ad: 'AD', bcShort: 'BC', adShort: 'AD',
       submitBoth: 'Pick place and year', submitPlace: 'Pick a place', submitYear: 'Pick a year', submit: 'Submit answer →',
@@ -161,6 +175,13 @@ export const resources = {
   }},
 
   de: { translation: {
+    daily: { noChallenge: 'Heute keine Challenge', tryTomorrow: 'Versuche es morgen wieder.', menu: '← Menü',
+      rule1: 'Du hast 1 Minute zum Antworten', rule2: 'Nur ein Versuch — das Spiel verlassen beendet es', rule3: 'Nach der Antwort siehst du Rangliste und Punkteverteilung',
+      start: 'Challenge starten →', remaining: 'Übrig', panoramaReady: 'Panorama bereit', panoramaLoading: 'Panorama lädt…',
+      placeSet: 'Ort ✓', pickPlace: 'Ort wählen', bc: 'v. Chr.', exact: '✓ Exakt!', submitting: 'Senden…',
+      collapse: '✕ Einklappen', yearPlaceholder: '-480 oder 1912',
+      leaderboard: 'Tagesrangliste', player: 'Spieler', alreadyPlayed: 'Du hast heute schon gespielt', resultTitle: 'Ergebnis · Dieser Tag in der Geschichte',
+      distribution: 'Punkteverteilung', close: '✕ Schließen', yourScore: 'Deine Punkte' },
     game: { round: 'Runde {{n}} / {{total}}', score: 'Punkte', quit: '✕ Beenden', histEvent: 'Historisches Ereignis',
       place: 'Ort', year: 'Jahr', pickYear: 'Jahr wählen →', bc: 'v. Chr.', ad: 'n. Chr.', bcShort: 'v.Chr.', adShort: 'n.Chr.',
       submitBoth: 'Ort und Jahr wählen', submitPlace: 'Ort wählen', submitYear: 'Jahr wählen', submit: 'Antwort senden →',
