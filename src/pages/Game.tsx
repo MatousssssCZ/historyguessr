@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,6 +13,7 @@ declare const pannellum: {
 }
 
 export default function GamePage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,11 +52,11 @@ export default function GamePage() {
         zIndex: 25, flexShrink: 0,
       }} className="game-hud">
         <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 10 }}>
-          Kolo {state.currentRound + 1} / {roundsCount}
+          {t('game.round', { n: state.currentRound + 1, total: roundsCount })}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ textAlign: 'right' }}>
-            <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.35)', fontSize: 9 }}>Skóre</div>
+            <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.35)', fontSize: 9 }}>{t('game.score')}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--on-dark)' }}>
               {state.totalScore.toLocaleString('cs-CZ')}
             </div>
@@ -64,7 +66,7 @@ export default function GamePage() {
             style={{ padding: '6px 12px', fontSize: 12, color: 'var(--on-dark)', borderColor: 'rgba(245,241,232,0.2)' }}
             onClick={() => { resetGame(); navigate('/menu') }}
           >
-            ✕ Skončit
+            {t('game.quit')}
           </button>
         </div>
       </div>
@@ -95,7 +97,7 @@ export default function GamePage() {
                 fontFamily: 'var(--font-mono)', fontSize: 9,
                 letterSpacing: '0.18em', color: 'var(--accent)',
                 textTransform: 'uppercase', marginBottom: 5,
-              }}>Historická událost</div>
+              }}>{t('game.histEvent')}</div>
               <div style={{
                 fontFamily: 'var(--font-serif)',
                 fontSize: 'clamp(15px, 2.2vw, 22px)',
@@ -294,6 +296,7 @@ function CalIcon({ color }: { color: string }) {
 function MapTile({ guessLat, guessLng, mapPin, onClick, height }: {
   guessLat: number | null; guessLng: number | null; mapPin: string | null; onClick: () => void; height: number
 }) {
+  const { t } = useTranslation()
   const set = guessLat !== null
   return (
     <button onClick={onClick} style={{
@@ -314,7 +317,7 @@ function MapTile({ guessLat, guessLng, mapPin, onClick, height }: {
         borderTop: `0.5px solid ${set ? 'rgba(39,174,96,0.2)' : 'var(--line)'}`,
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: set ? GREEN_DEEP : 'var(--ink-2)', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-          <PinIcon color={set ? GREEN_DEEP : '#5a4632'}/> {set ? mapPin : 'Místo'}
+          <PinIcon color={set ? GREEN_DEEP : '#5a4632'}/> {set ? mapPin : t('game.place')}
         </span>
         <span style={{ fontSize: 13, color: set ? GREEN_DEEP : 'var(--ink-3)', flexShrink: 0 }}>{set ? '✓' : '›'}</span>
       </div>
@@ -326,6 +329,7 @@ function MapTile({ guessLat, guessLng, mapPin, onClick, height }: {
 function YearTile({ guessYear, guessYearSet, onClick, height }: {
   guessYear: number; guessYearSet: boolean; onClick: () => void; height: number
 }) {
+  const { t } = useTranslation()
   const bc = guessYear < 0
   return (
     <button onClick={onClick} style={{
@@ -337,7 +341,7 @@ function YearTile({ guessYear, guessYearSet, onClick, height }: {
     }}>
       {guessYearSet && <div style={tileBadge}>✓</div>}
       <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
-        <CalIcon color="#8a7a5d"/> Rok
+        <CalIcon color="#8a7a5d"/> {t('game.year')}
       </span>
       {guessYearSet ? (
         <>
@@ -346,11 +350,11 @@ function YearTile({ guessYear, guessYearSet, onClick, height }: {
             alignSelf: 'flex-start', marginTop: 5, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase',
             padding: '2px 8px', borderRadius: 999,
             background: bc ? 'rgba(90,143,181,0.16)' : 'rgba(217,119,87,0.14)', color: bc ? '#3f6f97' : 'var(--accent-deep)',
-          }}>{bc ? 'př. n. l.' : 'n. l.'} ✓</span>
+          }}>{bc ? t('game.bc') : t('game.ad')} ✓</span>
         </>
       ) : (
         <>
-          <div style={{ marginTop: 'auto', fontSize: 14, color: 'var(--accent-deep)', fontWeight: 500 }}>Vybrat rok →</div>
+          <div style={{ marginTop: 'auto', fontSize: 14, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
           <div style={{ marginTop: 8, height: 14, position: 'relative' }}>
             <div style={{ position: 'absolute', top: 6, left: 0, right: 0, height: 2, background: 'repeating-linear-gradient(90deg, var(--line-strong) 0 2px, transparent 2px 7px)' }}/>
             <div style={{ position: 'absolute', top: 3, left: '60%', width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)' }}/>
@@ -367,6 +371,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   canSubmit: boolean; onLocationChange: (lat: number, lng: number) => void
   onYearChange: (y: number) => void; onSubmit: () => void
 }) {
+  const { t } = useTranslation()
   const [mapExpanded, setMapExpanded] = useState(false)
   const [yearExpanded, setYearExpanded] = useState(false)
   const isMobile = window.innerWidth <= 640
@@ -374,10 +379,10 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   const missingLocation = guessLat === null
   const missingYear = !canSubmit && !missingLocation
   const submitLabel = missingLocation && missingYear
-    ? 'Vyber místo a rok'
-    : missingLocation ? 'Zbývá vybrat místo'
-    : missingYear ? 'Zbývá vybrat rok'
-    : 'Odeslat odpověď →'
+    ? t('game.submitBoth')
+    : missingLocation ? t('game.submitPlace')
+    : missingYear ? t('game.submitYear')
+    : t('game.submit')
 
   const mapPin = guessLat !== null
     ? `${guessLat.toFixed(1)}°${guessLat >= 0 ? 'N' : 'S'} ${guessLng?.toFixed(1)}°${(guessLng ?? 0) >= 0 ? 'E' : 'W'}`
@@ -396,10 +401,10 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={onLocationChange}/>
                 <button
                   onClick={() => setMapExpanded(false)}
-                  aria-label="Zmenšit mapu"
+                  aria-label={t('game.shrinkMap')}
                   style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.2)', borderRadius: 8, padding: '8px 13px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer' }}
                 >
-                  <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> Zmenšit
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> {t('game.shrink')}
                 </button>
               </div>
               <div style={{ background: 'rgba(245,241,232,0.97)', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: '0.5px solid var(--line)' }}>
@@ -408,7 +413,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                   onClick={() => setMapExpanded(false)}
                   style={{ background: guessLat !== null ? 'var(--accent)' : 'var(--paper-400)', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 500, color: guessLat !== null ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}
                 >
-                  {guessLat !== null ? 'Potvrdit místo ✓' : 'Vyber místo…'}
+                  {guessLat !== null ? t('game.confirmPlace') : t('game.pickPlace')}
                 </button>
               </div>
             </div>
@@ -471,7 +476,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
             {/* Sbalit zpět na nativní zobrazení — vlevo nahoře v rohu */}
             <button
               onClick={() => setMapExpanded(false)}
-              aria-label="Zmenšit mapu"
+              aria-label={t('game.shrinkMap')}
               style={{
                 position: 'absolute', top: 10, left: 10, zIndex: 10,
                 background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)',
@@ -481,7 +486,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> Zmenšit
+              <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> {t('game.shrink')}
             </button>
           </div>
           {/* Potvrzení místa */}
@@ -505,7 +510,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 cursor: 'pointer',
               }}
             >
-              {guessLat !== null ? 'Potvrdit místo ✓' : 'Vyber místo…'}
+              {guessLat !== null ? t('game.confirmPlace') : t('game.pickPlace')}
             </button>
           </div>
         </div>
@@ -588,6 +593,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
 
 // ── Year picker — barevný slider + numerický input ───────
 function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+  const { t } = useTranslation()
   const MIN = -3000; const MAX = 2025
   const TOTAL = MAX - MIN  // 5025
   const pct = ((value - MIN) / TOTAL) * 100
@@ -670,7 +676,7 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
         </div>
         {/* Popisky */}
         <div style={{ position: 'relative', height: 16 }}>
-          <span style={{ position: 'absolute', left: 0, fontSize: 10, fontFamily: 'var(--font-mono)', color: '#7aa8cc' }}>3000 př.</span>
+          <span style={{ position: 'absolute', left: 0, fontSize: 10, fontFamily: 'var(--font-mono)', color: '#7aa8cc' }}>{t('game.bcAxis')}</span>
           <span style={{ position: 'absolute', left: `${zeroPct}%`, transform: 'translateX(-50%)', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--ink-3)' }}>0</span>
           <span style={{ position: 'absolute', right: 0, fontSize: 10, fontFamily: 'var(--font-mono)', color: '#d97757' }}>2025</span>
         </div>
@@ -691,7 +697,7 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
             value={inputValue}
             onChange={e => handleInput(e.target.value)}
             onBlur={() => setDraft(null)}
-            placeholder="rok"
+            placeholder={t('game.yearInput')}
             style={{
               width: 78, textAlign: 'right', border: 'none', background: 'transparent',
               fontFamily: 'var(--font-mono)', fontSize: 17, color: 'var(--ink)',
@@ -699,14 +705,14 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
             }}
           />
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
-            {value < 0 ? 'př.n.l.' : 'n.l.'}
+            {value < 0 ? t('game.bcShort') : t('game.adShort')}
           </span>
         </div>
         <button onClick={() => step(1)} style={stepBtnStyle}>+1</button>
         <button onClick={() => step(10)} style={stepBtnStyle}>+10</button>
       </div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--ink-3)', textTransform: 'uppercase', textAlign: 'center' }}>
-        − = př. n. l.
+        {t('game.yearHint')}
       </div>
     </div>
   )
@@ -717,10 +723,11 @@ function RoundResult({ event, round, onNext, isLast }: {
   event: Event; round: ReturnType<typeof useGame>['lastRound']
   onNext: () => void; isLast: boolean
 }) {
+  const { t } = useTranslation()
   if (!round) return null
   const [tab, setTab] = useState<'score' | 'info'>('score')
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
-  const yearDiffLabel = round.year_diff === 0 ? '✓ Přesný tip!' : `${round.year_diff} let mimo`
+  const yearDiffLabel = round.year_diff === 0 ? t('game.exactTip') : t('game.yearOff', { n: round.year_diff })
   const locPct = Math.round(round.location_score / 5)
   const yrPct = Math.round(round.year_score / 5)
 
@@ -736,7 +743,7 @@ function RoundResult({ event, round, onNext, isLast }: {
       style={{ width: '100%', fontSize: 15, padding: '13px 0' }}
       onClick={onNext}
     >
-      {isLast ? 'Zobrazit celkové výsledky →' : 'Další kolo →'}
+      {isLast ? t('game.showTotal') : t('game.nextRound')}
     </button>
   )
 
@@ -760,19 +767,19 @@ function RoundResult({ event, round, onNext, isLast }: {
         }}>
           {/* Header — název + skóre */}
           <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 3 }}>Výsledek kola</div>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 3 }}>{t('game.resultRound')}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
-                <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
               </div>
             </div>
           </div>
 
           {/* Tab přepínač */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-            {([['score', '🏆', 'Skóre'], ['info', '📖', 'O události']] as const).map(([key, icon, label]) => (
+            {([['score', '🏆', t('game.tabScore')], ['info', '📖', t('game.tabInfo')]] as const).map(([key, icon, label]) => (
               <button key={key} onClick={() => setTab(key)}
                 style={{ padding: '9px 0', border: 'none', borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <span style={{ fontSize: 13 }}>{icon}</span>{label}
@@ -790,16 +797,16 @@ function RoundResult({ event, round, onNext, isLast }: {
               {/* Skóre karty */}
               <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
-                  <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
+                  <ScoreCard label={t('game.location')} score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
+                  <ScoreCard label={t('game.year')} score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
                 </div>
                 <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
                   <div>
-                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Správný rok</div>
+                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.correctYear')}</div>
                     <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>Tvůj tip</div>
+                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.yourGuess')}</div>
                     <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(round.guess_year)}</div>
                   </div>
                 </div>
@@ -829,12 +836,12 @@ function RoundResult({ event, round, onNext, isLast }: {
         {/* Levý — mapa + skóre */}
         <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
           <div style={{ padding: '18px 24px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ marginBottom: 3 }}>Výsledek kola</div>
+            <div className="eyebrow" style={{ marginBottom: 3 }}>{t('game.resultRound')}</div>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{event.title}</h2>
               <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>z 1 000 bodů</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('game.outOf1000pts')}</div>
               </div>
             </div>
           </div>
@@ -843,12 +850,12 @@ function RoundResult({ event, round, onNext, isLast }: {
           </div>
           <div style={{ padding: '16px 24px', flex: 1 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-              <ScoreCard label="Poloha" score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
-              <ScoreCard label="Rok" score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
+              <ScoreCard label={t('game.location')} score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
+              <ScoreCard label={t('game.year')} score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-3)', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
-              <span>Správný rok: <strong style={{ color: 'var(--ink)' }}>{formatYear(event.year)}</strong></span>
-              <span>Tvůj tip: <strong style={{ color: 'var(--ink)' }}>{formatYear(round.guess_year)}</strong></span>
+              <span>{t('game.correctYearInline')} <strong style={{ color: 'var(--ink)' }}>{formatYear(event.year)}</strong></span>
+              <span>{t('game.yourGuessInline')} <strong style={{ color: 'var(--ink)' }}>{formatYear(round.guess_year)}</strong></span>
             </div>
           </div>
           <div style={{ padding: '12px 24px 16px', borderTop: '1px solid var(--line)' }}>{nextBtn}</div>
@@ -878,13 +885,15 @@ function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score
 
 // ── Sdílený obsah info ────────────────────────────────────
 function InfoContent({ event }: { event: Event }) {
+  const { t } = useTranslation()
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {event.event_image_url && (
         <img src={event.event_image_url} alt={event.title} style={{ width: '100%', height: 200, objectFit: 'cover', flexShrink: 0 }}/>
       )}
       <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <p className="eyebrow" style={{ margin: 0 }}>O události</p>
+        <p className="eyebrow" style={{ margin: 0 }}>{t('game.aboutEvent')}</p>
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h3>
         {event.description && (
           <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>{event.description}</p>
@@ -904,6 +913,7 @@ function InfoContent({ event }: { event: Event }) {
 
 // ── Star rating ──────────────────────────────────────────
 function StarRating({ eventId }: { eventId: string }) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState(0)
   const [hover, setHover] = useState(0)
   const [sent, setSent] = useState(false)
@@ -917,7 +927,7 @@ function StarRating({ eventId }: { eventId: string }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 0 4px' }}>
-      <div className="eyebrow" style={{ fontSize: 9 }}>Ohodnoť kvalitu panoramy</div>
+      <div className="eyebrow" style={{ fontSize: 9 }}>{t('game.ratePanorama')}</div>
       {sent ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', gap: 4 }}>
@@ -925,7 +935,7 @@ function StarRating({ eventId }: { eventId: string }) {
               <span key={i} style={{ fontSize: 22, color: i <= selected ? '#d97757' : 'var(--line-strong)' }}>★</span>
             ))}
           </div>
-          <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Díky!</span>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{t('game.thanks')}</span>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 4 }}>
@@ -976,19 +986,23 @@ function DetailRow({ label, value, highlight, strong }: {
 
 // ── Loading / Error / Finished screens ───────────────────
 function LoadingScreen() {
+  const { t } = useTranslation()
+
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#0d0906' }}>
       <div className="spinner" style={{ width: 32, height: 32 }}/>
-      <p style={{ color: 'var(--paper-300)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.16em' }}>NAČÍTÁM HISTORII…</p>
+      <p style={{ color: 'var(--paper-300)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.16em' }}>{t('game.loading')}</p>
     </div>
   )
 }
 
 function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
+  const { t } = useTranslation()
+
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 32, background: '#0d0906' }}>
       <p style={{ color: 'var(--on-dark)', fontSize: 16 }}>{msg}</p>
-      <button className="btn btn-accent" onClick={onRetry}>Zkusit znovu</button>
+      <button className="btn btn-accent" onClick={onRetry}>{t('game.retry')}</button>
     </div>
   )
 }
@@ -996,19 +1010,20 @@ function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
 function FinishedScreen({ totalScore, rounds, onPlayAgain, onMenu }: {
   totalScore: number; rounds: number; onPlayAgain: () => void; onMenu: () => void
 }) {
+  const { t } = useTranslation()
   const pct = Math.round((totalScore / (rounds * 1000)) * 100)
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--paper-100)' }}>
-      <p className="eyebrow" style={{ marginBottom: 16 }}>Konec hry</p>
+      <p className="eyebrow" style={{ marginBottom: 16 }}>{t('game.gameOver')}</p>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 80, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--accent)', marginBottom: 8 }}>
         {totalScore.toLocaleString('cs-CZ')}
       </div>
       <p style={{ color: 'var(--ink-3)', marginBottom: 40, fontFamily: 'var(--font-mono)', fontSize: 14 }}>
-        bodů · {pct} % přesnost
+        {t('game.accuracy', { pct })}
       </p>
       <div style={{ display: 'flex', gap: 12 }}>
-        <button className="btn btn-ghost" onClick={onMenu}>Menu</button>
-        <button className="btn btn-accent" onClick={onPlayAgain}>Hrát znovu</button>
+        <button className="btn btn-ghost" onClick={onMenu}>{t('game.menu')}</button>
+        <button className="btn btn-accent" onClick={onPlayAgain}>{t('game.playAgain')}</button>
       </div>
     </div>
   )

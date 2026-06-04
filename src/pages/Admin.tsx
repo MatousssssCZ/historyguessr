@@ -254,7 +254,7 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
           {filtered.map((ev, i) => (
             <tr key={ev.id} style={{ borderBottom: '1px solid var(--line)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
               <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-3)' }}>
-                #{ev.seq ?? '—'}
+                {ev.seq != null ? `#${ev.seq}` : '—'}
               </td>
               <td style={{ padding: '12px 16px' }}>
                 <div style={{ fontWeight: 500, marginBottom: 2 }}>{ev.title}</div>
