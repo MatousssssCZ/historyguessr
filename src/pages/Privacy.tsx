@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { currentLocale } from '@/i18n'
 
 export default function PrivacyPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
@@ -18,12 +21,12 @@ export default function PrivacyPage() {
           className="btn btn-ghost"
           style={{ padding: '7px 12px', fontSize: 13 }}
         >
-          ← Zpět
+          ← {t('legal.back')}
         </button>
         <div>
           <div className="eyebrow" style={{ fontSize: 9 }}>HistoryGuessr</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: 0, letterSpacing: '-0.01em' }}>
-            Zásady ochrany osobních údajů
+            {t('legal.privacy.title')}
           </h1>
         </div>
       </header>
@@ -38,55 +41,55 @@ export default function PrivacyPage() {
             borderRadius: 8, padding: '12px 16px', marginBottom: 28,
           }}>
             <p style={{ fontSize: 13, color: 'var(--accent-deep)', margin: 0 }}>
-              ⚠ Tento dokument je připravovaný placeholder. Finální znění bude doplněno před veřejným spuštěním.
+              {t('legal.placeholder')}
             </p>
           </div>
 
           <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 32 }}>
-            Poslední aktualizace: {new Date().toLocaleDateString('cs-CZ')}
+            {t('legal.lastUpdated')}: {new Date().toLocaleDateString(currentLocale())}
           </p>
 
-          <Section title="1. Kdo jsme">
-            <p>HistoryGuessr je vzdělávací webová hra dostupná na adrese historyguessr.vercel.app. Provozovatelem aplikace je [jméno/firma].</p>
+          <Section title={t('legal.privacy.s1t')}>
+            <p>{t('legal.privacy.s1b')}</p>
           </Section>
 
-          <Section title="2. Jaké údaje sbíráme">
-            <p>Při registraci a používání aplikace shromažďujeme:</p>
+          <Section title={t('legal.privacy.s2t')}>
+            <p>{t('legal.privacy.s2intro')}</p>
             <ul>
-              <li><strong>E-mailová adresa</strong> — pro přihlášení a komunikaci</li>
-              <li><strong>Uživatelské jméno</strong> — zobrazované v žebříčcích</li>
-              <li><strong>Herní statistiky</strong> — počet her, skóre, výsledky kol</li>
-              <li><strong>Analytická data</strong> — anonymizované události (spuštění hry, dokončení kola) pro zlepšení aplikace</li>
+              <li><strong>{t('legal.privacy.s2i1')}</strong>{t('legal.privacy.s2i1d')}</li>
+              <li><strong>{t('legal.privacy.s2i2')}</strong>{t('legal.privacy.s2i2d')}</li>
+              <li><strong>{t('legal.privacy.s2i3')}</strong>{t('legal.privacy.s2i3d')}</li>
+              <li><strong>{t('legal.privacy.s2i4')}</strong>{t('legal.privacy.s2i4d')}</li>
             </ul>
           </Section>
 
-          <Section title="3. K čemu údaje používáme">
+          <Section title={t('legal.privacy.s3t')}>
             <ul>
-              <li>Provoz uživatelských účtů a autentizace</li>
-              <li>Zobrazení žebříčků a herních statistik</li>
-              <li>Zlepšování aplikace na základě anonymizovaných dat</li>
-              <li>Zasílání důležitých oznámení o aplikaci (není marketing)</li>
+              <li>{t('legal.privacy.s3i1')}</li>
+              <li>{t('legal.privacy.s3i2')}</li>
+              <li>{t('legal.privacy.s3i3')}</li>
+              <li>{t('legal.privacy.s3i4')}</li>
             </ul>
           </Section>
 
-          <Section title="4. Jak data chráníme">
-            <p>Vaše data jsou uložena v zabezpečené cloudové databázi (Supabase). Přístup k datům je chráněn pomocí Row Level Security — každý uživatel vidí pouze vlastní data.</p>
+          <Section title={t('legal.privacy.s4t')}>
+            <p>{t('legal.privacy.s4b')}</p>
           </Section>
 
-          <Section title="5. Sdílení dat">
-            <p>Vaše osobní údaje neprodáváme ani nesdílíme s třetími stranami, s výjimkou nezbytných technických providerů (Supabase pro databázi, Vercel pro hosting).</p>
+          <Section title={t('legal.privacy.s5t')}>
+            <p>{t('legal.privacy.s5b')}</p>
           </Section>
 
-          <Section title="6. Vaše práva">
-            <p>Máte právo na přístup ke svým datům, jejich opravu nebo smazání. Pro smazání účtu nás kontaktujte na [email].</p>
+          <Section title={t('legal.privacy.s6t')}>
+            <p>{t('legal.privacy.s6b')}</p>
           </Section>
 
-          <Section title="7. Cookies">
-            <p>Aplikace používá pouze technicky nezbytné cookies pro udržení přihlášení. Nepoužíváme sledovací ani reklamní cookies.</p>
+          <Section title={t('legal.privacy.s7t')}>
+            <p>{t('legal.privacy.s7b')}</p>
           </Section>
 
-          <Section title="8. Kontakt" last>
-            <p>Dotazy ohledně ochrany osobních údajů zasílejte na: <strong>[email]</strong></p>
+          <Section title={t('legal.privacy.s8t')} last>
+            <p>{t('legal.privacy.s8b1')}<strong>[email]</strong></p>
           </Section>
         </div>
       </div>
