@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import L from 'leaflet'
 
 // Leaflet tile URL a attributace
@@ -46,6 +47,7 @@ interface GuessMapProps {
 }
 
 export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps) {
+  const { t } = useTranslation()
   const wrapRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
@@ -209,7 +211,7 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
             fontFamily: 'var(--font-mono)', fontSize: 10,
             letterSpacing: '0.12em', color: 'rgba(245,241,232,0.85)',
           }}>
-            Klikni pro umístění pinu
+            {t('game.clickToPin')}
           </div>
         </div>
       )}
@@ -229,6 +231,7 @@ interface ResultMapProps {
 }
 
 export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0 }: ResultMapProps) {
+  const { t } = useTranslation()
   const wrapRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
 
@@ -254,11 +257,11 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
       // Piny
       L.marker([guessLat, gLng], { icon: GUESS_ICON })
         .addTo(map)
-        .bindTooltip('Tvůj tip', { permanent: true, direction: 'right', offset: [8, -16] })
+        .bindTooltip(t('game.yourGuessMap'), { permanent: true, direction: 'right', offset: [8, -16] })
 
       L.marker([truthLat, tLng], { icon: TRUTH_ICON })
         .addTo(map)
-        .bindTooltip('Správné místo', { permanent: true, direction: 'right', offset: [8, -16] })
+        .bindTooltip(t('game.correctPlace'), { permanent: true, direction: 'right', offset: [8, -16] })
 
       // Linka
       L.polyline([[guessLat, gLng], [truthLat, tLng]], {

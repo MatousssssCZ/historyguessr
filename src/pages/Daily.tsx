@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -19,6 +20,7 @@ const TIMER_SECONDS = 60
 type Phase = 'loading' | 'no_challenge' | 'already_played' | 'warning' | 'playing' | 'result'
 
 export default function DailyChallengePage() {
+  const { t } = useTranslation()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
 
@@ -182,10 +184,10 @@ export default function DailyChallengePage() {
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--sepia-900)', gap: 16, padding: 24 }}>
         <div style={{ fontSize: 48 }}>📅</div>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: 0, textAlign: 'center' }}>
-          Dnes žádná výzva není
+          {t('daily.noChallenge')}
         </h1>
         <p style={{ color: 'rgba(245,241,232,0.5)', fontSize: 15, textAlign: 'center', margin: 0 }}>
-          Zkus to zítra.
+          {t('daily.tryTomorrow')}
         </p>
         <button className="btn btn-ghost" style={{ color: 'var(--on-dark)', borderColor: 'rgba(245,241,232,0.2)', marginTop: 8 }} onClick={() => navigate('/menu')}>
           ← Menu
@@ -226,7 +228,7 @@ export default function DailyChallengePage() {
           {/* Badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(217,119,87,0.12)', border: '1px solid rgba(217,119,87,0.25)', borderRadius: 999, padding: '6px 16px', marginBottom: 20, alignSelf: 'flex-start' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-              Tento den v historii
+              {t('menu.dailyMobile')}
             </span>
           </div>
 
@@ -237,9 +239,9 @@ export default function DailyChallengePage() {
 
           {/* Pravidla */}
           <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 20px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <RuleRow icon="⏱" text={<>Máš <strong style={{ color: 'var(--on-dark)' }}>1 minutu</strong> na odpověď</>}/>
-            <RuleRow icon="⚠" text={<>Pouze <strong style={{ color: 'var(--on-dark)' }}>jeden pokus</strong> — odchod ze hry = konec</>}/>
-            <RuleRow icon="🏆" text="Po odpovědi uvidíš žebříček a distribuci skóre"/>
+            <RuleRow icon="⏱" text={t('daily.rule1')}/>
+            <RuleRow icon="⚠" text={t('daily.rule2')}/>
+            <RuleRow icon="🏆" text={t('daily.rule3')}/>
           </div>
 
           {/* Indikátor načítání panoramy */}
@@ -250,7 +252,7 @@ export default function DailyChallengePage() {
               <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5, borderTopColor: 'var(--accent)', flexShrink: 0 }}/>
             )}
             <span style={{ fontSize: 12, color: 'rgba(245,241,232,0.4)', fontFamily: 'var(--font-mono)' }}>
-              {panoramaReady ? 'Panorama připravena' : 'Načítám panoramu…'}
+              {panoramaReady ? t('daily.panoramaReady') : t('daily.panoramaLoading')}
             </span>
           </div>
 
@@ -268,7 +270,7 @@ export default function DailyChallengePage() {
               style={{ flex: 1, fontSize: 15, padding: '12px 20px' }}
               onClick={startGame}
             >
-              Spustit výzvu →
+              {t('daily.start')}
             </button>
           </div>
         </div>
@@ -290,12 +292,12 @@ export default function DailyChallengePage() {
           paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
         }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>Tento den v historii</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>{t('menu.dailyMobile')}</div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{event.title}</div>
           </div>
           {/* Timer */}
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>Zbývá</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('daily.remaining')}</div>
             <div style={{
               fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 600,
               color: timerColor,
@@ -342,7 +344,7 @@ export default function DailyChallengePage() {
                 </div>
                 <div style={{ padding: '6px 10px', background: guessLat !== null ? 'rgba(39,174,96,0.12)' : 'rgba(245,241,232,0.95)', borderTop: '0.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: guessLat !== null ? '#1d6b3a' : 'var(--ink-3)', textTransform: 'uppercase' }}>
-                    {guessLat !== null ? 'Místo ✓' : 'Vybrat místo'}
+                    {guessLat !== null ? t('daily.placeSet') : t('daily.pickPlace')}
                   </span>
                 </div>
               </button>
@@ -354,14 +356,14 @@ export default function DailyChallengePage() {
                 borderRadius: 14, cursor: 'pointer', padding: '14px 16px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.25)', height: 100, textAlign: 'left',
               }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>Rok</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>{t('game.year')}</div>
                 {guessYearSet ? (
                   <>
                     <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>{Math.abs(guessYear)}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? 'Př. n. l.' : 'N. l.'} ✓</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'} ✓</div>
                   </>
                 ) : (
-                  <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>Vybrat rok →</div>
+                  <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
                 )}
               </button>
             </div>
@@ -379,7 +381,7 @@ export default function DailyChallengePage() {
                 cursor: canSubmit ? 'pointer' : 'default',
               }}
             >
-              {submitting ? 'Odesílám…' : canSubmit ? 'Odeslat odpověď →' : guessLat === null ? 'Zbývá vybrat místo' : 'Zbývá vybrat rok'}
+              {submitting ? t('daily.submitting') : canSubmit ? t('game.submit') : guessLat === null ? t('game.submitPlace') : t('game.submitYear')}
             </button>
           </div>
         )}
@@ -404,7 +406,7 @@ export default function DailyChallengePage() {
                 {guessLat !== null ? `${guessLat.toFixed(1)}° · ${guessLng?.toFixed(1)}° ✓` : 'Klikni na mapu'}
               </span>
               <button onClick={() => setMapExpanded(false)} style={{ background: guessLat !== null ? 'var(--accent)' : 'var(--paper-400)', border: 'none', borderRadius: 9, padding: '10px 20px', fontSize: 14, fontWeight: 500, color: guessLat !== null ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}>
-                {guessLat !== null ? 'Potvrdit místo ✓' : 'Vyber místo…'}
+                {guessLat !== null ? t('game.confirmPlace') : t('game.pickPlace')}
               </button>
             </div>
           </div>
@@ -417,13 +419,13 @@ export default function DailyChallengePage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 44, letterSpacing: '-0.03em', lineHeight: 1 }}>{Math.abs(guessYear) || '?'}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>{guessYear < 0 ? 'Př. n. l.' : 'N. l.'}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>
                     {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
                   </div>
-                  <button onClick={() => setYearExpanded(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>✕ Sbalit</button>
+                  <button onClick={() => setYearExpanded(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.collapse')}</button>
                 </div>
               </div>
               <YearPickerInline value={guessYear} onChange={(y) => { setGuessYear(y); setGuessYearSet(true) }}/>
@@ -466,6 +468,7 @@ function PanoramaViewer({ url }: { url: string }) {
 
 // ── Year picker ───────────────────────────────────────────
 function YearPickerInline({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+  const { t } = useTranslation()
   const MIN = -3000, MAX = 2025, TOTAL = MAX - MIN
   const pct = ((value - MIN) / TOTAL) * 100
   const zeroPct = ((0 - MIN) / TOTAL) * 100
@@ -482,7 +485,7 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
         <input type="range" min={MIN} max={MAX} value={value} step={1} onChange={e => { let v = parseInt(e.target.value); if (v === 0) v = -1; onChange(v) }} style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', margin: 0, height: 28 }}/>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
-        <span style={{ color: '#7aa8cc' }}>3000 př.</span>
+        <span style={{ color: '#7aa8cc' }}>{t('game.bcAxis')}</span>
         <span style={{ color: 'var(--ink-3)' }}>0</span>
         <span style={{ color: '#d97757' }}>2025</span>
       </div>
@@ -495,7 +498,7 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
       </div>
       <input type="text" inputMode="decimal" pattern="-?[0-9]*" value={value === 0 ? '' : String(value)}
         onChange={e => { const n = parseInt(e.target.value); if (!isNaN(n) && n !== 0) onChange(Math.max(MIN, Math.min(MAX, n))) }}
-        placeholder="-480 nebo 1912"
+        placeholder={t('daily.yearPlaceholder')}
         style={{ width: '100%', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 18, padding: '11px 14px', border: '1px solid var(--line-strong)', borderRadius: 10, color: 'var(--ink)', background: 'var(--surface)', outline: 'none' }}
       />
     </div>
@@ -545,6 +548,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   guessLat: number; guessLng: number; guessYear: number
   leaderboard: DailyResult[]; userId?: string; alreadyPlayed: boolean; onMenu: () => void
 }) {
+  const { t } = useTranslation()
   const [histModal, setHistModal] = useState(false)
   const isMobile = window.innerWidth < 768
   const locPct = Math.round(result.locScore / 5)
@@ -560,16 +564,16 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       {/* Skóre karty */}
       <div style={{ padding: isMobile ? '10px 12px' : '12px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <ScoreCard label="Poloha" score={result.locScore} pct={locPct} sub={result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString('cs-CZ')} km`}/>
-          <ScoreCard label="Rok" score={result.yrScore} pct={yrPct} sub={result.yrDiff === 0 ? '✓ Přesný!' : `${result.yrDiff} let mimo`} highlight={result.yrDiff === 0}/>
+          <ScoreCard label={t('game.location')} score={result.locScore} pct={locPct} sub={result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString('cs-CZ')} km`}/>
+          <ScoreCard label={t('game.year')} score={result.yrScore} pct={yrPct} sub={result.yrDiff === 0 ? t('daily.exact') : `${result.yrDiff} let mimo`} highlight={result.yrDiff === 0}/>
         </div>
         <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>Správný rok</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.correctYear')}</div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{event.year < 0 ? `${Math.abs(event.year)} př. n. l.` : `${event.year} n. l.`}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>Tvůj tip</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.yourGuess')}</div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{guessYear < 0 ? `${Math.abs(guessYear)} př. n. l.` : `${guessYear} n. l.`}</div>
           </div>
         </div>
@@ -580,7 +584,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   const leaderboardSection = (
     <div style={{ padding: isMobile ? '0 12px 8px' : '0 20px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>Žebříček dne</p>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.leaderboard')}</p>
         {leaderboard.length > 0 && (
           <span style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent-deep)', fontSize: 11, fontFamily: 'var(--font-mono)', padding: '3px 10px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.25)' }}>
             #{myRank} z {leaderboard.length}
@@ -596,7 +600,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{i + 1}.</span>}
               </span>
               <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>
-                {(r.profiles as { username?: string })?.username ?? 'Hráč'}
+                {(r.profiles as { username?: string })?.username ?? t('daily.player')}
                 {isMe && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>ty</span>}
               </span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString('cs-CZ')}</span>
@@ -616,7 +620,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
           <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
             <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-                {alreadyPlayed ? 'Dnes jsi již hrál' : 'Výsledek · Tento den v historii'}
+                {alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{event.title}</div>
@@ -628,7 +632,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             </div>
             {scoreSection}
             <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto' }}>
-              <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>← Menu</button>
+              <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
           </div>
           {/* Pravá — žebříček + histogram */}
@@ -636,7 +640,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             <div style={{ flex: 1 }}>{leaderboardSection}</div>
             {leaderboard.length > 1 && (
               <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--line)', paddingTop: 16 }}>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 12px' }}>Distribuce skóre</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 12px' }}>{t('daily.distribution')}</p>
                 <ScoreHistogram leaderboard={leaderboard} myScore={result.totalScore}/>
               </div>
             )}
@@ -652,7 +656,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       {/* Header */}
       <div style={{ padding: '14px 16px 12px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-          {alreadyPlayed ? 'Dnes jsi již hrál' : 'Výsledek · Tento den v historii'}
+          {alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
@@ -678,7 +682,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             📊 Zobrazit distribuci skóre
           </button>
         )}
-        <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>← Menu</button>
+        <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
       </div>
 
       {/* Histogram modal (bottom sheet) */}
@@ -686,11 +690,11 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end' }}>
           <div style={{ width: '100%', background: 'var(--paper-50)', borderRadius: '20px 20px 0 0', padding: '20px 18px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 32px rgba(0,0,0,0.35)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>Distribuce skóre</p>
-              <button onClick={() => setHistModal(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>✕ Zavřít</button>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
+              <button onClick={() => setHistModal(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.close')}</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>Tvé skóre</span>
+              <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
               <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{result.totalScore.toLocaleString('cs-CZ')}</span>
             </div>
             <ScoreHistogram leaderboard={leaderboard} myScore={result.totalScore}/>

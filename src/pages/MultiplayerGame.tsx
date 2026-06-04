@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -25,6 +26,7 @@ interface MyResult {
 const NEXT_ROUND_DELAY = 8000
 
 export default function MultiplayerGamePage() {
+  const { t } = useTranslation()
   const { roomId } = useParams<{ roomId: string }>()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -245,7 +247,7 @@ export default function MultiplayerGamePage() {
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0d0906', gap: 12 }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-          Kolo {currentRound?.round_number} / {room?.settings.rounds}
+          {t('game.round', { n: currentRound?.round_number, total: room?.settings.rounds })}
         </p>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 100, color: 'var(--on-dark)', letterSpacing: '-0.04em', lineHeight: 1, animation: 'pulse 1s ease infinite' }}>
           {secs > 0 ? secs : '→'}
@@ -262,8 +264,8 @@ export default function MultiplayerGamePage() {
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ background: '#1a1208', padding: '20px 20px 16px', paddingTop: 'calc(20px + env(safe-area-inset-top,0px))', textAlign: 'center' }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 6px' }}>konec hry · {room?.settings.rounds} kol</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: 0, letterSpacing: '-0.02em' }}>Výsledky</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 6px' }}>{t('mp.gameOverLine', { count: room?.settings.rounds ?? 0 })}</p>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: 0, letterSpacing: '-0.02em' }}>{t('mp.results')}</h1>
         </div>
         <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((p, i) => {
@@ -274,7 +276,7 @@ export default function MultiplayerGamePage() {
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
                 </span>
                 <span style={{ flex: 1, fontSize: 15, fontWeight: isMe ? 500 : 400 }}>
-                  {p.username}{isMe && <span style={{ fontSize: 11, color: 'var(--ink-3)', marginLeft: 6 }}>ty</span>}
+                  {p.username}{isMe && <span style={{ fontSize: 11, color: 'var(--ink-3)', marginLeft: 6 }}>{t('lobby.you')}</span>}
                 </span>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>
                   {p.total_score.toLocaleString('cs-CZ')}
@@ -284,10 +286,10 @@ export default function MultiplayerGamePage() {
           })}
         </div>
         <div style={{ padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', gap: 10 }}>
-          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => navigate('/menu')}>← Menu</button>
+          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => navigate('/menu')}>{t('daily.menu')}</button>
           {isHost && (
             <button className="btn btn-accent" style={{ flex: 1 }} onClick={() => navigate(`/multiplayer/lobby`)}>
-              Nová hra
+              {t('mp.newGame')}
             </button>
           )}
         </div>
@@ -303,13 +305,13 @@ export default function MultiplayerGamePage() {
       <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)' }}>
         <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 4px' }}>
-            Kolo {currentRound?.round_number} / {room?.settings.rounds}
+            {t('game.round', { n: currentRound?.round_number, total: room?.settings.rounds })}
           </p>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, flex: 1, lineHeight: 1.2 }}>{event.title}</div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString('cs-CZ')}</div>
-              <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
+              <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
             </div>
           </div>
         </div>
@@ -320,16 +322,16 @@ export default function MultiplayerGamePage() {
           </div>
           <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <ScoreCard label="Poloha" score={myResult.locScore} pct={locPct} sub={myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`}/>
-              <ScoreCard label="Rok" score={myResult.yrScore} pct={yrPct} sub={myResult.yrDiff === 0 ? '✓ Přesný!' : `${myResult.yrDiff} let mimo`} highlight={myResult.yrDiff === 0}/>
+              <ScoreCard label={t('game.location')} score={myResult.locScore} pct={locPct} sub={myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`}/>
+              <ScoreCard label={t('game.year')} score={myResult.yrScore} pct={yrPct} sub={myResult.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: myResult.yrDiff })} highlight={myResult.yrDiff === 0}/>
             </div>
             <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>Správný rok</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.correctYear')}</div>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{event.year < 0 ? `${Math.abs(event.year)} př. n. l.` : `${event.year} n. l.`}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>Tvůj tip</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.yourGuess')}</div>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{myResult.guessYear < 0 ? `${Math.abs(myResult.guessYear)} př. n. l.` : `${myResult.guessYear} n. l.`}</div>
               </div>
             </div>
@@ -338,7 +340,7 @@ export default function MultiplayerGamePage() {
 
         <div style={{ flexShrink: 0, padding: '10px 14px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)' }}>
           <button className="btn btn-accent" style={{ width: '100%', fontSize: 14, padding: '13px' }} onClick={handleShowRoundResults}>
-            Zobrazit výsledky kola →
+            {t('mp.showResults')}
           </button>
         </div>
       </div>
@@ -379,14 +381,14 @@ export default function MultiplayerGamePage() {
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 600, color: 'var(--on-dark)' }}>{nextRoundCountdown}</span>
                 </div>
               </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>dál</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('mp.next')}</span>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--paper-100)', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-          {([['round', '🏆', 'Toto kolo'], ['total', '📊', 'Celkové']] as const).map(([key, icon, label]) => (
+          {([['round', '🏆', t('mp.tabRound')], ['total', '📊', t('mp.tabTotal')]] as const).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
               style={{ padding: '10px 0', border: 'none', borderBottom: activeTab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: activeTab === key ? 600 : 400, color: activeTab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
               <span style={{ fontSize: 14 }}>{icon}</span>{label}
@@ -403,13 +405,13 @@ export default function MultiplayerGamePage() {
               {myResult && (
                 <div style={{ background: 'rgba(217,119,87,0.06)', border: '0.5px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '12px 14px', marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Tvůj tip</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('game.yourGuess')}</span>
                     <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{myResult.totalScore.toLocaleString('cs-CZ')}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {[
-                      { label: 'Poloha', score: myResult.locScore, sub: myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`, pct: Math.round(myResult.locScore / 5) },
-                      { label: 'Rok', score: myResult.yrScore, sub: myResult.yrDiff === 0 ? '✓ Přesný!' : `${myResult.yrDiff} let`, pct: Math.round(myResult.yrScore / 5) },
+                      { label: t('game.location'), score: myResult.locScore, sub: myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`, pct: Math.round(myResult.locScore / 5) },
+                      { label: t('game.year'), score: myResult.yrScore, sub: myResult.yrDiff === 0 ? '✓ Přesný!' : `${myResult.yrDiff} let`, pct: Math.round(myResult.yrScore / 5) },
                     ].map(item => (
                       <div key={item.label} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 8, padding: '8px 10px' }}>
                         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 3px' }}>{item.label}</p>
@@ -427,14 +429,14 @@ export default function MultiplayerGamePage() {
               {/* Žebříček kola */}
               {sortedByRound.map((a, i) => {
                 const isMe = a.user_id === user?.id
-                const pName = (a.profiles as { username?: string | null })?.username ?? 'Hráč'
+                const pName = (a.profiles as { username?: string | null })?.username ?? t('daily.player')
                 return (
                   <div key={a.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10, background: isMe ? 'rgba(39,174,96,0.06)' : 'var(--paper-100)', border: isMe ? '0.5px solid rgba(39,174,96,0.2)' : '0.5px solid var(--line)' }}>
                     <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{i + 1}.</span>}
                     </span>
                     <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>
-                      {pName}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>ty</span>}
+                      {pName}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>{t('lobby.you')}</span>}
                     </span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginRight: 6 }}>+{a.round_score.toLocaleString('cs-CZ')}</span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400 }}>{a.round_score.toLocaleString('cs-CZ')}</span>
@@ -455,7 +457,7 @@ export default function MultiplayerGamePage() {
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{i + 1}.</span>}
                     </span>
                     <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>
-                      {p.username}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>ty</span>}
+                      {p.username}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>{t('lobby.you')}</span>}
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: isMe ? 600 : 400, color: isMe ? '#1d6b3a' : 'var(--ink)' }}>{p.total_score.toLocaleString('cs-CZ')}</span>
@@ -482,12 +484,12 @@ export default function MultiplayerGamePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13,9,6,0.85)', backdropFilter: 'blur(8px)', flexShrink: 0, zIndex: 10, paddingTop: 'calc(10px + env(safe-area-inset-top,0px))' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-              Kolo {currentRound?.round_number} / {room?.settings.rounds} · {players.length} hráčů
+              {t('mp.roundPlayers', { n: currentRound?.round_number, total: room?.settings.rounds, count: players.length })}
             </div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{event.title}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>Zbývá</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('daily.remaining')}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 600, color: timerColor, lineHeight: 1, transition: 'color 500ms' }}>
               {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
             </div>
@@ -514,20 +516,20 @@ export default function MultiplayerGamePage() {
                 </div>
                 <div style={{ padding: '6px 10px', background: guessLat !== null ? 'rgba(39,174,96,0.12)' : 'rgba(245,241,232,0.95)', borderTop: '0.5px solid var(--line)' }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: guessLat !== null ? '#1d6b3a' : 'var(--ink-3)', textTransform: 'uppercase' }}>
-                    {guessLat !== null ? 'Místo ✓' : 'Vybrat místo'}
+                    {guessLat !== null ? t('daily.placeSet') : t('daily.pickPlace')}
                   </span>
                 </div>
               </button>
 
               <button onClick={() => setYearExpanded(true)} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(245,241,232,0.95)', backdropFilter: 'blur(16px)', border: guessYearSet ? '3px solid #27ae60' : '1.5px solid rgba(217,119,87,0.35)', borderRadius: 14, cursor: 'pointer', padding: '14px 16px', height: 100, textAlign: 'left' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>Rok</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>{t('game.year')}</div>
                 {guessYearSet ? (
                   <>
                     <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>{Math.abs(guessYear)}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? 'Př. n. l.' : 'N. l.'} ✓</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'} ✓</div>
                   </>
                 ) : (
-                  <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>Vybrat rok →</div>
+                  <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
                 )}
               </button>
             </div>
@@ -537,7 +539,7 @@ export default function MultiplayerGamePage() {
               onClick={() => event && doSubmit(event, guessLat, guessLng, guessYear, guessYearSet)}
               style={{ width: '100%', fontSize: 15, padding: '14px 0', borderRadius: 12, border: 'none', fontWeight: 500, background: canSubmit ? 'var(--accent)' : 'rgba(245,241,232,0.7)', backdropFilter: 'blur(16px)', color: canSubmit ? '#fff' : 'var(--ink-3)', boxShadow: canSubmit ? '0 4px 20px rgba(217,119,87,0.4)' : 'none', cursor: canSubmit ? 'pointer' : 'default' }}
             >
-              {canSubmit ? 'Odeslat odpověď →' : guessLat === null ? 'Zbývá vybrat místo' : 'Zbývá vybrat rok'}
+              {canSubmit ? t('game.submit') : guessLat === null ? t('game.submitPlace') : t('game.submitYear')}
             </button>
           </div>
         )}
@@ -547,7 +549,7 @@ export default function MultiplayerGamePage() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 30, display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { setGuessLat(lat); setGuessLng(lng) }}/>
-              <button onClick={() => setMapExpanded(false)} style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.2)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer' }}>✕ Sbalit</button>
+              <button onClick={() => setMapExpanded(false)} style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.2)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer' }}>{t('daily.collapse')}</button>
               <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '6px 12px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
               </div>
@@ -555,7 +557,7 @@ export default function MultiplayerGamePage() {
             <div style={{ background: 'rgba(245,241,232,0.97)', padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: '0.5px solid var(--line)' }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{guessLat !== null ? `${guessLat.toFixed(1)}° · ${guessLng?.toFixed(1)}° ✓` : 'Klikni na mapu'}</span>
               <button onClick={() => setMapExpanded(false)} style={{ background: guessLat !== null ? 'var(--accent)' : 'var(--paper-400)', border: 'none', borderRadius: 9, padding: '10px 20px', fontSize: 14, fontWeight: 500, color: guessLat !== null ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}>
-                {guessLat !== null ? 'Potvrdit místo ✓' : 'Vyber místo…'}
+                {guessLat !== null ? t('game.confirmPlace') : t('game.pickPlace')}
               </button>
             </div>
           </div>
@@ -568,11 +570,11 @@ export default function MultiplayerGamePage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 44, letterSpacing: '-0.03em', lineHeight: 1 }}>{Math.abs(guessYear) || '?'}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>{guessYear < 0 ? 'Př. n. l.' : 'N. l.'}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>
-                  <button onClick={() => setYearExpanded(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>✕ Sbalit</button>
+                  <button onClick={() => setYearExpanded(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.collapse')}</button>
                 </div>
               </div>
               <YearPickerInline value={guessYear} onChange={(y) => { setGuessYear(y); setGuessYearSet(true) }}/>
@@ -608,6 +610,7 @@ function PanoramaViewer({ url }: { url: string }) {
 
 // ── Year picker ────────────────────────────────────────────
 function YearPickerInline({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+  const { t } = useTranslation()
   const MIN = -3000, MAX = 2025, TOTAL = MAX - MIN
   const pct = ((value - MIN) / TOTAL) * 100
   const zeroPct = ((0 - MIN) / TOTAL) * 100
@@ -623,7 +626,7 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
         <input type="range" min={MIN} max={MAX} value={value} step={1} onChange={e => { let v = parseInt(e.target.value); if (v === 0) v = -1; onChange(v) }} style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', margin: 0, height: 28 }}/>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
-        <span style={{ color: '#7aa8cc' }}>3000 př.</span><span style={{ color: 'var(--ink-3)' }}>0</span><span style={{ color: '#d97757' }}>2025</span>
+        <span style={{ color: '#7aa8cc' }}>{t('game.bcAxis')}</span><span style={{ color: 'var(--ink-3)' }}>0</span><span style={{ color: '#d97757' }}>2025</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
         {([-10,-1,1,10] as const).map(d => (

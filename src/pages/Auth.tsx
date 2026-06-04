@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { signIn, signUp, requestPasswordReset, track } from '@/lib/supabase'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 const forgotLinkStyle: React.CSSProperties = {
   alignSelf: 'flex-end', background: 'none', border: 'none', padding: 0,
@@ -10,13 +12,14 @@ const forgotLinkStyle: React.CSSProperties = {
 type Mode = 'login' | 'register'
 
 const PASSWORD_RULES = [
-  { test: (p: string) => p.length >= 8,           label: 'Alespoň 8 znaků' },
-  { test: (p: string) => /[A-Z]/.test(p),         label: '1 velké písmeno' },
-  { test: (p: string) => /[0-9]/.test(p),         label: '1 číslo' },
-  { test: (p: string) => /[^A-Za-z0-9]/.test(p),  label: '1 speciální znak' },
+  { test: (p: string) => p.length >= 8,           key: 'auth.rule8' },
+  { test: (p: string) => /[A-Z]/.test(p),         key: 'auth.ruleUpper' },
+  { test: (p: string) => /[0-9]/.test(p),         key: 'auth.ruleNum' },
+  { test: (p: string) => /[^A-Za-z0-9]/.test(p),  key: 'auth.ruleSpecial' },
 ]
 
 export default function AuthPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
@@ -40,15 +43,15 @@ export default function AuthPage() {
     e.preventDefault()
     setError(null); setSuccess(null)
     if (isRegister) {
-      if (!passwordValid) { setError('Heslo nesplňuje požadavky.'); return }
-      if (password !== confirmPassword) { setError('Hesla se neshodují.'); return }
+      if (!passwordValid) { setError(t('auth.weak')); return }
+      if (password !== confirmPassword) { setError(t('auth.mismatch')); return }
     }
     setLoading(true)
     try {
       if (isRegister) {
         const { error } = await signUp(email, password)
         if (error) throw error
-        setSuccess('Registrace úspěšná! Zkontroluj svůj e-mail.')
+        setSuccess(t('auth.registered'))
         setPassword(''); setConfirmPassword('')
         track('sign_up', { email })
       } else {
@@ -58,24 +61,24 @@ export default function AuthPage() {
         navigate('/menu')
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Nastala chyba.'
-      if (msg.includes('Invalid login')) setError('Nesprávný e-mail nebo heslo.')
-      else if (msg.includes('already registered')) setError('Tento e-mail je již zaregistrován.')
-      else if (msg.includes('Email not confirmed')) setError('Nejprve potvrď svůj e-mail.')
+      const msg = err instanceof Error ? err.message : t('auth.errGeneric')
+      if (msg.includes('Invalid login')) setError(t('auth.errInvalid'))
+      else if (msg.includes('already registered')) setError(t('auth.errExists'))
+      else if (msg.includes('Email not confirmed')) setError(t('auth.errUnconfirmed'))
       else setError(msg)
     } finally { setLoading(false) }
   }
 
   async function handleForgot() {
     setError(null); setSuccess(null)
-    if (!email) { setError('Zadej nejdřív svůj e-mail.'); return }
+    if (!email) { setError(t('auth.enterEmailFirst')); return }
     setLoading(true)
     try {
       const { error } = await requestPasswordReset(email)
       if (error) throw error
-      setSuccess('Poslali jsme ti e-mail s odkazem na obnovu hesla.')
+      setSuccess(t('auth.resetSent'))
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nepodařilo se odeslat e-mail.')
+      setError(err instanceof Error ? err.message : t('auth.errResetFailed'))
     } finally { setLoading(false) }
   }
 
@@ -102,18 +105,18 @@ export default function AuthPage() {
           </svg>
           <div style={{ position: 'relative' }}><Wordmark/></div>
           <div style={{ position: 'relative' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 20px', textTransform: 'uppercase' }}>Vzdělávací geolokační hra</p>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 20px', textTransform: 'uppercase' }}>{t('auth.eyebrow')}</p>
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--feature-fg)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-              Hádej historii.<br/><span style={{ color: 'var(--accent)' }}>Trefuj čas a místo.</span>
+              {t('auth.tagline1')}<br/><span style={{ color: 'var(--accent)' }}>{t('auth.tagline2')}</span>
             </h1>
             <p style={{ fontSize: 16, color: 'var(--feature-fg2)', margin: '0 0 40px', lineHeight: 1.6 }}>
-              5 kol · 360° panoramy · tip místa + roku
+              {t('auth.bullet')}
             </p>
             <blockquote style={{ margin: 0, borderLeft: '2px solid rgba(217,119,87,0.4)', paddingLeft: 20 }}>
               <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--feature-fg2)', margin: '0 0 8px', lineHeight: 1.5 }}>
-                "Kdo nezná historii, je odsouzen ji znovu prožívat."
+                {t('auth.quote')}
               </p>
-              <cite style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--feature-fg3)', letterSpacing: '0.1em' }}>— George Santayana</cite>
+              <cite style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--feature-fg3)', letterSpacing: '0.1em' }}>{t('auth.quoteAuthor')}</cite>
             </blockquote>
           </div>
           <div style={{ position: 'relative' }}/>
@@ -122,56 +125,59 @@ export default function AuthPage() {
         {/* Pravá — formulář */}
         <div style={{ background: 'var(--paper-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
           <div style={{ width: '100%', maxWidth: 400 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <LanguageSwitcher/>
+            </div>
             {/* Tab */}
             <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 3, marginBottom: 36 }}>
               {(['login', 'register'] as Mode[]).map(m => (
                 <button key={m} onClick={() => { setMode(m); setError(null); setSuccess(null) }}
                   style={{ flex: 1, padding: '9px 0', border: 'none', borderRadius: 10, background: mode === m ? 'var(--surface)' : 'transparent', boxShadow: mode === m ? 'var(--shadow-sm)' : 'none', fontSize: 14, fontWeight: 500, color: mode === m ? 'var(--ink)' : 'var(--ink-3)', cursor: 'pointer', transition: 'all 200ms' }}>
-                  {m === 'login' ? 'Přihlásit se' : 'Registrovat'}
+                  {m === 'login' ? t('auth.login') : t('auth.register')}
                 </button>
               ))}
             </div>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-              {isRegister ? 'Vytvoř si účet' : 'Vítej zpět'}
+              {isRegister ? t('auth.createAccount') : t('auth.welcomeBack')}
             </h2>
             <p style={{ fontSize: 15, color: 'var(--ink-3)', margin: '0 0 28px' }}>
-              {isRegister ? 'Zaregistruj se a začni hádat historii.' : 'Přihlaš se a pokračuj ve hře.'}
+              {isRegister ? t('auth.registerSub') : t('auth.loginSub')}
             </p>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                <label className="label">E-mail</label>
+                <label className="label">{t('auth.email')}</label>
                 <input className="input" type="email" placeholder="jan@example.cz" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email"/>
               </div>
               <div>
-                <label className="label">Heslo</label>
+                <label className="label">{t('auth.password')}</label>
                 <div style={{ position: 'relative' }}>
-                  <input className="input" type={showPassword ? 'text' : 'password'} placeholder={isRegister ? 'Silné heslo…' : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isRegister ? 'new-password' : 'current-password'} style={{ paddingRight: 48 }}/>
+                  <input className="input" type={showPassword ? 'text' : 'password'} placeholder={isRegister ? t('auth.strongPassword') : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isRegister ? 'new-password' : 'current-password'} style={{ paddingRight: 48 }}/>
                   <button type="button" onClick={() => setShowPassword(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 16 }}>{showPassword ? '🙈' : '👁'}</button>
                 </div>
                 {isRegister && password.length > 0 && (
                   <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
                     {PASSWORD_RULES.map(rule => (
-                      <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: rule.test(password) ? '#1d6b3a' : 'var(--ink-3)', transition: 'color 200ms' }}>
-                        <span>{rule.test(password) ? '✓' : '○'}</span>{rule.label}
+                      <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: rule.test(password) ? '#1d6b3a' : 'var(--ink-3)', transition: 'color 200ms' }}>
+                        <span>{rule.test(password) ? '✓' : '○'}</span>{t(rule.key)}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
               {!isRegister && (
-                <button type="button" onClick={handleForgot} style={forgotLinkStyle}>Zapomněl jsi heslo?</button>
+                <button type="button" onClick={handleForgot} style={forgotLinkStyle}>{t('auth.forgot')}</button>
               )}
               {isRegister && (
                 <div>
-                  <label className="label">Potvrdit heslo</label>
-                  <input className={`input${confirmPassword && password !== confirmPassword ? ' input-error' : ''}`} type={showPassword ? 'text' : 'password'} placeholder="Zopakuj heslo" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required autoComplete="new-password"/>
+                  <label className="label">{t('auth.confirmPassword')}</label>
+                  <input className={`input${confirmPassword && password !== confirmPassword ? ' input-error' : ''}`} type={showPassword ? 'text' : 'password'} placeholder={t('auth.repeatPassword')} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required autoComplete="new-password"/>
                   {confirmPassword && password !== confirmPassword && <p className="field-error">Hesla se neshodují</p>}
                 </div>
               )}
               {error && <div className="alert alert-error">⚠ {error}</div>}
               {success && <div className="alert alert-success">✓ {success}</div>}
               <button type="submit" className="btn btn-accent" disabled={loading} style={{ width: '100%', padding: '14px 0', fontSize: 16, marginTop: 4, borderRadius: 12 }}>
-                {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> Moment…</> : isRegister ? 'Vytvořit účet →' : 'Přihlásit se →'}
+                {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
             </form>
           </div>
@@ -232,8 +238,10 @@ export default function AuthPage() {
       <div className="animate-fadeIn" style={{
         padding: 'calc(20px + var(--safe-top)) 24px 0',
         position: 'relative', zIndex: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Wordmark/>
+        <LanguageSwitcher variant="dark"/>
       </div>
 
       {/* Tagline — skrytá na mobilu když je málo místa */}
@@ -250,8 +258,8 @@ export default function AuthPage() {
           letterSpacing: '-0.02em',
           lineHeight: 1.1,
         }}>
-          Hádej historii.<br/>
-          <span style={{ color: 'var(--accent)' }}>Trefuj čas a místo.</span>
+          {t('auth.tagline1')}<br/>
+          <span style={{ color: 'var(--accent)' }}>{t('auth.tagline2')}</span>
         </h1>
         <p style={{
           fontSize: 15, color: 'var(--feature-fg2)',
@@ -294,7 +302,7 @@ export default function AuthPage() {
                   transition: 'all 200ms var(--ease-out)',
                 }}
               >
-                {m === 'login' ? 'Přihlásit se' : 'Registrovat'}
+                {m === 'login' ? t('auth.login') : t('auth.register')}
               </button>
             ))}
           </div>
@@ -306,17 +314,17 @@ export default function AuthPage() {
               fontSize: 26, margin: '0 0 4px',
               letterSpacing: '-0.02em',
             }}>
-              {isRegister ? 'Vytvoř si účet' : 'Vítej zpět'}
+              {isRegister ? t('auth.createAccount') : t('auth.welcomeBack')}
             </h2>
             <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: 0 }}>
-              {isRegister ? 'Zaregistruj se a začni hádat historii.' : 'Přihlaš se a pokračuj ve hře.'}
+              {isRegister ? t('auth.registerSub') : t('auth.loginSub')}
             </p>
           </div>
 
           {/* Formulář */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label className="label">E-mail</label>
+              <label className="label">{t('auth.email')}</label>
               <input
                 className="input"
                 type="email" placeholder="jan@example.cz"
@@ -326,12 +334,12 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="label">Heslo</label>
+              <label className="label">{t('auth.password')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   className="input"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder={isRegister ? 'Silné heslo…' : '••••••••'}
+                  placeholder={isRegister ? t('auth.strongPassword') : '••••••••'}
                   value={password} onChange={e => setPassword(e.target.value)}
                   required
                   autoComplete={isRegister ? 'new-password' : 'current-password'}
@@ -357,7 +365,7 @@ export default function AuthPage() {
                 <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
                   {PASSWORD_RULES.map(rule => (
                     <div
-                      key={rule.label}
+                      key={rule.key}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 5,
                         fontSize: 12,
@@ -366,7 +374,7 @@ export default function AuthPage() {
                       }}
                     >
                       <span style={{ fontSize: 13 }}>{rule.test(password) ? '✓' : '○'}</span>
-                      {rule.label}
+                      {t(rule.key)}
                     </div>
                   ))}
                 </div>
@@ -374,15 +382,15 @@ export default function AuthPage() {
             </div>
 
             {!isRegister && (
-              <button type="button" onClick={handleForgot} style={forgotLinkStyle}>Zapomněl jsi heslo?</button>
+              <button type="button" onClick={handleForgot} style={forgotLinkStyle}>{t('auth.forgot')}</button>
             )}
             {isRegister && (
               <div>
-                <label className="label">Potvrdit heslo</label>
+                <label className="label">{t('auth.confirmPassword')}</label>
                 <input
                   className={`input${confirmPassword && password !== confirmPassword ? ' input-error' : ''}`}
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Zopakuj heslo"
+                  placeholder={t('auth.repeatPassword')}
                   value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                   required autoComplete="new-password"
                 />
@@ -410,18 +418,18 @@ export default function AuthPage() {
               style={{ width: '100%', marginTop: 4 }}
             >
               {loading
-                ? <><span className="spinner" style={{ width: 16, height: 16 }}/> Moment…</>
-                : isRegister ? 'Vytvořit účet →' : 'Přihlásit se →'
+                ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</>
+                : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')
               }
             </button>
           </form>
 
           {/* Legal links */}
           <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: 20, lineHeight: 1.6 }}>
-            Používáním aplikace souhlasíš s{' '}
-            <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>podmínkami použití</Link>
-            {' '}a{' '}
-            <Link to="/privacy" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>zásadami ochrany údajů</Link>.
+            {t('auth.legal')}{' '}
+            <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.terms')}</Link>
+            {' '}{t('auth.and')}{' '}
+            <Link to="/privacy" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.privacy')}</Link>.
           </p>
         </div>
       </div>

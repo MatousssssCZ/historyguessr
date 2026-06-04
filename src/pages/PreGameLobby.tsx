@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { getCandidateEvents, type CandidateEvent } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
@@ -21,6 +22,7 @@ const YEAR_MAX = 2025
 type SortBy = 'year' | 'title'
 
 export default function PreGameLobbyPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [rounds, setRounds] = useState(5)
@@ -95,15 +97,15 @@ export default function PreGameLobbyPage() {
       {/* Hlavička */}
       <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
-        <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 14, position: 'relative' }}>← Zpět do menu</button>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-soft)', position: 'relative' }}>Klasický mód · sólo</div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', margin: '6px 0 0', position: 'relative' }}>Nastav si hru</h1>
+        <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 14, position: 'relative' }}>{t('pregame.backToMenu')}</button>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-soft)', position: 'relative' }}>{t('pregame.mode')}</div>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', margin: '6px 0 0', position: 'relative' }}>{t('pregame.title')}</h1>
       </div>
 
       {/* Obsah */}
       <div style={{ flex: 1, padding: '20px 20px 0', maxWidth: 560, width: '100%', margin: '0 auto' }}>
         {/* Počet kol */}
-        <Section label="Počet kol">
+        <Section label={t('pregame.rounds')}>
           <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 4, gap: 4 }}>
             {ROUND_OPTIONS.map(r => (
               <button key={r} onClick={() => setRounds(r)} style={{
@@ -119,7 +121,7 @@ export default function PreGameLobbyPage() {
         </Section>
 
         {/* Kategorie */}
-        <Section label="Kategorie" hint="nic = bez filtru">
+        <Section label={t('pregame.categories')} hint={t('pregame.noFilter')}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {CATEGORIES.map(cat => {
               const on = categories.includes(cat.id)
@@ -130,14 +132,14 @@ export default function PreGameLobbyPage() {
                   border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
                   background: on ? 'var(--accent)' : 'transparent',
                   color: on ? '#fff' : 'var(--ink-2)',
-                }}>{cat.label}</button>
+                }}>{t('cat.' + cat.id)}</button>
               )
             })}
           </div>
         </Section>
 
         {/* Rozsah let */}
-        <Section label="Rozsah let">
+        <Section label={t('pregame.yearRange')}>
           <YearRange from={yearFrom} to={yearTo} onFrom={setYearFrom} onTo={setYearTo}/>
         </Section>
 
@@ -149,8 +151,8 @@ export default function PreGameLobbyPage() {
           color: enough ? 'var(--success-deep)' : '#c0392b',
         }}>
           {loading ? '…' : enough
-            ? <><span>✓</span> {availableCount} událostí ve hře{excluded.size > 0 && <span style={{ color: 'var(--ink-3)' }}> · {excluded.size} vyloučené</span>}</>
-            : <><span>⚠</span> Jen {availableCount} událostí — potřebuješ aspoň {rounds}</>}
+            ? <><span>✓</span> {t('pregame.inGame', { count: availableCount })}{excluded.size > 0 && <span style={{ color: 'var(--ink-3)' }}> · {t('pregame.excluded', { n: excluded.size })}</span>}</>
+            : <><span>⚠</span> {t('pregame.notEnough', { n: availableCount, min: rounds })}</>}
         </div>
 
         {/* Vyladit události */}
@@ -161,11 +163,11 @@ export default function PreGameLobbyPage() {
           }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 16 }}>🗂</span>
-              <span style={{ fontSize: 14.5, color: 'var(--ink)', fontWeight: 500 }}>Vyladit konkrétní události</span>
+              <span style={{ fontSize: 14.5, color: 'var(--ink)', fontWeight: 500 }}>{t('pregame.tune')}</span>
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)' }}>
-                {excluded.size > 0 ? `${excluded.size} pryč` : candidates.length}
+                {excluded.size > 0 ? t('pregame.away', { n: excluded.size }) : candidates.length}
               </span>
               <span style={{ color: 'var(--ink-3)', fontSize: 13, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
             </span>
@@ -174,19 +176,19 @@ export default function PreGameLobbyPage() {
           {expanded && (
             <>
               <div style={{ fontSize: 11, color: 'var(--ink-3)', padding: '0 14px 12px', background: 'var(--surface)' }}>
-                Klepni na × u událostí, které v této hře nechceš.
+                {t('pregame.tuneHint')}
               </div>
               {/* Řazení */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Řadit</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('pregame.sort')}</span>
                 <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-                  <SortBtn active={sortBy === 'year'} onClick={() => setSortBy('year')}>Rok ↑</SortBtn>
-                  <SortBtn active={sortBy === 'title'} onClick={() => setSortBy('title')}>Název</SortBtn>
+                  <SortBtn active={sortBy === 'year'} onClick={() => setSortBy('year')}>{t('pregame.sortYear')}</SortBtn>
+                  <SortBtn active={sortBy === 'title'} onClick={() => setSortBy('title')}>{t('pregame.sortTitle')}</SortBtn>
                 </div>
               </div>
               <div style={{ maxHeight: 320, overflowY: 'auto', borderTop: '1px solid var(--line)' }}>
-                {loading && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>Načítám…</div>}
-                {!loading && sortedCandidates.length === 0 && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>Žádné události neodpovídají filtru.</div>}
+                {loading && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>{t('pregame.loadingEvents')}</div>}
+                {!loading && sortedCandidates.length === 0 && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>{t('pregame.noEvents')}</div>}
                 {sortedCandidates.map(ev => {
                   const out = excluded.has(ev.id)
                   return (
@@ -201,10 +203,10 @@ export default function PreGameLobbyPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14.5, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: out ? 'line-through' : 'none' }}>{ev.title}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
-                          {formatYear(ev.year)}{ev.category && CAT_LABEL[ev.category] ? ` · ${CAT_LABEL[ev.category]}` : ''}
+                          {formatYear(ev.year)}{ev.category ? ` · ${t('cat.' + ev.category)}` : ''}
                         </div>
                       </div>
-                      <button onClick={() => toggleExclude(ev.id)} aria-label={out ? 'Vrátit do hry' : 'Vyloučit'} style={{
+                      <button onClick={() => toggleExclude(ev.id)} aria-label={out ? t('pregame.restore') : t('pregame.exclude')} style={{
                         width: 30, height: 30, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
                         border: `1px solid ${out ? 'var(--ink)' : 'var(--line-strong)'}`,
@@ -229,7 +231,7 @@ export default function PreGameLobbyPage() {
           fontFamily: 'var(--font-serif)', fontSize: 19, cursor: enough && !loading ? 'pointer' : 'not-allowed',
           boxShadow: enough && !loading ? '0 10px 30px rgba(217,119,87,0.4)' : 'none',
         }}>
-          Spustit hru
+          {t('pregame.start')}
           <span style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>→</span>
         </button>
       </div>
@@ -262,6 +264,7 @@ function SortBtn({ active, onClick, children }: { active: boolean; onClick: () =
 
 // Rozsah let — dva posuvníky + číselná pole
 function YearRange({ from, to, onFrom, onTo }: { from: number; to: number; onFrom: (v: number) => void; onTo: (v: number) => void }) {
+  const { t } = useTranslation()
   const span = YEAR_MAX - YEAR_MIN
   const lo = Math.min(from, to)
   const hi = Math.max(from, to)
@@ -285,20 +288,21 @@ function YearRange({ from, to, onFrom, onTo }: { from: number; to: number; onFro
       </div>
       {/* Číselná pole */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <YearBox label="Od" value={from} onChange={handleFrom}/>
+        <YearBox label={t('pregame.from')} value={from} onChange={handleFrom}/>
         <span style={{ color: 'var(--ink-3)' }}>→</span>
-        <YearBox label="Do" value={to} onChange={handleTo}/>
+        <YearBox label={t('pregame.to')} value={to} onChange={handleTo}/>
       </div>
     </div>
   )
 }
 
 function YearBox({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  const { t } = useTranslation()
   const isBc = value < 0
   return (
     <label style={{ flex: 1, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 10px', display: 'flex', flexDirection: 'column', cursor: 'text' }}>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
-        {label} <span style={{ color: isBc ? '#5b7fa6' : 'var(--accent-deep)' }}>{isBc ? 'př.n.l.' : 'n.l.'}</span>
+        {label} <span style={{ color: isBc ? '#5b7fa6' : 'var(--accent-deep)' }}>{isBc ? t('pregame.bc') : t('pregame.ad')}</span>
       </span>
       <input
         type="number" min={YEAR_MIN} max={YEAR_MAX} value={value}

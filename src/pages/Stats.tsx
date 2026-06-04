@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getUserSessions, getUserDailyResults, type SessionRow } from '@/lib/supabase'
@@ -69,6 +70,7 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
 }
 
 export default function StatsPage() {
+  const { t } = useTranslation()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [stats, setStats] = useState<Stats | null>(null)
@@ -94,13 +96,13 @@ export default function StatsPage() {
       <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', marginBottom: 14 }}>
-          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0 }}>← Zpět do menu</button>
-          <button onClick={() => navigate('/account')} style={{ background: 'var(--feature-line)', border: '1px solid var(--feature-line)', borderRadius: 8, padding: '6px 12px', color: 'var(--feature-fg2)', fontSize: 12, cursor: 'pointer' }}>⚙ Účet</button>
+          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0 }}>{t('pregame.backToMenu')}</button>
+          <button onClick={() => navigate('/account')} style={{ background: 'var(--feature-line)', border: '1px solid var(--feature-line)', borderRadius: 8, padding: '6px 12px', color: 'var(--feature-fg2)', fontSize: 12, cursor: 'pointer' }}>⚙ {t('common.account')}</button>
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>Tvůj progres</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>{t('stats.title')}</h1>
         <div style={{ marginTop: 16, position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--feature-fg)' }}>Level {lvl.level}</b>
+            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--feature-fg)' }}>{t('menu.level')} {lvl.level}</b>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--feature-fg2)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
           </div>
           <div style={{ height: 8, borderRadius: 999, background: 'var(--feature-line)', overflow: 'hidden' }}>
@@ -115,50 +117,50 @@ export default function StatsPage() {
         ) : stats.games === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
-            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>Zatím žádná data</p>
-            <p style={{ fontSize: 14 }}>Zahraj si první hru a sleduj svůj progres tady.</p>
-            <button onClick={() => navigate('/play')} className="btn btn-accent" style={{ marginTop: 18, padding: '12px 24px', borderRadius: 12 }}>Hrát →</button>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>{t('stats.noData')}</p>
+            <p style={{ fontSize: 14 }}>{t('stats.noDataSub')}</p>
+            <button onClick={() => navigate('/play')} className="btn btn-accent" style={{ marginTop: 18, padding: '12px 24px', borderRadius: 12 }}>{t('stats.playCta')}</button>
           </div>
         ) : (
           <>
-            <Section label="Přehled">
+            <Section label={t('stats.overview')}>
               <Grid>
-                <Card icon="🎮" value={n(stats.games)} k="Odehraných her"/>
-                <Card icon="🏆" value={n(stats.totalScore)} k="Celkové skóre"/>
-                <Card icon="📊" value={n(stats.avgScore)} k="Ø skóre / hra"/>
-                <Card icon="🎯" value={`${stats.bullseyes}×`} k="Zásahů do černého" hl/>
+                <Card icon="🎮" value={n(stats.games)} k={t('stats.games')}/>
+                <Card icon="🏆" value={n(stats.totalScore)} k={t('stats.totalScore')}/>
+                <Card icon="📊" value={n(stats.avgScore)} k={t('stats.avgScore')}/>
+                <Card icon="🎯" value={`${stats.bullseyes}×`} k={t('stats.bullseyes')} hl/>
               </Grid>
             </Section>
 
-            <Section label="Přesnost">
+            <Section label={t('stats.accuracy')}>
               <Grid>
-                <Card icon="📍" value={n(stats.avgDistance)} unit=" km" k="Ø vzdálenost"/>
-                <Card icon="📅" value={n(stats.avgYearDiff)} unit=" let" k="Ø chyba roku"/>
-                <Card icon="🎯" value={String(stats.pctClose)} unit="%" k="Trefa do 25 km"/>
-                <Card icon="✓" value={String(stats.pctExactYear)} unit="%" k="Přesný rok"/>
+                <Card icon="📍" value={n(stats.avgDistance)} unit={t('stats.unitKm')} k={t('stats.avgDistance')}/>
+                <Card icon="📅" value={n(stats.avgYearDiff)} unit={t('stats.unitYears')} k={t('stats.avgYear')}/>
+                <Card icon="🎯" value={String(stats.pctClose)} unit="%" k={t('stats.close')}/>
+                <Card icon="✓" value={String(stats.pctExactYear)} unit="%" k={t('stats.exactYear')}/>
               </Grid>
             </Section>
 
-            <Section label="Denní výzva">
+            <Section label={t('stats.daily')}>
               <Grid>
-                <Card icon="🔥" value={String(stats.dailyStreak)} unit=" dní" k="Aktuální série"/>
-                <Card icon="📆" value={n(stats.dailyCount)} k="Odehraných výzev"/>
+                <Card icon="🔥" value={String(stats.dailyStreak)} unit={t('stats.unitDays')} k={t('stats.streak')}/>
+                <Card icon="📆" value={n(stats.dailyCount)} k={t('stats.dailyCount')}/>
               </Grid>
             </Section>
 
-            <Section label="Vývoj výkonu">
+            <Section label={t('stats.trend')}>
               <TrendChart scores={stats.gameScores} trendPct={stats.trendPct}/>
             </Section>
 
-            <Section label="Achievementy">
+            <Section label={t('stats.achievements')}>
               <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: 16, textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
                   {['🔥', '🎯', '🏛', '⏳'].map(b => (
                     <div key={b} style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, filter: 'grayscale(1)', opacity: 0.5 }}>{b}</div>
                   ))}
                 </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: 'var(--accent)', padding: '3px 10px', borderRadius: 999 }}>Již brzy</span>
-                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5, marginTop: 8 }}>Sbírej odznaky za série, přesnost a milníky. Připravujeme.</p>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: 'var(--accent)', padding: '3px 10px', borderRadius: 999 }}>{t('stats.soon')}</span>
+                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5, marginTop: 8 }}>{t('stats.achSub')}</p>
               </div>
             </Section>
           </>
@@ -196,12 +198,13 @@ function Card({ icon, value, unit, k, hl }: { icon: string; value: string; unit?
 }
 
 function TrendChart({ scores, trendPct }: { scores: number[]; trendPct: number }) {
+  const { t } = useTranslation()
   const W = 320, H = 96
   const verdict = trendPct >= 5
-    ? { txt: `📈 Zlepšuješ se · +${trendPct} %`, bg: 'rgba(39,174,96,0.12)', col: '#1d6b3a' }
+    ? { txt: t('stats.trendUp', { pct: trendPct }), bg: 'rgba(39,174,96,0.12)', col: '#1d6b3a' }
     : trendPct <= -5
-      ? { txt: `📉 Mírný pokles · ${trendPct} %`, bg: 'rgba(192,57,43,0.1)', col: '#b3261e' }
-      : { txt: '➖ Stabilní výkon', bg: 'var(--paper-200)', col: 'var(--ink-2)' }
+      ? { txt: t('stats.trendDown', { pct: trendPct }), bg: 'rgba(192,57,43,0.1)', col: '#b3261e' }
+      : { txt: t('stats.trendStable'), bg: 'var(--paper-200)', col: 'var(--ink-2)' }
 
   // posledních max 40 her
   const data = scores.slice(-40)
@@ -232,7 +235,7 @@ function TrendChart({ scores, trendPct }: { scores: number[]; trendPct: number }
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: '14px 14px 12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 500, padding: '4px 11px', borderRadius: 999, background: verdict.bg, color: verdict.col }}>{verdict.txt}</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)' }}>skóre / hra</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)' }}>{t('stats.perGame')}</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 96, display: 'block' }}>
         <polyline points={pts} fill="none" stroke="#ddd2bb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -240,7 +243,7 @@ function TrendChart({ scores, trendPct }: { scores: number[]; trendPct: number }
         {data.length > 0 && <circle cx={x(data.length - 1)} cy={y(data[data.length - 1])} r="4" fill="#d97757"/>}
       </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', marginTop: 6 }}>
-        <span>prvních her</span><span>posledních her →</span>
+        <span>{t('stats.firstGames')}</span><span>{t('stats.lastGames')}</span>
       </div>
     </div>
   )

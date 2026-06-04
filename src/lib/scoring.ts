@@ -1,3 +1,4 @@
+import i18n from '@/i18n'
 const MAX_SCORE = 500
 
 // Ladicí konstanty exponenciálního poklesu (vyšší = mírnější)
@@ -44,8 +45,11 @@ export function formatDistance(km: number): string {
 }
 
 export function formatYear(year: number): string {
-  if (year < 0) return `${Math.abs(year)} př. n. l.`
-  return `${year} n. l.`
+  const lng = (i18n.language || 'en').slice(0, 2)
+  const bc = lng === 'en' ? 'BC' : lng === 'de' ? 'v. Chr.' : 'př. n. l.'
+  const ad = lng === 'en' ? 'AD' : lng === 'de' ? 'n. Chr.' : 'n. l.'
+  if (year < 0) return `${Math.abs(year)} ${bc}`
+  return `${year} ${ad}`
 }
 
 export function scorePercent(score: number, maxScore = 1_000): number {

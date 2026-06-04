@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { updateProfile, signOut } from '@/lib/supabase'
 import ThemeToggle from '@/components/ThemeToggle'
 
 export default function AccountPage() {
+  const { t } = useTranslation()
   const { profile, user } = useAuth()
   const navigate = useNavigate()
   const [username, setUsername] = useState(profile?.username ?? '')
@@ -18,8 +20,8 @@ export default function AccountPage() {
     const { error } = await updateProfile(user.id, { username })
     setSaving(false)
     setMessage(error
-      ? { type: 'error', text: 'Nepodařilo se uložit.' }
-      : { type: 'success', text: 'Profil uložen.' }
+      ? { type: 'error', text: t('account.saveError') }
+      : { type: 'success', text: t('account.saved') }
     )
   }
 
@@ -38,59 +40,59 @@ export default function AccountPage() {
         borderBottom: '1px solid var(--line)',
       }}>
         <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/menu')}>
-          ← Zpět
+          ← {t('common.back')}
         </button>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Můj účet</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{t('account.title')}</h1>
       </header>
 
       <div style={{ maxWidth: 560, margin: '40px auto', padding: '0 24px' }}>
 
         {/* Statistiky */}
         <div className="card" style={{ padding: 28, marginBottom: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 20 }}>Statistiky</p>
+          <p className="eyebrow" style={{ marginBottom: 20 }}>{t('account.stats')}</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-            <StatBlock label="Celkové skóre" value={profile?.total_score?.toLocaleString('cs-CZ') ?? '0'}/>
-            <StatBlock label="Odehráno her" value={String(profile?.games_played ?? 0)}/>
+            <StatBlock label={t('account.totalScore')} value={profile?.total_score?.toLocaleString('cs-CZ') ?? '0'}/>
+            <StatBlock label={t('account.gamesPlayed')} value={String(profile?.games_played ?? 0)}/>
           </div>
         </div>
 
         {/* Profil */}
         <div className="card" style={{ padding: 28, marginBottom: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 20 }}>Profil</p>
+          <p className="eyebrow" style={{ marginBottom: 20 }}>{t('account.profile')}</p>
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label className="label">E-mail</label>
+              <label className="label">{t('auth.email')}</label>
               <input className="input" value={user?.email ?? ''} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}/>
             </div>
             <div>
-              <label className="label">Uživatelské jméno</label>
-              <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="např. historik42" maxLength={32}/>
+              <label className="label">{t('account.username')}</label>
+              <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder={t('account.usernamePlaceholder')} maxLength={32}/>
             </div>
             {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
             <button className="btn btn-primary" type="submit" disabled={saving}>
               {saving ? <span className="spinner" style={{ width: 16, height: 16 }}/> : null}
-              {saving ? 'Ukládám…' : 'Uložit změny'}
+              {saving ? t('account.saving') : t('common.save')}
             </button>
           </form>
         </div>
 
         {/* Vzhled */}
         <div className="card" style={{ padding: 28, marginBottom: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 16 }}>Vzhled</p>
+          <p className="eyebrow" style={{ marginBottom: 16 }}>{t('account.appearance')}</p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>Světlý / tmavý režim</span>
+            <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{t('account.themeLabel')}</span>
             <ThemeToggle/>
           </div>
         </div>
 
         {/* Odhlášení */}
         <div className="card" style={{ padding: 28 }}>
-          <p className="eyebrow" style={{ marginBottom: 12 }}>Relace</p>
+          <p className="eyebrow" style={{ marginBottom: 12 }}>{t('account.session')}</p>
           <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 16 }}>
-            Přihlášen jako <strong>{user?.email}</strong>
+            {t('account.loggedInAs')} <strong>{user?.email}</strong>
           </p>
           <button className="btn btn-danger" onClick={handleSignOut}>
-            Odhlásit se
+            {t('account.signOut')}
           </button>
         </div>
       </div>

@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { currentLocale } from '@/i18n'
 
 export default function TermsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
@@ -18,12 +21,12 @@ export default function TermsPage() {
           className="btn btn-ghost"
           style={{ padding: '7px 12px', fontSize: 13 }}
         >
-          ← Zpět
+          ← {t('legal.back')}
         </button>
         <div>
           <div className="eyebrow" style={{ fontSize: 9 }}>HistoryGuessr</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: 0, letterSpacing: '-0.01em' }}>
-            Podmínky použití
+            {t('legal.terms.title')}
           </h1>
         </div>
       </header>
@@ -38,59 +41,59 @@ export default function TermsPage() {
             borderRadius: 8, padding: '12px 16px', marginBottom: 28,
           }}>
             <p style={{ fontSize: 13, color: 'var(--accent-deep)', margin: 0 }}>
-              ⚠ Tento dokument je připravovaný placeholder. Finální znění bude doplněno před veřejným spuštěním.
+              {t('legal.placeholder')}
             </p>
           </div>
 
           <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 32 }}>
-            Poslední aktualizace: {new Date().toLocaleDateString('cs-CZ')}
+            {t('legal.lastUpdated')}: {new Date().toLocaleDateString(currentLocale())}
           </p>
 
-          <Section title="1. Přijetí podmínek">
-            <p>Používáním aplikace HistoryGuessr souhlasíte s těmito podmínkami použití. Pokud nesouhlasíte, aplikaci prosím nepoužívejte.</p>
+          <Section title={t('legal.terms.s1t')}>
+            <p>{t('legal.terms.s1b')}</p>
           </Section>
 
-          <Section title="2. Popis služby">
-            <p>HistoryGuessr je bezplatná vzdělávací hra, ve které hráči tipují polohu a rok historických událostí na základě 360° panoramatických fotografií.</p>
+          <Section title={t('legal.terms.s2t')}>
+            <p>{t('legal.terms.s2b')}</p>
           </Section>
 
-          <Section title="3. Uživatelský účet">
+          <Section title={t('legal.terms.s3t')}>
             <ul>
-              <li>Registrace vyžaduje platnou e-mailovou adresu</li>
-              <li>Za bezpečnost svého účtu a hesla odpovídáte vy</li>
-              <li>Jeden uživatel smí mít pouze jeden účet</li>
-              <li>Uživatelské jméno nesmí být urážlivé nebo klamavé</li>
+              <li>{t('legal.terms.s3i1')}</li>
+              <li>{t('legal.terms.s3i2')}</li>
+              <li>{t('legal.terms.s3i3')}</li>
+              <li>{t('legal.terms.s3i4')}</li>
             </ul>
           </Section>
 
-          <Section title="4. Pravidla chování">
-            <p>Zakazuje se:</p>
+          <Section title={t('legal.terms.s4t')}>
+            <p>{t('legal.terms.s4intro')}</p>
             <ul>
-              <li>Manipulace se žebříčky nebo skóre pomocí technických prostředků</li>
-              <li>Automatizované hraní (boti)</li>
-              <li>Pokusy o narušení bezpečnosti aplikace</li>
-              <li>Šíření obsahu, který poškozuje ostatní uživatele</li>
+              <li>{t('legal.terms.s4i1')}</li>
+              <li>{t('legal.terms.s4i2')}</li>
+              <li>{t('legal.terms.s4i3')}</li>
+              <li>{t('legal.terms.s4i4')}</li>
             </ul>
           </Section>
 
-          <Section title="5. Obsah aplikace">
-            <p>Historické události, panoramata a popisky v aplikaci jsou shromažďovány za vzdělávacím účelem. Provozovatel si vyhrazuje právo kdykoli upravit nebo odstranit jakýkoli obsah.</p>
+          <Section title={t('legal.terms.s5t')}>
+            <p>{t('legal.terms.s5b')}</p>
           </Section>
 
-          <Section title="6. Dostupnost služby">
-            <p>Aplikace je poskytována „jak stojí a leží". Neposkytujeme záruku nepřetržité dostupnosti ani přesnosti herního obsahu. Vyhrazujeme si právo aplikaci kdykoli upravit nebo ukončit.</p>
+          <Section title={t('legal.terms.s6t')}>
+            <p>{t('legal.terms.s6b')}</p>
           </Section>
 
-          <Section title="7. Odpovědnost">
-            <p>Provozovatel neodpovídá za jakékoli škody vzniklé v důsledku používání nebo nedostupnosti aplikace.</p>
+          <Section title={t('legal.terms.s7t')}>
+            <p>{t('legal.terms.s7b')}</p>
           </Section>
 
-          <Section title="8. Změny podmínek">
-            <p>Podmínky použití můžeme kdykoli aktualizovat. O zásadních změnách budeme uživatele informovat e-mailem.</p>
+          <Section title={t('legal.terms.s8t')}>
+            <p>{t('legal.terms.s8b')}</p>
           </Section>
 
-          <Section title="9. Kontakt" last>
-            <p>Dotazy ohledně podmínek použití zasílejte na: <strong>[email]</strong></p>
+          <Section title={t('legal.terms.s9t')} last>
+            <p>{t('legal.terms.s9b1')}<strong>[email]</strong></p>
           </Section>
         </div>
       </div>

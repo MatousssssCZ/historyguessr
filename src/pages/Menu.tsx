@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { signOut, getTodayDailyResult, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
+import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type DailyState = 'loading' | 'new' | 'done'
 
 export default function MenuPage() {
+  const { t } = useTranslation()
   const { user, profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [mounted, setMounted] = useState(false)
@@ -49,8 +52,8 @@ export default function MenuPage() {
   // Podtitul + stav pro denní výzvu
   const dailySub =
     dailyState === 'done'
-      ? `Skóre ${dailyResult?.score?.toLocaleString('cs-CZ') ?? 0} · vrať se zítra`
-      : 'Denní výzva tě dnes ještě čeká'
+      ? t('menu.dailyDone', { score: (dailyResult?.score ?? 0).toLocaleString('cs-CZ') })
+      : t('menu.dailyWaiting')
 
   // ═══════════════════════════════════════════════════════
   // DESKTOP — filmový hero
@@ -62,11 +65,12 @@ export default function MenuPage() {
         <header style={{ position: 'relative', zIndex: 2, padding: '18px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--feature-chip)' }}>
           <Wordmark/>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <LanguageSwitcher variant="dark"/>
             <ThemeToggle variant="dark"/>
             <button onClick={handleSignOut} style={logoutDark}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--feature-line)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'var(--feature-chip)')}>
-              Odhlásit
+              {t('common.logout')}
             </button>
           </div>
         </header>
@@ -82,18 +86,18 @@ export default function MenuPage() {
             <HeroBackdrop height={320}/>
             <div style={{ position: 'relative', height: 320, display: 'flex', alignItems: 'flex-end', padding: '0 38px 34px' }}>
               <div style={{ flex: 1 }}>
-                <span style={heroTag}>Klasický mód · 5 kol</span>
+                <span style={heroTag}>{t('menu.heroTag')}</span>
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: 'var(--feature-fg)', margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98 }}>
-                  Začni novou výpravu
+                  {t('menu.heroTitle')}
                 </h1>
                 <p style={{ fontSize: 15, color: 'var(--feature-fg2)', margin: '12px 0 0' }}>
-                  360° panoramy · tipni místo + rok
+                  {t('menu.heroSub')}
                 </p>
               </div>
               <button onClick={() => navigate('/play')} style={heroPlayBtn}
                 onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
                 onMouseLeave={e => (e.currentTarget.style.transform = 'none')}>
-                Hrát
+                {t('common.play')}
                 <span style={heroPlayArrow}>→</span>
               </button>
             </div>
@@ -104,10 +108,10 @@ export default function MenuPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 6px 14px',
             opacity: mounted ? 1 : 0, transition: 'all 0.5s 0.08s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)' }}>Vítej zpět, {name}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)' }}>{t('menu.greeting', { name })}</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <StatBadge value={String(games)} label="her"/>
-              <StatBadge value={score} label="bodů" accent/>
+              <StatBadge value={String(games)} label={t('menu.stHer')}/>
+              <StatBadge value={score} label={t('menu.stBody')} accent/>
             </div>
           </div>
 
@@ -122,16 +126,16 @@ export default function MenuPage() {
             opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(16px)',
             transition: 'all 0.5s 0.14s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            <ModeTileDark icon="📅" title="Tento den" sub={dailySub} onClick={() => navigate('/daily')}
+            <ModeTileDark icon="📅" title={t('menu.daily')} sub={dailySub} onClick={() => navigate('/daily')}
               dailyState={dailyState}/>
-            <ModeTileDark icon="🎮" title="Více hráčů" sub="Zahraj s přáteli" onClick={() => navigate('/multiplayer/lobby')}/>
-            <ModeTileDark icon="👤" title="Účet" sub="Profil & statistiky" onClick={() => navigate('/account')}/>
-            <ModeTileDark icon="🏆" title="Skóre" sub="Statistiky a progres" onClick={() => navigate('/stats')}/>
-            {isAdmin && <ModeTileDark icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')}/>}
+            <ModeTileDark icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={() => navigate('/multiplayer/lobby')}/>
+            <ModeTileDark icon="👤" title={t('menu.accountTitle')} sub={t('menu.accountSub')} onClick={() => navigate('/account')}/>
+            <ModeTileDark icon="🏆" title={t('menu.scoreTitle')} sub={t('menu.scoreSub')} onClick={() => navigate('/stats')}/>
+            {isAdmin && <ModeTileDark icon="⚙️" title={t('menu.admin')} sub={t('menu.adminSub')} onClick={() => navigate('/admin')}/>}
           </div>
 
           <p style={{ textAlign: 'center', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--feature-fg3)', lineHeight: 1.6, marginTop: 40 }}>
-            "Kdo nezná historii, je odsouzen ji znovu prožívat." — <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>George Santayana</span>
+            {t('menu.quote')} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{t('menu.quoteAuthor')}</span>
           </p>
         </div>
       </div>
@@ -152,8 +156,9 @@ export default function MenuPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 0' }}>
         <Wordmark dark/>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LanguageSwitcher/>
           <ThemeToggle variant="light"/>
-          <button onClick={handleSignOut} style={logoutLight}>Odhlásit</button>
+          <button onClick={handleSignOut} style={logoutLight}>{t('common.logout')}</button>
         </div>
       </div>
 
@@ -163,11 +168,11 @@ export default function MenuPage() {
         opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(12px)',
         transition: 'all 0.45s cubic-bezier(0.16,1,0.3,1)',
       }}>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: 0 }}>Vítej zpět</p>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: 0 }}>{t('menu.welcomeBack')}</p>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(34px, 11vw, 46px)', color: 'var(--ink)', letterSpacing: '-0.025em', lineHeight: 1, margin: '10px 0 18px' }}>{name}</h1>
         <div style={{ display: 'flex', gap: 26, marginBottom: 18 }}>
-          <MobileStat value={String(games)} label="odehraných her"/>
-          <MobileStat value={score} label="celkem bodů"/>
+          <MobileStat value={String(games)} label={t('menu.games')}/>
+          <MobileStat value={score} label={t('menu.score')}/>
         </div>
         <LevelBar lvl={lvl}/>
       </div>
@@ -183,7 +188,7 @@ export default function MenuPage() {
         <HeroBackdrop height={162} sideFade/>
         <div style={{ position: 'relative', padding: '18px 20px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent-soft)', textTransform: 'uppercase' }}>Klasický mód · 5 kol</span>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--feature-fg)', lineHeight: 1.04, marginTop: 8 }}>Hrát klasickou hru</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--feature-fg)', lineHeight: 1.04, marginTop: 8 }}>{t('menu.playCardTitle')}</div>
         </div>
         <div style={{
           position: 'absolute', right: 18, bottom: 18, width: 46, height: 46, borderRadius: 13,
@@ -199,16 +204,16 @@ export default function MenuPage() {
         opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(16px)',
         transition: 'all 0.45s 0.12s cubic-bezier(0.16,1,0.3,1)',
       }}>
-        <ListItem icon="📅" title="Tento den v historii" sub={dailySub}
+        <ListItem icon="📅" title={t('menu.dailyMobile')} sub={dailySub}
           onClick={() => navigate('/daily')} dailyState={dailyState}/>
-        <ListItem icon="🎮" title="Více hráčů" sub="Zahraj si s přáteli" onClick={() => navigate('/multiplayer/lobby')}/>
-        <ListItem icon="🏆" title="Skóre & progres" sub="Tvoje statistiky" onClick={() => navigate('/stats')}/>
-        {isAdmin && <ListItem icon="⚙️" title="Admin" sub="Správa událostí" onClick={() => navigate('/admin')}/>}
+        <ListItem icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub2')} onClick={() => navigate('/multiplayer/lobby')}/>
+        <ListItem icon="🏆" title={t('menu.scoreMobile')} sub={t('menu.scoreMobileSub')} onClick={() => navigate('/stats')}/>
+        {isAdmin && <ListItem icon="⚙️" title={t('menu.admin')} sub={t('menu.adminSub')} onClick={() => navigate('/admin')}/>}
       </div>
 
       <p style={{ textAlign: 'center', fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, margin: '20px 24px 8px' }}>
-        "Kdo nezná historii, je odsouzen ji znovu prožívat."
-        <br/><span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em' }}>— George Santayana</span>
+        {t('menu.quote')}
+        <br/><span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em' }}>{t('menu.quoteAuthor')}</span>
       </p>
     </div>
   )
@@ -245,6 +250,7 @@ function HeroBackdrop({ height, sideFade }: { height: number; sideFade?: boolean
 
 // ─── Štítek denní výzvy ───────────────────────────────────
 function DailyBadge({ state, floating }: { state: DailyState; floating?: boolean }) {
+  const { t } = useTranslation()
   if (state === 'loading') return null
   const done = state === 'done'
   return (
@@ -258,8 +264,8 @@ function DailyBadge({ state, floating }: { state: DailyState; floating?: boolean
       animation: done ? 'none' : 'glow 2s infinite',
     }}>
       {done
-        ? <>✓ Hotovo</>
-        : <><span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }}/>Nová výzva</>}
+        ? <>{t('menu.badgeDone')}</>
+        : <><span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }}/>{t('menu.badgeNew')}</>}
     </span>
   )
 }
@@ -329,13 +335,14 @@ function ListItem({ icon, title, sub, onClick, dailyState }: {
 
 // ─── Drobné komponenty ────────────────────────────────────
 function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
+  const { t } = useTranslation()
   const into = lvl.into.toLocaleString('cs-CZ')
   const need = lvl.need.toLocaleString('cs-CZ')
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
         <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: dark ? 'var(--feature-fg)' : 'var(--ink)' }}>
-          Level {lvl.level}
+          {t('menu.level')} {lvl.level}
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: dark ? 'var(--feature-fg2)' : 'var(--ink-3)' }}>
           {into} / {need} XP

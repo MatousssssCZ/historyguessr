@@ -4,6 +4,7 @@ import App from './App'
 import './styles/globals.css'
 import 'leaflet/dist/leaflet.css'
 import { applyTheme, getTheme } from './lib/theme'
+import './i18n'
 
 // Aplikuj uložené téma co nejdřív (zabrání bliknutí)
 applyTheme(getTheme())
