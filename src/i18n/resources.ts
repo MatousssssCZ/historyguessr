@@ -1,6 +1,24 @@
 // Překlady (cs / en / de). Klíče přidáváme postupně, jak se překládají obrazovky.
 export const resources = {
   cs: { translation: {
+    reset: { title: 'Nové heslo', sub: 'Zvol si nové heslo k účtu.', newPassword: 'Nové heslo',
+      done: '✓ Heslo změněno. Přesměrovávám…', verifying: 'Ověřuji odkaz z e-mailu… Pokud se nic nestane, odkaz mohl vypršet — požádej o nový na přihlašovací stránce.',
+      failed: 'Nepodařilo se změnit heslo. Odkaz mohl vypršet.', submit: 'Nastavit heslo →' },
+    account: { title: 'Můj účet', stats: 'Statistiky', totalScore: 'Celkové skóre', gamesPlayed: 'Odehráno her',
+      profile: 'Profil', username: 'Uživatelské jméno', usernamePlaceholder: 'např. historik42',
+      saveError: 'Nepodařilo se uložit.', saved: 'Profil uložen.', saving: 'Ukládám…',
+      appearance: 'Vzhled', themeLabel: 'Světlý / tmavý režim', session: 'Relace', loggedInAs: 'Přihlášen jako', signOut: 'Odhlásit se' },
+    cat: { war: '⚔ Bitvy', culture: '🏛 Kultura', science: '🔬 Věda', politics: '🏛 Politika', religion: '✝ Náboženství', exploration: '🧭 Objevy' },
+    pregame: {
+      backToMenu: '← Zpět do menu', mode: 'Klasický mód · sólo', title: 'Nastav si hru',
+      rounds: 'Počet kol', categories: 'Kategorie', noFilter: 'nic = bez filtru', yearRange: 'Rozsah let',
+      from: 'Od', to: 'Do', bc: 'př.n.l.', ad: 'n.l.',
+      inGame_one: '{{count}} událost ve hře', inGame_few: '{{count}} události ve hře', inGame_many: '{{count}} události ve hře', inGame_other: '{{count}} událostí ve hře',
+      excluded: '{{n}} vyloučeno', notEnough: 'Jen {{n}} událostí — potřebuješ aspoň {{min}}',
+      tune: 'Vyladit konkrétní události', away: '{{n}} pryč', tuneHint: 'Klepni na × u událostí, které v této hře nechceš.',
+      sort: 'Řadit', sortYear: 'Rok ↑', sortTitle: 'Název', loadingEvents: 'Načítám…', noEvents: 'Žádné události neodpovídají filtru.',
+      start: 'Spustit hru', exclude: 'Vyloučit', restore: 'Vrátit do hry',
+    },
     common: {
       logout: 'Odhlásit', back: 'Zpět', backToMenu: 'Zpět do menu', account: 'Účet',
       save: 'Uložit změny', loading: 'Moment…', play: 'Hrát', cancel: 'Zrušit',
@@ -41,6 +59,24 @@ export const resources = {
   }},
 
   en: { translation: {
+    reset: { title: 'New password', sub: 'Choose a new password for your account.', newPassword: 'New password',
+      done: '✓ Password changed. Redirecting…', verifying: 'Verifying the e-mail link… If nothing happens, the link may have expired — request a new one on the sign-in page.',
+      failed: 'Could not change the password. The link may have expired.', submit: 'Set password →' },
+    account: { title: 'My account', stats: 'Statistics', totalScore: 'Total score', gamesPlayed: 'Games played',
+      profile: 'Profile', username: 'Username', usernamePlaceholder: 'e.g. historian42',
+      saveError: 'Could not save.', saved: 'Profile saved.', saving: 'Saving…',
+      appearance: 'Appearance', themeLabel: 'Light / dark mode', session: 'Session', loggedInAs: 'Logged in as', signOut: 'Log out' },
+    cat: { war: '⚔ Battles', culture: '🏛 Culture', science: '🔬 Science', politics: '🏛 Politics', religion: '✝ Religion', exploration: '🧭 Exploration' },
+    pregame: {
+      backToMenu: '← Back to menu', mode: 'Classic mode · solo', title: 'Set up your game',
+      rounds: 'Rounds', categories: 'Categories', noFilter: 'none = no filter', yearRange: 'Year range',
+      from: 'From', to: 'To', bc: 'BC', ad: 'AD',
+      inGame_one: '{{count}} event in the game', inGame_other: '{{count}} events in the game',
+      excluded: '{{n}} excluded', notEnough: 'Only {{n}} events — you need at least {{min}}',
+      tune: 'Fine-tune specific events', away: '{{n}} off', tuneHint: 'Tap × on events you do not want in this game.',
+      sort: 'Sort', sortYear: 'Year ↑', sortTitle: 'Title', loadingEvents: 'Loading…', noEvents: 'No events match the filter.',
+      start: 'Start game', exclude: 'Exclude', restore: 'Return to game',
+    },
     common: {
       logout: 'Log out', back: 'Back', backToMenu: 'Back to menu', account: 'Account',
       save: 'Save changes', loading: 'One moment…', play: 'Play', cancel: 'Cancel',
@@ -81,6 +117,24 @@ export const resources = {
   }},
 
   de: { translation: {
+    reset: { title: 'Neues Passwort', sub: 'Wähle ein neues Passwort für dein Konto.', newPassword: 'Neues Passwort',
+      done: '✓ Passwort geändert. Weiterleitung…', verifying: 'E-Mail-Link wird geprüft… Wenn nichts passiert, ist der Link evtl. abgelaufen — fordere auf der Anmeldeseite einen neuen an.',
+      failed: 'Passwort konnte nicht geändert werden. Der Link ist evtl. abgelaufen.', submit: 'Passwort festlegen →' },
+    account: { title: 'Mein Konto', stats: 'Statistiken', totalScore: 'Gesamtpunkte', gamesPlayed: 'Gespielte Spiele',
+      profile: 'Profil', username: 'Benutzername', usernamePlaceholder: 'z. B. historiker42',
+      saveError: 'Speichern fehlgeschlagen.', saved: 'Profil gespeichert.', saving: 'Speichern…',
+      appearance: 'Darstellung', themeLabel: 'Heller / dunkler Modus', session: 'Sitzung', loggedInAs: 'Angemeldet als', signOut: 'Abmelden' },
+    cat: { war: '⚔ Schlachten', culture: '🏛 Kultur', science: '🔬 Wissenschaft', politics: '🏛 Politik', religion: '✝ Religion', exploration: '🧭 Entdeckungen' },
+    pregame: {
+      backToMenu: '← Zurück zum Menü', mode: 'Klassischer Modus · Solo', title: 'Spiel einrichten',
+      rounds: 'Runden', categories: 'Kategorien', noFilter: 'keine = kein Filter', yearRange: 'Jahresbereich',
+      from: 'Von', to: 'Bis', bc: 'v. Chr.', ad: 'n. Chr.',
+      inGame_one: '{{count}} Ereignis im Spiel', inGame_other: '{{count}} Ereignisse im Spiel',
+      excluded: '{{n}} ausgeschlossen', notEnough: 'Nur {{n}} Ereignisse — du brauchst mindestens {{min}}',
+      tune: 'Bestimmte Ereignisse anpassen', away: '{{n}} entfernt', tuneHint: 'Tippe auf × bei Ereignissen, die du nicht möchtest.',
+      sort: 'Sortieren', sortYear: 'Jahr ↑', sortTitle: 'Titel', loadingEvents: 'Lädt…', noEvents: 'Keine Ereignisse passen zum Filter.',
+      start: 'Spiel starten', exclude: 'Ausschließen', restore: 'Zurück ins Spiel',
+    },
     common: {
       logout: 'Abmelden', back: 'Zurück', backToMenu: 'Zurück zum Menü', account: 'Konto',
       save: 'Änderungen speichern', loading: 'Einen Moment…', play: 'Spielen', cancel: 'Abbrechen',
