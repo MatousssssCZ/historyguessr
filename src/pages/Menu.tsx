@@ -356,7 +356,7 @@ function StatBadge({ value, label, accent }: { value: string; label: string; acc
       border: `1px solid ${accent ? 'rgba(217,119,87,0.18)' : 'var(--feature-line)'}`,
       borderRadius: 999, padding: '6px 13px',
     }}>
-      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: accent ? 'var(--accent-soft)' : 'var(--paper-200)', letterSpacing: '-0.02em' }}>{value}</span>
+      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: accent ? 'var(--accent)' : 'var(--feature-fg)', letterSpacing: '-0.02em' }}>{value}</span>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--feature-fg3)', textTransform: 'uppercase' }}>{label}</span>
     </div>
   )
