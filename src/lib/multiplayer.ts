@@ -94,6 +94,15 @@ export async function createRoom(
   return { room: null, error: new Error('Nepodařilo se vygenerovat kód místnosti') }
 }
 
+export async function getRoom(roomId: string): Promise<MultiplayerRoom | null> {
+  const { data } = await supabase
+    .from('multiplayer_rooms')
+    .select('*')
+    .eq('id', roomId)
+    .single()
+  return data ?? null
+}
+
 export async function getRoomByCode(code: string): Promise<MultiplayerRoom | null> {
   const { data } = await supabase
     .from('multiplayer_rooms')
