@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
-  createRoom, getRoomByCode, joinRoom, leaveRoom,
+  createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom,
   getPlayers, startGame, subscribeToRoom, countMatchingEvents,
 } from '@/lib/multiplayer'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
@@ -40,6 +40,8 @@ export default function MultiplayerLobbyPage() {
   const [error, setError] = useState<string | null>(null)
   const [matchingEvents, setMatchingEvents] = useState<number | null>(null)
   const unsubRef = useRef<(() => void) | null>(null)
+  // Když přecházíme do hry, NESMÍME hráče odhlásit z místnosti (unmount lobby)
+  const enteringGameRef = useRef(false)
 
   const isHost = room?.host_id === user?.id
   const username = profile?.username ?? t('lobby.defaultPlayer')
@@ -63,23 +65,30 @@ export default function MultiplayerLobbyPage() {
   useEffect(() => {
     return () => {
       unsubRef.current?.()
-      if (room && user && !isHost) leaveRoom(room.id, user.id)
+      if (room && user && !isHost && !enteringGameRef.current) leaveRoom(room.id, user.id)
     }
   }, [room, user, isHost])
 
   // Pojistka proti nespolehlivému Realtime: v lobby pravidelně přečti seznam
-  // hráčů, aby hostitel viděl nově připojené i bez doručené realtime události.
+  // hráčů i stav místnosti, aby hostitel viděl nově připojené a aby všichni
+  // přešli do hry i bez doručené realtime události o startu.
   useEffect(() => {
     if (screen !== 'lobby' || !room) return
     let alive = true
+    const roomId = room.id
     const refetch = async () => {
-      const ps = await getPlayers(room.id)
-      if (alive) setPlayers(ps)
+      const [ps, r] = await Promise.all([getPlayers(roomId), getRoom(roomId)])
+      if (!alive) return
+      setPlayers(ps)
+      if (r) {
+        setRoom(r)
+        if (r.status === 'playing') { enteringGameRef.current = true; navigate(`/multiplayer/game/${roomId}`) }
+      }
     }
     refetch()
-    const iv = setInterval(refetch, 2500)
+    const iv = setInterval(refetch, 2000)
     return () => { alive = false; clearInterval(iv) }
-  }, [screen, room])
+  }, [screen, room?.id])
 
   function subscribeToRoomUpdates(roomId: string) {
     unsubRef.current?.()
@@ -89,6 +98,7 @@ export default function MultiplayerLobbyPage() {
         setRoom(updatedRoom)
         // Hra začala → přejdi do herní stránky
         if (updatedRoom.status === 'playing') {
+          enteringGameRef.current = true
           navigate(`/multiplayer/game/${updatedRoom.id}`)
         }
       },
@@ -136,7 +146,10 @@ export default function MultiplayerLobbyPage() {
     const { error: err } = await startGame(room)
     if (err) { setError(err.message); setLoading(false); return }
     setLoading(false)
-    // Navigace proběhne přes subscribeToRoom callback
+    // Naviguj rovnou — nespoléhej na realtime událost (ta nemusí dorazit).
+    // Ostatní hráči přejdou přes realtime, případně přes polling stavu místnosti.
+    enteringGameRef.current = true
+    navigate(`/multiplayer/game/${room.id}`)
   }
 
   function handleSettingChange<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
