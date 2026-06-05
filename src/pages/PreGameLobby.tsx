@@ -4,6 +4,7 @@ import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
 import { getCandidateEvents, type CandidateEvent } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
+import BackButton from '@/components/BackButton'
 import type { GameOptions } from '@/hooks/useGame'
 
 const CATEGORIES = [
@@ -98,7 +99,9 @@ export default function PreGameLobbyPage() {
       {/* Hlavička */}
       <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
-        <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 14, position: 'relative' }}>{t('pregame.backToMenu')}</button>
+        <div style={{ position: 'relative', marginBottom: 14 }}>
+          <BackButton onClick={() => navigate('/menu')} label={t('pregame.backToMenu')} />
+        </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-soft)', position: 'relative' }}>{t('pregame.mode')}</div>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', margin: '6px 0 0', position: 'relative' }}>{t('pregame.title')}</h1>
       </div>

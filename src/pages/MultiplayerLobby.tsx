@@ -7,6 +7,7 @@ import {
   getPlayers, startGame, subscribeToRoom, countMatchingEvents,
 } from '@/lib/multiplayer'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
+import BackButton from '@/components/BackButton'
 
 const DEFAULT_SETTINGS: RoomSettings = {
   rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025,
@@ -141,7 +142,9 @@ export default function MultiplayerLobbyPage() {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--feature-bg)', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
-          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg3)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>{t('daily.menu')}</button>
+          <div style={{ marginBottom: 24 }}>
+            <BackButton onClick={() => navigate('/menu')} label={t('daily.menu')} />
+          </div>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>{t('menu.multiplayer')}</p>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--feature-fg)', margin: '0 0 32px', letterSpacing: '-0.02em' }}>{t('menu.multiplayerSub2')}</h1>
 
@@ -337,12 +340,10 @@ export default function MultiplayerLobbyPage() {
 
           {/* Odejít */}
           <div style={{ padding: '24px 36px', position: 'relative' }}>
-            <button
+            <BackButton
               onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }}
-              style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid var(--feature-line)', borderRadius: 9, padding: '9px 20px', fontSize: 13, color: 'var(--feature-fg3)', cursor: 'pointer' }}
-            >
-              ← Odejít
-            </button>
+              label={t('lobby.leave')}
+            />
           </div>
         </div>
 
@@ -378,7 +379,7 @@ export default function MultiplayerLobbyPage() {
             <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--feature-line)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--feature-fg2)', cursor: 'pointer' }}>{t('lobby.copy')}</button>
           </div>
         </div>
-        <button onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }} style={{ background: 'var(--feature-chip)', border: '0.5px solid var(--feature-line)', borderRadius: 8, padding: '7px 14px', fontSize: 13, color: 'var(--feature-fg2)', cursor: 'pointer' }}>{t('lobby.leave')}</button>
+        <BackButton onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }} label={t('lobby.leave')} />
       </header>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>

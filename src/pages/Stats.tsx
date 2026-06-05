@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getUserSessions, getUserDailyResults, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
+import BackButton from '@/components/BackButton'
 import type { RoundResult } from '@/types/database'
 
 const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
@@ -96,7 +97,7 @@ export default function StatsPage() {
       <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', marginBottom: 14 }}>
-          <button onClick={() => navigate('/menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg2)', fontSize: 13, cursor: 'pointer', padding: 0 }}>{t('pregame.backToMenu')}</button>
+          <BackButton onClick={() => navigate('/menu')} label={t('pregame.backToMenu')} />
           <button onClick={() => navigate('/account')} style={{ background: 'var(--feature-line)', border: '1px solid var(--feature-line)', borderRadius: 8, padding: '6px 12px', color: 'var(--feature-fg2)', fontSize: 12, cursor: 'pointer' }}>⚙ {t('common.account')}</button>
         </div>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>{t('stats.title')}</h1>

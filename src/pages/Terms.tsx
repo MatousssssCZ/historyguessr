@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { currentLocale } from '@/i18n'
+import BackButton from '@/components/BackButton'
 
 export default function TermsPage() {
   const { t } = useTranslation()
@@ -16,13 +17,7 @@ export default function TermsPage() {
         background: 'var(--surface)',
         borderBottom: '1px solid var(--line)',
       }}>
-        <button
-          onClick={() => navigate(-1)}
-          className="btn btn-ghost"
-          style={{ padding: '7px 12px', fontSize: 13 }}
-        >
-          ← {t('legal.back')}
-        </button>
+        <BackButton onClick={() => navigate(-1)} label={t('legal.back')} />
         <div>
           <div className="eyebrow" style={{ fontSize: 9 }}>HistoryGuessr</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: 0, letterSpacing: '-0.01em' }}>

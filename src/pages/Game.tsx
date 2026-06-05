@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, track } from '@/lib/supabase'
+import BackButton from '@/components/BackButton'
 import type { Event } from '@/types/database'
 
 declare const pannellum: {
@@ -62,13 +63,12 @@ export default function GamePage() {
               {state.totalScore.toLocaleString('cs-CZ')}
             </div>
           </div>
-          <button
-            className="btn btn-ghost"
-            style={{ padding: '6px 12px', fontSize: 12, color: 'var(--on-dark)', borderColor: 'rgba(245,241,232,0.2)' }}
+          <BackButton
+            tone="dark"
+            style={{ padding: '7px 13px', fontSize: 13 }}
             onClick={() => { resetGame(); navigate('/menu') }}
-          >
-            {t('game.quit')}
-          </button>
+            label={t('game.quit')}
+          />
         </div>
       </div>
 

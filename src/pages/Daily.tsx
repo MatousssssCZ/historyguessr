@@ -8,6 +8,7 @@ import {
   saveDailyResult, getDailyLeaderboard, recordEventScore, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
+import BackButton from '@/components/BackButton'
 import type { Event } from '@/types/database'
 import type { DailyResult } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
@@ -190,9 +191,9 @@ export default function DailyChallengePage() {
         <p style={{ color: 'rgba(245,241,232,0.5)', fontSize: 15, textAlign: 'center', margin: 0 }}>
           {t('daily.tryTomorrow')}
         </p>
-        <button className="btn btn-ghost" style={{ color: 'var(--on-dark)', borderColor: 'rgba(245,241,232,0.2)', marginTop: 8 }} onClick={() => navigate('/menu')}>
-          ← Menu
-        </button>
+        <div style={{ marginTop: 8 }}>
+          <BackButton tone="dark" onClick={() => navigate('/menu')} label={t('daily.menu')} />
+        </div>
       </div>
     )
   }
@@ -259,13 +260,7 @@ export default function DailyChallengePage() {
 
           {/* Tlačítka */}
           <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              className="btn btn-ghost"
-              style={{ color: 'rgba(245,241,232,0.6)', borderColor: 'rgba(255,255,255,0.12)', padding: '12px 20px' }}
-              onClick={() => navigate('/menu')}
-            >
-              ← Menu
-            </button>
+            <BackButton tone="dark" onClick={() => navigate('/menu')} label={t('daily.menu')} />
             <button
               className="btn btn-accent"
               style={{ flex: 1, fontSize: 15, padding: '12px 20px' }}
