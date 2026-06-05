@@ -46,15 +46,6 @@ export default function AccountPage() {
 
       <div style={{ maxWidth: 560, margin: '40px auto', padding: '0 24px' }}>
 
-        {/* Statistiky */}
-        <div className="card" style={{ padding: 28, marginBottom: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 20 }}>{t('account.stats')}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-            <StatBlock label={t('account.totalScore')} value={profile?.total_score?.toLocaleString('cs-CZ') ?? '0'}/>
-            <StatBlock label={t('account.gamesPlayed')} value={String(profile?.games_played ?? 0)}/>
-          </div>
-        </div>
-
         {/* Profil */}
         <div className="card" style={{ padding: 28, marginBottom: 24 }}>
           <p className="eyebrow" style={{ marginBottom: 20 }}>{t('account.profile')}</p>
@@ -95,15 +86,6 @@ export default function AccountPage() {
           </button>
         </div>
       </div>
-    </div>
-  )
-}
-
-function StatBlock({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, letterSpacing: '-0.02em' }}>{value}</div>
     </div>
   )
 }
