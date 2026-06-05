@@ -5,10 +5,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getRound, getPlayers, subscribeToRoom, submitAnswer,
-  updatePlayerTotalScore, getRoundAnswers, advanceRound,
+  getRoundAnswers, advanceRound,
 } from '@/lib/multiplayer'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
-import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
+import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { supabase, recordEventScore } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import { GuessMap, ResultMap } from '@/components/GameMap'
@@ -64,6 +64,12 @@ export default function MultiplayerGamePage() {
   const advancedRoundRef = useRef<number | null>(null)
   const shownResultsRef = useRef<number | null>(null)
 
+  // Vždy aktuální místnost a číslo kola pro realtime callbacky
+  // (jinak se uzavřou nad počáteční hodnotou a čtou špatné kolo)
+  const roomRef = useRef<MultiplayerRoom | null>(null)
+  useEffect(() => { roomRef.current = room }, [room])
+  const currentRoundNoRef = useRef<number | null>(null)
+
   const isHost = room?.host_id === user?.id
 
   useEffect(() => {
@@ -82,24 +88,28 @@ export default function MultiplayerGamePage() {
     if (!roomData) { navigate('/menu'); return }
     const room_ = roomData as MultiplayerRoom
     setRoom(room_)
+    roomRef.current = room_
     const players_ = await getPlayers(roomId)
     setPlayers(players_)
 
     unsubRef.current = subscribeToRoom(
       roomId,
       async (updatedRoom) => {
+        const prevRound = roomRef.current?.current_round
         setRoom(updatedRoom)
+        roomRef.current = updatedRoom
         if (updatedRoom.status === 'finished') { setPhase('finished'); return }
-        if (updatedRoom.current_round !== room_.current_round) {
+        if (updatedRoom.current_round !== prevRound) {
           // Nové kolo — načti round data
           await loadRound(roomId, updatedRoom.current_round, updatedRoom)
         }
       },
       (updatedPlayers) => setPlayers(updatedPlayers),
       async () => {
-        // Nová odpověď — refetch
-        if (roomId && room_) {
-          const answers = await getRoundAnswers(roomId, room_.current_round)
+        // Nová odpověď — refetch pro AKTUÁLNÍ kolo (ne počáteční)
+        const rn = currentRoundNoRef.current
+        if (roomId && rn != null) {
+          const answers = await getRoundAnswers(roomId, rn)
           setRoundAnswers(answers)
         }
       },
@@ -111,6 +121,7 @@ export default function MultiplayerGamePage() {
   async function loadRound(rId: string, roundNum: number, room_: MultiplayerRoom) {
     const round = await getRound(rId, roundNum)
     if (!round) return
+    currentRoundNoRef.current = roundNum
     setCurrentRound(round)
     hasSubmittedRef.current = false
     setGuessLat(null); setGuessLng(null); setGuessYear(0); setGuessYearSet(false)
@@ -188,8 +199,9 @@ export default function MultiplayerGamePage() {
     setPhase('my_results')
 
     recordEventScore(event.id, locSc, yrSc)
+    // submitAnswer si připíše skóre samo (increment_multiplayer_score / fallback).
+    // NESMÍ se volat updatePlayerTotalScore navíc — jinak se kolo započítá dvakrát.
     await submitAnswer(roomId, currentRound.round_number, user.id, answer)
-    await updatePlayerTotalScore(roomId, user.id, total)
   }
 
   async function handleShowRoundResults() {
@@ -329,11 +341,11 @@ export default function MultiplayerGamePage() {
             <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.correctYear')}</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{event.year < 0 ? `${Math.abs(event.year)} př. n. l.` : `${event.year} n. l.`}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.yourGuess')}</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{myResult.guessYear < 0 ? `${Math.abs(myResult.guessYear)} př. n. l.` : `${myResult.guessYear} n. l.`}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(myResult.guessYear)}</div>
               </div>
             </div>
           </div>
@@ -362,7 +374,7 @@ export default function MultiplayerGamePage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
             <div>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'rgba(217,119,87,0.6)', textTransform: 'uppercase', margin: '0 0 4px' }}>
-                kolo {currentRound?.round_number} / {room?.settings.rounds}
+                {t('game.round', { n: currentRound?.round_number, total: room?.settings.rounds })}
               </p>
               <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--on-dark)', margin: 0, lineHeight: 1.2 }}>{eventTitle(event)}</p>
             </div>
@@ -412,7 +424,7 @@ export default function MultiplayerGamePage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {[
                       { label: t('game.location'), score: myResult.locScore, sub: myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`, pct: Math.round(myResult.locScore / 5) },
-                      { label: t('game.year'), score: myResult.yrScore, sub: myResult.yrDiff === 0 ? '✓ Přesný!' : `${myResult.yrDiff} let`, pct: Math.round(myResult.yrScore / 5) },
+                      { label: t('game.year'), score: myResult.yrScore, sub: myResult.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: myResult.yrDiff }), pct: Math.round(myResult.yrScore / 5) },
                     ].map(item => (
                       <div key={item.label} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 8, padding: '8px 10px' }}>
                         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 3px' }}>{item.label}</p>
@@ -527,7 +539,7 @@ export default function MultiplayerGamePage() {
                 {guessYearSet ? (
                   <>
                     <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>{Math.abs(guessYear)}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'} ✓</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? t('daily.bc') : t('game.ad')} ✓</div>
                   </>
                 ) : (
                   <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
@@ -556,7 +568,7 @@ export default function MultiplayerGamePage() {
               </div>
             </div>
             <div style={{ background: 'rgba(245,241,232,0.97)', padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: '0.5px solid var(--line)' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{guessLat !== null ? `${guessLat.toFixed(1)}° · ${guessLng?.toFixed(1)}° ✓` : 'Klikni na mapu'}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{guessLat !== null ? `${guessLat.toFixed(1)}° · ${guessLng?.toFixed(1)}° ✓` : t('game.clickMap')}</span>
               <button onClick={() => setMapExpanded(false)} style={{ background: guessLat !== null ? 'var(--accent)' : 'var(--paper-400)', border: 'none', borderRadius: 9, padding: '10px 20px', fontSize: 14, fontWeight: 500, color: guessLat !== null ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}>
                 {guessLat !== null ? t('game.confirmPlace') : t('game.pickPlace')}
               </button>
@@ -571,7 +583,7 @@ export default function MultiplayerGamePage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 44, letterSpacing: '-0.03em', lineHeight: 1 }}>{Math.abs(guessYear) || '?'}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.14em', color: 'var(--ink-3)', marginTop: 3, textTransform: 'uppercase' }}>{guessYear < 0 ? t('daily.bc') : t('game.ad')}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</div>
@@ -580,7 +592,7 @@ export default function MultiplayerGamePage() {
               </div>
               <YearPickerInline value={guessYear} onChange={(y) => { setGuessYear(y); setGuessYearSet(true) }}/>
               <button onClick={() => setYearExpanded(false)} style={{ marginTop: 16, width: '100%', background: 'var(--accent)', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 500, color: '#fff', cursor: 'pointer' }}>
-                Potvrdit rok ✓
+                {t('game.confirmYear')}
               </button>
             </div>
           </div>
