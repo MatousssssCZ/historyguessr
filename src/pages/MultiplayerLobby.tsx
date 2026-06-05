@@ -8,6 +8,7 @@ import {
 } from '@/lib/multiplayer'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
 import BackButton from '@/components/BackButton'
+import YearRange from '@/components/YearRange'
 
 const DEFAULT_SETTINGS: RoomSettings = {
   rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025,
@@ -272,11 +273,12 @@ export default function MultiplayerLobbyPage() {
       </div>
       <div>
         <label className="label">{t('lobby.yearSpread')}</label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input type="number" className="input" value={settings.year_from} onChange={e => handleSettingChange('year_from', Number(e.target.value))} style={{ width: 100, padding: '8px 10px', fontFamily: 'var(--font-mono)', fontSize: 13 }}/>
-          <span style={{ color: 'var(--ink-3)' }}>–</span>
-          <input type="number" className="input" value={settings.year_to} onChange={e => handleSettingChange('year_to', Number(e.target.value))} style={{ width: 100, padding: '8px 10px', fontFamily: 'var(--font-mono)', fontSize: 13 }}/>
-        </div>
+        <YearRange
+          from={settings.year_from}
+          to={settings.year_to}
+          onFrom={v => handleSettingChange('year_from', v)}
+          onTo={v => handleSettingChange('year_to', v)}
+        />
         {matchingEvents !== null && (
           <p style={{ fontSize: 12, color: matchingEvents >= settings.rounds ? 'var(--ink-3)' : '#c0392b', margin: '6px 0 0', fontFamily: 'var(--font-mono)' }}>
             {matchingEvents >= settings.rounds ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
@@ -352,7 +354,7 @@ export default function MultiplayerLobbyPage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 0 4px' }}>{t('lobby.gameSettings')}</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 32px', letterSpacing: '-0.01em' }}>{t('lobby.customize')}</h2>
-            {isHost ? <SettingsPanel/> : (
+            {isHost ? SettingsPanel() : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 16 }}>
                 <span className="spinner"/>
                 <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</p>
@@ -389,7 +391,7 @@ export default function MultiplayerLobbyPage() {
           </div>
           <div style={{ padding: '8px 12px' }}><PlayerList/></div>
         </div>
-        {isHost && <div className="card" style={{ padding: '16px' }}><p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 14px' }}>{t('lobby.gameSettings')}</p><SettingsPanel/></div>}
+        {isHost && <div className="card" style={{ padding: '16px' }}><p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 14px' }}>{t('lobby.gameSettings')}</p>{SettingsPanel()}</div>}
         {!isHost && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</div>}
         {error && <div className="alert alert-error">{error}</div>}
       </div>
