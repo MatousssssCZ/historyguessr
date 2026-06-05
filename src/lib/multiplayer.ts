@@ -173,6 +173,10 @@ export async function startGame(
     started_at: i === 0 ? startedAt : null, // první kolo začne za 3s, ostatní se nastaví postupně
   }))
 
+  // Úklid případných zbytkových kol (opakovaný start / dřívější pokus),
+  // aby insert nespadl na unique constraint multiplayer_rounds_pkey
+  await supabase.from('multiplayer_rounds').delete().eq('room_id', room.id)
+
   const { error: roundsError } = await supabase.from('multiplayer_rounds').insert(rounds)
   if (roundsError) return { error: roundsError as Error }
 

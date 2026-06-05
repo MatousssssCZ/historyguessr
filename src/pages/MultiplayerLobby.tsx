@@ -67,6 +67,20 @@ export default function MultiplayerLobbyPage() {
     }
   }, [room, user, isHost])
 
+  // Pojistka proti nespolehlivému Realtime: v lobby pravidelně přečti seznam
+  // hráčů, aby hostitel viděl nově připojené i bez doručené realtime události.
+  useEffect(() => {
+    if (screen !== 'lobby' || !room) return
+    let alive = true
+    const refetch = async () => {
+      const ps = await getPlayers(room.id)
+      if (alive) setPlayers(ps)
+    }
+    refetch()
+    const iv = setInterval(refetch, 2500)
+    return () => { alive = false; clearInterval(iv) }
+  }, [screen, room])
+
   function subscribeToRoomUpdates(roomId: string) {
     unsubRef.current?.()
     unsubRef.current = subscribeToRoom(
