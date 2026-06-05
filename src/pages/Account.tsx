@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { updateProfile, signOut } from '@/lib/supabase'
 import ThemeToggle from '@/components/ThemeToggle'
+import BackButton from '@/components/BackButton'
 
 export default function AccountPage() {
   const { t } = useTranslation()
@@ -39,9 +40,7 @@ export default function AccountPage() {
         background: 'var(--surface)',
         borderBottom: '1px solid var(--line)',
       }}>
-        <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/menu')}>
-          ← {t('common.back')}
-        </button>
+        <BackButton onClick={() => navigate('/menu')} label={t('common.back')} />
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{t('account.title')}</h1>
       </header>
 
