@@ -86,6 +86,10 @@ interface ImportRow {
   id: string
   title: string
   description: string
+  title_en: string
+  description_en: string
+  title_de: string
+  description_de: string
   year: number
   lat: number
   lng: number
@@ -119,6 +123,10 @@ function rowFromCSV(raw: Record<string, string>, idx: number): ImportRow {
     id: `row-${idx}`,
     title: raw.title ?? '',
     description: raw.description ?? '',
+    title_en: raw.title_en ?? '',
+    description_en: raw.description_en ?? '',
+    title_de: raw.title_de ?? '',
+    description_de: raw.description_de ?? '',
     year: isNaN(year) ? 0 : year,
     lat: isNaN(lat) ? 0 : lat,
     lng: isNaN(lng) ? 0 : lng,
@@ -227,6 +235,10 @@ export default function AdminImportPage() {
         const payload: EventInsert = {
           title: row.title,
           description: row.description,
+          title_en: row.title_en.trim() || null,
+          description_en: row.description_en.trim() || null,
+          title_de: row.title_de.trim() || null,
+          description_de: row.description_de.trim() || null,
           year: row.year,
           year_from: row.year - row.year_range,
           year_to: row.year + row.year_range,

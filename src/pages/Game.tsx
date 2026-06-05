@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -104,7 +105,7 @@ export default function GamePage() {
                 color: 'var(--on-dark)',
                 letterSpacing: '-0.01em', lineHeight: 1.2,
               }}>
-                {currentEvent.title}
+                {eventTitle(currentEvent)}
               </div>
             </div>
           </div>
@@ -769,7 +770,7 @@ function RoundResult({ event, round, onNext, isLast }: {
           <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
             <div className="eyebrow" style={{ fontSize: 9, marginBottom: 3 }}>{t('game.resultRound')}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
                 <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
@@ -838,7 +839,7 @@ function RoundResult({ event, round, onNext, isLast }: {
           <div style={{ padding: '18px 24px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
             <div className="eyebrow" style={{ marginBottom: 3 }}>{t('game.resultRound')}</div>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{event.title}</h2>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{eventTitle(event)}</h2>
               <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('game.outOf1000pts')}</div>
@@ -890,13 +891,13 @@ function InfoContent({ event }: { event: Event }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {event.event_image_url && (
-        <img src={event.event_image_url} alt={event.title} style={{ width: '100%', height: 200, objectFit: 'cover', flexShrink: 0 }}/>
+        <img src={event.event_image_url} alt={eventTitle(event)} style={{ width: '100%', height: 200, objectFit: 'cover', flexShrink: 0 }}/>
       )}
       <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <p className="eyebrow" style={{ margin: 0 }}>{t('game.aboutEvent')}</p>
-        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{event.title}</h3>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{eventTitle(event)}</h3>
         {event.description && (
-          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>{event.description}</p>
+          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>{eventDescription(event)}</p>
         )}
         {event.category && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>

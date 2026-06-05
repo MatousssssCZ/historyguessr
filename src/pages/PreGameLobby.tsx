@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
 import { getCandidateEvents, type CandidateEvent } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
@@ -201,7 +202,7 @@ export default function PreGameLobbyPage() {
                         background: 'radial-gradient(120% 90% at 30% 10%, #8a6f50, #2a1f17 70%)',
                       }}/>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14.5, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: out ? 'line-through' : 'none' }}>{ev.title}</div>
+                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14.5, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: out ? 'line-through' : 'none' }}>{eventTitle(ev)}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
                           {formatYear(ev.year)}{ev.category ? ` · ${t('cat.' + ev.category)}` : ''}
                         </div>
