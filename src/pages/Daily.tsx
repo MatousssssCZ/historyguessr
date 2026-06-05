@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -234,7 +235,7 @@ export default function DailyChallengePage() {
 
           {/* Název události */}
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(26px, 6vw, 36px)', color: 'var(--on-dark)', margin: '0 0 28px', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-            {event.title}
+            {eventTitle(event)}
           </h1>
 
           {/* Pravidla */}
@@ -293,7 +294,7 @@ export default function DailyChallengePage() {
         }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>{t('menu.dailyMobile')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{event.title}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{eventTitle(event)}</div>
           </div>
           {/* Timer */}
           <div style={{ textAlign: 'right' }}>
@@ -623,7 +624,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
                 {alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{event.title}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{eventTitle(event)}</div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString('cs-CZ')}</div>
                   <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
@@ -659,7 +660,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
           {alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{event.title}</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString('cs-CZ')}</div>
             <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>

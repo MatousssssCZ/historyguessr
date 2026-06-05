@@ -14,6 +14,10 @@ export interface Event {
   seq: number
   title: string
   description: string
+  title_en: string | null
+  title_de: string | null
+  description_en: string | null
+  description_de: string | null
   year: number
   year_from: number
   year_to: number
@@ -42,6 +46,10 @@ export interface Event {
 export interface EventInsert {
   title: string
   description: string
+  title_en?: string | null
+  title_de?: string | null
+  description_en?: string | null
+  description_de?: string | null
   year: number
   year_from: number
   year_to: number
@@ -61,6 +69,10 @@ export interface EventInsert {
 export interface EventUpdate {
   title?: string
   description?: string
+  title_en?: string | null
+  title_de?: string | null
+  description_en?: string | null
+  description_de?: string | null
   year?: number
   year_from?: number
   year_to?: number

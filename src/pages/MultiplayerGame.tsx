@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -252,7 +253,7 @@ export default function MultiplayerGamePage() {
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 100, color: 'var(--on-dark)', letterSpacing: '-0.04em', lineHeight: 1, animation: 'pulse 1s ease infinite' }}>
           {secs > 0 ? secs : '→'}
         </div>
-        {event && <p style={{ fontSize: 14, color: 'rgba(245,241,232,0.4)', fontFamily: 'var(--font-serif)' }}>{event.title}</p>}
+        {event && <p style={{ fontSize: 14, color: 'rgba(245,241,232,0.4)', fontFamily: 'var(--font-serif)' }}>{eventTitle(event)}</p>}
         <style>{`@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}`}</style>
       </div>
     )
@@ -308,7 +309,7 @@ export default function MultiplayerGamePage() {
             {t('game.round', { n: currentRound?.round_number, total: room?.settings.rounds })}
           </p>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, flex: 1, lineHeight: 1.2 }}>{event.title}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString('cs-CZ')}</div>
               <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
@@ -363,7 +364,7 @@ export default function MultiplayerGamePage() {
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'rgba(217,119,87,0.6)', textTransform: 'uppercase', margin: '0 0 4px' }}>
                 kolo {currentRound?.round_number} / {room?.settings.rounds}
               </p>
-              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--on-dark)', margin: 0, lineHeight: 1.2 }}>{event.title}</p>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--on-dark)', margin: 0, lineHeight: 1.2 }}>{eventTitle(event)}</p>
             </div>
             {/* Kruhový timer */}
             <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -486,7 +487,7 @@ export default function MultiplayerGamePage() {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>
               {t('mp.roundPlayers', { n: currentRound?.round_number, total: room?.settings.rounds, count: players.length })}
             </div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{event.title}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{eventTitle(event)}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('daily.remaining')}</div>
