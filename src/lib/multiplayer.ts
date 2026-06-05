@@ -306,22 +306,6 @@ export async function submitAnswer(
   return { error: null }
 }
 
-export async function updatePlayerTotalScore(
-  roomId: string,
-  userId: string,
-  addScore: number,
-) {
-  const { data: player } = await supabase
-    .from('multiplayer_players')
-    .select('total_score')
-    .eq('room_id', roomId).eq('user_id', userId)
-    .single()
-  if (!player) return
-  await supabase.from('multiplayer_players')
-    .update({ total_score: (player.total_score ?? 0) + addScore })
-    .eq('room_id', roomId).eq('user_id', userId)
-}
-
 export async function getRoundAnswers(
   roomId: string,
   roundNumber: number,
