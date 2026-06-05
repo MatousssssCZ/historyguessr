@@ -183,7 +183,9 @@ export default function MultiplayerLobbyPage() {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--feature-bg)', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 400, margin: '0 auto', width: '100%' }}>
-          <button onClick={() => setScreen('menu')} style={{ background: 'none', border: 'none', color: 'var(--feature-fg3)', cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: 0 }}>{t('lobby.back')}</button>
+          <div style={{ marginBottom: 24 }}>
+            <BackButton onClick={() => setScreen('menu')} label={t('lobby.back')} />
+          </div>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--feature-fg)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>{t('lobby.joinTitle')}</h2>
           <p style={{ fontSize: 14, color: 'var(--feature-fg3)', margin: '0 0 28px' }}>{t('lobby.joinHint')}</p>
 
