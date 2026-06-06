@@ -24,6 +24,7 @@ export interface Event {
   lat: number
   lng: number
   panorama_url: string
+  preview_url: string | null
   event_image_url: string | null
   category: string | null
   difficulty: 1 | 2 | 3
@@ -79,6 +80,7 @@ export interface EventUpdate {
   lat?: number
   lng?: number
   panorama_url?: string
+  preview_url?: string | null
   event_image_url?: string | null
   category?: string | null
   difficulty?: 1 | 2 | 3

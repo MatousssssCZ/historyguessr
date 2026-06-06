@@ -5,8 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getRound, getPlayers, subscribeToRoom, submitAnswer,
-  getRoundAnswers, advanceRound,
+  getRoundAnswers, advanceRound, getRoomPanoramas,
 } from '@/lib/multiplayer'
+import { preloadImage } from '@/lib/preload'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { supabase, recordEventScore } from '@/lib/supabase'
@@ -70,6 +71,9 @@ export default function MultiplayerGamePage() {
   useEffect(() => { roomRef.current = room }, [room])
   const currentRoundNoRef = useRef<number | null>(null)
 
+  // Prefetch panoramat: kolo → URL. Plníme jednou na začátku hry.
+  const panoramasRef = useRef<Map<number, string>>(new Map())
+
   const isHost = room?.host_id === user?.id
 
   useEffect(() => {
@@ -91,6 +95,14 @@ export default function MultiplayerGamePage() {
     roomRef.current = room_
     const players_ = await getPlayers(roomId)
     setPlayers(players_)
+
+    // Prefetch: natáhni mapu všech panoramat a hned přednačti aktuální + další kolo.
+    // Aktuální kolo se tak stáhne během 3s countdownu, ne až po jeho startu.
+    getRoomPanoramas(roomId).then(panos => {
+      panos.forEach(p => panoramasRef.current.set(p.round_number, p.panorama_url))
+      preloadImage(panoramasRef.current.get(room_.current_round))
+      preloadImage(panoramasRef.current.get(room_.current_round + 1))
+    })
 
     unsubRef.current = subscribeToRoom(
       roomId,
@@ -247,6 +259,14 @@ export default function MultiplayerGamePage() {
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRound?.round_number, currentRound?.started_at, room?.id])
+
+  // Jakmile běží kolo N, na pozadí přednačti panorama kola N+1
+  // (máme celé kolo času, takže další kolo startuje s panoramatem už v cache).
+  useEffect(() => {
+    const rn = currentRound?.round_number
+    if (rn == null) return
+    preloadImage(panoramasRef.current.get(rn + 1))
+  }, [currentRound?.round_number])
 
   const event = currentRound?.events as Event | undefined
   const canSubmit = guessLat !== null && guessYearSet
@@ -516,7 +536,7 @@ export default function MultiplayerGamePage() {
 
         {/* Panorama */}
         <div style={{ flex: 1, position: 'relative' }}>
-          <PanoramaViewer url={event.panorama_url}/>
+          <PanoramaViewer url={event.panorama_url} preview={event.preview_url}/>
         </div>
 
         {/* Guess UI */}
@@ -610,14 +630,19 @@ export default function MultiplayerGamePage() {
 }
 
 // ── Panorama viewer ────────────────────────────────────────
-function PanoramaViewer({ url }: { url: string }) {
+function PanoramaViewer({ url, preview }: { url: string; preview?: string | null }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!ref.current || !url || url === 'pending') return
     let v: { destroy: () => void } | null = null
-    try { v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 120 }) } catch {}
+    try {
+      v = pannellum.viewer(ref.current, {
+        type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 120,
+        ...(preview ? { preview } : {}),
+      })
+    } catch {}
     return () => { v?.destroy() }
-  }, [url])
+  }, [url, preview])
   return <div ref={ref} style={{ width: '100%', height: '100%' }}/>
 }
 

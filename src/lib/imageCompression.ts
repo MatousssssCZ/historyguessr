@@ -3,10 +3,14 @@
  * Cíl: WebP, max 8192×4096, min 4096×2048, target 3–6 MB
  */
 
-const MAX_WIDTH = 8192
-const MAX_HEIGHT = 4096
-const MIN_WIDTH = 4096
-const MIN_HEIGHT = 2048
+// Cap na 4096×2048 — equirektangulární panorama v této velikosti vypadá
+// ostře i na mobilu a drží velikost rozumně nízko (cíl ~3 MB místo 10 MB).
+const MAX_WIDTH = 4096
+const MAX_HEIGHT = 2048
+
+// Rozměry náhledu (preview) — zobrazí se okamžitě, než dotáhne plná verze
+const PREVIEW_WIDTH = 1024
+const PREVIEW_HEIGHT = 512
 
 export interface CompressionResult {
   file: File
@@ -101,7 +105,7 @@ export async function compressPanorama(
 
   // Postupně snižuj kvalitu: 0.85 → 0.75 → 0.65 → 0.55
   const qualities = [0.85, 0.75, 0.65, 0.55]
-  const TARGET_SIZE = 6 * 1024 * 1024  // 6 MB cíl
+  const TARGET_SIZE = 3 * 1024 * 1024  // 3 MB cíl
 
   let bestBlob: Blob | null = null
 
@@ -142,6 +146,27 @@ export async function compressPanorama(
   onProgress?.(`Hotovo — úspora ${savings}%`)
 
   return { file: compressedFile, originalSize, compressedSize, width, height, savings }
+}
+
+/**
+ * Vygeneruje malý náhled (preview) panoramatu — 1024×512 WebP.
+ * Pannellum ho zobrazí okamžitě, než dotáhne plnou verzi.
+ * Vstup: ideálně už zkomprimovaná plná verze (nebo originál).
+ */
+export async function generatePreview(file: File): Promise<File | null> {
+  try {
+    const testCanvas = document.createElement('canvas')
+    testCanvas.width = 1; testCanvas.height = 1
+    const supportsWebP = testCanvas.toDataURL('image/webp').startsWith('data:image/webp')
+    if (!supportsWebP) return null
+
+    const img = await loadImage(file)
+    const blob = await canvasCompress(img, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
+    return new File([blob], 'preview.webp', { type: 'image/webp' })
+  } catch (e) {
+    console.warn('[Preview] Generování náhledu selhalo:', e)
+    return null
+  }
 }
 
 /**

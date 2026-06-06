@@ -74,8 +74,8 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { compressPanorama, formatFileSize } from '@/lib/imageCompression'
-import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, track } from '@/lib/supabase'
+import { compressPanorama, generatePreview, formatFileSize } from '@/lib/imageCompression'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -421,6 +421,17 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
             : await uploadPanorama(fileToUpload, savedId)
           if (error) throw error
           if (!event) await updateEvent(savedId, { panorama_url: url! })
+
+          // Vygeneruj a nahraj malý náhled (preview) pro okamžité zobrazení
+          try {
+            const previewFile = await generatePreview(fileToUpload)
+            if (previewFile) {
+              const { url: pvUrl } = await uploadPanoramaPreview(previewFile, savedId)
+              if (pvUrl) await updateEvent(savedId, { preview_url: pvUrl })
+            }
+          } catch (e) {
+            console.warn('[Upload] Náhled se nepodařilo vytvořit:', e)
+          }
         }
         if (imageFile) {
           const { url, error } = await uploadEventImage(imageFile, savedId)

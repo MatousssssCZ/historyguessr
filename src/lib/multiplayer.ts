@@ -198,6 +198,23 @@ export async function startGame(
   return { error: error as Error | null }
 }
 
+// Všechna panoramata místnosti (kolo → URL) pro prefetch dopředu.
+// Záměrně NEvybírá preview_url (může chybět ve starší DB) — preview řeší Pannellum.
+export async function getRoomPanoramas(
+  roomId: string,
+): Promise<{ round_number: number; panorama_url: string }[]> {
+  const { data } = await supabase
+    .from('multiplayer_rounds')
+    .select('round_number, events(panorama_url)')
+    .eq('room_id', roomId)
+    .order('round_number')
+  return (data ?? []).map((r) => {
+    const ev = (r as { events?: { panorama_url?: string } | { panorama_url?: string }[] }).events
+    const url = Array.isArray(ev) ? ev[0]?.panorama_url : ev?.panorama_url
+    return { round_number: (r as { round_number: number }).round_number, panorama_url: url ?? '' }
+  })
+}
+
 export async function getRound(
   roomId: string,
   roundNumber: number,
