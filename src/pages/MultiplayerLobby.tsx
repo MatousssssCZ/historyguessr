@@ -4,8 +4,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom,
-  getPlayers, startGame, subscribeToRoom, countMatchingEvents,
+  getPlayers, startGame, subscribeToRoom, countMatchingEvents, getRoomPanoramas,
 } from '@/lib/multiplayer'
+import { preloadImage } from '@/lib/preload'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
 import BackButton from '@/components/BackButton'
 import YearRange from '@/components/YearRange'
@@ -146,6 +147,8 @@ export default function MultiplayerLobbyPage() {
     const { error: err } = await startGame(room)
     if (err) { setError(err.message); setLoading(false); return }
     setLoading(false)
+    // Náskok: začni stahovat panorama 1. kola ještě před přechodem do hry
+    getRoomPanoramas(room.id).then(panos => preloadImage(panos.find(p => p.round_number === 1)?.panorama_url)).catch(() => {})
     // Naviguj rovnou — nespoléhej na realtime událost (ta nemusí dorazit).
     // Ostatní hráči přejdou přes realtime, případně přes polling stavu místnosti.
     enteringGameRef.current = true

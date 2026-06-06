@@ -73,7 +73,7 @@ export default function GamePage() {
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
-        {state.phase === 'playing' && <PanoramaViewer url={currentEvent.panorama_url}/>}
+        {state.phase === 'playing' && <PanoramaViewer url={currentEvent.panorama_url} preview={currentEvent.preview_url}/>}
         {/* Skrytý viewer pro prefetch dalšího kola — Pannellum skutečně načte obrázek */}
         {state.phase === 'playing' && state.events[state.currentRound + 1]?.panorama_url &&
           state.events[state.currentRound + 1].panorama_url !== 'pending' && (
@@ -145,7 +145,7 @@ export default function GamePage() {
 }
 
 // ── Panorama viewer ───────────────────────────────────────
-function PanoramaViewer({ url }: { url: string }) {
+function PanoramaViewer({ url, preview }: { url: string; preview?: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<{ destroy: () => void } | null>(null)
   const [error, setError] = useState<'loading' | 'failed' | null>(null)
@@ -168,6 +168,7 @@ function PanoramaViewer({ url }: { url: string }) {
         hfov: 120,
         pitch: 0,
         yaw: 0,
+        ...(preview ? { preview } : {}),
       })
 
       // Pannellum error callback
@@ -193,7 +194,7 @@ function PanoramaViewer({ url }: { url: string }) {
       console.error('[Panorama] Init error:', e)
       setError('failed')
     }
-  }, [url])
+  }, [url, preview])
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

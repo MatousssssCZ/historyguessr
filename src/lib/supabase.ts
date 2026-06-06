@@ -304,6 +304,17 @@ export async function uploadPanorama(file: File, eventId: string) {
   return { url: data.publicUrl, error: null }
 }
 
+// Náhled panoramatu (malý WebP) do stejného bucketu — pro okamžité zobrazení
+export async function uploadPanoramaPreview(file: File, eventId: string) {
+  const path = `${eventId}/preview.webp`
+  const { error } = await supabase.storage
+    .from('panorama')
+    .upload(path, file, { upsert: true, contentType: 'image/webp' })
+  if (error) return { url: null, error }
+  const { data } = supabase.storage.from('panorama').getPublicUrl(path)
+  return { url: data.publicUrl, error: null }
+}
+
 export async function uploadEventImage(file: File, eventId: string) {
   const ext = file.name.split('.').pop()
   const path = `${eventId}/cover.${ext}`
