@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -49,13 +49,16 @@ export default function MultiplayerGamePage() {
 
   // Timer
   const [timeLeft, setTimeLeft] = useState(60)
+  const [countdownSecs, setCountdownSecs] = useState(3)   // odpočet 3-2-1 mezi koly
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const barRef = useRef<HTMLDivElement>(null)             // plynulý progress bar času
   const hasSubmittedRef = useRef(false)
 
   // Results
   const [myResult, setMyResult] = useState<MyResult | null>(null)
   const [activeTab, setActiveTab] = useState<'round' | 'total'>('round')
   const [nextRoundCountdown, setNextRoundCountdown] = useState(NEXT_ROUND_DELAY / 1000)
+  const nextRoundTotalRef = useRef(NEXT_ROUND_DELAY / 1000) // celková délka okna výsledků (pro kruh)
   const nextRoundTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const unsubRef = useRef<(() => void) | null>(null)
 
@@ -110,7 +113,12 @@ export default function MultiplayerGamePage() {
         const prevRound = roomRef.current?.current_round
         setRoom(updatedRoom)
         roomRef.current = updatedRoom
-        if (updatedRoom.status === 'finished') { setPhase('finished'); return }
+        if (updatedRoom.status === 'finished') {
+          // Refetch hráčů, ať závěrečná listina ukáže skóre všech
+          setPlayers(await getPlayers(roomId))
+          setPhase('finished')
+          return
+        }
         if (updatedRoom.current_round !== prevRound) {
           // Nové kolo — načti round data
           await loadRound(roomId, updatedRoom.current_round, updatedRoom)
@@ -118,11 +126,13 @@ export default function MultiplayerGamePage() {
       },
       (updatedPlayers) => setPlayers(updatedPlayers),
       async () => {
-        // Nová odpověď — refetch pro AKTUÁLNÍ kolo (ne počáteční)
+        // Nová odpověď — refetch odpovědí i hráčů pro AKTUÁLNÍ kolo,
+        // ať se průběžně aktualizuje žebříček kola i celkové skóre všech
         const rn = currentRoundNoRef.current
         if (roomId && rn != null) {
-          const answers = await getRoundAnswers(roomId, rn)
+          const [answers, ps] = await Promise.all([getRoundAnswers(roomId, rn), getPlayers(roomId)])
           setRoundAnswers(answers)
+          setPlayers(ps)
         }
       },
     )
@@ -155,12 +165,16 @@ export default function MultiplayerGamePage() {
 
     if (msUntilStart > 0) {
       setPhase('countdown')
+      setCountdownSecs(Math.max(1, Math.ceil(msUntilStart / 1000)))
       timerRef.current = setInterval(() => {
         const remaining = new Date(startedAt).getTime() - Date.now()
         if (remaining <= 0) {
           clearInterval(timerRef.current!)
           setPhase('playing')
           startPlayTimer(startedAt, timeLimit)
+        } else {
+          // průběžně aktualizuj číslo, ať animace 3-2-1 opravdu běží
+          setCountdownSecs(Math.ceil(remaining / 1000))
         }
       }, 100)
     } else {
@@ -219,8 +233,18 @@ export default function MultiplayerGamePage() {
   async function handleShowRoundResults() {
     if (!roomId || !currentRound) return
     shownResultsRef.current = currentRound.round_number
-    const answers = await getRoundAnswers(roomId, currentRound.round_number)
+    // Celková délka okna výsledků (od teď do postupu) — pro kruhový timer,
+    // ať se kruh plní podle skutečně zbývajícího času, ne napevno z 8 s.
+    const startedMs = currentRound.started_at ? new Date(currentRound.started_at).getTime() : Date.now()
+    const advanceAt = startedMs + (room?.settings.time_limit ?? 60) * 1000 + NEXT_ROUND_DELAY
+    nextRoundTotalRef.current = Math.max(1, Math.ceil((advanceAt - Date.now()) / 1000))
+    // Refetch hráčů, ať „celkový" žebříček ukáže skóre všech (ne jen hosta)
+    const [answers, ps] = await Promise.all([
+      getRoundAnswers(roomId, currentRound.round_number),
+      getPlayers(roomId),
+    ])
     setRoundAnswers(answers)
+    setPlayers(ps)
     setActiveTab('round')
     setPhase('round_results')
     // Postup do dalšího kola řeší časový „director" efekt níže (advanceRound)
@@ -268,15 +292,31 @@ export default function MultiplayerGamePage() {
     preloadImage(panoramasRef.current.get(rn + 1))
   }, [currentRound?.round_number])
 
+  // Plynulý progress bar času — místo skoků po vteřinách necháme animaci
+  // na CSS: nastavíme aktuální šířku a pak ji během zbývajícího času
+  // lineárně přejedeme na 0 (jediný přechod, žádné překreslování po vteřině).
+  useLayoutEffect(() => {
+    if (phase !== 'playing' || !currentRound?.started_at || !room) return
+    const el = barRef.current
+    if (!el) return
+    const startMs = new Date(currentRound.started_at).getTime()
+    const total = room.settings.time_limit * 1000
+    const remaining = Math.max(0, total - (Date.now() - startMs))
+    const startPct = Math.max(0, Math.min(100, (remaining / total) * 100))
+    el.style.transition = 'none'
+    el.style.width = `${startPct}%`
+    void el.offsetWidth // vynuť reflow, ať start není přeskočen
+    el.style.transition = `width ${remaining}ms linear`
+    el.style.width = '0%'
+  }, [phase, currentRound?.started_at, room?.id])
+
   const event = currentRound?.events as Event | undefined
   const canSubmit = guessLat !== null && guessYearSet
-  const timerPct = room ? (timeLeft / room.settings.time_limit) * 100 : 100
   const timerColor = timeLeft > 15 ? '#d97757' : '#c0392b'
 
   // ── Countdown ─────────────────────────────────────────
   if (phase === 'countdown') {
-    const msUntilStart = currentRound?.started_at ? new Date(currentRound.started_at).getTime() - Date.now() : 0
-    const secs = Math.ceil(msUntilStart / 1000)
+    const secs = countdownSecs
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0d0906', gap: 12 }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase' }}>
@@ -405,7 +445,7 @@ export default function MultiplayerGamePage() {
                   <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3"/>
                   <circle cx="22" cy="22" r="18" fill="none" stroke="#d97757" strokeWidth="3"
                     strokeDasharray="113"
-                    strokeDashoffset={113 - (113 * nextRoundCountdown / (NEXT_ROUND_DELAY / 1000))}
+                    strokeDashoffset={113 * (1 - Math.max(0, Math.min(1, nextRoundCountdown / nextRoundTotalRef.current)))}
                     strokeLinecap="round"
                     style={{ transition: 'stroke-dashoffset 1s linear' }}
                   />
@@ -529,9 +569,9 @@ export default function MultiplayerGamePage() {
           </div>
         </div>
 
-        {/* Timer bar */}
+        {/* Timer bar — šířku řídí useLayoutEffect (plynulý CSS přechod) */}
         <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}>
-          <div style={{ height: '100%', background: timerColor, width: `${timerPct}%`, transition: 'width 0.2s linear, background 500ms' }}/>
+          <div ref={barRef} style={{ height: '100%', background: timerColor }}/>
         </div>
 
         {/* Panorama */}
