@@ -316,6 +316,8 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
 // ── Event form ────────────────────────────────────────────
 type FormData = {
   title: string; description: string
+  title_en: string; description_en: string
+  title_de: string; description_de: string
   year_from: string; year_to: string
   lat: string; lng: string
   location_radius_km: string
@@ -327,6 +329,10 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const [form, setForm] = useState<FormData>({
     title: event?.title ?? '',
     description: event?.description ?? '',
+    title_en: event?.title_en ?? '',
+    description_en: event?.description_en ?? '',
+    title_de: event?.title_de ?? '',
+    description_de: event?.description_de ?? '',
     year_from: String(event?.year_from ?? event?.year ?? 1900),
     year_to: String(event?.year_to ?? event?.year ?? 1900),
     lat: String(event?.lat ?? 50.0755),
@@ -368,6 +374,10 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
       const payload = {
         title: form.title,
         description: form.description,
+        title_en: form.title_en.trim() || null,
+        description_en: form.description_en.trim() || null,
+        title_de: form.title_de.trim() || null,
+        description_de: form.description_de.trim() || null,
         year: yearMid,
         year_from: yearFrom,
         year_to: yearTo,
@@ -491,6 +501,34 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
                 required rows={4} placeholder="Krátký popis události…" style={{ resize: 'vertical' }}
               />
             </div>
+
+            {/* Překlady — volitelné. Prázdné = hra zobrazí český text jako fallback. */}
+            <details style={{ border: '1px solid var(--line)', borderRadius: 8 }}>
+              <summary style={{ cursor: 'pointer', padding: '10px 14px', fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}>
+                🌐 Překlady (EN / DE) — volitelné
+              </summary>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 14px 16px' }}>
+                <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
+                  Když pole necháš prázdné, hra v daném jazyce zobrazí český text.
+                </p>
+                <div>
+                  <label className="label">🇬🇧 Název (EN)</label>
+                  <input className="input" value={form.title_en} onChange={set('title_en')} placeholder="e.g. Battle of White Mountain"/>
+                </div>
+                <div>
+                  <label className="label">🇬🇧 Popis (EN)</label>
+                  <textarea className="input" value={form.description_en} onChange={set('description_en') as React.ChangeEventHandler<HTMLTextAreaElement>} rows={4} style={{ resize: 'vertical' }} placeholder="Short event description…"/>
+                </div>
+                <div>
+                  <label className="label">🇩🇪 Název (DE)</label>
+                  <input className="input" value={form.title_de} onChange={set('title_de')} placeholder="z. B. Schlacht am Weißen Berg"/>
+                </div>
+                <div>
+                  <label className="label">🇩🇪 Popis (DE)</label>
+                  <textarea className="input" value={form.description_de} onChange={set('description_de') as React.ChangeEventHandler<HTMLTextAreaElement>} rows={4} style={{ resize: 'vertical' }} placeholder="Kurze Beschreibung des Ereignisses…"/>
+                </div>
+              </div>
+            </details>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               <div>
                 <label className="label">Kategorie</label>
