@@ -74,7 +74,7 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { compressPanorama, generatePreview, formatFileSize } from '@/lib/imageCompression'
+import { compressPanorama, generatePreview, generatePreviewFromUrl, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
@@ -88,6 +88,7 @@ export default function AdminPage() {
   const [panel, setPanel] = useState<Panel>('list')
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [fetching, setFetching] = useState(true)
+  const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number } | null>(null)
 
   useEffect(() => {
     if (!loading && !isAdmin) navigate('/menu')
@@ -111,6 +112,33 @@ export default function AdminPage() {
     if (!confirm('Opravdu smazat tuto událost?')) return
     await deleteEvent(id)
     loadEvents()
+  }
+
+  // Dávkové přegenerování náhledů (preview) ze stávajících panoramat.
+  // Volitelně jen chybějící (onlyMissing), jinak všechny.
+  async function handleRegeneratePreviews(onlyMissing = false) {
+    const targets = events.filter(e =>
+      e.panorama_url && e.panorama_url !== 'pending' && (!onlyMissing || !e.preview_url)
+    )
+    if (targets.length === 0) { alert('Není co přegenerovat.'); return }
+    if (!confirm(`Přegenerovat náhledy pro ${targets.length} událostí?\nStáhne to každé panorama (velké soubory) — nech tuto kartu otevřenou až do konce.`)) return
+
+    setRegen({ running: true, done: 0, total: targets.length, failed: 0 })
+    let done = 0, failed = 0
+    for (const ev of targets) {
+      try {
+        const preview = await generatePreviewFromUrl(ev.panorama_url)
+        if (preview) {
+          const { url } = await uploadPanoramaPreview(preview, ev.id)
+          if (url) await updateEvent(ev.id, { preview_url: url })
+          else failed++
+        } else failed++
+      } catch { failed++ }
+      done++
+      setRegen({ running: true, done, total: targets.length, failed })
+    }
+    setRegen({ running: false, done, total: targets.length, failed })
+    await loadEvents()
   }
 
   function openEdit(event: Event) {
@@ -140,6 +168,9 @@ export default function AdminPage() {
             <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadCSVTemplate}>↓ CSV šablona</button>
             <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS šablona</button>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/import')}>↑ Hromadný import</button>
+            <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={regen?.running} onClick={() => handleRegeneratePreviews(false)} title="Vytvoří malý náhled z každého panoramatu pro okamžité zobrazení ve hře">
+              {regen?.running ? `♻ ${regen.done}/${regen.total}…` : '♻ Přegenerovat náhledy'}
+            </button>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/daily')}>📅 Tento den v historii</button>
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
@@ -148,6 +179,17 @@ export default function AdminPage() {
           <button className="btn btn-ghost" onClick={closePanel}>← Zpět na seznam</button>
         )}
       </header>
+
+      {regen && (
+        <div style={{ background: regen.running ? 'var(--accent)' : 'var(--success-deep, #1d6b3a)', color: '#fff', padding: '10px 32px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>
+            {regen.running
+              ? `♻ Generuji náhledy… ${regen.done} / ${regen.total}${regen.failed ? ` (chyb: ${regen.failed})` : ''}`
+              : `✓ Hotovo — ${regen.done - regen.failed} náhledů vytvořeno${regen.failed ? `, ${regen.failed} se nezdařilo` : ''}`}
+          </span>
+          {!regen.running && <button className="btn btn-ghost" style={{ fontSize: 12, color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => setRegen(null)}>Zavřít</button>}
+        </div>
+      )}
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
         {panel === 'list' && (

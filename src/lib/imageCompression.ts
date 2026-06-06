@@ -170,6 +170,33 @@ export async function generatePreview(file: File): Promise<File | null> {
 }
 
 /**
+ * Vygeneruje náhled z URL už nahraného panoramatu (pro dávkové přegenerování).
+ * Načítá s crossOrigin='anonymous', aby se canvas nezašpinil (Supabase Storage
+ * posílá CORS hlavičky). Vrací null, když to nejde (CORS / nepodporovaný WebP).
+ */
+export async function generatePreviewFromUrl(url: string): Promise<File | null> {
+  if (!url || url === 'pending') return null
+  try {
+    const testCanvas = document.createElement('canvas')
+    testCanvas.width = 1; testCanvas.height = 1
+    if (!testCanvas.toDataURL('image/webp').startsWith('data:image/webp')) return null
+
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image()
+      i.crossOrigin = 'anonymous'
+      i.onload = () => resolve(i)
+      i.onerror = () => reject(new Error('Načtení panoramatu selhalo'))
+      i.src = url + (url.includes('?') ? '&' : '?') + 'cors=1'
+    })
+    const blob = await canvasCompress(img, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
+    return new File([blob], 'preview.webp', { type: 'image/webp' })
+  } catch (e) {
+    console.warn('[Preview] Přegenerování z URL selhalo:', e)
+    return null
+  }
+}
+
+/**
  * Formátuje velikost souboru na čitelný string
  */
 export function formatFileSize(bytes: number): string {
