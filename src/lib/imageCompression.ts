@@ -1,7 +1,8 @@
 /**
  * Komprimace panoramat před uploadem.
- * Cíl: WebP, max 8192×4096, min 4096×2048, target 3–6 MB
+ * Cíl: WebP, max 4096×2048, target 3 MB + generování náhledů (preview).
  */
+import { supabase } from './supabase'
 
 // Cap na 4096×2048 — equirektangulární panorama v této velikosti vypadá
 // ostře i na mobilu a drží velikost rozumně nízko (cíl ~3 MB místo 10 MB).
@@ -176,25 +177,32 @@ export async function generatePreview(file: File): Promise<File | null> {
  */
 export async function generatePreviewFromUrl(url: string): Promise<File | null> {
   if (!url || url === 'pending') return null
-  try {
-    const testCanvas = document.createElement('canvas')
-    testCanvas.width = 1; testCanvas.height = 1
-    if (!testCanvas.toDataURL('image/webp').startsWith('data:image/webp')) return null
+  const testCanvas = document.createElement('canvas')
+  testCanvas.width = 1; testCanvas.height = 1
+  if (!testCanvas.toDataURL('image/webp').startsWith('data:image/webp')) return null
 
-    // Stáhni bajty přes fetch (Supabase Storage posílá CORS) a vykresli přes
-    // createImageBitmap z blobu — tím se canvas NEzašpiní (žádný tainting),
-    // na rozdíl od <img crossOrigin>, kde selhává kvůli CDN cache bez CORS.
+  // Bajty získej blobově (canvas se pak nezašpiní). Přednostně přes Supabase
+  // SDK download() — jde na storage API se správnými CORS hlavičkami, na rozdíl
+  // od veřejné CDN URL, kterou CDN často cachuje bez CORS.
+  let blob: Blob | null = null
+  const m = url.match(/\/object\/public\/panorama\/(.+?)(?:\?|$)/)
+  if (m) {
+    const path = decodeURIComponent(m[1])
+    const { data, error } = await supabase.storage.from('panorama').download(path)
+    if (error) throw new Error(`download: ${error.message}`)
+    blob = data
+  }
+  // Fallback: přímý fetch
+  if (!blob) {
     const res = await fetch(url, { mode: 'cors', cache: 'reload' })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const srcBlob = await res.blob()
-    const bitmap = await createImageBitmap(srcBlob)
-    const out = await canvasCompress(bitmap, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
-    bitmap.close?.()
-    return new File([out], 'preview.webp', { type: 'image/webp' })
-  } catch (e) {
-    console.warn('[Preview] Přegenerování z URL selhalo:', e)
-    return null
+    blob = await res.blob()
   }
+
+  const bitmap = await createImageBitmap(blob)
+  const out = await canvasCompress(bitmap, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
+  bitmap.close?.()
+  return new File([out], 'preview.webp', { type: 'image/webp' })
 }
 
 /**
