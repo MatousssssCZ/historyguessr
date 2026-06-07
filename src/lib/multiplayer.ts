@@ -128,6 +128,15 @@ export async function leaveRoom(roomId: string, userId: string) {
     .delete().eq('room_id', roomId).eq('user_id', userId)
 }
 
+// Host opouští čekající místnost → označ ji jako ukončenou, ať do ní
+// nikdo nemůže vstoupit (join povoluje jen status 'waiting') a zůstane
+// osiřelá. Skutečné smazání řeší úklidový cron (migrace 013).
+export async function abandonRoom(roomId: string) {
+  await supabase.from('multiplayer_rooms')
+    .update({ status: 'finished', updated_at: new Date().toISOString() })
+    .eq('id', roomId)
+}
+
 export async function getPlayers(roomId: string): Promise<MultiplayerPlayer[]> {
   const { data } = await supabase
     .from('multiplayer_players')
@@ -155,10 +164,11 @@ export async function startGame(
   const { settings } = room
   const COUNTDOWN_MS = 3000
 
-  // Načti náhodné události podle nastavení
+  // Načti CELOU způsobilou množinu ID (ne jen prvních pár) a vyber z ní
+  // náhodně — jinak by se losovalo pořád ze stejných prvních událostí.
   let q = supabase.from('events').select('id').eq('published', true)
   if (settings.categories.length > 0) q = q.in('category', settings.categories)
-  q = q.gte('year', settings.year_from).lte('year', settings.year_to).limit(settings.rounds * 6)
+  q = q.gte('year', settings.year_from).lte('year', settings.year_to).limit(2000)
   const { data: eventsData } = await q
   if (!eventsData || eventsData.length < settings.rounds) {
     return { error: new Error('Není dostatek událostí pro daná kritéria') }
