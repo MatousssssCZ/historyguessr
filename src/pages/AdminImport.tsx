@@ -57,25 +57,48 @@ async function downloadXLSTemplate() {
 }
 
 // ── CSV parser ────────────────────────────────────────────
+// Robustní vůči: BOM (﻿ z Excelu/Sheets), oddělovači , ; nebo tab
+// (české Excel ukládá se středníky) a koncům řádků \r\n / \r.
+function detectDelimiter(headerLine: string): string {
+  const candidates = [',', ';', '\t']
+  let best = ','
+  let bestCount = -1
+  for (const d of candidates) {
+    const count = headerLine.split(d).length - 1
+    if (count > bestCount) { bestCount = count; best = d }
+  }
+  return best
+}
+
 function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.trim().split('\n').filter(l => l.trim())
+  // Odstraň BOM a normalizuj konce řádků
+  const clean = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+  const lines = clean.split('\n').filter(l => l.trim())
   if (lines.length < 2) return []
-  const headers = parseCSVLine(lines[0])
+  const delimiter = detectDelimiter(lines[0])
+  const headers = parseCSVLine(lines[0], delimiter).map(h => h.trim())
   return lines.slice(1).map(line => {
-    const values = parseCSVLine(line)
+    const values = parseCSVLine(line, delimiter)
     const row: Record<string, string> = {}
-    headers.forEach((h, i) => { row[h.trim()] = (values[i] ?? '').trim() })
+    headers.forEach((h, i) => { row[h] = (values[i] ?? '').trim() })
     return row
   })
 }
 
-function parseCSVLine(line: string): string[] {
+function parseCSVLine(line: string, delimiter = ','): string[] {
   const result: string[] = []
   let current = ''; let inQuotes = false
   for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') { inQuotes = !inQuotes }
-    else if (line[i] === ',' && !inQuotes) { result.push(current); current = '' }
-    else { current += line[i] }
+    const ch = line[i]
+    if (ch === '"') {
+      // Zdvojená uvozovka uvnitř pole = literální "
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++ }
+      else inQuotes = !inQuotes
+    } else if (ch === delimiter && !inQuotes) {
+      result.push(current); current = ''
+    } else {
+      current += ch
+    }
   }
   result.push(current)
   return result
@@ -171,6 +194,10 @@ export default function AdminImportPage() {
         const text = e.target?.result as string
         const parsed = parseCSV(text)
         if (!parsed.length) { setCsvError('CSV je prázdné nebo nemá správné hlavičky.'); return }
+        if (!('title' in parsed[0]) || !('year' in parsed[0])) {
+          setCsvError(`Hlavičky sloupců nesedí (našel jsem: ${Object.keys(parsed[0]).join(', ')}). Zkontroluj, že první řádek obsahuje názvy sloupců jako title, description, year… a použij staženou šablonu.`)
+          return
+        }
         setRows(parsed.map(rowFromCSV))
         setStep('preview')
       }
@@ -255,7 +282,7 @@ export default function AdminImportPage() {
         }
 
         const { data, error } = await createEvent(payload)
-        if (error || !data) throw new Error('Nepodařilo se vytvořit událost')
+        if (error || !data) throw new Error(error?.message || 'Nepodařilo se vytvořit událost')
 
         const eventId = (data as { id: string }).id
         let panoramaUrl = ''
@@ -498,6 +525,16 @@ export default function AdminImportPage() {
             <p style={{ color: 'var(--ink-3)', fontSize: 14, margin: '0 0 32px' }}>
               {doneCount} událostí importováno · uloženy jako nepublikované
             </p>
+            {rows.some(r => r.status === 'error') && (
+              <div className="alert alert-error" style={{ maxWidth: 520, margin: '0 auto 24px', textAlign: 'left' }}>
+                <strong>{rows.filter(r => r.status === 'error').length} řádků se nepodařilo uložit:</strong>
+                <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13 }}>
+                  {rows.filter(r => r.status === 'error').slice(0, 8).map(r => (
+                    <li key={r.id}>{r.title || '(bez názvu)'} — {r.statusMsg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {rows.some(r => !r.panoramaFile && r.panorama_filename) && (
               <div className="alert alert-info" style={{ maxWidth: 480, margin: '0 auto 24px', textAlign: 'left' }}>
                 Některé události čekají na panoramu — přidej ji přes editaci události v admin panelu.
