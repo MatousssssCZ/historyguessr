@@ -49,20 +49,22 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 - `created_at` timestamptz
 
 ### `events`
-- `id` uuid
-- `title` text
-- `description` text
+- `id` uuid, `seq` int (čitelné pořadové číslo — migrace 010)
+- `title` text, `description` text
+- `title_en/title_de`, `description_en/description_de` text (překlady, fallback na CZ)
 - `year` int (střed rozsahu)
 - `year_from` int, `year_to` int (rozsah pro bodování)
 - `lat` float, `lng` float
-- `panorama_url` text (Supabase Storage: bucket `panorama`)
-- `event_image_url` text (Supabase Storage: bucket `events`)
+- `panorama_url` text (bucket `panorama`, soubor `${id}/panorama.webp`)
+- `preview_url` text (malý náhled `${id}/preview.webp` — migrace 012)
+- `event_image_url` text (bucket `events`)
 - `category` text
-- `difficulty` text
+- `difficulty` int (1–3)
+- `hfov` int (výchozí zoom panoramy)
 - `published` boolean
 - `play_count` int
-- `location_radius_km` float
-- `rating_sum` int, `rating_count` int
+- `location_radius_km` float, `year_range` int
+- `rating_sum/rating_count`, `score_*` agregáty
 - `created_by` uuid
 
 ### `game_sessions`
@@ -126,46 +128,70 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 src/
 ├── components/
 │   ├── GameMap.tsx        — GuessMap (compact prop), ResultMap
-│   └── AdminMap.tsx
+│   ├── AdminMap.tsx
+│   ├── BackButton.tsx     — jednotný výrazný návratový prvek (akcent)
+│   ├── YearRange.tsx      — sdílený dvojitý slider rozsahu let (solo + MP)
+│   ├── LanguageSwitcher.tsx — přepínač CS/EN/DE
+│   ├── ThemeToggle.tsx    — světlý/tmavý režim
+│   └── ErrorBoundary.tsx  — záchrana proti bílé obrazovce
 ├── hooks/
 │   ├── useAuth.tsx        — user, profile, isAdmin
 │   └── useGame.ts         — herní smyčka pro solo hru
+├── i18n/
+│   ├── index.ts           — i18next config, currentLocale(), setLanguage()
+│   └── resources.ts       — překlady CS/EN/DE (namespaces)
 ├── lib/
-│   ├── supabase.ts        — všechny DB/Storage helpery + track() + daily funkce
-│   ├── scoring.ts         — haversineKm, roundScore, yearDiff
+│   ├── supabase.ts        — DB/Storage helpery + track() + daily funkce
+│   ├── scoring.ts         — haversineKm, roundScore, yearDiff, formatYear
 │   ├── multiplayer.ts     — multiplayer funkce + Realtime subscriptions
-│   └── imageCompression.ts — Canvas WebP komprimace panoramat
+│   ├── eventLocale.ts     — eventTitle()/eventDescription() dle jazyka (fallback CS)
+│   ├── preload.ts         — preloadImage() pro prefetch panoramat
+│   ├── leveling.ts        — XP / úrovně
+│   └── imageCompression.ts — Canvas WebP komprese + generatePreview()
 ├── pages/
-│   ├── Auth.tsx           — přihlášení/registrace (mobil: fullscreen, desktop: split)
-│   ├── Menu.tsx           — hlavní menu (dark hero + dlaždice)
-│   ├── Game.tsx           — solo herní smyčka (5 kol)
-│   ├── Daily.tsx          — "Tento den v historii" (1 kolo, timer 60s, leaderboard)
+│   ├── Auth.tsx           — přihlášení/registrace
+│   ├── Menu.tsx           — hlavní menu
+│   ├── PreGameLobby.tsx   — předsálí solo hry (/play): kola, kategorie, roky
+│   ├── Game.tsx           — solo herní smyčka
+│   ├── Daily.tsx          — "Tento den v historii" (1 kolo, timer 60s)
+│   ├── Stats.tsx          — statistiky hráče (/stats)
 │   ├── MultiplayerLobby.tsx — vytvoření/připojení místnosti + nastavení
 │   ├── MultiplayerGame.tsx  — multiplayer herní smyčka
-│   ├── Admin.tsx          — správa událostí (CRUD, preview panoramy)
+│   ├── Admin.tsx          — správa událostí (CRUD, komprese, preview, EN/DE, batch náhledy)
 │   ├── AdminImport.tsx    — hromadný import CSV/XLS
-│   ├── AdminDailyChallenge.tsx — kalendář přiřazení denních výzev
-│   ├── Account.tsx        — profil uživatele
+│   ├── AdminDailyChallenge.tsx — kalendář denních výzev
+│   ├── Account.tsx        — profil uživatele (bez statistik)
+│   ├── ResetPassword.tsx  — nastavení nového hesla
 │   ├── Privacy.tsx        — zásady ochrany údajů (placeholder)
 │   └── Terms.tsx          — podmínky použití (placeholder)
 └── types/
     └── database.ts
 ```
 
+> Pozn.: admin formulář událostí je inline `EventForm` v `Admin.tsx`
+> (samostatný `AdminEventForm.tsx` byl smazán jako mrtvý kód).
+
 ---
 
 ## Routes (App.tsx)
 
+Admin routy chrání `RequireAdmin`, ostatní `RequireAuth`. Admin/MP stránky
+jsou líně načítané (`React.lazy`).
+
 ```
 /                     → redirect (menu nebo auth)
 /auth                 → AuthPage
+/auth/callback        → RootRedirect (cíl e-mail potvrzení)
+/reset-password       → ResetPasswordPage
 /menu                 → MenuPage
+/play                 → PreGameLobbyPage (předsálí solo)
 /game                 → GamePage (solo)
 /daily                → DailyChallengePage
+/stats                → StatsPage
 /account              → AccountPage
-/admin                → AdminPage
-/admin/import         → AdminImportPage
-/admin/daily          → AdminDailyChallengePage
+/admin                → AdminPage           (RequireAdmin)
+/admin/import         → AdminImportPage      (RequireAdmin)
+/admin/daily          → AdminDailyChallengePage (RequireAdmin)
 /multiplayer/lobby    → MultiplayerLobbyPage
 /multiplayer/game/:roomId → MultiplayerGamePage
 /privacy              → PrivacyPage
@@ -176,9 +202,14 @@ src/
 
 ## Bodovací systém (scoring.ts)
 
-- **Poloha:** `max(0, 5000 - distKm - radiusKm)` bodů
-- **Rok:** `max(0, 5000 - roků_mimo_rozsah)` bodů
-- **Max za kolo:** 10 000 bodů (5 kol = 50 000 celkem)
+Exponenciální pokles, **MAX_SCORE = 500** za složku:
+
+- **Poloha:** `500 · e^(−max(0, distKm − radiusKm) / 1500)`
+- **Rok:** `500` v rozsahu `[year_from, year_to]`, jinak `500 · e^(−roky_mimo / 120)`
+- **Max za kolo:** 1 000 bodů (500 + 500)
+
+V multiplayeru skóre počítá a ukládá **server** (RPC `submit_multiplayer_answer`,
+migrace 014) — stejný vzorec, klient posílá jen tip.
 
 ---
 
@@ -237,20 +268,24 @@ env(safe-area-inset-top/bottom)
 ## Aktuální stav & TODO
 
 ### ✅ Hotové
-- Solo hra (5 kol, tipování místa + roku, výsledky)
-- Auth (registrace, přihlášení)
-- Admin panel (CRUD, bulk import, panorama preview, komprimace)
-- Daily Challenge (kalendář, gameplay s timerem, leaderboard, histogram)
-- Multiplayer (lobby, nastavení, sync, výsledky)
-- Analytics (Supabase tracking)
-- Legal pages (placeholdery)
-- PWA manifest
+- Solo hra, Daily Challenge, Multiplayer (lobby, sync, výsledky)
+- i18n CS/EN/DE (UI + popisy událostí přes title_en/de)
+- Admin panel (CRUD, bulk import, komprese, preview náhledy + batch)
+- Prefetch panoramat + preview (okamžité zobrazení)
+- Server-authoritativní skóre v MP (RPC 014), úklid místností (013)
+- RequireAdmin guard, ErrorBoundary, lazy-load admin/MP rout
+- Analytics, PWA manifest
+
+### 🗄️ Migrace (Supabase SQL editor — idempotentní)
+`001`–`009` základ · `010` seq · `011` MP realtime · `012` preview_url
+· `013` úklid MP (pg_cron volitelný) · `014` server skóre MP
++ ruční ALTER pro title_en/de, description_en/de.
 
 ### 🔲 TODO / Známé problémy
-- Multiplayer: "Založit hru" nefunguje — debugging in progress (tabulky existují, soubory na GitHubu)
-- Screenshot sdílení výsledků (html2canvas nebo Web Share API)
-- Privacy/Terms: doplnit [email] a [jméno/firma]
-- Multiplayer: chybí `increment_multiplayer_score` RPC funkce v Supabase (fallback existuje)
+- Privacy/Terms: doplnit `[email]` a `[jméno/firma]` (placeholdery)
+- Skóre solo/daily je stále client-trusted (MP už ne) — případně server-side
+- Screenshot sdílení výsledků (Web Share API)
+- Volitelně: pg_cron pro úklid MP (jinak `select cleanup_multiplayer()` ručně)
 
 ---
 
