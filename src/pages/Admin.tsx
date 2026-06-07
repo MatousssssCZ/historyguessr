@@ -129,7 +129,7 @@ export default function AdminPage() {
     for (const ev of targets) {
       try {
         const preview = await generatePreviewFromUrl(ev.panorama_url)
-        if (!preview) { failed++; firstError ||= 'Náhled se nepodařilo vytvořit (CORS / načtení panoramatu).' }
+        if (!preview) { failed++; firstError ||= 'Prohlížeč nepodporuje export do WebP.' }
         else {
           const { url, error: upErr } = await uploadPanoramaPreview(preview, ev.id)
           if (upErr || !url) { failed++; firstError ||= `Upload náhledu: ${upErr?.message ?? 'neznámá chyba'}` }
