@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -352,7 +353,7 @@ export default function MultiplayerGamePage() {
                   {p.username}{isMe && <span style={{ fontSize: 11, color: 'var(--ink-3)', marginLeft: 6 }}>{t('lobby.you')}</span>}
                 </span>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>
-                  {p.total_score.toLocaleString('cs-CZ')}
+                  {p.total_score.toLocaleString(currentLocale())}
                 </span>
               </div>
             )
@@ -383,7 +384,7 @@ export default function MultiplayerGamePage() {
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString('cs-CZ')}</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString(currentLocale())}</div>
               <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
             </div>
           </div>
@@ -479,7 +480,7 @@ export default function MultiplayerGamePage() {
                 <div style={{ background: 'rgba(217,119,87,0.06)', border: '0.5px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '12px 14px', marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('game.yourGuess')}</span>
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{myResult.totalScore.toLocaleString('cs-CZ')}</span>
+                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{myResult.totalScore.toLocaleString(currentLocale())}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {[
@@ -488,7 +489,7 @@ export default function MultiplayerGamePage() {
                     ].map(item => (
                       <div key={item.label} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 8, padding: '8px 10px' }}>
                         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 3px' }}>{item.label}</p>
-                        <p style={{ fontSize: 16, fontWeight: 500, margin: '0 0 5px', lineHeight: 1 }}>{item.score.toLocaleString('cs-CZ')}</p>
+                        <p style={{ fontSize: 16, fontWeight: 500, margin: '0 0 5px', lineHeight: 1 }}>{item.score.toLocaleString(currentLocale())}</p>
                         <div style={{ height: 2, background: 'rgba(42,31,23,0.1)', borderRadius: 999, overflow: 'hidden', marginBottom: 3 }}>
                           <div style={{ width: `${item.pct}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
                         </div>
@@ -511,8 +512,8 @@ export default function MultiplayerGamePage() {
                     <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>
                       {pName}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>{t('lobby.you')}</span>}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginRight: 6 }}>+{a.round_score.toLocaleString('cs-CZ')}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400 }}>{a.round_score.toLocaleString('cs-CZ')}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginRight: 6 }}>+{a.round_score.toLocaleString(currentLocale())}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400 }}>{a.round_score.toLocaleString(currentLocale())}</span>
                   </div>
                 )
               })}
@@ -533,7 +534,7 @@ export default function MultiplayerGamePage() {
                       {p.username}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>{t('lobby.you')}</span>}
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: isMe ? 600 : 400, color: isMe ? '#1d6b3a' : 'var(--ink)' }}>{p.total_score.toLocaleString('cs-CZ')}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: isMe ? 600 : 400, color: isMe ? '#1d6b3a' : 'var(--ink)' }}>{p.total_score.toLocaleString(currentLocale())}</span>
                       <div style={{ width: 60, height: 3, background: 'rgba(42,31,23,0.1)', borderRadius: 999, overflow: 'hidden' }}>
                         <div style={{ width: `${(p.total_score / maxScore) * 100}%`, height: '100%', background: isMe ? '#1d6b3a' : 'var(--line-strong)', borderRadius: 999 }}/>
                       </div>
@@ -722,7 +723,7 @@ function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score
   return (
     <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>{score.toLocaleString('cs-CZ')}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>{score.toLocaleString(currentLocale())}</div>
       <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
       </div>

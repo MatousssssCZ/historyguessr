@@ -408,7 +408,7 @@ export async function getDailyChallenge(): Promise<Event | null> {
     .select('event_id, events(*)')
     .eq('month', month)
     .eq('day', day)
-    .single()
+    .maybeSingle()
 
   if (!data?.event_id || !data?.events) return null
   return data.events as unknown as Event
@@ -422,7 +422,7 @@ export async function getTodayDailyResult(userId: string): Promise<DailyResult |
     .select('*')
     .eq('user_id', userId)
     .eq('date', today)
-    .single()
+    .maybeSingle()
   return data ?? null
 }
 

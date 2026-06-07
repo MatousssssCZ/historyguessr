@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { signOut, getTodayDailyResult, type DailyResult } from '@/lib/supabase'
@@ -44,7 +45,7 @@ export default function MenuPage() {
   }
 
   const games = profile?.games_played ?? 0
-  const score = profile?.total_score?.toLocaleString('cs-CZ') ?? '0'
+  const score = profile?.total_score?.toLocaleString(currentLocale()) ?? '0'
   const name = profile?.username ?? 'Hráči'
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
@@ -52,7 +53,7 @@ export default function MenuPage() {
   // Podtitul + stav pro denní výzvu
   const dailySub =
     dailyState === 'done'
-      ? t('menu.dailyDone', { score: (dailyResult?.score ?? 0).toLocaleString('cs-CZ') })
+      ? t('menu.dailyDone', { score: (dailyResult?.score ?? 0).toLocaleString(currentLocale()) })
       : t('menu.dailyWaiting')
 
   // ═══════════════════════════════════════════════════════
@@ -336,8 +337,8 @@ function ListItem({ icon, title, sub, onClick, dailyState }: {
 // ─── Drobné komponenty ────────────────────────────────────
 function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
   const { t } = useTranslation()
-  const into = lvl.into.toLocaleString('cs-CZ')
-  const need = lvl.need.toLocaleString('cs-CZ')
+  const into = lvl.into.toLocaleString(currentLocale())
+  const need = lvl.need.toLocaleString(currentLocale())
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>

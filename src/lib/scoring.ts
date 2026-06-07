@@ -1,4 +1,5 @@
 import i18n from '@/i18n'
+import { currentLocale } from '@/i18n'
 const MAX_SCORE = 500
 
 // Ladicí konstanty exponenciálního poklesu (vyšší = mírnější)
@@ -41,7 +42,7 @@ export function roundScore(distKm: number, guessYear: number, yearFrom: number, 
 export function formatDistance(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`
   if (km < 100) return `${km.toFixed(1)} km`
-  return `${Math.round(km).toLocaleString('cs-CZ')} km`
+  return `${Math.round(km).toLocaleString(currentLocale())} km`
 }
 
 export function formatYear(year: number): string {

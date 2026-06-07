@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
@@ -60,7 +61,7 @@ export default function GamePage() {
           <div style={{ textAlign: 'right' }}>
             <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.35)', fontSize: 9 }}>{t('game.score')}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--on-dark)' }}>
-              {state.totalScore.toLocaleString('cs-CZ')}
+              {state.totalScore.toLocaleString(currentLocale())}
             </div>
           </div>
           <BackButton
@@ -773,7 +774,7 @@ function RoundResult({ event, round, onNext, isLast }: {
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}</div>
                 <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
               </div>
             </div>
@@ -842,7 +843,7 @@ function RoundResult({ event, round, onNext, isLast }: {
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{eventTitle(event)}</h2>
               <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString('cs-CZ')}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('game.outOf1000pts')}</div>
               </div>
             </div>
@@ -875,7 +876,7 @@ function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score
     <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
       <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>{label}</div>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>
-        {score.toLocaleString('cs-CZ')}
+        {score.toLocaleString(currentLocale())}
       </div>
       <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
@@ -1018,7 +1019,7 @@ function FinishedScreen({ totalScore, rounds, onPlayAgain, onMenu }: {
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, background: 'var(--paper-100)' }}>
       <p className="eyebrow" style={{ marginBottom: 16 }}>{t('game.gameOver')}</p>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 80, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--accent)', marginBottom: 8 }}>
-        {totalScore.toLocaleString('cs-CZ')}
+        {totalScore.toLocaleString(currentLocale())}
       </div>
       <p style={{ color: 'var(--ink-3)', marginBottom: 40, fontFamily: 'var(--font-mono)', fontSize: 14 }}>
         {t('game.accuracy', { pct })}
