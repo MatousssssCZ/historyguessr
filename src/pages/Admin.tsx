@@ -88,7 +88,7 @@ export default function AdminPage() {
   const [panel, setPanel] = useState<Panel>('list')
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [fetching, setFetching] = useState(true)
-  const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number } | null>(null)
+  const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number; firstError?: string } | null>(null)
 
   useEffect(() => {
     if (!loading && !isAdmin) navigate('/menu')
@@ -125,19 +125,24 @@ export default function AdminPage() {
 
     setRegen({ running: true, done: 0, total: targets.length, failed: 0 })
     let done = 0, failed = 0
+    let firstError = ''
     for (const ev of targets) {
       try {
         const preview = await generatePreviewFromUrl(ev.panorama_url)
-        if (preview) {
-          const { url } = await uploadPanoramaPreview(preview, ev.id)
-          if (url) await updateEvent(ev.id, { preview_url: url })
-          else failed++
-        } else failed++
-      } catch { failed++ }
+        if (!preview) { failed++; firstError ||= 'Náhled se nepodařilo vytvořit (CORS / načtení panoramatu).' }
+        else {
+          const { url, error: upErr } = await uploadPanoramaPreview(preview, ev.id)
+          if (upErr || !url) { failed++; firstError ||= `Upload náhledu: ${upErr?.message ?? 'neznámá chyba'}` }
+          else {
+            const { error: dbErr } = await updateEvent(ev.id, { preview_url: url })
+            if (dbErr) { failed++; firstError ||= `Uložení do DB: ${dbErr.message}` }
+          }
+        }
+      } catch (e) { failed++; firstError ||= e instanceof Error ? e.message : String(e) }
       done++
-      setRegen({ running: true, done, total: targets.length, failed })
+      setRegen({ running: true, done, total: targets.length, failed, firstError })
     }
-    setRegen({ running: false, done, total: targets.length, failed })
+    setRegen({ running: false, done, total: targets.length, failed, firstError })
     await loadEvents()
   }
 
@@ -186,6 +191,9 @@ export default function AdminPage() {
             {regen.running
               ? `♻ Generuji náhledy… ${regen.done} / ${regen.total}${regen.failed ? ` (chyb: ${regen.failed})` : ''}`
               : `✓ Hotovo — ${regen.done - regen.failed} náhledů vytvořeno${regen.failed ? `, ${regen.failed} se nezdařilo` : ''}`}
+            {!regen.running && regen.failed > 0 && regen.firstError && (
+              <span style={{ display: 'block', fontSize: 12, opacity: 0.85, marginTop: 4 }}>Důvod: {regen.firstError}</span>
+            )}
           </span>
           {!regen.running && <button className="btn btn-ghost" style={{ fontSize: 12, color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => setRegen(null)}>Zavřít</button>}
         </div>

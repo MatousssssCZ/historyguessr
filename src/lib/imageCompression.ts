@@ -52,7 +52,7 @@ function calcDimensions(w: number, h: number): { width: number; height: number }
 /**
  * Komprimuje obrázek na Canvas a vrátí jako WebP blob
  */
-async function canvasCompress(img: HTMLImageElement, width: number, height: number, quality: number): Promise<Blob> {
+async function canvasCompress(img: CanvasImageSource, width: number, height: number, quality: number): Promise<Blob> {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -181,15 +181,16 @@ export async function generatePreviewFromUrl(url: string): Promise<File | null> 
     testCanvas.width = 1; testCanvas.height = 1
     if (!testCanvas.toDataURL('image/webp').startsWith('data:image/webp')) return null
 
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const i = new Image()
-      i.crossOrigin = 'anonymous'
-      i.onload = () => resolve(i)
-      i.onerror = () => reject(new Error('Načtení panoramatu selhalo'))
-      i.src = url + (url.includes('?') ? '&' : '?') + 'cors=1'
-    })
-    const blob = await canvasCompress(img, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
-    return new File([blob], 'preview.webp', { type: 'image/webp' })
+    // Stáhni bajty přes fetch (Supabase Storage posílá CORS) a vykresli přes
+    // createImageBitmap z blobu — tím se canvas NEzašpiní (žádný tainting),
+    // na rozdíl od <img crossOrigin>, kde selhává kvůli CDN cache bez CORS.
+    const res = await fetch(url, { mode: 'cors', cache: 'reload' })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const srcBlob = await res.blob()
+    const bitmap = await createImageBitmap(srcBlob)
+    const out = await canvasCompress(bitmap, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
+    bitmap.close?.()
+    return new File([out], 'preview.webp', { type: 'image/webp' })
   } catch (e) {
     console.warn('[Preview] Přegenerování z URL selhalo:', e)
     return null
