@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
-  createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom,
+  createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom, abandonRoom,
   getPlayers, startGame, subscribeToRoom, countMatchingEvents, getRoomPanoramas,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
@@ -165,6 +165,15 @@ export default function MultiplayerLobbyPage() {
 
   function handleSettingChange<K extends keyof RoomSettings>(key: K, value: RoomSettings[K]) {
     setSettings(prev => ({ ...prev, [key]: value }))
+  }
+
+  // Odchod z lobby — host navíc místnost ukončí, ať nezůstane osiřelá
+  async function handleLeave() {
+    if (room && user) {
+      if (isHost) await abandonRoom(room.id)
+      await leaveRoom(room.id, user.id)
+    }
+    navigate('/menu')
   }
 
   function toggleCategory(id: string) {
@@ -382,7 +391,7 @@ export default function MultiplayerLobbyPage() {
           {/* Odejít */}
           <div style={{ padding: '24px 36px', position: 'relative' }}>
             <BackButton
-              onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }}
+              onClick={handleLeave}
               label={t('lobby.leave')}
             />
           </div>
@@ -420,7 +429,7 @@ export default function MultiplayerLobbyPage() {
             <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--feature-line)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--feature-fg2)', cursor: 'pointer' }}>{t('lobby.copy')}</button>
           </div>
         </div>
-        <BackButton onClick={async () => { if (room && user) await leaveRoom(room.id, user.id); navigate('/menu') }} label={t('lobby.leave')} />
+        <BackButton onClick={handleLeave} label={t('lobby.leave')} />
       </header>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
