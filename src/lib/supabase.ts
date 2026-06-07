@@ -304,6 +304,18 @@ export async function uploadPanorama(file: File, eventId: string) {
   return { url: data.publicUrl, error: null }
 }
 
+// Stáhne panorama přes SDK (ne přes veřejnou CDN URL) — spolehlivé CORS,
+// vrácený Blob jde rovnou do createImageBitmap bez zašpinění canvasu.
+export async function downloadPanoramaBlob(panoramaUrl: string): Promise<Blob | null> {
+  try {
+    const m = new URL(panoramaUrl).pathname.match(/\/storage\/v1\/object\/public\/panorama\/(.+)$/)
+    if (!m) return null
+    const path = decodeURIComponent(m[1])
+    const { data } = await supabase.storage.from('panorama').download(path)
+    return data ?? null
+  } catch { return null }
+}
+
 // Náhled panoramatu (malý WebP) do stejného bucketu — pro okamžité zobrazení
 export async function uploadPanoramaPreview(file: File, eventId: string) {
   const path = `${eventId}/preview.webp`

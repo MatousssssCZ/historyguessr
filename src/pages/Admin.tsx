@@ -74,8 +74,8 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { compressPanorama, generatePreview, generatePreviewFromUrl, formatFileSize } from '@/lib/imageCompression'
-import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, track } from '@/lib/supabase'
+import { compressPanorama, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, track } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -128,8 +128,10 @@ export default function AdminPage() {
     let firstError = ''
     for (const ev of targets) {
       try {
-        const preview = await generatePreviewFromUrl(ev.panorama_url)
-        if (!preview) { failed++; firstError ||= 'Prohlížeč nepodporuje export do WebP.' }
+        const blob = await downloadPanoramaBlob(ev.panorama_url)
+        const preview = blob ? await generatePreviewFromBlob(blob) : null
+        if (!blob) { failed++; firstError ||= 'Panorama se nepodařilo stáhnout (cesta / oprávnění bucketu).' }
+        else if (!preview) { failed++; firstError ||= 'Náhled se nepodařilo vykreslit (WebP/canvas).' }
         else {
           const { url, error: upErr } = await uploadPanoramaPreview(preview, ev.id)
           if (upErr || !url) { failed++; firstError ||= `Upload náhledu: ${upErr?.message ?? 'neznámá chyba'}` }
