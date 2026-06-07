@@ -303,33 +303,43 @@ export async function submitAnswer(
     location_score: number; year_score: number; round_score: number
   },
 ): Promise<{ error: Error | null }> {
-  // Ulož odpověď
+  // Server-authoritativní cesta: pošli jen TIP, skóre spočítá a uloží DB
+  // (idempotentně, bez možnosti podvádět). Migrace 014.
+  const { error: rpcError } = await supabase.rpc('submit_multiplayer_answer', {
+    p_room_id: roomId,
+    p_round_number: roundNumber,
+    p_guess_lat: answer.guess_lat,
+    p_guess_lng: answer.guess_lng,
+    p_guess_year: answer.guess_year,
+  })
+
+  if (!rpcError) {
+    await addXp(userId, answer.round_score)
+    return { error: null }
+  }
+
+  // ── Fallback (RPC 014 ještě nenasazená) ──────────────────
+  // Stará cesta: upsert odpovědi + increment skóre přes RPC / read-modify-write
   const { error } = await supabase.from('multiplayer_answers').upsert({
     room_id: roomId, round_number: roundNumber, user_id: userId, ...answer,
   })
   if (error) return { error: error as Error }
 
-  // Aktualizuj celkové skóre hráče — atomicky přes RPC
-  const { error: rpcError } = await supabase.rpc('increment_multiplayer_score', {
+  const { error: incErr } = await supabase.rpc('increment_multiplayer_score', {
     p_room_id: roomId, p_user_id: userId, p_score: answer.round_score,
   })
-
-  // Fallback pokud RPC v DB neexistuje — read-modify-write (přičti, ne přepiš)
-  if (rpcError) {
+  if (incErr) {
     const { data: player } = await supabase
       .from('multiplayer_players')
       .select('total_score')
       .eq('room_id', roomId).eq('user_id', userId)
-      .single()
-
+      .maybeSingle()
     await supabase.from('multiplayer_players')
       .update({ total_score: (player?.total_score ?? 0) + answer.round_score })
       .eq('room_id', roomId).eq('user_id', userId)
   }
 
-  // XP za kolo v multiplayeru
   await addXp(userId, answer.round_score)
-
   return { error: null }
 }
 
