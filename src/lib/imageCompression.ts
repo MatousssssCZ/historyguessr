@@ -175,6 +175,24 @@ export async function generatePreview(file: File): Promise<File | null> {
  * Načítá s crossOrigin='anonymous', aby se canvas nezašpinil (Supabase Storage
  * posílá CORS hlavičky). Vrací null, když to nejde (CORS / nepodporovaný WebP).
  */
+// Vygeneruje náhled z už staženého blobu (panorama stažené přes Supabase SDK).
+// createImageBitmap z lokálního blobu canvas nezašpiní → žádný CORS problém.
+export async function generatePreviewFromBlob(blob: Blob): Promise<File | null> {
+  try {
+    const testCanvas = document.createElement('canvas')
+    testCanvas.width = 1; testCanvas.height = 1
+    if (!testCanvas.toDataURL('image/webp').startsWith('data:image/webp')) return null
+
+    const bitmap = await createImageBitmap(blob)
+    const out = await canvasCompress(bitmap, PREVIEW_WIDTH, PREVIEW_HEIGHT, 0.6)
+    bitmap.close?.()
+    return new File([out], 'preview.webp', { type: 'image/webp' })
+  } catch (e) {
+    console.warn('[Preview] Generování z blobu selhalo:', e)
+    return null
+  }
+}
+
 export async function generatePreviewFromUrl(url: string): Promise<File | null> {
   if (!url || url === 'pending') return null
   const testCanvas = document.createElement('canvas')
