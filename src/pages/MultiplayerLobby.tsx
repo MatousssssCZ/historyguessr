@@ -40,7 +40,15 @@ export default function MultiplayerLobbyPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [matchingEvents, setMatchingEvents] = useState<number | null>(null)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   const unsubRef = useRef<(() => void) | null>(null)
+
+  // Reaguj na změnu velikosti / otočení obrazovky
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   // Když přecházíme do hry, NESMÍME hráče odhlásit z místnosti (unmount lobby)
   const enteringGameRef = useRef(false)
 
@@ -245,7 +253,6 @@ export default function MultiplayerLobbyPage() {
   }
 
   // ── Lobby ──────────────────────────────────────────────
-  const isMobile = window.innerWidth < 768
 
   // ── Sdílené komponenty ─────────────────────────────────
   const PlayerList = () => (

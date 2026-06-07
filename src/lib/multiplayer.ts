@@ -99,7 +99,7 @@ export async function getRoom(roomId: string): Promise<MultiplayerRoom | null> {
     .from('multiplayer_rooms')
     .select('*')
     .eq('id', roomId)
-    .single()
+    .maybeSingle()
   return data ?? null
 }
 
@@ -108,7 +108,7 @@ export async function getRoomByCode(code: string): Promise<MultiplayerRoom | nul
     .from('multiplayer_rooms')
     .select('*')
     .eq('code', code.toUpperCase())
-    .single()
+    .maybeSingle()
   return data ?? null
 }
 

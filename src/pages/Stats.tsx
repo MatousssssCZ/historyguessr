@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -89,7 +90,7 @@ export default function StatsPage() {
   }, [user?.id, profile?.games_played, profile?.total_score])
 
   const lvl = levelFromXp(profile?.xp ?? 0)
-  const n = (v: number) => v.toLocaleString('cs-CZ')
+  const n = (v: number) => v.toLocaleString(currentLocale())
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', paddingBottom: 'max(20px, var(--safe-bottom))' }}>

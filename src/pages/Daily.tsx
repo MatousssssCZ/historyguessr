@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
@@ -560,7 +561,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       {/* Skóre karty */}
       <div style={{ padding: isMobile ? '10px 12px' : '12px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <ScoreCard label={t('game.location')} score={result.locScore} pct={locPct} sub={result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString('cs-CZ')} km`}/>
+          <ScoreCard label={t('game.location')} score={result.locScore} pct={locPct} sub={result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString(currentLocale())} km`}/>
           <ScoreCard label={t('game.year')} score={result.yrScore} pct={yrPct} sub={result.yrDiff === 0 ? t('daily.exact') : `${result.yrDiff} let mimo`} highlight={result.yrDiff === 0}/>
         </div>
         <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
@@ -599,7 +600,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
                 {(r.profiles as { username?: string })?.username ?? t('daily.player')}
                 {isMe && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>ty</span>}
               </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString('cs-CZ')}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString(currentLocale())}</span>
             </div>
           )
         })}
@@ -621,7 +622,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{eventTitle(event)}</div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString('cs-CZ')}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}</div>
                   <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
                 </div>
               </div>
@@ -657,7 +658,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString('cs-CZ')}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}</div>
             <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
           </div>
         </div>
@@ -691,7 +692,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{result.totalScore.toLocaleString('cs-CZ')}</span>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{result.totalScore.toLocaleString(currentLocale())}</span>
             </div>
             <ScoreHistogram leaderboard={leaderboard} myScore={result.totalScore}/>
           </div>
@@ -706,7 +707,7 @@ function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score
   return (
     <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>{score.toLocaleString('cs-CZ')}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>{score.toLocaleString(currentLocale())}</div>
       <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
       </div>
