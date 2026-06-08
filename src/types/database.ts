@@ -21,6 +21,7 @@ export interface Event {
   year: number
   year_from: number
   year_to: number
+  event_date: string | null
   lat: number
   lng: number
   panorama_url: string
@@ -54,6 +55,7 @@ export interface EventInsert {
   year: number
   year_from: number
   year_to: number
+  event_date?: string | null
   lat: number
   lng: number
   panorama_url: string
@@ -77,6 +79,7 @@ export interface EventUpdate {
   year?: number
   year_from?: number
   year_to?: number
+  event_date?: string | null
   lat?: number
   lng?: number
   panorama_url?: string

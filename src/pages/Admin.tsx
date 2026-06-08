@@ -370,7 +370,7 @@ type FormData = {
   title: string; description: string
   title_en: string; description_en: string
   title_de: string; description_de: string
-  year_from: string; year_to: string
+  year_from: string; year_to: string; event_date: string
   lat: string; lng: string
   location_radius_km: string
   category: string; difficulty: string; published: boolean
@@ -387,6 +387,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
     description_de: event?.description_de ?? '',
     year_from: String(event?.year_from ?? event?.year ?? 1900),
     year_to: String(event?.year_to ?? event?.year ?? 1900),
+    event_date: event?.event_date ?? '',
     lat: String(event?.lat ?? 50.0755),
     lng: String(event?.lng ?? 14.4378),
     location_radius_km: String(event?.location_radius_km ?? 0),
@@ -434,6 +435,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
         year_from: yearFrom,
         year_to: yearTo,
         year_range: Math.round((yearTo - yearFrom) / 2),
+        event_date: form.event_date.trim() || null,
         lat: parseFloat(form.lat),
         lng: parseFloat(form.lng),
         location_radius_km: parseInt(form.location_radius_km) || 0,
@@ -634,6 +636,11 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           {yearFrom > yearTo && (
             <div className="alert alert-error" style={{ marginTop: 12 }}>Rok od musí být ≤ roku do.</div>
           )}
+          <div style={{ marginTop: 14 }}>
+            <label className="label">Přesné datum (volitelné) — pro „Tento den v historii"</label>
+            <input className="input" type="date" value={form.event_date} onChange={set('event_date')} style={{ maxWidth: 220 }}/>
+            <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>Den a měsíc se nabídne v kalendáři denních výzev. Jen n. l.</p>
+          </div>
         </div>
 
         {/* Poloha + mapa */}
