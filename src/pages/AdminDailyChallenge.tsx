@@ -66,9 +66,22 @@ export default function AdminDailyChallengePage() {
     setSearch('')
   }
 
+  // Návrhy podle přesného data události (shoda den + měsíc s vybraným dnem)
+  const suggestions = selectedDay
+    ? events.filter(e => {
+        if (!e.event_date) return false
+        const m = parseInt(e.event_date.slice(5, 7))
+        const d = parseInt(e.event_date.slice(8, 10))
+        return m === selectedDay.month && d === selectedDay.day
+      })
+    : []
+  const suggestionIds = new Set(suggestions.map(e => e.id))
+
   const filtered = events.filter(e =>
-    e.title.toLowerCase().includes(search.toLowerCase()) ||
-    e.category?.toLowerCase().includes(search.toLowerCase())
+    (e.title.toLowerCase().includes(search.toLowerCase()) ||
+     e.category?.toLowerCase().includes(search.toLowerCase())) &&
+    // při prázdném hledání nezdvojuj návrhy (jsou zvlášť nahoře)
+    (search.trim() !== '' || !suggestionIds.has(e.id))
   )
 
   const selectedAssignment = selectedDay
@@ -139,7 +152,35 @@ export default function AdminDailyChallengePage() {
                   ✕ Odebrat přiřazení
                 </button>
               )}
-              {filtered.length === 0 && (
+              {/* Návrhy podle data — události s event_date na tento den/měsíc */}
+              {!search.trim() && suggestions.length > 0 && (
+                <>
+                  <div style={{ padding: '8px 20px 4px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-deep)' }}>
+                    📅 Návrhy podle data
+                  </div>
+                  {suggestions.map(ev => (
+                    <button
+                      key={`sug-${ev.id}`}
+                      onClick={() => handleAssign(ev.id)}
+                      disabled={saving}
+                      style={{
+                        width: '100%', padding: '10px 20px', border: 'none',
+                        background: selectedAssignment?.event_id === ev.id ? 'rgba(217,119,87,0.12)' : 'rgba(217,119,87,0.05)',
+                        textAlign: 'left', cursor: 'pointer',
+                        borderLeft: '3px solid var(--accent)',
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{ev.title}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                        {ev.event_date}{ev.category && ` · ${ev.category}`}
+                        {selectedAssignment?.event_id === ev.id && <span style={{ color: 'var(--accent)', marginLeft: 6 }}>✓ přiřazeno</span>}
+                      </div>
+                    </button>
+                  ))}
+                  <div style={{ height: 1, background: 'var(--line)', margin: '6px 0' }}/>
+                </>
+              )}
+              {filtered.length === 0 && suggestions.length === 0 && (
                 <p style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
                   Žádné události nenalezeny
                 </p>

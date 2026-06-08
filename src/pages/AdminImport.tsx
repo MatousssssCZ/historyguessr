@@ -5,9 +5,9 @@ import { createEvent, uploadPanorama, uploadEventImage } from '@/lib/supabase'
 import type { EventInsert } from '@/types/database'
 
 // ── CSV šablona ───────────────────────────────────────────
-const CSV_TEMPLATE = `title,description,year,lat,lng,category,difficulty,year_range,location_radius_km,panorama_filename,image_filename
-Bitva na Bílé hoře,"Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.",1620,50.0755,14.2836,war,2,0,0,bila_hora_360.jpg,bila_hora.jpg
-Výbuch Vesuvu,"Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",-79,40.8210,14.4260,science,3,5,10,vesuvius_360.jpg,vesuvius.jpg`
+const CSV_TEMPLATE = `title,description,year_from,year_to,event_date,lat,lng,category,difficulty,location_radius_km,panorama_filename,image_filename
+Bitva na Bílé hoře,"Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.",1620,1620,1620-11-08,50.0755,14.2836,war,2,0,bila_hora_360.jpg,bila_hora.jpg
+Výbuch Vesuvu,"Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",-79,-79,,40.8210,14.4260,science,3,10,vesuvius_360.jpg,vesuvius.jpg`
 
 function downloadTemplate() {
   const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv;charset=utf-8;' })
@@ -27,29 +27,30 @@ async function downloadXLSTemplate() {
     })
   }
   const XLSX = (window as any).XLSX
-  const headers = ['title','description','year','lat','lng','category','difficulty','year_range','location_radius_km','panorama_filename','image_filename']
+  const headers = ['title','description','year_from','year_to','event_date','lat','lng','category','difficulty','location_radius_km','panorama_filename','image_filename']
   const rows = [
-    ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.',1620,50.0755,14.2836,'war',2,0,0,'bila_hora_360.jpg','bila_hora.jpg'],
-    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.',-79,40.8210,14.4260,'science',3,5,10,'vesuvius_360.jpg','vesuvius.jpg'],
+    ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.',1620,1620,'1620-11-08',50.0755,14.2836,'war',2,0,'bila_hora_360.jpg','bila_hora.jpg'],
+    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.',-79,-79,'',40.8210,14.4260,'science',3,10,'vesuvius_360.jpg','vesuvius.jpg'],
   ]
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-  ws['!cols'] = [{wch:30},{wch:50},{wch:8},{wch:10},{wch:10},{wch:12},{wch:10},{wch:12},{wch:20},{wch:25},{wch:20}]
+  ws['!cols'] = [{wch:30},{wch:50},{wch:10},{wch:10},{wch:13},{wch:10},{wch:10},{wch:12},{wch:10},{wch:16},{wch:25},{wch:20}]
   const helpRows = [
     ['Sloupec','Povinný','Popis','Příklady'],
     ['title','ANO','Název historické události','Bitva na Bílé hoře'],
     ['description','ANO','Popis události','Bitva proběhla...'],
-    ['year','ANO','Rok (záporné = př. n. l.)','1620, -79'],
+    ['year_from','ANO','Rok OD (záporné = př. n. l.)','1620, -79'],
+    ['year_to','ANO','Rok DO (stejný jako OD = přesný rok)','1620, -79'],
+    ['event_date','NE','Přesné datum YYYY-MM-DD (pro denní výzvu)','1620-11-08'],
     ['lat','ANO','Zeměpisná šířka (-90 až 90)','50.0755'],
     ['lng','ANO','Zeměpisná délka (-180 až 180)','14.4378'],
     ['category','NE','Kategorie','war, culture, science, politics, religion, exploration'],
     ['difficulty','NE','Obtížnost 1–3 (výchozí: 2)','1, 2, 3'],
-    ['year_range','NE','Tolerance roku v letech','0, 5, 10'],
     ['location_radius_km','NE','Tolerance polohy v km','0, 5, 20'],
     ['panorama_filename','NE','Název souboru 360° panoramy','panorama.jpg'],
     ['image_filename','NE','Název doplňkového obrázku','cover.jpg'],
   ]
   const wsHelp = XLSX.utils.aoa_to_sheet(helpRows)
-  wsHelp['!cols'] = [{wch:22},{wch:10},{wch:40},{wch:40}]
+  wsHelp['!cols'] = [{wch:22},{wch:10},{wch:42},{wch:40}]
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Události')
   XLSX.utils.book_append_sheet(wb, wsHelp, 'Nápověda')
@@ -113,12 +114,13 @@ interface ImportRow {
   description_en: string
   title_de: string
   description_de: string
-  year: number
+  year_from: number
+  year_to: number
+  event_date: string
   lat: number
   lng: number
   category: string
   difficulty: 1 | 2 | 3
-  year_range: number
   location_radius_km: number
   panorama_filename: string
   image_filename: string
@@ -129,18 +131,27 @@ interface ImportRow {
   statusMsg: string
 }
 
+// Volitelné datum YYYY-MM-DD (jen n. l. — Postgres date neumí záporné roky).
+// Pro denní výzvu stejně rozhoduje jen den a měsíc.
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
 function rowFromCSV(raw: Record<string, string>, idx: number): ImportRow {
   const errors: string[] = []
-  const year = parseInt(raw.year)
+  const yearFrom = parseInt(raw.year_from)
+  const yearTo = parseInt(raw.year_to)
   const lat = parseFloat(raw.lat)
   const lng = parseFloat(raw.lng)
   const difficulty = parseInt(raw.difficulty) as 1 | 2 | 3
+  const eventDate = (raw.event_date ?? '').trim()
 
   if (!raw.title) errors.push('Chybí název')
   if (!raw.description) errors.push('Chybí popis')
-  if (isNaN(year)) errors.push('Neplatný rok')
+  if (isNaN(yearFrom)) errors.push('Neplatný rok od')
+  if (isNaN(yearTo)) errors.push('Neplatný rok do')
+  if (!isNaN(yearFrom) && !isNaN(yearTo) && yearFrom > yearTo) errors.push('Rok od > rok do')
   if (isNaN(lat) || lat < -90 || lat > 90) errors.push('Neplatná šířka')
   if (isNaN(lng) || lng < -180 || lng > 180) errors.push('Neplatná délka')
+  if (eventDate && !DATE_RE.test(eventDate)) errors.push('Datum musí být YYYY-MM-DD')
 
   return {
     id: `row-${idx}`,
@@ -150,12 +161,13 @@ function rowFromCSV(raw: Record<string, string>, idx: number): ImportRow {
     description_en: raw.description_en ?? '',
     title_de: raw.title_de ?? '',
     description_de: raw.description_de ?? '',
-    year: isNaN(year) ? 0 : year,
+    year_from: isNaN(yearFrom) ? 0 : yearFrom,
+    year_to: isNaN(yearTo) ? 0 : yearTo,
+    event_date: eventDate,
     lat: isNaN(lat) ? 0 : lat,
     lng: isNaN(lng) ? 0 : lng,
     category: raw.category ?? '',
     difficulty: [1,2,3].includes(difficulty) ? difficulty : 2,
-    year_range: parseInt(raw.year_range) || 0,
     location_radius_km: parseInt(raw.location_radius_km) || 0,
     panorama_filename: raw.panorama_filename ?? '',
     image_filename: raw.image_filename ?? '',
@@ -194,8 +206,8 @@ export default function AdminImportPage() {
         const text = e.target?.result as string
         const parsed = parseCSV(text)
         if (!parsed.length) { setCsvError('CSV je prázdné nebo nemá správné hlavičky.'); return }
-        if (!('title' in parsed[0]) || !('year' in parsed[0])) {
-          setCsvError(`Hlavičky sloupců nesedí (našel jsem: ${Object.keys(parsed[0]).join(', ')}). Zkontroluj, že první řádek obsahuje názvy sloupců jako title, description, year… a použij staženou šablonu.`)
+        if (!('title' in parsed[0]) || !('year_from' in parsed[0])) {
+          setCsvError(`Hlavičky sloupců nesedí (našel jsem: ${Object.keys(parsed[0]).join(', ')}). Zkontroluj, že první řádek obsahuje názvy sloupců jako title, description, year_from, year_to… a použij staženou šablonu.`)
           return
         }
         setRows(parsed.map(rowFromCSV))
@@ -266,14 +278,15 @@ export default function AdminImportPage() {
           description_en: row.description_en.trim() || null,
           title_de: row.title_de.trim() || null,
           description_de: row.description_de.trim() || null,
-          year: row.year,
-          year_from: row.year - row.year_range,
-          year_to: row.year + row.year_range,
+          year: Math.round((row.year_from + row.year_to) / 2),
+          year_from: row.year_from,
+          year_to: row.year_to,
+          year_range: Math.round((row.year_to - row.year_from) / 2),
+          event_date: row.event_date || null,
           lat: row.lat,
           lng: row.lng,
           category: row.category || null,
           difficulty: row.difficulty,
-          year_range: row.year_range,
           location_radius_km: row.location_radius_km,
           panorama_url: 'pending',
           event_image_url: null,
@@ -390,7 +403,7 @@ export default function AdminImportPage() {
             <div className="card" style={{ padding: 24 }}>
               <p className="eyebrow" style={{ marginBottom: 14 }}>Sloupce CSV</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['title *', 'description *', 'year *', 'lat *', 'lng *', 'category', 'difficulty (1–3)', 'year_range', 'location_radius_km', 'panorama_filename', 'image_filename'].map(col => (
+                {['title *', 'description *', 'year_from *', 'year_to *', 'event_date', 'lat *', 'lng *', 'category', 'difficulty (1–3)', 'location_radius_km', 'panorama_filename', 'image_filename'].map(col => (
                   <span key={col} style={{
                     padding: '4px 10px', borderRadius: 999, fontSize: 12,
                     fontFamily: 'var(--font-mono)',
@@ -402,7 +415,7 @@ export default function AdminImportPage() {
                   </span>
                 ))}
               </div>
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12 }}>* = povinné · panorama_filename a image_filename = název souboru (přiřadíš v dalším kroku)</p>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12 }}>* = povinné · <strong>year_from = year_to</strong> u přesného roku · <strong>event_date</strong> (YYYY-MM-DD) volitelně pro denní výzvu · panorama_filename a image_filename = název souboru (přiřadíš v dalším kroku)</p>
             </div>
           </>
         )}
@@ -447,7 +460,7 @@ export default function AdminImportPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
-                      {['Název', 'Rok', 'Souřadnice', 'Kat.', 'Panorama', 'Obrázek', 'Stav'].map(h => (
+                      {['Název', 'Roky', 'Datum', 'Souřadnice', 'Kat.', 'Panorama', 'Obrázek', 'Stav'].map(h => (
                         <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>{h}</th>
                       ))}
                     </tr>
@@ -457,8 +470,12 @@ export default function AdminImportPage() {
                       <tr key={row.id} style={{ borderBottom: '1px solid var(--line)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
                         <td style={{ padding: '10px 14px', fontWeight: 500 }}>{row.title || <span style={{ color: 'var(--ink-3)' }}>–</span>}</td>
                         <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                          {row.year < 0 ? `${Math.abs(row.year)} př.` : row.year}
-                          {row.year_range > 0 && <span style={{ color: 'var(--ink-3)' }}> ±{row.year_range}</span>}
+                          {row.year_from === row.year_to
+                            ? (row.year_from < 0 ? `${Math.abs(row.year_from)} př.` : row.year_from)
+                            : `${row.year_from} – ${row.year_to}`}
+                        </td>
+                        <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: row.event_date ? 'var(--accent-deep)' : 'var(--ink-3)' }}>
+                          {row.event_date || '–'}
                         </td>
                         <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
                           {row.lat.toFixed(2)}, {row.lng.toFixed(2)}
