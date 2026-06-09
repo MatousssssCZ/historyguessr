@@ -16,12 +16,14 @@ const DEFAULT_SETTINGS: RoomSettings = {
 }
 
 const CATEGORIES = [
-  { id: 'war', label: '⚔ Bitvy' },
-  { id: 'culture', label: '🏛 Kultura' },
-  { id: 'science', label: '🔬 Věda' },
-  { id: 'politics', label: '🏛 Politika' },
-  { id: 'religion', label: '✝ Náboženství' },
-  { id: 'exploration', label: '🧭 Objevy' },
+  { id: 'war', label: '⚔ Války' },
+  { id: 'moments', label: '📜 Historické okamžiky' },
+  { id: 'places', label: '🧭 Objevy míst' },
+  { id: 'inventions', label: '💡 Vynálezy' },
+  { id: 'art', label: '🎨 Umění' },
+  { id: 'sports', label: '🏅 Sportovní okamžiky' },
+  { id: 'mysteries', label: '🔮 Záhady a legendy' },
+  { id: 'disasters', label: '🌋 Katastrofy' },
 ]
 
 type Screen = 'menu' | 'join_code' | 'lobby'
