@@ -508,7 +508,15 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
 
       onDone()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nastala chyba.')
+      // Vytáhni skutečnou hlášku i z PostgrestError (není to Error instance)
+      let msg = 'Nastala chyba.'
+      if (err instanceof Error) msg = err.message
+      else if (err && typeof err === 'object') {
+        const e = err as { message?: string; details?: string; hint?: string; code?: string }
+        msg = [e.message, e.details, e.hint, e.code && `(${e.code})`].filter(Boolean).join(' · ') || JSON.stringify(err)
+      }
+      console.error('[EventForm] save error:', err)
+      setError(msg)
     } finally {
       setSaving(false)
     }
