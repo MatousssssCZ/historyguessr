@@ -96,7 +96,7 @@ export const resources = {
       profile: 'Profil', username: 'Uživatelské jméno', usernamePlaceholder: 'např. historik42',
       saveError: 'Nepodařilo se uložit.', saved: 'Profil uložen.', saving: 'Ukládám…',
       appearance: 'Vzhled', themeLabel: 'Světlý / tmavý režim', session: 'Relace', loggedInAs: 'Přihlášen jako', signOut: 'Odhlásit se' },
-    cat: { war: '⚔ Bitvy', culture: '🏛 Kultura', science: '🔬 Věda', politics: '🏛 Politika', religion: '✝ Náboženství', exploration: '🧭 Objevy' },
+    cat: { war: '⚔ Války', moments: '📜 Historické okamžiky', places: '🧭 Objevy míst', inventions: '💡 Vynálezy', art: '🎨 Umění', sports: '🏅 Sportovní okamžiky', mysteries: '🔮 Záhady a legendy', disasters: '🌋 Katastrofy' },
     pregame: {
       backToMenu: 'Zpět do menu', mode: 'Klasický mód · sólo', title: 'Nastav si hru',
       rounds: 'Počet kol', categories: 'Kategorie', noFilter: 'nic = bez filtru', yearRange: 'Rozsah let',
@@ -243,7 +243,7 @@ export const resources = {
       profile: 'Profile', username: 'Username', usernamePlaceholder: 'e.g. historian42',
       saveError: 'Could not save.', saved: 'Profile saved.', saving: 'Saving…',
       appearance: 'Appearance', themeLabel: 'Light / dark mode', session: 'Session', loggedInAs: 'Logged in as', signOut: 'Log out' },
-    cat: { war: '⚔ Battles', culture: '🏛 Culture', science: '🔬 Science', politics: '🏛 Politics', religion: '✝ Religion', exploration: '🧭 Exploration' },
+    cat: { war: '⚔ Wars', moments: '📜 Historic moments', places: '🧭 Place discoveries', inventions: '💡 Inventions', art: '🎨 Art', sports: '🏅 Sporting moments', mysteries: '🔮 Mysteries & legends', disasters: '🌋 Disasters' },
     pregame: {
       backToMenu: 'Back to menu', mode: 'Classic mode · solo', title: 'Set up your game',
       rounds: 'Rounds', categories: 'Categories', noFilter: 'none = no filter', yearRange: 'Year range',
@@ -390,7 +390,7 @@ export const resources = {
       profile: 'Profil', username: 'Benutzername', usernamePlaceholder: 'z. B. historiker42',
       saveError: 'Speichern fehlgeschlagen.', saved: 'Profil gespeichert.', saving: 'Speichern…',
       appearance: 'Darstellung', themeLabel: 'Heller / dunkler Modus', session: 'Sitzung', loggedInAs: 'Angemeldet als', signOut: 'Abmelden' },
-    cat: { war: '⚔ Schlachten', culture: '🏛 Kultur', science: '🔬 Wissenschaft', politics: '🏛 Politik', religion: '✝ Religion', exploration: '🧭 Entdeckungen' },
+    cat: { war: '⚔ Kriege', moments: '📜 Historische Momente', places: '🧭 Ortsentdeckungen', inventions: '💡 Erfindungen', art: '🎨 Kunst', sports: '🏅 Sportmomente', mysteries: '🔮 Rätsel & Legenden', disasters: '🌋 Katastrophen' },
     pregame: {
       backToMenu: 'Zurück zum Menü', mode: 'Klassischer Modus · Solo', title: 'Spiel einrichten',
       rounds: 'Runden', categories: 'Kategorien', noFilter: 'keine = kein Filter', yearRange: 'Jahresbereich',

@@ -596,12 +596,14 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
                 <label className="label">Kategorie</label>
                 <select className="input" value={form.category} onChange={set('category') as React.ChangeEventHandler<HTMLSelectElement>}>
                   <option value="">— bez kategorie —</option>
-                  <option value="war">Válka</option>
-                  <option value="culture">Kultura</option>
-                  <option value="science">Věda</option>
-                  <option value="politics">Politika</option>
-                  <option value="religion">Náboženství</option>
-                  <option value="exploration">Průzkum</option>
+                  <option value="war">Války</option>
+                  <option value="moments">Historické okamžiky</option>
+                  <option value="places">Objevy míst</option>
+                  <option value="inventions">Vynálezy</option>
+                  <option value="art">Umění</option>
+                  <option value="sports">Sportovní okamžiky</option>
+                  <option value="mysteries">Záhady a legendy</option>
+                  <option value="disasters">Katastrofy</option>
                 </select>
               </div>
               <div>

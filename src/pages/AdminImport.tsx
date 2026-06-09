@@ -7,7 +7,7 @@ import type { EventInsert } from '@/types/database'
 // ── CSV šablona ───────────────────────────────────────────
 const CSV_TEMPLATE = `title,description,year_from,year_to,event_date,lat,lng,category,difficulty,location_radius_km,panorama_filename,image_filename
 Bitva na Bílé hoře,"Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.",1620,1620,1620-11-08,50.0755,14.2836,war,2,0,bila_hora_360.jpg,bila_hora.jpg
-Výbuch Vesuvu,"Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",-79,-79,,40.8210,14.4260,science,3,10,vesuvius_360.jpg,vesuvius.jpg`
+Výbuch Vesuvu,"Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",-79,-79,,40.8210,14.4260,disasters,3,10,vesuvius_360.jpg,vesuvius.jpg`
 
 function downloadTemplate() {
   const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv;charset=utf-8;' })
@@ -30,7 +30,7 @@ async function downloadXLSTemplate() {
   const headers = ['title','description','year_from','year_to','event_date','lat','lng','category','difficulty','location_radius_km','panorama_filename','image_filename']
   const rows = [
     ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.',1620,1620,'1620-11-08',50.0755,14.2836,'war',2,0,'bila_hora_360.jpg','bila_hora.jpg'],
-    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.',-79,-79,'',40.8210,14.4260,'science',3,10,'vesuvius_360.jpg','vesuvius.jpg'],
+    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.',-79,-79,'',40.8210,14.4260,'disasters',3,10,'vesuvius_360.jpg','vesuvius.jpg'],
   ]
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
   ws['!cols'] = [{wch:30},{wch:50},{wch:10},{wch:10},{wch:13},{wch:10},{wch:10},{wch:12},{wch:10},{wch:16},{wch:25},{wch:20}]
@@ -43,7 +43,7 @@ async function downloadXLSTemplate() {
     ['event_date','NE','Přesné datum YYYY-MM-DD (pro denní výzvu)','1620-11-08'],
     ['lat','ANO','Zeměpisná šířka (-90 až 90)','50.0755'],
     ['lng','ANO','Zeměpisná délka (-180 až 180)','14.4378'],
-    ['category','NE','Kategorie','war, culture, science, politics, religion, exploration'],
+    ['category','NE','Kategorie','war, moments, places, inventions, art, sports, mysteries, disasters'],
     ['difficulty','NE','Obtížnost 1–3 (výchozí: 2)','1, 2, 3'],
     ['location_radius_km','NE','Tolerance polohy v km','0, 5, 20'],
     ['panorama_filename','NE','Název souboru 360° panoramy','panorama.jpg'],
