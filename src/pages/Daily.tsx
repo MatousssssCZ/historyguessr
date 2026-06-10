@@ -456,7 +456,7 @@ function PanoramaViewer({ url }: { url: string }) {
     if (!ref.current || !url || url === 'pending') return
     let v: { destroy: () => void } | null = null
     try {
-      v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 120 })
+      v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 120, maxHfov: 140 })
     } catch {}
     return () => { v?.destroy() }
   }, [url])
