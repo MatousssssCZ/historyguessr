@@ -116,7 +116,7 @@ export default function StatsPage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 18px 24px' }}>
         {loading || !stats ? (
           <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
-        ) : stats.games === 0 ? (
+        ) : (stats.games === 0 && stats.dailyCount === 0) ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>{t('stats.noData')}</p>
