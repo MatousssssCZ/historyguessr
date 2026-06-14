@@ -166,7 +166,7 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
         autoLoad: true,
         showControls: false,
         mouseZoom: true,
-        hfov: 120,
+        hfov: 140,
         maxHfov: 140,
         pitch: 0,
         yaw: 0,
