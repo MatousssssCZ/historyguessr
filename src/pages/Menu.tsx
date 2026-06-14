@@ -44,8 +44,6 @@ export default function MenuPage() {
     navigate('/auth')
   }
 
-  const games = profile?.games_played ?? 0
-  const score = profile?.total_score?.toLocaleString(currentLocale()) ?? '0'
   const name = profile?.username ?? 'Hráči'
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
@@ -110,10 +108,6 @@ export default function MenuPage() {
             opacity: mounted ? 1 : 0, transition: 'all 0.5s 0.08s cubic-bezier(0.16,1,0.3,1)',
           }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)' }}>{t('menu.greeting', { name })}</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <StatBadge value={String(games)} label={t('menu.stHer')}/>
-              <StatBadge value={score} label={t('menu.stBody')} accent/>
-            </div>
           </div>
 
           {/* ── Level + XP ── */}
@@ -171,10 +165,7 @@ export default function MenuPage() {
       }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: 0 }}>{t('menu.welcomeBack')}</p>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(34px, 11vw, 46px)', color: 'var(--ink)', letterSpacing: '-0.025em', lineHeight: 1, margin: '10px 0 18px' }}>{name}</h1>
-        <div style={{ display: 'flex', gap: 26, marginBottom: 18 }}>
-          <MobileStat value={String(games)} label={t('menu.games')}/>
-          <MobileStat value={score} label={t('menu.score')}/>
-        </div>
+        <div style={{ marginBottom: 18 }}/>
         <LevelBar lvl={lvl}/>
       </div>
 
@@ -352,29 +343,6 @@ function LevelBar({ lvl, dark }: { lvl: LevelInfo; dark?: boolean }) {
       <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: dark ? 'var(--feature-line)' : 'var(--paper-300)' }}>
         <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)', borderRadius: 999, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
       </div>
-    </div>
-  )
-}
-
-function StatBadge({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'baseline', gap: 5,
-      background: accent ? 'rgba(217,119,87,0.10)' : 'var(--feature-chip)',
-      border: `1px solid ${accent ? 'rgba(217,119,87,0.18)' : 'var(--feature-line)'}`,
-      borderRadius: 999, padding: '6px 13px',
-    }}>
-      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: accent ? 'var(--accent)' : 'var(--feature-fg)', letterSpacing: '-0.02em' }}>{value}</span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--feature-fg3)', textTransform: 'uppercase' }}>{label}</span>
-    </div>
-  )
-}
-
-function MobileStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: 'var(--ink)', lineHeight: 1 }}>{value}</div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--ink-3)', textTransform: 'uppercase', marginTop: 3 }}>{label}</div>
     </div>
   )
 }
