@@ -2,7 +2,7 @@
 // xpDoDalšího(L) = round(BASE * L^EXP). Laditelné dvěma konstantami.
 
 const BASE = 2500
-const EXP = 1.4
+const EXP = 1.0
 
 /** Kolik XP je potřeba na postup z levelu L na L+1 */
 export function xpToNext(level: number): number {
