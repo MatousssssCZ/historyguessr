@@ -678,7 +678,7 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
     let v: { destroy: () => void } | null = null
     try {
       v = pannellum.viewer(ref.current, {
-        type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 120, maxHfov: 140,
+        type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 140, maxHfov: 140,
         ...(preview ? { preview } : {}),
       })
     } catch {}
