@@ -3,13 +3,19 @@ import type { Event } from '@/types/database'
 
 // ── Typy ─────────────────────────────────────────────────
 
+export type GameMode = 'classic' | 'battle_royale'
+
 export interface RoomSettings {
   rounds: number
   time_limit: number
   categories: string[]
   year_from: number
   year_to: number
+  mode?: GameMode
 }
+
+// Kolik kol vytvořit pro Battle Royale (strop; hra obvykle skončí dřív)
+const BR_MAX_ROUNDS = 20
 
 export interface MultiplayerRoom {
   id: string
@@ -29,6 +35,8 @@ export interface MultiplayerPlayer {
   total_score: number
   is_host: boolean
   joined_at: string
+  eliminated?: boolean
+  eliminated_round?: number | null
 }
 
 export interface MultiplayerRound {
@@ -169,8 +177,12 @@ export async function startGame(
   let q = supabase.from('events').select('id').eq('published', true)
   if (settings.categories.length > 0) q = q.in('category', settings.categories)
   q = q.gte('year', settings.year_from).lte('year', settings.year_to).limit(2000)
+  const isBR = settings.mode === 'battle_royale'
+  // BR potřebuje víc kol (postupné vyřazování); klasika přesně settings.rounds
+  const wantRounds = isBR ? BR_MAX_ROUNDS : settings.rounds
+  const minNeeded = isBR ? 2 : settings.rounds
   const { data: eventsData } = await q
-  if (!eventsData || eventsData.length < settings.rounds) {
+  if (!eventsData || eventsData.length < minNeeded) {
     return { error: new Error('Není dostatek událostí pro daná kritéria') }
   }
 
@@ -181,7 +193,7 @@ export async function startGame(
     const j = buf[0] % (i + 1);
     [pool[i], pool[j]] = [pool[j], pool[i]]
   }
-  const selected = pool.slice(0, settings.rounds)
+  const selected = pool.slice(0, Math.min(wantRounds, pool.length))
 
   // Vytvoř záznamy kol
   const startedAt = new Date(Date.now() + COUNTDOWN_MS).toISOString()
@@ -195,6 +207,13 @@ export async function startGame(
   // Úklid případných zbytkových kol (opakovaný start / dřívější pokus),
   // aby insert nespadl na unique constraint multiplayer_rounds_pkey
   await supabase.from('multiplayer_rounds').delete().eq('room_id', room.id)
+
+  // BR: vynuluj případné staré vyřazení (re-start místnosti)
+  if (isBR) {
+    await supabase.from('multiplayer_players')
+      .update({ eliminated: false, eliminated_round: null })
+      .eq('room_id', room.id)
+  }
 
   const { error: roundsError } = await supabase.from('multiplayer_rounds').insert(rounds)
   if (roundsError) return { error: roundsError as Error }
@@ -280,7 +299,16 @@ export async function advanceRound(
   roomId: string,
   expectedRound: number,
   totalRounds: number,
+  mode: GameMode = 'classic',
 ): Promise<{ error: Error | null }> {
+  // Battle Royale má vlastní RPC (eliminace nejnižšího + konec při 1 živém)
+  if (mode === 'battle_royale') {
+    const { error } = await supabase.rpc('advance_battle_royale', {
+      p_room_id: roomId,
+      p_expected_round: expectedRound,
+    })
+    return { error: error as Error | null }
+  }
   const { error } = await supabase.rpc('advance_multiplayer_round', {
     p_room_id: roomId,
     p_expected_round: expectedRound,

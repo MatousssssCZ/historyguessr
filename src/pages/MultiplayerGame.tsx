@@ -197,7 +197,11 @@ export default function MultiplayerGamePage() {
     }, 200)
   }
 
+  // Vyřazený hráč (Battle Royale) jen sleduje — neodesílá odpovědi
+  const amEliminatedRef = useRef(false)
+
   const handleAutoSubmit = useCallback(async () => {
+    if (amEliminatedRef.current) return
     if (!currentRound?.events || !user || !roomId || hasSubmittedRef.current) return
     hasSubmittedRef.current = true
     await doSubmit(currentRound.events, guessLat, guessLng, guessYear, guessYearSet)
@@ -208,6 +212,7 @@ export default function MultiplayerGamePage() {
     lat: number | null, lng: number | null,
     year: number, yearSet: boolean,
   ) {
+    if (amEliminatedRef.current) return
     if (!user || !roomId || !currentRound) return
     hasSubmittedRef.current = true
     if (timerRef.current) clearInterval(timerRef.current)
@@ -278,7 +283,7 @@ export default function MultiplayerGamePage() {
       // Posuň kolo (idempotentně) po vypršení okna výsledků
       if (now >= advanceAt && advancedRoundRef.current !== roundNo) {
         advancedRoundRef.current = roundNo
-        advanceRound(roomId, roundNo, total)
+        advanceRound(roomId, roundNo, total, room.settings.mode ?? 'classic')
       }
     }, 250)
 
@@ -313,6 +318,12 @@ export default function MultiplayerGamePage() {
   }, [phase, currentRound?.started_at, room?.id])
 
   const event = currentRound?.events as Event | undefined
+  // Battle Royale stav
+  const isBR = (room?.settings.mode ?? 'classic') === 'battle_royale'
+  const me = players.find(p => p.user_id === user?.id)
+  const amEliminated = isBR && !!me?.eliminated
+  const aliveCount = players.filter(p => !p.eliminated).length
+  amEliminatedRef.current = amEliminated
   const canSubmit = guessLat !== null && guessYearSet
   const timerColor = timeLeft > 15 ? '#d97757' : '#c0392b'
 
@@ -335,7 +346,15 @@ export default function MultiplayerGamePage() {
 
   // ── Finished ──────────────────────────────────────────
   if (phase === 'finished') {
-    const sorted = [...players].sort((a, b) => b.total_score - a.total_score)
+    // BR: živý (vítěz) první, pak podle toho kdo přežil déle; jinak podle skóre
+    const sorted = isBR
+      ? [...players].sort((a, b) => {
+          if (!!a.eliminated !== !!b.eliminated) return a.eliminated ? 1 : -1
+          const ar = a.eliminated_round ?? 9999, br = b.eliminated_round ?? 9999
+          if (ar !== br) return br - ar
+          return b.total_score - a.total_score
+        })
+      : [...players].sort((a, b) => b.total_score - a.total_score)
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ background: '#1a1208', padding: '20px 20px 16px', paddingTop: 'calc(20px + env(safe-area-inset-top,0px))', textAlign: 'center' }}>
@@ -345,13 +364,18 @@ export default function MultiplayerGamePage() {
         <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((p, i) => {
             const isMe = p.user_id === user?.id
+            const isWinner = isBR && !p.eliminated && i === 0
             return (
-              <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, background: isMe ? 'rgba(217,119,87,0.07)' : 'var(--paper-100)', border: isMe ? '0.5px solid rgba(217,119,87,0.2)' : '0.5px solid var(--line)' }}>
+              <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, opacity: isBR && p.eliminated ? 0.6 : 1, background: isMe ? 'rgba(217,119,87,0.07)' : 'var(--paper-100)', border: isWinner ? '1px solid var(--accent)' : isMe ? '0.5px solid rgba(217,119,87,0.2)' : '0.5px solid var(--line)' }}>
                 <span style={{ fontSize: 22, width: 28, textAlign: 'center' }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
+                  {isWinner ? '🏆' : i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
                 </span>
                 <span style={{ flex: 1, fontSize: 15, fontWeight: isMe ? 500 : 400 }}>
                   {p.username}{isMe && <span style={{ fontSize: 11, color: 'var(--ink-3)', marginLeft: 6 }}>{t('lobby.you')}</span>}
+                  {isWinner && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>{t('lobby.brWinner')}</span>}
+                  {isBR && p.eliminated && p.eliminated_round != null && (
+                    <span style={{ fontSize: 10, color: 'var(--ink-3)', marginLeft: 6 }}>{t('lobby.brOut')} · #{p.eliminated_round}</span>
+                  )}
                 </span>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>
                   {p.total_score.toLocaleString(currentLocale())}
@@ -559,7 +583,9 @@ export default function MultiplayerGamePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13,9,6,0.85)', backdropFilter: 'blur(8px)', flexShrink: 0, zIndex: 10, paddingTop: 'calc(10px + env(safe-area-inset-top,0px))' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-              {t('mp.roundPlayers', { n: currentRound?.round_number, total: room?.settings.rounds, count: players.length })}
+              {isBR
+                ? `☠️ ${t('lobby.brAlive')}: ${aliveCount}`
+                : t('mp.roundPlayers', { n: currentRound?.round_number, total: room?.settings.rounds, count: players.length })}
             </div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{eventTitle(event)}</div>
           </div>
@@ -581,8 +607,15 @@ export default function MultiplayerGamePage() {
           <PanoramaViewer url={event.panorama_url} preview={event.preview_url}/>
         </div>
 
+        {/* Vyřazený hráč jen sleduje */}
+        {amEliminated && (
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '14px 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))', background: 'rgba(13,9,6,0.85)', backdropFilter: 'blur(8px)', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--on-dark)' }}>☠️ {t('lobby.brSpectating')}</div>
+          </div>
+        )}
+
         {/* Guess UI */}
-        {!mapExpanded && !yearExpanded && (
+        {!mapExpanded && !yearExpanded && !amEliminated && (
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '10px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button onClick={() => setMapExpanded(true)} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(245,241,232,0.95)', backdropFilter: 'blur(16px)', border: guessLat !== null ? '3px solid #27ae60' : '1.5px solid rgba(217,119,87,0.35)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer', padding: 0, height: 100 }}>
