@@ -9,6 +9,7 @@ interface AuthContextValue {
   profile: Profile | null
   loading: boolean
   isAdmin: boolean
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   loading: true,
   isAdmin: false,
+  refreshProfile: async () => {},
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -54,6 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false)
   }
 
+  async function refreshProfile() {
+    if (user) {
+      const { data } = await getProfile(user.id)
+      setProfile(data)
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -61,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       loading,
       isAdmin: profile?.role === 'admin',
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>

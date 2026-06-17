@@ -299,6 +299,36 @@ export async function getCategoryHits(userId: string): Promise<Record<string, nu
   return m
 }
 
+// ─── Přátelé ──────────────────────────────────────────────
+
+export interface Friend { id: string; username: string | null; xp: number }
+export type FriendRequestResult =
+  | 'sent' | 'accepted' | 'pending' | 'already_friends' | 'self' | 'not_found' | 'unauthorized' | 'error'
+
+export async function sendFriendRequest(username: string): Promise<FriendRequestResult> {
+  const { data, error } = await supabase.rpc('send_friend_request', { p_username: username })
+  if (error) return 'error'
+  return (data as FriendRequestResult) ?? 'error'
+}
+
+export async function respondFriendRequest(requesterId: string, accept: boolean) {
+  await supabase.rpc('respond_friend_request', { p_requester: requesterId, p_accept: accept })
+}
+
+export async function removeFriend(friendId: string) {
+  await supabase.rpc('remove_friend', { p_friend_id: friendId })
+}
+
+export async function getFriends(): Promise<Friend[]> {
+  const { data } = await supabase.rpc('get_friends')
+  return (data ?? []) as Friend[]
+}
+
+export async function getFriendRequests(): Promise<Friend[]> {
+  const { data } = await supabase.rpc('get_friend_requests')
+  return (data ?? []) as Friend[]
+}
+
 // ─── Ratings ──────────────────────────────────────────────
 
 export async function addEventRating(eventId: string, rating: number) {

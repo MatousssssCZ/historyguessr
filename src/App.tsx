@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import UsernameSetup from '@/components/UsernameSetup'
 import AuthPage from '@/pages/Auth'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
@@ -10,6 +11,7 @@ import AccountPage from '@/pages/Account'
 import DailyChallengePage from '@/pages/Daily'
 import ResetPasswordPage from '@/pages/ResetPassword'
 import StatsPage from '@/pages/Stats'
+import FriendsPage from '@/pages/Friends'
 import PrivacyPage from '@/pages/Privacy'
 import TermsPage from '@/pages/Terms'
 
@@ -22,18 +24,21 @@ const MultiplayerGamePage = lazy(() => import('@/pages/MultiplayerGame'))
 
 // ── Auth guard ────────────────────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const location = useLocation()
   if (loading) return <FullScreenSpinner/>
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace/>
+  // Vynucené nastavení přezdívky (první přihlášení / historický účet bez ní)
+  if (profile && !profile.username) return <UsernameSetup/>
   return <>{children}</>
 }
 
 // ── Admin guard ───────────────────────────────────────────
 function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading } = useAuth()
+  const { user, profile, isAdmin, loading } = useAuth()
   if (loading) return <FullScreenSpinner/>
   if (!user) return <Navigate to="/auth" replace/>
+  if (profile && !profile.username) return <UsernameSetup/>
   if (!isAdmin) return <Navigate to="/menu" replace/>
   return <>{children}</>
 }
@@ -75,6 +80,7 @@ export default function App() {
               <Route path="/game"    element={<RequireAuth><GamePage/></RequireAuth>}/>
               <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
+              <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>
               <Route path="/admin"   element={<RequireAdmin><AdminPage/></RequireAdmin>}/>
               <Route path="/admin/import" element={<RequireAdmin><AdminImportPage/></RequireAdmin>}/>
               <Route path="/admin/daily" element={<RequireAdmin><AdminDailyChallengePage/></RequireAdmin>}/>
