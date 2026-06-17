@@ -11,7 +11,7 @@ import {
 import { preloadImage } from '@/lib/preload'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
-import { supabase, recordEventScore } from '@/lib/supabase'
+import { supabase, recordEventScore, recordCategoryHit } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 
@@ -226,6 +226,7 @@ export default function MultiplayerGamePage() {
     setPhase('my_results')
 
     recordEventScore(event.id, locSc, yrSc)
+    recordCategoryHit(event.id, total)
     // submitAnswer si připíše skóre samo (increment_multiplayer_score / fallback).
     // NESMÍ se volat updatePlayerTotalScore navíc — jinak se kolo započítá dvakrát.
     await submitAnswer(roomId, currentRound.round_number, user.id, answer)

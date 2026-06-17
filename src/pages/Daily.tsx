@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
-  saveDailyResult, getDailyLeaderboard, recordEventScore, track,
+  saveDailyResult, getDailyLeaderboard, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
 import BackButton from '@/components/BackButton'
@@ -157,6 +157,7 @@ export default function DailyChallengePage() {
     setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: total, yrDiff: yrDiff_ })
 
     recordEventScore(event.id, locSc, yrSc)
+    recordCategoryHit(event.id, total)
     await saveDailyResult(user.id, total, lat ?? 0, lng ?? 0, year)
     const lb = await getDailyLeaderboard()
     setLeaderboard(lb)

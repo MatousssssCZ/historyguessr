@@ -282,6 +282,23 @@ export async function recordEventScore(eventId: string, locationScore: number, y
   })
 }
 
+/** Započte „úspěšné kolo" (skóre >= 950) do achievementů dané kategorie */
+export async function recordCategoryHit(eventId: string, roundScore: number) {
+  if (!eventId || roundScore < 950) return
+  await supabase.rpc('record_category_hit', { p_event_id: eventId, p_round_score: roundScore })
+}
+
+/** Počty úspěšných kol (>=950) po kategoriích pro hráče */
+export async function getCategoryHits(userId: string): Promise<Record<string, number>> {
+  const { data } = await supabase
+    .from('user_category_hits')
+    .select('category, hits')
+    .eq('user_id', userId)
+  const m: Record<string, number> = {}
+  for (const r of data ?? []) m[(r as { category: string }).category] = (r as { hits: number }).hits
+  return m
+}
+
 // ─── Ratings ──────────────────────────────────────────────
 
 export async function addEventRating(eventId: string, rating: number) {
