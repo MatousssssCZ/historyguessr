@@ -3,8 +3,9 @@ import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getUserSessions, getUserDailyResults, type SessionRow } from '@/lib/supabase'
+import { getUserSessions, getUserDailyResults, getCategoryHits, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
+import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import BackButton from '@/components/BackButton'
 import type { RoundResult } from '@/types/database'
 
@@ -76,14 +77,16 @@ export default function StatsPage() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [stats, setStats] = useState<Stats | null>(null)
+  const [catHits, setCatHits] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user?.id) return
     let alive = true
-    Promise.all([getUserSessions(user.id), getUserDailyResults(user.id)]).then(([sessions, daily]) => {
+    Promise.all([getUserSessions(user.id), getUserDailyResults(user.id), getCategoryHits(user.id)]).then(([sessions, daily, hits]) => {
       if (!alive) return
       setStats(computeStats(sessions, daily, profile?.games_played ?? 0, profile?.total_score ?? 0))
+      setCatHits(hits)
       setLoading(false)
     }).catch(() => { if (alive) setLoading(false) })
     return () => { alive = false }
@@ -155,14 +158,43 @@ export default function StatsPage() {
             </Section>
 
             <Section label={t('stats.achievements')}>
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: 16, textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
-                  {['🔥', '🎯', '🏛', '⏳'].map(b => (
-                    <div key={b} style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, filter: 'grayscale(1)', opacity: 0.5 }}>{b}</div>
-                  ))}
-                </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: 'var(--accent)', padding: '3px 10px', borderRadius: 999 }}>{t('stats.soon')}</span>
-                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5, marginTop: 8 }}>{t('stats.achSub')}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {ACHIEVEMENTS.map(cat => {
+                  const hits = catHits[cat.id] ?? 0
+                  const { current, next } = tierProgress(cat.tiers, hits)
+                  const target = next?.count ?? cat.tiers[cat.tiers.length - 1].count
+                  const prevCount = current?.count ?? 0
+                  const pct = next
+                    ? Math.round(((hits - prevCount) / (target - prevCount)) * 100)
+                    : 100
+                  return (
+                    <div key={cat.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <div style={{ fontSize: 22, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: current ? 'rgba(217,119,87,0.1)' : 'var(--paper-200)', filter: current ? 'none' : 'grayscale(1)', opacity: current ? 1 : 0.55 }}>
+                          {current ? current.icon : cat.icon}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)' }}>
+                            {current ? current.name : cat.label}
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>
+                            {cat.icon} {cat.label} · {hits}× ≥950
+                          </div>
+                        </div>
+                        {next && (
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 16, lineHeight: 1, opacity: 0.5 }}>{next.icon}</div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2 }}>{hits}/{next.count}</div>
+                          </div>
+                        )}
+                        {!next && <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓ max</span>}
+                      </div>
+                      <div style={{ height: 4, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </Section>
           </>
