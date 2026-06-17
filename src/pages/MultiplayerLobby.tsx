@@ -12,7 +12,7 @@ import BackButton from '@/components/BackButton'
 import YearRange from '@/components/YearRange'
 
 const DEFAULT_SETTINGS: RoomSettings = {
-  rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025,
+  rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025, mode: 'classic',
 }
 
 const CATEGORIES = [
@@ -56,6 +56,8 @@ export default function MultiplayerLobbyPage() {
 
   const isHost = room?.host_id === user?.id
   const username = profile?.username ?? t('lobby.defaultPlayer')
+  // Min. počet událostí: BR potřebuje aspoň 2, klasika počet kol
+  const minEvents = settings.mode === 'battle_royale' ? 2 : settings.rounds
 
   // Pokud přišel s kódem v URL
   useEffect(() => {
@@ -286,9 +288,30 @@ export default function MultiplayerLobbyPage() {
     </div>
   )
 
-  const SettingsPanel = () => (
+  const SettingsPanel = () => {
+    const isBR = settings.mode === 'battle_royale'
+    return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      {/* Režim hry */}
+      <div>
+        <label className="label">{t('lobby.modeLabel')}</label>
+        <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 4, gap: 4 }}>
+          {([['classic', t('lobby.modeClassic')], ['battle_royale', t('lobby.modeBR')]] as const).map(([m, lbl]) => {
+            const on = (settings.mode ?? 'classic') === m
+            return (
+              <button key={m} onClick={() => handleSettingChange('mode', m)} style={{
+                flex: 1, border: 'none', padding: '9px 0', borderRadius: 7, cursor: 'pointer',
+                fontSize: 13, fontWeight: on ? 600 : 400,
+                background: on ? 'var(--accent)' : 'transparent', color: on ? '#fff' : 'var(--ink-2)',
+              }}>{lbl}</button>
+            )
+          })}
+        </div>
+        {isBR && <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '6px 2px 0' }}>{t('lobby.brHint')}</p>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isBR ? '1fr' : '1fr 1fr', gap: 12 }}>
+        {!isBR && (
         <div>
           <label className="label">{t('pregame.rounds')}</label>
           <select className="input" style={{ padding: '8px 12px' }} value={settings.rounds} onChange={e => handleSettingChange('rounds', Number(e.target.value))}>
@@ -297,6 +320,7 @@ export default function MultiplayerLobbyPage() {
             <option value={10}>{t('lobby.rounds10')}</option>
           </select>
         </div>
+        )}
         <div>
           <label className="label">{t('lobby.timeLabel')}</label>
           <select className="input" style={{ padding: '8px 12px' }} value={settings.time_limit} onChange={e => handleSettingChange('time_limit', Number(e.target.value))}>
@@ -330,18 +354,19 @@ export default function MultiplayerLobbyPage() {
           onTo={v => handleSettingChange('year_to', v)}
         />
         {matchingEvents !== null && (
-          <p style={{ fontSize: 12, color: matchingEvents >= settings.rounds ? 'var(--ink-3)' : '#c0392b', margin: '6px 0 0', fontFamily: 'var(--font-mono)' }}>
-            {matchingEvents >= settings.rounds ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
-            {matchingEvents < settings.rounds && t('lobby.minRounds', { min: settings.rounds })}
+          <p style={{ fontSize: 12, color: matchingEvents >= minEvents ? 'var(--ink-3)' : '#c0392b', margin: '6px 0 0', fontFamily: 'var(--font-mono)' }}>
+            {matchingEvents >= minEvents ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
+            {matchingEvents < minEvents && t('lobby.minRounds', { min: minEvents })}
           </p>
         )}
       </div>
     </div>
-  )
+    )
+  }
 
   const StartButton = () => isHost ? (
     <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '14px' }}
-      disabled={loading || players.length < 1 || (matchingEvents !== null && matchingEvents < settings.rounds)}
+      disabled={loading || players.length < 1 || (matchingEvents !== null && matchingEvents < minEvents)}
       onClick={handleStart}>
       {loading ? t('lobby.starting') : t('lobby.startGame', { count: players.length })}
     </button>
