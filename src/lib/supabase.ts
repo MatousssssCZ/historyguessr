@@ -171,6 +171,19 @@ export async function getCandidateEvents(filters?: EventFilters): Promise<Candid
   return (data ?? []) as CandidateEvent[]
 }
 
+/** Doplňkové obrázky publikovaných událostí (jen ty s nahraným obrázkem) */
+export async function getEventImages(limit = 60): Promise<string[]> {
+  const { data } = await supabase
+    .from('events')
+    .select('event_image_url')
+    .eq('published', true)
+    .not('event_image_url', 'is', null)
+    .limit(limit)
+  return (data ?? [])
+    .map(r => (r as { event_image_url: string | null }).event_image_url)
+    .filter((u): u is string => !!u)
+}
+
 export async function getAdminEvents() {
   return supabase
     .from('events')
@@ -359,6 +372,17 @@ export async function downloadPanoramaBlob(panoramaUrl: string): Promise<Blob | 
     if (!m) return null
     const path = decodeURIComponent(m[1])
     const { data } = await supabase.storage.from('panorama').download(path)
+    return data ?? null
+  } catch { return null }
+}
+
+// Stáhne doplňkový obrázek události přes SDK (spolehlivé CORS) — pro analýzu jasu
+export async function downloadEventImageBlob(imageUrl: string): Promise<Blob | null> {
+  try {
+    const m = new URL(imageUrl).pathname.match(/\/storage\/v1\/object\/public\/events\/(.+)$/)
+    if (!m) return null
+    const path = decodeURIComponent(m[1])
+    const { data } = await supabase.storage.from('events').download(path)
     return data ?? null
   } catch { return null }
 }

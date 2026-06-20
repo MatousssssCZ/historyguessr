@@ -3,6 +3,7 @@
 
 const BASE = 2500
 const EXP = 1.0
+export const MAX_LEVEL = 60
 
 /** Kolik XP je potřeba na postup z levelu L na L+1 */
 export function xpToNext(level: number): number {
@@ -20,8 +21,8 @@ export interface LevelInfo {
 export function levelFromXp(xp: number): LevelInfo {
   let level = 1
   let remaining = Math.max(0, Math.floor(xp || 0))
-  // pojistka proti nekonečné smyčce
-  while (level < 999 && remaining >= xpToNext(level)) {
+  // strop levelu = 60
+  while (level < MAX_LEVEL && remaining >= xpToNext(level)) {
     remaining -= xpToNext(level)
     level++
   }

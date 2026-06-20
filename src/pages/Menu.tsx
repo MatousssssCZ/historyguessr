@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, type DailyResult } from '@/lib/supabase'
+import { signOut, getTodayDailyResult, getEventImages, downloadEventImageBlob, type DailyResult } from '@/lib/supabase'
+import { luminanceFromBlob } from '@/lib/imageColor'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -20,6 +21,25 @@ export default function MenuPage() {
   // ── Stav denní výzvy ──────────────────────────────────
   const [dailyState, setDailyState] = useState<DailyState>('loading')
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
+
+  // ── Obrázek na hero dlaždici (z událostí) + barva textu dle jasu ──
+  const [heroImg, setHeroImg] = useState<string | null>(null)
+  const [heroTextDark, setHeroTextDark] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    getEventImages().then(async imgs => {
+      if (!alive || imgs.length === 0) return
+      const url = imgs[Math.floor(Math.random() * imgs.length)]
+      setHeroImg(url)
+      // jas → bílý/černý text (stahujeme přes SDK kvůli CORS)
+      const blob = await downloadEventImageBlob(url)
+      if (!alive || !blob) return
+      const lum = await luminanceFromBlob(blob)
+      if (alive && lum != null) setHeroTextDark(lum > 0.58)
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50)
@@ -47,6 +67,13 @@ export default function MenuPage() {
   const name = profile?.username ?? 'Hráči'
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
+
+  // Barvy textu hero dlaždice: na obrázku bílá/černá dle jasu, jinak feature tokeny
+  const onHeroImg = !!heroImg
+  const heroTxtDark = onHeroImg && heroTextDark === true
+  const heroFg = onHeroImg ? (heroTxtDark ? '#1a1208' : '#ffffff') : 'var(--feature-fg)'
+  const heroFg2 = onHeroImg ? (heroTxtDark ? 'rgba(26,18,8,0.72)' : 'rgba(255,255,255,0.88)') : 'var(--feature-fg2)'
+  const heroScrimDark = onHeroImg && !heroTxtDark
 
   // Podtitul + stav pro denní výzvu
   const dailySub =
@@ -82,14 +109,14 @@ export default function MenuPage() {
             opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(18px)',
             transition: 'all 0.55s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            <HeroBackdrop height={320}/>
+            {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={320}/>}
             <div style={{ position: 'relative', height: 320, display: 'flex', alignItems: 'flex-end', padding: '0 38px 34px' }}>
               <div style={{ flex: 1 }}>
                 <span style={heroTag}>{t('menu.heroTag')}</span>
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: 'var(--feature-fg)', margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98 }}>
+                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: heroFg, margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98, textShadow: onHeroImg ? '0 2px 18px rgba(0,0,0,0.35)' : 'none' }}>
                   {t('menu.heroTitle')}
                 </h1>
-                <p style={{ fontSize: 15, color: 'var(--feature-fg2)', margin: '12px 0 0' }}>
+                <p style={{ fontSize: 15, color: heroFg2, margin: '12px 0 0', textShadow: onHeroImg && !heroTxtDark ? '0 1px 10px rgba(0,0,0,0.4)' : 'none' }}>
                   {t('menu.heroSub')}
                 </p>
               </div>
@@ -178,10 +205,10 @@ export default function MenuPage() {
         opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(14px)',
         transition: 'all 0.45s 0.06s cubic-bezier(0.16,1,0.3,1)',
       }}>
-        <HeroBackdrop height={162} sideFade/>
+        {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
         <div style={{ position: 'relative', padding: '18px 20px' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent-soft)', textTransform: 'uppercase' }}>Klasický mód · 5 kol</span>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--feature-fg)', lineHeight: 1.04, marginTop: 8 }}>{t('menu.playCardTitle')}</div>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent-soft)', textTransform: 'uppercase' }}>{t('menu.heroTag')}</span>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, marginTop: 8, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
         </div>
         <div style={{
           position: 'absolute', right: 18, bottom: 18, width: 46, height: 46, borderRadius: 13,
@@ -209,6 +236,19 @@ export default function MenuPage() {
         {t('menu.quote')}
         <br/><span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em' }}>{t('menu.quoteAuthor')}</span>
       </p>
+    </div>
+  )
+}
+
+// ─── Obrázek události jako pozadí hero (+ scrim pro čitelnost) ─────
+function HeroImage({ url, scrimDark }: { url: string; scrimDark: boolean }) {
+  const scrim = scrimDark
+    ? 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.5) 100%)'
+    : 'linear-gradient(180deg, rgba(250,247,240,0.1) 0%, rgba(250,247,240,0.45) 100%)'
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+      <div style={{ position: 'absolute', inset: 0, background: scrim }}/>
     </div>
   )
 }
