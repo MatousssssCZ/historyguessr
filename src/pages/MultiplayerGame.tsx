@@ -657,7 +657,7 @@ export default function MultiplayerGamePage() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 30, display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { setGuessLat(lat); setGuessLng(lng) }}/>
-              <button onClick={() => setMapExpanded(false)} style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.2)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer' }}>{t('daily.collapse')}</button>
+              <button onClick={() => setMapExpanded(false)} aria-label={t('daily.collapse')} style={{ position: 'absolute', top: 'calc(10px + env(safe-area-inset-top,0px))', right: 10, zIndex: 10, width: 40, height: 40, borderRadius: '50%', background: 'rgba(13,9,6,0.72)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, lineHeight: 1, color: 'rgba(245,241,232,0.95)', cursor: 'pointer' }}>×</button>
               <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '6px 12px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
               </div>
