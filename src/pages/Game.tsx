@@ -467,30 +467,28 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
   // ── MOBIL: GeoGuessr styl ─────────────────────────────
   return (
     <>
-      {/* Rozbalená mapa — spodní panel přes ~50 % obrazovky */}
+      {/* Rozbalená mapa — fullscreen přes celý telefon */}
       {mapExpanded && (
         <div style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0, height: '50dvh', zIndex: 30,
-          display: 'flex', flexDirection: 'column',
-          borderRadius: '16px 16px 0 0', overflow: 'hidden',
-          boxShadow: '0 -10px 44px rgba(0,0,0,0.45)',
+          position: 'absolute', inset: 0, zIndex: 30,
+          display: 'flex', flexDirection: 'column', background: '#0d0906',
         }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { onLocationChange(lat, lng) }}/>
-            {/* Sbalit zpět na nativní zobrazení — vlevo nahoře v rohu */}
+            {/* Křížek — zavřít fullscreen mapu */}
             <button
               onClick={() => setMapExpanded(false)}
               aria-label={t('game.shrinkMap')}
               style={{
-                position: 'absolute', top: 10, left: 10, zIndex: 10,
-                background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(245,241,232,0.2)',
-                borderRadius: 8, padding: '8px 12px',
-                display: 'flex', alignItems: 'center', gap: 6,
-                fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer',
+                position: 'absolute', top: 'calc(10px + env(safe-area-inset-top,0px))', right: 10, zIndex: 10,
+                width: 40, height: 40, borderRadius: '50%',
+                background: 'rgba(13,9,6,0.72)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(245,241,232,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22, lineHeight: 1, color: 'rgba(245,241,232,0.95)', cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> {t('game.shrink')}
+              ×
             </button>
           </div>
           {/* Potvrzení místa */}
