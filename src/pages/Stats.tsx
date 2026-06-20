@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getUserSessions, getUserDailyResults, getCategoryHits, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
-import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
+import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
 import BackButton from '@/components/BackButton'
 import type { RoundResult } from '@/types/database'
 
@@ -119,15 +119,18 @@ export default function StatsPage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 18px 24px' }}>
         {loading || !stats ? (
           <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
-        ) : (stats.games === 0 && stats.dailyCount === 0) ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--ink-3)' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
-            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>{t('stats.noData')}</p>
-            <p style={{ fontSize: 14 }}>{t('stats.noDataSub')}</p>
-            <button onClick={() => navigate('/play')} className="btn btn-accent" style={{ marginTop: 18, padding: '12px 24px', borderRadius: 12 }}>{t('stats.playCta')}</button>
-          </div>
         ) : (
           <>
+            {stats.games === 0 && stats.dailyCount === 0 && (
+              <div style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 26 }}>🗺️</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{t('stats.noData')}</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{t('stats.noDataSub')}</div>
+                </div>
+                <button onClick={() => navigate('/play')} className="btn btn-accent" style={{ padding: '9px 16px', fontSize: 13, flexShrink: 0 }}>{t('stats.playCta')}</button>
+              </div>
+            )}
             <Section label={t('stats.overview')}>
               <Grid>
                 <Card icon="🎮" value={n(stats.games)} k={t('stats.games')}/>
@@ -158,48 +161,72 @@ export default function StatsPage() {
             </Section>
 
             <Section label={t('stats.achievements')}>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {ACHIEVEMENTS.map(cat => {
-                  const hits = catHits[cat.id] ?? 0
-                  const { current, next } = tierProgress(cat.tiers, hits)
-                  const target = next?.count ?? cat.tiers[cat.tiers.length - 1].count
-                  const prevCount = current?.count ?? 0
-                  const pct = next
-                    ? Math.round(((hits - prevCount) / (target - prevCount)) * 100)
-                    : 100
-                  return (
-                    <div key={cat.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                        <div style={{ fontSize: 22, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: current ? 'rgba(217,119,87,0.1)' : 'var(--paper-200)', filter: current ? 'none' : 'grayscale(1)', opacity: current ? 1 : 0.55 }}>
-                          {current ? current.icon : cat.icon}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)' }}>
-                            {current ? current.name : cat.label}
-                          </div>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>
-                            {cat.icon} {cat.label} · {hits}× ≥950
-                          </div>
-                        </div>
-                        {next && (
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontSize: 16, lineHeight: 1, opacity: 0.5 }}>{next.icon}</div>
-                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2 }}>{hits}/{next.count}</div>
-                          </div>
-                        )}
-                        {!next && <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓ max</span>}
-                      </div>
-                      <div style={{ height: 4, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
-                        <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
-                      </div>
-                    </div>
-                  )
-                })}
+                {ACHIEVEMENTS.map(cat => (
+                  <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>
+                ))}
               </div>
             </Section>
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number }) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const { current, next } = tierProgress(cat.tiers, hits)
+  const target = next?.count ?? cat.tiers[cat.tiers.length - 1].count
+  const prevCount = current?.count ?? 0
+  const pct = next ? Math.round(((hits - prevCount) / (target - prevCount)) * 100) : 100
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ fontSize: 22, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: current ? 'rgba(217,119,87,0.1)' : 'var(--paper-200)', filter: current ? 'none' : 'grayscale(1)', opacity: current ? 1 : 0.55 }}>
+            {current ? current.icon : cat.icon}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)' }}>{current ? current.name : cat.label}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>{cat.icon} {cat.label} · {hits}× ≥950</div>
+          </div>
+          {next
+            ? <div style={{ textAlign: 'right', flexShrink: 0 }}><div style={{ fontSize: 16, lineHeight: 1, opacity: 0.5 }}>{next.icon}</div><div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2 }}>{hits}/{next.count}</div></div>
+            : <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓ max</span>}
+          <span style={{ fontSize: 11, color: 'var(--ink-3)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms', marginLeft: 2 }}>▾</span>
+        </div>
+        <div style={{ height: 4, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
+        </div>
+        {next && <div style={{ fontSize: 11, color: 'var(--accent-deep)', marginTop: 6 }}>{t('stats.achToNext', { n: next.count - hits, name: next.name })}</div>}
+      </button>
+
+      {open && (
+        <div style={{ borderTop: '1px solid var(--line)', padding: '4px 8px 8px' }}>
+          {cat.tiers.map(tier => {
+            const done = hits >= tier.count
+            const isNext = !done && next?.count === tier.count
+            return (
+              <div key={tier.count} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, background: isNext ? 'rgba(217,119,87,0.08)' : 'transparent' }}>
+                <div style={{ fontSize: 18, width: 28, textAlign: 'center', filter: done || isNext ? 'none' : 'grayscale(1)', opacity: done || isNext ? 1 : 0.4 }}>{tier.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: done ? 500 : 400, color: done ? 'var(--ink)' : 'var(--ink-2)' }}>{tier.name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{tier.count}× ≥950</div>
+                </div>
+                {done
+                  ? <span style={{ fontSize: 11, color: '#1d6b3a' }}>✓ {t('stats.achDone')}</span>
+                  : isNext
+                    ? <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>{t('stats.achRemain', { n: tier.count - hits })}</span>
+                    : <span style={{ fontSize: 12, opacity: 0.45 }}>🔒</span>}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
