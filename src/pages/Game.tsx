@@ -7,10 +7,10 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
-import { addEventRating, track, getProfile, getCategoryHits } from '@/lib/supabase'
-import { levelFromXp, XP_BONUS_GAME } from '@/lib/leveling'
-import { ACHIEVEMENTS } from '@/lib/achievements'
+import { addEventRating, track } from '@/lib/supabase'
+import { XP_BONUS_GAME } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
+import GameEvaluation from '@/components/GameEvaluation'
 import type { Event, RoundResult } from '@/types/database'
 
 declare const pannellum: {
@@ -1014,8 +1014,6 @@ function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   )
 }
 
-interface UnlockedTier { catIcon: string; catLabel: string; icon: string; name: string }
-
 function FinishedScreen({ totalScore, rounds, roundResults, events, userId, onPlayAgain, onMenu }: {
   totalScore: number; rounds: number; roundResults: RoundResult[]; events: Event[]
   userId?: string; onPlayAgain: () => void; onMenu: () => void
@@ -1024,46 +1022,15 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, onPl
   const pct = Math.round((totalScore / (rounds * 1000)) * 100)
   const gainedXp = totalScore + XP_BONUS_GAME
 
-  const [xpAfter, setXpAfter] = useState<number | null>(null)
-  const [unlocked, setUnlocked] = useState<UnlockedTier[]>([])
-
-  useEffect(() => {
-    if (!userId) return
-    let alive = true
-    Promise.all([getProfile(userId), getCategoryHits(userId)]).then(([prof, afterHits]) => {
-      if (!alive) return
-      setXpAfter((prof.data?.xp ?? gainedXp))
-
-      // Kolik ≥950 zásahů přibylo touto hrou po kategoriích
-      const catById = new Map(events.map(e => [e.id, e.category]))
-      const gameHits: Record<string, number> = {}
-      for (const r of roundResults) {
-        if ((r.round_score ?? 0) >= 950) {
-          const cat = catById.get(r.event_id)
-          if (cat) gameHits[cat] = (gameHits[cat] ?? 0) + 1
-        }
-      }
-      // Nově odemčené tituly = práh překročený právě touto hrou
-      const newly: UnlockedTier[] = []
-      for (const cat of ACHIEVEMENTS) {
-        const after = afterHits[cat.id] ?? 0
-        const before = after - (gameHits[cat.id] ?? 0)
-        if (after === before) continue
-        for (const tier of cat.tiers) {
-          if (before < tier.count && tier.count <= after) {
-            newly.push({ catIcon: cat.icon, catLabel: cat.label, icon: tier.icon, name: tier.name })
-          }
-        }
-      }
-      setUnlocked(newly)
-    }).catch(() => {})
-    return () => { alive = false }
-  }, [userId])
-
-  const before = xpAfter != null ? xpAfter - gainedXp : null
-  const lvlBefore = before != null ? levelFromXp(before) : null
-  const lvlAfter = xpAfter != null ? levelFromXp(xpAfter) : null
-  const leveledUp = lvlBefore && lvlAfter && lvlAfter.level > lvlBefore.level
+  // Kolik ≥950 zásahů přibylo touto hrou po kategoriích
+  const catById = new Map(events.map(e => [e.id, e.category]))
+  const gameHits: Record<string, number> = {}
+  for (const r of roundResults) {
+    if ((r.round_score ?? 0) >= 950) {
+      const cat = catById.get(r.event_id)
+      if (cat) gameHits[cat] = (gameHits[cat] ?? 0) + 1
+    }
+  }
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 22px', background: 'var(--paper-100)' }}>
@@ -1076,45 +1043,9 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, onPl
           {t('game.accuracy', { pct })}
         </p>
 
-        {/* XP / level */}
-        <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15 }}>
-              {t('menu.level')} {lvlAfter?.level ?? lvlBefore?.level ?? '—'}
-              {leveledUp && <span style={{ color: 'var(--accent)', fontSize: 12, marginLeft: 8 }}>{t('game.levelUp')}</span>}
-            </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--accent-deep)' }}>+{gainedXp.toLocaleString(currentLocale())} XP</span>
-          </div>
-          <div style={{ height: 8, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.round((lvlAfter?.pct ?? 0) * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)', transition: 'width 700ms ease' }}/>
-          </div>
-          {lvlAfter && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 5, textAlign: 'right' }}>
-              {lvlAfter.into.toLocaleString(currentLocale())} / {lvlAfter.need.toLocaleString(currentLocale())} XP
-            </div>
-          )}
-        </div>
+        <GameEvaluation userId={userId} gainedXp={gainedXp} gameHits={gameHits}/>
 
-        {/* Odemčené achievementy */}
-        {unlocked.length > 0 && (
-          <div className="card" style={{ padding: 16, marginBottom: 12 }}>
-            <p className="eyebrow" style={{ marginBottom: 10 }}>{t('game.newAchievements')}</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {unlocked.map((u, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ fontSize: 22, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: 'rgba(217,119,87,0.1)' }}>{u.icon}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 500 }}>{u.name}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{u.catIcon} {u.catLabel}</div>
-                  </div>
-                  <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
           <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onMenu}>{t('game.menu')}</button>
           <button className="btn btn-accent" style={{ flex: 1 }} onClick={onPlayAgain}>{t('game.playAgain')}</button>
         </div>
