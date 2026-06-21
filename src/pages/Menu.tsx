@@ -421,8 +421,9 @@ const logoutLight: React.CSSProperties = {
 }
 const heroTag: React.CSSProperties = {
   display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em',
-  textTransform: 'uppercase', color: 'var(--accent-soft)', background: 'rgba(217,119,87,0.16)',
-  border: '1px solid rgba(217,119,87,0.3)', padding: '5px 11px', borderRadius: 999,
+  textTransform: 'uppercase', color: '#fff', background: 'var(--accent)',
+  border: '1px solid var(--accent)', padding: '5px 11px', borderRadius: 999,
+  boxShadow: '0 2px 10px rgba(217,119,87,0.4)',
 }
 const heroPlayBtn: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
