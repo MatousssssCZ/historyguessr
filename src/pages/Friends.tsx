@@ -95,7 +95,7 @@ export default function FriendsPage() {
               <p className="eyebrow" style={{ marginBottom: 10 }}>{t('friends.list')} ({friends.length})</p>
               {friends.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--ink-3)' }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>🫂</div>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>👥</div>
                   <p style={{ fontSize: 14, margin: 0 }}>{t('friends.empty')}</p>
                 </div>
               ) : (

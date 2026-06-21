@@ -153,7 +153,7 @@ export default function MenuPage() {
             <ModeTileDark icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={() => navigate('/multiplayer/lobby')}/>
             <ModeTileDark icon="👤" title={t('menu.accountTitle')} sub={t('menu.accountSub')} onClick={() => navigate('/account')}/>
             <ModeTileDark icon="🏆" title={t('menu.scoreTitle')} sub={t('menu.scoreSub')} onClick={() => navigate('/stats')}/>
-            <ModeTileDark icon="🫂" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')}/>
+            <ModeTileDark icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')}/>
             {isAdmin && <ModeTileDark icon="⚙️" title={t('menu.admin')} sub={t('menu.adminSub')} onClick={() => navigate('/admin')}/>}
           </div>
 
@@ -228,7 +228,7 @@ export default function MenuPage() {
           onClick={() => navigate('/daily')} dailyState={dailyState}/>
         <ListItem icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub2')} onClick={() => navigate('/multiplayer/lobby')}/>
         <ListItem icon="🏆" title={t('menu.scoreMobile')} sub={t('menu.scoreMobileSub')} onClick={() => navigate('/stats')}/>
-        <ListItem icon="🫂" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')}/>
+        <ListItem icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')}/>
         {isAdmin && <ListItem icon="⚙️" title={t('menu.admin')} sub={t('menu.adminSub')} onClick={() => navigate('/admin')}/>}
       </div>
 
