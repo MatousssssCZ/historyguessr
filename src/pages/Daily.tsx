@@ -473,14 +473,14 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
   function step(d: number) { let n = value + d; if (n === 0) n = d > 0 ? 1 : -1; onChange(Math.max(MIN, Math.min(MAX, n))) }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ position: 'relative', height: 28, marginBottom: 4 }}>
-        <div style={{ position: 'absolute', top: 11, left: 0, right: 0, height: 6, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
+      <div style={{ position: 'relative', height: 48, marginBottom: 4, touchAction: 'none' }}>
+        <div style={{ position: 'absolute', top: 21, left: 0, right: 0, height: 6, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
           <div style={{ width: `${zeroPct}%`, background: 'linear-gradient(90deg,#5a8fb5,#9bbdd4)' }}/>
           <div style={{ flex: 1, background: 'linear-gradient(90deg,#e8b49a,#d97757)' }}/>
         </div>
-        <div style={{ position: 'absolute', top: 5, left: `${zeroPct}%`, width: 2, height: 18, background: 'rgba(42,31,23,0.3)', transform: 'translateX(-50%)', pointerEvents: 'none' }}/>
-        <div style={{ position: 'absolute', top: 4, left: `${pct}%`, transform: 'translateX(-50%)', width: 20, height: 20, borderRadius: '50%', background: 'var(--paper-50)', border: `2.5px solid ${value < 0 ? '#7aa8cc' : '#d97757'}`, pointerEvents: 'none' }}/>
-        <input type="range" min={MIN} max={MAX} value={value} step={1} onChange={e => { let v = parseInt(e.target.value); if (v === 0) v = -1; onChange(v) }} style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', margin: 0, height: 28 }}/>
+        <div style={{ position: 'absolute', top: 15, left: `${zeroPct}%`, width: 2, height: 18, background: 'rgba(42,31,23,0.3)', transform: 'translateX(-50%)', pointerEvents: 'none' }}/>
+        <div style={{ position: 'absolute', top: 9, left: `${pct}%`, transform: 'translateX(-50%)', width: 30, height: 30, borderRadius: '50%', background: 'var(--paper-50)', border: `3px solid ${value < 0 ? '#7aa8cc' : '#d97757'}`, boxShadow: `0 0 0 4px ${value < 0 ? 'rgba(90,143,181,0.2)' : 'rgba(217,119,87,0.2)'}`, pointerEvents: 'none' }}/>
+        <input type="range" min={MIN} max={MAX} value={value} step={1} onChange={e => { let v = parseInt(e.target.value); if (v === 0) v = -1; onChange(v) }} style={{ position: 'absolute', inset: 0, width: '100%', height: 48, opacity: 0, cursor: 'pointer', margin: 0, touchAction: 'none' }}/>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
         <span style={{ color: '#7aa8cc' }}>{t('game.bcAxis')}</span>
