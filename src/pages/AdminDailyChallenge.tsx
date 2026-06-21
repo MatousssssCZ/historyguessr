@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getDailyAssignments, setDailyAssignment, getAdminEvents } from '@/lib/supabase'
+import { formatYear } from '@/lib/scoring'
 import type { DailyAssignment } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 
@@ -204,7 +205,7 @@ export default function AdminDailyChallengePage() {
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{ev.title}</div>
                       <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
-                        {ev.year < 0 ? `${Math.abs(ev.year)} př. n. l.` : `${ev.year} n. l.`}
+                        {formatYear(ev.year)}
                         {ev.category && ` · ${ev.category}`}
                       </div>
                     </div>
