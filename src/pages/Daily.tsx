@@ -9,7 +9,9 @@ import {
   saveDailyResult, getDailyLeaderboard, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
+import { XP_BONUS_DAILY } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
+import GameEvaluation from '@/components/GameEvaluation'
 import type { Event } from '@/types/database'
 import type { DailyResult } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
@@ -607,6 +609,17 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     </div>
   )
 
+  // Vyhodnocení (XP/level + achievementy) — jen po dnešním odehrání
+  const evalSection = !alreadyPlayed && userId ? (
+    <div style={{ padding: isMobile ? '0 12px 8px' : '0 20px 14px' }}>
+      <GameEvaluation
+        userId={userId}
+        gainedXp={result.totalScore + XP_BONUS_DAILY}
+        gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}}
+      />
+    </div>
+  ) : null
+
   // ── Desktop ────────────────────────────────────────────
   if (!isMobile) {
     return (
@@ -627,6 +640,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               </div>
             </div>
             {scoreSection}
+            {evalSection}
             <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto' }}>
               <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
@@ -665,6 +679,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {scoreSection}
+        {evalSection}
         {leaderboardSection}
       </div>
 
