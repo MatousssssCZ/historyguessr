@@ -152,9 +152,12 @@ export default function GamePage() {
 
 // ── Panorama viewer ───────────────────────────────────────
 function PanoramaViewer({ url, preview }: { url: string; preview?: string | null }) {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<{ destroy: () => void } | null>(null)
+  const loadedRef = useRef(false)
   const [error, setError] = useState<'loading' | 'failed' | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     if (!containerRef.current || !url || url === 'pending') {
@@ -162,8 +165,10 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
       return
     }
     setError('loading')
+    loadedRef.current = false
     if (viewerRef.current) { viewerRef.current.destroy(); viewerRef.current = null }
 
+    let timeout: ReturnType<typeof setTimeout> | undefined
     try {
       const viewer = pannellum.viewer(containerRef.current, {
         type: 'equirectangular',
@@ -178,55 +183,64 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
         ...(preview ? { preview } : {}),
       })
 
-      // Pannellum error callback
       ;(viewer as unknown as { on: (e: string, cb: () => void) => void })
-        .on?.('error', () => setError('failed'))
+        .on?.('error', () => { if (!loadedRef.current) setError('failed') })
 
-      // Timeout — pokud se panorama nenačte do 15s → fallback
-      const timeout = setTimeout(() => {
-        if (error === 'loading') setError('failed')
-      }, 15000)
+      // Timeout — pokud se panorama nenačte (ref, ne stale state)
+      timeout = setTimeout(() => { if (!loadedRef.current) setError('failed') }, 20000)
 
-      // Úspěšné načtení
       ;(viewer as unknown as { on: (e: string, cb: () => void) => void })
-        .on?.('load', () => { setError(null); clearTimeout(timeout) })
+        .on?.('load', () => { loadedRef.current = true; setError(null); if (timeout) clearTimeout(timeout) })
 
       viewerRef.current = viewer
-      return () => {
-        clearTimeout(timeout)
-        viewerRef.current?.destroy()
-        viewerRef.current = null
-      }
     } catch (e) {
       console.error('[Panorama] Init error:', e)
       setError('failed')
     }
-  }, [url, preview])
+    return () => {
+      if (timeout) clearTimeout(timeout)
+      viewerRef.current?.destroy()
+      viewerRef.current = null
+    }
+  }, [url, preview, reloadKey])
+
+  // Návrat do appky (např. po přepnutí aplikací) — když se nestihlo načíst,
+  // zkus to znovu místo zaseknutého loadingu.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible' && !loadedRef.current) setReloadKey(k => k + 1)
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+
+  const retry = () => setReloadKey(k => k + 1)
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
       <FullscreenButton/>
 
-      {/* Fallback overlay — zobrazí se jen při chybě */}
+      {/* Fallback overlay — chyba i zaseknuté načítání */}
       {error === 'failed' && (
         <div style={{
           position: 'absolute', inset: 0,
           background: 'var(--sepia-900)',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          gap: 12, padding: 32, zIndex: 5,
+          gap: 14, padding: 32, zIndex: 5,
         }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(245,241,232,0.3)" strokeWidth="1.5">
             <circle cx="12" cy="12" r="10"/>
             <path d="M12 8v4M12 16h.01"/>
           </svg>
           <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'rgba(245,241,232,0.6)', margin: 0, textAlign: 'center' }}>
-            Panorama není dostupná
+            {t('game.panoramaUnavailable')}
           </p>
-          <p style={{ fontSize: 13, color: 'rgba(245,241,232,0.35)', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
-            Tuto událost přeskočíme — pokračuj tipováním roku a místa.
-          </p>
+          <button onClick={retry} style={{
+            background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10,
+            padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+          }}>{t('game.panoramaRetry')}</button>
         </div>
       )}
     </div>
@@ -642,34 +656,34 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
 
       {/* Barevný slider */}
       <div>
-        <div style={{ position: 'relative', height: 28, marginBottom: 4 }}>
+        <div style={{ position: 'relative', height: 48, marginBottom: 4, touchAction: 'none' }}>
           {/* Pozadí stopy */}
-          <div style={{ position: 'absolute', top: 11, left: 0, right: 0, height: 6, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
+          <div style={{ position: 'absolute', top: 21, left: 0, right: 0, height: 6, borderRadius: 999, overflow: 'hidden', display: 'flex' }}>
             <div style={{ width: `${zeroPct}%`, background: 'linear-gradient(90deg, #5a8fb5, #9bbdd4)' }}/>
             <div style={{ flex: 1, background: 'linear-gradient(90deg, #e8b49a, #d97757)' }}/>
           </div>
           {/* Nulová svislá čára */}
           <div style={{
-            position: 'absolute', top: 5, left: `${zeroPct}%`,
+            position: 'absolute', top: 15, left: `${zeroPct}%`,
             width: 2, height: 18,
             background: 'rgba(42,31,23,0.3)',
             transform: 'translateX(-50%)',
             borderRadius: 1,
             pointerEvents: 'none',
           }}/>
-          {/* Custom thumb */}
+          {/* Custom thumb — větší pro snadné chycení palcem */}
           <div style={{
-            position: 'absolute', top: 4,
+            position: 'absolute', top: 9,
             left: `${pct}%`,
             transform: 'translateX(-50%)',
-            width: 20, height: 20, borderRadius: '50%',
+            width: 30, height: 30, borderRadius: '50%',
             background: 'var(--paper-50)',
-            border: `2.5px solid ${thumbColor}`,
-            boxShadow: `0 0 0 3px ${value < 0 ? 'rgba(90,143,181,0.2)' : 'rgba(217,119,87,0.2)'}`,
+            border: `3px solid ${thumbColor}`,
+            boxShadow: `0 0 0 4px ${value < 0 ? 'rgba(90,143,181,0.2)' : 'rgba(217,119,87,0.2)'}`,
             pointerEvents: 'none',
             transition: 'border-color 200ms',
           }}/>
-          {/* Invisible range input */}
+          {/* Invisible range input — velké dotykové pole + bez posunu stránky */}
           <input
             type="range" min={MIN} max={MAX} value={value}
             step={1}
@@ -678,7 +692,7 @@ function YearPicker({ value, onChange }: { value: number; onChange: (y: number) 
               if (v === 0) v = -1
               onChange(v)
             }}
-            style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer', margin: 0, height: 28 }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: 48, opacity: 0, cursor: 'pointer', margin: 0, touchAction: 'none' }}
           />
         </div>
         {/* Popisky */}

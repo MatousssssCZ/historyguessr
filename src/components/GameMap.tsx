@@ -10,19 +10,19 @@ const TILE_URL_PLAIN = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
 // Custom ikony (SVG inline — bez externích PNG souborů)
-const makeIcon = (color: string) => L.divIcon({
+const makeIcon = (fill: string, stroke: string) => L.divIcon({
   className: '',
   html: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 22 28">
-    <path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="${color}" stroke="${color === '#d97757' ? '#b85a3e' : '#000'}" stroke-width="1"/>
-    <circle cx="11" cy="11" r="3.2" fill="${color === '#d97757' ? '#fff' : '#f5f1e8'}"/>
+    <path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="${fill}" stroke="${stroke}" stroke-width="1"/>
+    <circle cx="11" cy="11" r="3.2" fill="#fff"/>
   </svg>`,
   iconSize: [26, 34],
   iconAnchor: [13, 34],
   popupAnchor: [0, -34],
 })
 
-const GUESS_ICON = makeIcon('#d97757')
-const TRUTH_ICON = makeIcon('#2a1f17')
+const GUESS_ICON = makeIcon('#d97757', '#b85a3e')   // tip hráče — oranžový
+const TRUTH_ICON = makeIcon('#1f9d57', '#157a42')   // správné místo — zelený
 
 // Normalizuj zeměpisnou délku do <-180, 180> — zabrání tipu „o mapu vedle"
 // při posunu mapy přes okraj světa (Leaflet jinak vrací např. 300° nebo -300°)
