@@ -76,6 +76,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { compressPanorama, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, track } from '@/lib/supabase'
+import { formatYear } from '@/lib/scoring'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -636,7 +637,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
             <div style={{ padding: '10px 14px', background: 'var(--paper-200)', borderRadius: 8 }}>
               <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>Střed</div>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>
-                {yearMid < 0 ? `${Math.abs(yearMid)} př. n. l.` : `${yearMid} n. l.`}
+                {formatYear(yearMid)}
               </div>
               {yearFrom !== yearTo && (
                 <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>±{Math.round((yearTo - yearFrom) / 2)} let</div>
