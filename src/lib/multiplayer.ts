@@ -371,6 +371,29 @@ export async function submitAnswer(
   return { error: null }
 }
 
+// Počet vlastních kol se skóre ≥950 v tomto zápase po kategoriích (pro vyhodnocení)
+export async function getMyMatchHits(roomId: string, userId: string): Promise<Record<string, number>> {
+  const [ansRes, roundsRes] = await Promise.all([
+    supabase.from('multiplayer_answers').select('round_number, round_score').eq('room_id', roomId).eq('user_id', userId),
+    supabase.from('multiplayer_rounds').select('round_number, events(category)').eq('room_id', roomId),
+  ])
+  const catByRound = new Map<number, string | null>()
+  for (const r of (roundsRes.data ?? [])) {
+    const ev = (r as { events?: { category?: string | null } | { category?: string | null }[] }).events
+    const cat = Array.isArray(ev) ? ev[0]?.category : ev?.category
+    catByRound.set((r as { round_number: number }).round_number, cat ?? null)
+  }
+  const hits: Record<string, number> = {}
+  for (const a of (ansRes.data ?? [])) {
+    const row = a as { round_number: number; round_score: number }
+    if ((row.round_score ?? 0) >= 950) {
+      const cat = catByRound.get(row.round_number)
+      if (cat) hits[cat] = (hits[cat] ?? 0) + 1
+    }
+  }
+  return hits
+}
+
 export async function getRoundAnswers(
   roomId: string,
   roundNumber: number,

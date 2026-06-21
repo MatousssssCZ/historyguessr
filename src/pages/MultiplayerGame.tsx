@@ -6,9 +6,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getRound, getPlayers, subscribeToRoom, submitAnswer,
-  getRoundAnswers, advanceRound, getRoomPanoramas,
+  getRoundAnswers, advanceRound, getRoomPanoramas, getMyMatchHits,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
+import GameEvaluation from '@/components/GameEvaluation'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { supabase, recordEventScore, recordCategoryHit } from '@/lib/supabase'
@@ -77,6 +78,13 @@ export default function MultiplayerGamePage() {
 
   // Prefetch panoramat: kolo → URL. Plníme jednou na začátku hry.
   const panoramasRef = useRef<Map<number, string>>(new Map())
+
+  // Osobní vyhodnocení (XP/achievementy) na konci zápasu
+  const [matchHits, setMatchHits] = useState<Record<string, number>>({})
+  useEffect(() => {
+    if (phase !== 'finished' || !roomId || !user) return
+    getMyMatchHits(roomId, user.id).then(setMatchHits).catch(() => {})
+  }, [phase, roomId, user])
 
   const isHost = room?.host_id === user?.id
 
@@ -361,7 +369,7 @@ export default function MultiplayerGamePage() {
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 6px' }}>{t('mp.gameOverLine', { count: room?.settings.rounds ?? 0 })}</p>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--on-dark)', margin: 0, letterSpacing: '-0.02em' }}>{t('mp.results')}</h1>
         </div>
-        <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((p, i) => {
             const isMe = p.user_id === user?.id
             const isWinner = isBR && !p.eliminated && i === 0
@@ -383,6 +391,14 @@ export default function MultiplayerGamePage() {
               </div>
             )
           })}
+
+          {/* Tvůj postup — XP/level + odemčené achievementy za zápas */}
+          {user && (
+            <div style={{ marginTop: 12 }}>
+              <p className="eyebrow" style={{ margin: '4px 0 10px' }}>{t('mp.yourProgress')}</p>
+              <GameEvaluation userId={user.id} gainedXp={me?.total_score ?? 0} gameHits={matchHits}/>
+            </div>
+          )}
         </div>
         <div style={{ padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', gap: 10 }}>
           <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => navigate('/menu')}>{t('daily.menu')}</button>
