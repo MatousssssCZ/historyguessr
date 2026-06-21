@@ -8,7 +8,7 @@ import {
   getDailyChallenge, getTodayDailyResult,
   saveDailyResult, getDailyLeaderboard, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
-import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
+import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
 import GameEvaluation from '@/components/GameEvaluation'
@@ -401,7 +401,7 @@ export default function DailyChallengePage() {
             </div>
             <div style={{ background: 'rgba(245,241,232,0.97)', padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: '0.5px solid var(--line)' }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-                {guessLat !== null ? `${guessLat.toFixed(1)}° · ${guessLng?.toFixed(1)}° ✓` : 'Klikni na mapu'}
+                {guessLat !== null ? `${guessLat.toFixed(1)}° · ${guessLng?.toFixed(1)}° ✓` : t('game.clickMap')}
               </span>
               <button onClick={() => setMapExpanded(false)} style={{ background: guessLat !== null ? 'var(--accent)' : 'var(--paper-400)', border: 'none', borderRadius: 9, padding: '10px 20px', fontSize: 14, fontWeight: 500, color: guessLat !== null ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}>
                 {guessLat !== null ? t('game.confirmPlace') : t('game.pickPlace')}
@@ -428,7 +428,7 @@ export default function DailyChallengePage() {
               </div>
               <YearPickerInline value={guessYear} onChange={(y) => { setGuessYear(y); setGuessYearSet(true) }}/>
               <button onClick={() => setYearExpanded(false)} style={{ marginTop: 16, width: '100%', background: 'var(--accent)', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 500, color: '#fff', cursor: 'pointer' }}>
-                Potvrdit rok ✓
+                {t('game.confirmYear')}
               </button>
             </div>
           </div>
@@ -563,16 +563,16 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       <div style={{ padding: isMobile ? '10px 12px' : '12px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <ScoreCard label={t('game.location')} score={result.locScore} pct={locPct} sub={result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString(currentLocale())} km`}/>
-          <ScoreCard label={t('game.year')} score={result.yrScore} pct={yrPct} sub={result.yrDiff === 0 ? t('daily.exact') : `${result.yrDiff} let mimo`} highlight={result.yrDiff === 0}/>
+          <ScoreCard label={t('game.year')} score={result.yrScore} pct={yrPct} sub={result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })} highlight={result.yrDiff === 0}/>
         </div>
         <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.correctYear')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{event.year < 0 ? `${Math.abs(event.year)} př. n. l.` : `${event.year} n. l.`}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.yourGuess')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{guessYear < 0 ? `${Math.abs(guessYear)} př. n. l.` : `${guessYear} n. l.`}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(guessYear)}</div>
           </div>
         </div>
       </div>
@@ -635,7 +635,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{eventTitle(event)}</div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}</div>
-                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
                 </div>
               </div>
             </div>
@@ -672,7 +672,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}</div>
-            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>z 1 000</div>
+            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
           </div>
         </div>
       </div>

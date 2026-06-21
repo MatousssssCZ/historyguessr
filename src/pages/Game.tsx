@@ -425,13 +425,11 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 <button
                   onClick={() => setMapExpanded(false)}
                   aria-label={t('game.shrinkMap')}
-                  style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.2)', borderRadius: 8, padding: '8px 13px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(245,241,232,0.9)', cursor: 'pointer' }}
-                >
-                  <span style={{ fontSize: 14, lineHeight: 1 }}>⤡</span> {t('game.shrink')}
-                </button>
+                  style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, width: 40, height: 40, borderRadius: '50%', background: 'rgba(13,9,6,0.72)', backdropFilter: 'blur(8px)', border: '1px solid rgba(245,241,232,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, lineHeight: 1, color: 'rgba(245,241,232,0.95)', cursor: 'pointer' }}
+                >×</button>
               </div>
               <div style={{ background: 'rgba(245,241,232,0.97)', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderTop: '0.5px solid var(--line)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>{mapPin ? `${mapPin} ✓` : 'Klikni na mapu'}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>{mapPin ? `${mapPin} ✓` : t('game.clickMap')}</span>
                 <button
                   onClick={() => setMapExpanded(false)}
                   style={{ background: guessLat !== null ? 'var(--accent)' : 'var(--paper-400)', border: 'none', borderRadius: 9, padding: '10px 22px', fontSize: 14, fontWeight: 500, color: guessLat !== null ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}
@@ -452,7 +450,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 onClick={() => setYearExpanded(false)}
                 style={{ marginTop: 12, width: '100%', background: 'var(--accent)', border: 'none', borderRadius: 10, padding: '12px 0', fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500, color: '#fff', cursor: 'pointer' }}
               >
-                Potvrdit rok ✓
+                {t('game.confirmYear')}
               </button>
             </div>
           </div>
@@ -519,7 +517,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
             gap: 12, borderTop: '0.5px solid var(--line)',
           }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-              {mapPin ? `${mapPin} ✓` : 'Klikni na mapu'}
+              {mapPin ? `${mapPin} ✓` : t('game.clickMap')}
             </span>
             <button
               onClick={() => setMapExpanded(false)}
@@ -565,7 +563,7 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
                 padding: '11px 0', fontSize: 15, fontWeight: 500, color: '#fff', cursor: 'pointer',
               }}
             >
-              Potvrdit rok ✓
+              {t('game.confirmYear')}
             </button>
           </div>
         </div>
