@@ -180,6 +180,7 @@ export default function AdminPage() {
               {regen?.running ? `♻ ${regen.done}/${regen.total}…` : '♻ Přegenerovat náhledy'}
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/admin/daily')}>📅 Tento den v historii</button>
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/reports')}>📊 Reporting</button>
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
         )}
