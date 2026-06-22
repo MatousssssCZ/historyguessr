@@ -116,6 +116,9 @@ export default function MenuPage() {
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: heroFg, margin: 0, letterSpacing: '-0.025em', lineHeight: 0.98, textShadow: onHeroImg ? '0 2px 18px rgba(0,0,0,0.35)' : 'none' }}>
                   {t('menu.heroTitle')}
                 </h1>
+                <p style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0 0', color: heroFg, fontFamily: 'var(--font-serif)', fontSize: 18, textShadow: onHeroImg ? '0 1px 10px rgba(0,0,0,0.45)' : 'none' }}>
+                  <span style={{ opacity: 0.85 }}>🌿</span>{t('menu.heroTagline')}<span style={{ opacity: 0.85, transform: 'scaleX(-1)', display: 'inline-block' }}>🌿</span>
+                </p>
               </div>
               <button onClick={() => navigate('/play')} style={heroPlayBtn}
                 onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
@@ -205,6 +208,9 @@ export default function MenuPage() {
         {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
         <div style={{ position: 'relative', padding: '18px 20px' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
+          <p style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 0', color: heroFg, fontFamily: 'var(--font-serif)', fontSize: 14, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
+            <span style={{ opacity: 0.85 }}>🌿</span>{t('menu.heroTagline')}<span style={{ opacity: 0.85, transform: 'scaleX(-1)', display: 'inline-block' }}>🌿</span>
+          </p>
         </div>
         <div style={{
           position: 'absolute', right: 18, bottom: 18, width: 46, height: 46, borderRadius: 13,
