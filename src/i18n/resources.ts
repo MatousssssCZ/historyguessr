@@ -128,7 +128,7 @@ export const resources = {
     common: {
       logout: 'Odhlásit', back: 'Zpět', backToMenu: 'Zpět do menu', account: 'Účet',
       save: 'Uložit změny', loading: 'Moment…', play: 'Hrát', cancel: 'Zrušit',
-      errorTitle: 'Něco se pokazilo', errorBody: 'Aplikaci se nepodařilo zobrazit. Zkus obnovit stránku nebo se vrátit do menu.', reload: 'Obnovit', toMenu: 'Do menu',
+      errorTitle: 'Něco se pokazilo', errorBody: 'Aplikaci se nepodařilo zobrazit. Zkus obnovit stránku nebo se vrátit do menu.', reload: 'Obnovit', toMenu: 'Do menu', pts: 'b.',
     },
     auth: {
       login: 'Přihlásit se', register: 'Registrovat',
@@ -293,7 +293,7 @@ export const resources = {
     common: {
       logout: 'Log out', back: 'Back', backToMenu: 'Back to menu', account: 'Account',
       save: 'Save changes', loading: 'One moment…', play: 'Play', cancel: 'Cancel',
-      errorTitle: 'Something went wrong', errorBody: 'The app failed to render. Try reloading the page or going back to the menu.', reload: 'Reload', toMenu: 'To menu',
+      errorTitle: 'Something went wrong', errorBody: 'The app failed to render. Try reloading the page or going back to the menu.', reload: 'Reload', toMenu: 'To menu', pts: 'pts',
     },
     auth: {
       login: 'Log in', register: 'Sign up',
@@ -458,7 +458,7 @@ export const resources = {
     common: {
       logout: 'Abmelden', back: 'Zurück', backToMenu: 'Zurück zum Menü', account: 'Konto',
       save: 'Änderungen speichern', loading: 'Einen Moment…', play: 'Spielen', cancel: 'Abbrechen',
-      errorTitle: 'Etwas ist schiefgelaufen', errorBody: 'Die App konnte nicht angezeigt werden. Lade die Seite neu oder kehre zum Menü zurück.', reload: 'Neu laden', toMenu: 'Zum Menü',
+      errorTitle: 'Etwas ist schiefgelaufen', errorBody: 'Die App konnte nicht angezeigt werden. Lade die Seite neu oder kehre zum Menü zurück.', reload: 'Neu laden', toMenu: 'Zum Menü', pts: 'Pkt.',
     },
     auth: {
       login: 'Anmelden', register: 'Registrieren',

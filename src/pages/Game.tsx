@@ -88,10 +88,10 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* Název — výrazný overlay vlevo nahoře na panoramě */}
+        {/* Název — výrazný overlay vlevo nahoře, pluje nad mapou i panelem roku */}
         {state.phase === 'playing' && (
           <div style={{
-            position: 'absolute', top: 14, left: 16, zIndex: 15,
+            position: 'absolute', top: 14, left: 16, zIndex: 45,
             maxWidth: 'min(400px, 58vw)', pointerEvents: 'none',
           }}>
             <div style={{
@@ -790,7 +790,7 @@ function RoundResult({ event, round, onNext, isLast }: {
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}<span style={{ fontSize: 15, marginLeft: 3 }}>{t('common.pts')}</span></div>
                 <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
               </div>
             </div>
@@ -800,8 +800,9 @@ function RoundResult({ event, round, onNext, isLast }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
             {([['score', '🏆', t('game.tabScore')], ['info', '📖', t('game.tabInfo')]] as const).map(([key, icon, label]) => (
               <button key={key} onClick={() => setTab(key)}
-                style={{ padding: '9px 0', border: 'none', borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                style={{ position: 'relative', padding: '9px 0', border: 'none', borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <span style={{ fontSize: 13 }}>{icon}</span>{label}
+                {key === 'info' && tab !== 'info' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }}/>}
               </button>
             ))}
           </div>
@@ -859,7 +860,7 @@ function RoundResult({ event, round, onNext, isLast }: {
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{eventTitle(event)}</h2>
               <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}<span style={{ fontSize: 16, marginLeft: 3 }}>{t('common.pts')}</span></div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('game.outOf1000pts')}</div>
               </div>
             </div>
@@ -888,11 +889,12 @@ function RoundResult({ event, round, onNext, isLast }: {
 
 // ── Score karta ───────────────────────────────────────────
 function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score: number; pct: number; sub: string; highlight?: boolean }) {
+  const { t } = useTranslation()
   return (
     <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
       <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>{label}</div>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>
-        {score.toLocaleString(currentLocale())}
+        {score.toLocaleString(currentLocale())}<span style={{ fontSize: 13, marginLeft: 2, color: 'var(--ink-3)' }}>{t('common.pts')}</span>
       </div>
       <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
@@ -911,11 +913,11 @@ function InfoContent({ event }: { event: Event }) {
       {event.event_image_url && (
         <img src={event.event_image_url} alt={eventTitle(event)} style={{ width: '100%', height: 200, objectFit: 'cover', flexShrink: 0 }}/>
       )}
-      <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <p className="eyebrow" style={{ margin: 0 }}>{t('game.aboutEvent')}</p>
-        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, letterSpacing: '-0.01em' }}>{eventTitle(event)}</h3>
+      <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 12, borderLeft: '3px solid var(--accent)' }}>
+        <p style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 600 }}>📖 {t('game.aboutEvent')}</p>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, margin: 0, letterSpacing: '-0.01em', lineHeight: 1.15 }}>{eventTitle(event)}</h3>
         {event.description && (
-          <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>{eventDescription(event)}</p>
+          <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>{eventDescription(event)}</p>
         )}
         {event.category && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>

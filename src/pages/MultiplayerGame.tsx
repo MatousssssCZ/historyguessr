@@ -425,7 +425,7 @@ export default function MultiplayerGamePage() {
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString(currentLocale())}</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{myResult.totalScore.toLocaleString(currentLocale())}<span style={{ fontSize: 16, marginLeft: 3 }}>{t('common.pts')}</span></div>
               <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
             </div>
           </div>
@@ -521,7 +521,7 @@ export default function MultiplayerGamePage() {
                 <div style={{ background: 'rgba(217,119,87,0.06)', border: '0.5px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '12px 14px', marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('game.yourGuess')}</span>
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{myResult.totalScore.toLocaleString(currentLocale())}</span>
+                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{myResult.totalScore.toLocaleString(currentLocale())}<span style={{ fontSize: 13, marginLeft: 2 }}>{t('common.pts')}</span></span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {[
