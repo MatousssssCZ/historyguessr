@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, getEventImages, downloadEventImageBlob, type DailyResult } from '@/lib/supabase'
+import { signOut, getTodayDailyResult, getEventImages, downloadEventImageBlob, getFriendRequests, type DailyResult } from '@/lib/supabase'
 import { luminanceFromBlob } from '@/lib/imageColor'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +21,7 @@ export default function MenuPage() {
   // ── Stav denní výzvy ──────────────────────────────────
   const [dailyState, setDailyState] = useState<DailyState>('loading')
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
+  const [friendReqs, setFriendReqs] = useState(0)
 
   // ── Obrázek na hero dlaždici (z událostí) + barva textu dle jasu ──
   const [heroImg, setHeroImg] = useState<string | null>(null)
@@ -56,6 +57,7 @@ export default function MenuPage() {
       setDailyResult(res)
       setDailyState(res ? 'done' : 'new')
     }).catch(() => { if (alive) setDailyState('new') })
+    getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
     return () => { alive = false }
   }, [user?.id])
 
@@ -72,7 +74,6 @@ export default function MenuPage() {
   const onHeroImg = !!heroImg
   const heroTxtDark = onHeroImg && heroTextDark === true
   const heroFg = onHeroImg ? (heroTxtDark ? '#1a1208' : '#ffffff') : 'var(--feature-fg)'
-  const heroFg2 = onHeroImg ? (heroTxtDark ? 'rgba(26,18,8,0.72)' : 'rgba(255,255,255,0.88)') : 'var(--feature-fg2)'
   const heroScrimDark = onHeroImg && !heroTxtDark
 
   // Podtitul + stav pro denní výzvu
@@ -112,13 +113,9 @@ export default function MenuPage() {
             {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={320}/>}
             <div style={{ position: 'relative', height: 320, display: 'flex', alignItems: 'flex-end', padding: '0 38px 34px' }}>
               <div style={{ flex: 1 }}>
-                <span style={heroTag}>{t('menu.heroTag')}</span>
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: heroFg, margin: '14px 0 0', letterSpacing: '-0.025em', lineHeight: 0.98, textShadow: onHeroImg ? '0 2px 18px rgba(0,0,0,0.35)' : 'none' }}>
+                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: heroFg, margin: 0, letterSpacing: '-0.025em', lineHeight: 0.98, textShadow: onHeroImg ? '0 2px 18px rgba(0,0,0,0.35)' : 'none' }}>
                   {t('menu.heroTitle')}
                 </h1>
-                <p style={{ fontSize: 15, color: heroFg2, margin: '12px 0 0', textShadow: onHeroImg && !heroTxtDark ? '0 1px 10px rgba(0,0,0,0.4)' : 'none' }}>
-                  {t('menu.heroSub')}
-                </p>
               </div>
               <button onClick={() => navigate('/play')} style={heroPlayBtn}
                 onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
@@ -153,7 +150,7 @@ export default function MenuPage() {
             <ModeTileDark icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={() => navigate('/multiplayer/lobby')}/>
             <ModeTileDark icon="👤" title={t('menu.accountTitle')} sub={t('menu.accountSub')} onClick={() => navigate('/account')}/>
             <ModeTileDark icon="🏆" title={t('menu.scoreTitle')} sub={t('menu.scoreSub')} onClick={() => navigate('/stats')}/>
-            <ModeTileDark icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')}/>
+            <ModeTileDark icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')} badge={friendReqs}/>
             {isAdmin && <ModeTileDark icon="⚙️" title={t('menu.admin')} sub={t('menu.adminSub')} onClick={() => navigate('/admin')}/>}
           </div>
 
@@ -207,8 +204,7 @@ export default function MenuPage() {
       }}>
         {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
         <div style={{ position: 'relative', padding: '18px 20px' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent-soft)', textTransform: 'uppercase' }}>{t('menu.heroTag')}</span>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, marginTop: 8, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
         </div>
         <div style={{
           position: 'absolute', right: 18, bottom: 18, width: 46, height: 46, borderRadius: 13,
@@ -228,7 +224,7 @@ export default function MenuPage() {
           onClick={() => navigate('/daily')} dailyState={dailyState}/>
         <ListItem icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub2')} onClick={() => navigate('/multiplayer/lobby')}/>
         <ListItem icon="🏆" title={t('menu.scoreMobile')} sub={t('menu.scoreMobileSub')} onClick={() => navigate('/stats')}/>
-        <ListItem icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')}/>
+        <ListItem icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')} badge={friendReqs}/>
         {isAdmin && <ListItem icon="⚙️" title={t('menu.admin')} sub={t('menu.adminSub')} onClick={() => navigate('/admin')}/>}
       </div>
 
@@ -305,8 +301,8 @@ function DailyBadge({ state, floating }: { state: DailyState; floating?: boolean
 }
 
 // ─── Desktop dlaždice režimu ──────────────────────────────
-function ModeTileDark({ icon, title, sub, onClick, dailyState }: {
-  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState
+function ModeTileDark({ icon, title, sub, onClick, dailyState, badge }: {
+  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState; badge?: number
 }) {
   const [pressed, setPressed] = useState(false)
   const active = dailyState === 'new'
@@ -322,6 +318,7 @@ function ModeTileDark({ icon, title, sub, onClick, dailyState }: {
         transform: pressed ? 'scale(0.98)' : 'scale(1)', transition: 'all 140ms cubic-bezier(0.16,1,0.3,1)',
       }}>
       {dailyState && <DailyBadge state={dailyState} floating/>}
+      {!!badge && badge > 0 && <NotifBadge count={badge} floating/>}
       <div style={{ fontSize: 20 }}>{icon}</div>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--feature-fg)', marginTop: 18 }}>{title}</div>
       <div style={{ fontSize: 11, color: 'var(--feature-fg2)', marginTop: 2 }}>{sub}</div>
@@ -330,8 +327,8 @@ function ModeTileDark({ icon, title, sub, onClick, dailyState }: {
 }
 
 // ─── Mobil položka seznamu ────────────────────────────────
-function ListItem({ icon, title, sub, onClick, dailyState }: {
-  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState
+function ListItem({ icon, title, sub, onClick, dailyState, badge }: {
+  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState; badge?: number
 }) {
   const [pressed, setPressed] = useState(false)
   const active = dailyState === 'new'
@@ -355,6 +352,7 @@ function ListItem({ icon, title, sub, onClick, dailyState }: {
           position: 'absolute', top: -3, right: -3, width: 13, height: 13, borderRadius: '50%',
           background: 'var(--accent)', border: '2.5px solid var(--surface)', animation: 'glow 2s infinite',
         }}/>}
+        {!!badge && badge > 0 && <NotifBadge count={badge}/>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -364,6 +362,20 @@ function ListItem({ icon, title, sub, onClick, dailyState }: {
       </div>
       <div style={{ color: 'var(--paper-400)', fontSize: 20, flexShrink: 0 }}>›</div>
     </button>
+  )
+}
+
+// Červená notifikační bublina s počtem (např. žádosti o přátelství)
+function NotifBadge({ count, floating }: { count: number; floating?: boolean }) {
+  return (
+    <span style={{
+      position: 'absolute',
+      ...(floating ? { top: 10, right: 10 } : { top: -5, right: -5 }),
+      minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999,
+      background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      border: '2px solid var(--surface)', lineHeight: 1,
+    }}>{count > 9 ? '9+' : count}</span>
   )
 }
 
@@ -418,12 +430,6 @@ const logoutDark: React.CSSProperties = {
 const logoutLight: React.CSSProperties = {
   background: 'rgba(42,31,23,0.05)', border: '1px solid var(--line)',
   borderRadius: 8, padding: '7px 13px', fontSize: 12, color: 'var(--ink-3)', cursor: 'pointer',
-}
-const heroTag: React.CSSProperties = {
-  display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em',
-  textTransform: 'uppercase', color: '#fff', background: 'var(--accent)',
-  border: '1px solid var(--accent)', padding: '5px 11px', borderRadius: 999,
-  boxShadow: '0 2px 10px rgba(217,119,87,0.4)',
 }
 const heroPlayBtn: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
