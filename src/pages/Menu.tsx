@@ -116,8 +116,8 @@ export default function MenuPage() {
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: heroFg, margin: 0, letterSpacing: '-0.025em', lineHeight: 0.98, textShadow: onHeroImg ? '0 2px 18px rgba(0,0,0,0.35)' : 'none' }}>
                   {t('menu.heroTitle')}
                 </h1>
-                <p style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0 0', color: heroFg, fontFamily: 'var(--font-serif)', fontSize: 18, textShadow: onHeroImg ? '0 1px 10px rgba(0,0,0,0.45)' : 'none' }}>
-                  <span style={{ opacity: 0.85 }}>🌿</span>{t('menu.heroTagline')}<span style={{ opacity: 0.85, transform: 'scaleX(-1)', display: 'inline-block' }}>🌿</span>
+                <p style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0 0', color: '#f5ce8b', fontFamily: 'var(--font-serif)', fontSize: 18, textShadow: onHeroImg ? '0 1px 10px rgba(0,0,0,0.45)' : 'none' }}>
+                  <OliveSprig/>{t('menu.heroTagline')}<OliveSprig flip/>
                 </p>
               </div>
               <button onClick={() => navigate('/play')} style={heroPlayBtn}
@@ -208,8 +208,8 @@ export default function MenuPage() {
         {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
         <div style={{ position: 'relative', padding: '18px 20px' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
-          <p style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 0', color: heroFg, fontFamily: 'var(--font-serif)', fontSize: 14, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
-            <span style={{ opacity: 0.85 }}>🌿</span>{t('menu.heroTagline')}<span style={{ opacity: 0.85, transform: 'scaleX(-1)', display: 'inline-block' }}>🌿</span>
+          <p style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 0', color: '#f5ce8b', fontFamily: 'var(--font-serif)', fontSize: 14, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
+            <OliveSprig/>{t('menu.heroTagline')}<OliveSprig flip/>
           </p>
         </div>
         <div style={{
@@ -368,6 +368,22 @@ function ListItem({ icon, title, sub, onClick, dailyState, badge }: {
       </div>
       <div style={{ color: 'var(--paper-400)', fontSize: 20, flexShrink: 0 }}>›</div>
     </button>
+  )
+}
+
+// Olivová ratolest (SVG) — laditelná barva přes `color`
+function OliveSprig({ flip }: { flip?: boolean }) {
+  return (
+    <svg width="22" height="16" viewBox="0 0 28 18" fill="none"
+      style={{ color: '#f5ce8b', transform: flip ? 'scaleX(-1)' : 'none', flexShrink: 0 }} aria-hidden>
+      <path d="M3 14 C11 13 21 11 26 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <g fill="currentColor">
+        <ellipse cx="8" cy="11.5" rx="2.6" ry="1.2" transform="rotate(-28 8 11.5)"/>
+        <ellipse cx="13" cy="9.6" rx="2.6" ry="1.2" transform="rotate(-32 13 9.6)"/>
+        <ellipse cx="18" cy="7.4" rx="2.6" ry="1.2" transform="rotate(-36 18 7.4)"/>
+        <ellipse cx="22.5" cy="5" rx="2.4" ry="1.1" transform="rotate(-42 22.5 5)"/>
+      </g>
+    </svg>
   )
 }
 
