@@ -342,6 +342,40 @@ export async function getFriendRequests(): Promise<Friend[]> {
   return (data ?? []) as Friend[]
 }
 
+// ─── Reporting (admin) ────────────────────────────────────
+
+export interface DailySeriesRow { day: string; new_users: number; active_users: number; games: number }
+export interface CategoryRow { category: string; plays: number }
+export interface RankedEvent { id: string; title: string; category: string | null; play_count: number }
+export interface DailyChallengeRow { day: string; players: number; avg_score: number | null }
+
+async function reportKV(fn: string): Promise<Record<string, number>> {
+  const { data } = await supabase.rpc(fn)
+  const m: Record<string, number> = {}
+  for (const r of (data ?? []) as { metric: string; value: number }[]) m[r.metric] = Number(r.value)
+  return m
+}
+
+export const getReportOverview = () => reportKV('report_overview')
+export const getReportMultiplayer = () => reportKV('report_multiplayer')
+
+export async function getReportDailySeries(days: number): Promise<DailySeriesRow[]> {
+  const { data } = await supabase.rpc('report_daily_series', { p_days: days })
+  return (data ?? []) as DailySeriesRow[]
+}
+export async function getReportCategories(): Promise<CategoryRow[]> {
+  const { data } = await supabase.rpc('report_categories')
+  return ((data ?? []) as { category: string; plays: number }[]).map(r => ({ category: r.category, plays: Number(r.plays) }))
+}
+export async function getReportEventsRanked(): Promise<RankedEvent[]> {
+  const { data } = await supabase.rpc('report_events_ranked')
+  return (data ?? []) as RankedEvent[]
+}
+export async function getReportDailyChallenge(days: number): Promise<DailyChallengeRow[]> {
+  const { data } = await supabase.rpc('report_daily_challenge', { p_days: days })
+  return (data ?? []) as DailyChallengeRow[]
+}
+
 // ─── Ratings ──────────────────────────────────────────────
 
 export async function addEventRating(eventId: string, rating: number) {
