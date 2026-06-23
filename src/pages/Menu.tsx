@@ -206,7 +206,7 @@ export default function MenuPage() {
         transition: 'all 0.45s 0.06s cubic-bezier(0.16,1,0.3,1)',
       }}>
         {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
-        <div style={{ position: 'relative', padding: '18px 20px' }}>
+        <div style={{ position: 'relative', padding: '18px 82px 18px 20px' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
           <p style={{ margin: '8px 0 0', color: '#f5ce8b', fontFamily: 'var(--font-serif)', fontSize: 14, lineHeight: 1.45, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
             <OliveSprig/>&nbsp;{t('menu.heroTagline')}&nbsp;<OliveSprig flip/>

@@ -14,7 +14,7 @@ export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dar
   const fg = onFeature ? 'var(--feature-fg)' : 'var(--ink)'
   const idle = onFeature ? 'var(--feature-fg2)' : 'var(--ink-3)'
   const border = onFeature ? 'var(--feature-line)' : 'var(--line-strong)'
-  const surface = onFeature ? 'var(--feature-bg-2, var(--feature-chip))' : 'var(--surface)'
+  const surface = onFeature ? 'var(--feature-bg)' : 'var(--surface)'
 
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
