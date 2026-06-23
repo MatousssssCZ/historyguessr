@@ -16,6 +16,7 @@ import PrivacyPage from '@/pages/Privacy'
 import TermsPage from '@/pages/Terms'
 
 // Líně načítané (těžké / méně časté) sekce — menší první bundle pro běžného hráče
+const AdminHubPage = lazy(() => import('@/pages/AdminHub'))
 const AdminPage = lazy(() => import('@/pages/Admin'))
 const AdminImportPage = lazy(() => import('@/pages/AdminImport'))
 const AdminDailyChallengePage = lazy(() => import('@/pages/AdminDailyChallenge'))
@@ -82,7 +83,8 @@ export default function App() {
               <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
               <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>
-              <Route path="/admin"   element={<RequireAdmin><AdminPage/></RequireAdmin>}/>
+              <Route path="/admin"   element={<RequireAdmin><AdminHubPage/></RequireAdmin>}/>
+              <Route path="/admin/events" element={<RequireAdmin><AdminPage/></RequireAdmin>}/>
               <Route path="/admin/import" element={<RequireAdmin><AdminImportPage/></RequireAdmin>}/>
               <Route path="/admin/daily" element={<RequireAdmin><AdminDailyChallengePage/></RequireAdmin>}/>
               <Route path="/admin/reports" element={<RequireAdmin><AdminReportsPage/></RequireAdmin>}/>

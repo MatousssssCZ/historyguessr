@@ -353,7 +353,7 @@ export default function AdminImportPage() {
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
-        <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Správa událostí</button>
+        <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Hromadný import</h1>
         {step === 'preview' && (
           <span className="badge badge-neutral" style={{ marginLeft: 4 }}>{rows.length} řádků</span>
@@ -561,7 +561,7 @@ export default function AdminImportPage() {
               <button className="btn btn-ghost" onClick={() => { setRows([]); setDoneCount(0); setStep('upload') }}>
                 Importovat další
               </button>
-              <button className="btn btn-accent" onClick={() => navigate('/admin')}>
+              <button className="btn btn-accent" onClick={() => navigate('/admin/events')}>
                 Zpět do správy →
               </button>
             </div>
