@@ -1,13 +1,32 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { createEvent, uploadPanorama, uploadEventImage } from '@/lib/supabase'
+import { createEvent, uploadPanorama, uploadEventImage, getAdminEvents } from '@/lib/supabase'
 import type { EventInsert } from '@/types/database'
 
+// ── Export událostí do CSV (round-trip s importem) ────────
+function csvCell(v: unknown): string {
+  const s = v == null ? '' : String(v)
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+async function exportEventsCSV() {
+  const { data } = await getAdminEvents()
+  const cols = ['title', 'description', 'title_en', 'description_en', 'title_de', 'description_de',
+    'year_from', 'year_to', 'event_date', 'lat', 'lng', 'category', 'difficulty', 'location_radius_km']
+  const lines = (data ?? []).map(e => cols.map(c => csvCell((e as Record<string, unknown>)[c])).join(','))
+  // BOM + CRLF kvůli Excelu; import si BOM i oddělovač poradí sám
+  const csv = '﻿' + [cols.join(','), ...lines].join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'historyguessr_export.csv'
+  a.click(); URL.revokeObjectURL(url)
+}
+
 // ── CSV šablona ───────────────────────────────────────────
-const CSV_TEMPLATE = `title,description,year_from,year_to,event_date,lat,lng,category,difficulty,location_radius_km,panorama_filename,image_filename
-Bitva na Bílé hoře,"Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.",1620,1620,1620-11-08,50.0755,14.2836,war,2,0,bila_hora_360.jpg,bila_hora.jpg
-Výbuch Vesuvu,"Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",-79,-79,,40.8210,14.4260,disasters,3,10,vesuvius_360.jpg,vesuvius.jpg`
+const CSV_TEMPLATE = `title,description,title_en,description_en,title_de,description_de,year_from,year_to,event_date,lat,lng,category,difficulty,location_radius_km,panorama_filename,image_filename
+Bitva na Bílé hoře,"Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.",Battle of White Mountain,"The battle took place on 8 November 1620 near Prague.",Schlacht am Weißen Berg,"Die Schlacht fand am 8. November 1620 bei Prag statt.",1620,1620,1620-11-08,50.0755,14.2836,war,2,0,bila_hora_360.jpg,bila_hora.jpg
+Výbuch Vesuvu,"Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.",Eruption of Vesuvius,"Mount Vesuvius erupted in 79 AD and buried Pompeii.",Ausbruch des Vesuvs,"Der Vesuv brach 79 n. Chr. aus und begrub Pompeji.",-79,-79,,40.8210,14.4260,disasters,3,10,vesuvius_360.jpg,vesuvius.jpg`
 
 function downloadTemplate() {
   const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv;charset=utf-8;' })
@@ -27,17 +46,21 @@ async function downloadXLSTemplate() {
     })
   }
   const XLSX = (window as any).XLSX
-  const headers = ['title','description','year_from','year_to','event_date','lat','lng','category','difficulty','location_radius_km','panorama_filename','image_filename']
+  const headers = ['title','description','title_en','description_en','title_de','description_de','year_from','year_to','event_date','lat','lng','category','difficulty','location_radius_km','panorama_filename','image_filename']
   const rows = [
-    ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.',1620,1620,'1620-11-08',50.0755,14.2836,'war',2,0,'bila_hora_360.jpg','bila_hora.jpg'],
-    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.',-79,-79,'',40.8210,14.4260,'disasters',3,10,'vesuvius_360.jpg','vesuvius.jpg'],
+    ['Bitva na Bílé hoře','Bitva na Bílé hoře proběhla 8. listopadu 1620 u Prahy.','Battle of White Mountain','The battle took place on 8 November 1620 near Prague.','Schlacht am Weißen Berg','Die Schlacht fand am 8. November 1620 bei Prag statt.',1620,1620,'1620-11-08',50.0755,14.2836,'war',2,0,'bila_hora_360.jpg','bila_hora.jpg'],
+    ['Výbuch Vesuvu','Sopka Vesuv vybuchla v roce 79 n. l. a pohřbila město Pompeje.','Eruption of Vesuvius','Mount Vesuvius erupted in 79 AD and buried Pompeii.','Ausbruch des Vesuvs','Der Vesuv brach 79 n. Chr. aus und begrub Pompeji.',-79,-79,'',40.8210,14.4260,'disasters',3,10,'vesuvius_360.jpg','vesuvius.jpg'],
   ]
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-  ws['!cols'] = [{wch:30},{wch:50},{wch:10},{wch:10},{wch:13},{wch:10},{wch:10},{wch:12},{wch:10},{wch:16},{wch:25},{wch:20}]
+  ws['!cols'] = [{wch:30},{wch:50},{wch:30},{wch:50},{wch:30},{wch:50},{wch:10},{wch:10},{wch:13},{wch:10},{wch:10},{wch:12},{wch:10},{wch:16},{wch:25},{wch:20}]
   const helpRows = [
     ['Sloupec','Povinný','Popis','Příklady'],
-    ['title','ANO','Název historické události','Bitva na Bílé hoře'],
-    ['description','ANO','Popis události','Bitva proběhla...'],
+    ['title','ANO','Název (CS — fallback)','Bitva na Bílé hoře'],
+    ['description','ANO','Popis (CS — fallback)','Bitva proběhla...'],
+    ['title_en','NE','Název anglicky','Battle of White Mountain'],
+    ['description_en','NE','Popis anglicky','The battle took place...'],
+    ['title_de','NE','Název německy','Schlacht am Weißen Berg'],
+    ['description_de','NE','Popis německy','Die Schlacht fand...'],
     ['year_from','ANO','Rok OD (záporné = př. n. l.)','1620, -79'],
     ['year_to','ANO','Rok DO (stejný jako OD = přesný rok)','1620, -79'],
     ['event_date','NE','Přesné datum YYYY-MM-DD (pro denní výzvu)','1620-11-08'],
@@ -374,8 +397,9 @@ export default function AdminImportPage() {
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadTemplate}>↓ CSV</button>
-                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS</button>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadTemplate}>↓ CSV šablona</button>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS šablona</button>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={exportEventsCSV}>↓ Export událostí</button>
                 </div>
               </div>
 
@@ -403,7 +427,7 @@ export default function AdminImportPage() {
             <div className="card" style={{ padding: 24 }}>
               <p className="eyebrow" style={{ marginBottom: 14 }}>Sloupce CSV</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['title *', 'description *', 'year_from *', 'year_to *', 'event_date', 'lat *', 'lng *', 'category', 'difficulty (1–3)', 'location_radius_km', 'panorama_filename', 'image_filename'].map(col => (
+                {['title *', 'description *', 'title_en', 'description_en', 'title_de', 'description_de', 'year_from *', 'year_to *', 'event_date', 'lat *', 'lng *', 'category', 'difficulty (1–3)', 'location_radius_km', 'panorama_filename', 'image_filename'].map(col => (
                   <span key={col} style={{
                     padding: '4px 10px', borderRadius: 999, fontSize: 12,
                     fontFamily: 'var(--font-mono)',
@@ -415,7 +439,7 @@ export default function AdminImportPage() {
                   </span>
                 ))}
               </div>
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12 }}>* = povinné · <strong>year_from = year_to</strong> u přesného roku · <strong>event_date</strong> (YYYY-MM-DD) volitelně pro denní výzvu · panorama_filename a image_filename = název souboru (přiřadíš v dalším kroku)</p>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12 }}>* = povinné · <strong>title_en/de</strong> a <strong>description_en/de</strong> jsou volitelné překlady (prázdné = použije se česká verze) · <strong>year_from = year_to</strong> u přesného roku · <strong>event_date</strong> (YYYY-MM-DD) volitelně pro denní výzvu · panorama_filename a image_filename = název souboru (přiřadíš v dalším kroku)</p>
             </div>
           </>
         )}
