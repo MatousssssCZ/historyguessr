@@ -234,7 +234,7 @@ export default function AdminDailyChallengePage() {
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>
-          ← Správa událostí
+          ← Admin
         </button>
         <div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Tento den v historii</h1>

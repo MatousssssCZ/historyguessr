@@ -103,7 +103,7 @@ export const resources = {
     setup: {
       title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.',
       placeholder: 'Tvoje přezdívka', confirm: 'Pokračovat', hint: 'Min. 3 znaky. Změnit ji můžeš později v účtu.',
-      tooShort: 'Přezdívka musí mít aspoň 3 znaky.', taken: 'Tahle přezdívka už je obsazená.', error: 'Nepodařilo se uložit. Zkus to znovu.',
+      tooShort: 'Přezdívka musí mít aspoň 3 znaky.', tooLong: 'Přezdívka může mít max. 20 znaků.', invalid: 'Povolena jsou jen písmena, číslice, mezera a _ . -', taken: 'Tahle přezdívka už je obsazená.', error: 'Nepodařilo se uložit. Zkus to znovu.',
     },
     friends: {
       title: 'Přátelé', add: 'Přidat přítele', addPlaceholder: 'Přezdívka hráče', addBtn: 'Přidat',
@@ -268,7 +268,7 @@ export const resources = {
     setup: {
       title: 'Choose a nickname', sub: 'Other players will see you under this name.',
       placeholder: 'Your nickname', confirm: 'Continue', hint: 'Min. 3 characters. You can change it later in your account.',
-      tooShort: 'Nickname must be at least 3 characters.', taken: 'That nickname is already taken.', error: 'Could not save. Try again.',
+      tooShort: 'Nickname must be at least 3 characters.', tooLong: 'Nickname can be at most 20 characters.', invalid: 'Only letters, digits, space and _ . - are allowed', taken: 'That nickname is already taken.', error: 'Could not save. Try again.',
     },
     friends: {
       title: 'Friends', add: 'Add friend', addPlaceholder: 'Player nickname', addBtn: 'Add',
@@ -433,7 +433,7 @@ export const resources = {
     setup: {
       title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.',
       placeholder: 'Dein Spitzname', confirm: 'Weiter', hint: 'Min. 3 Zeichen. Du kannst ihn später im Konto ändern.',
-      tooShort: 'Der Spitzname muss mindestens 3 Zeichen haben.', taken: 'Dieser Spitzname ist bereits vergeben.', error: 'Speichern fehlgeschlagen. Versuch es erneut.',
+      tooShort: 'Der Spitzname muss mindestens 3 Zeichen haben.', tooLong: 'Der Spitzname darf höchstens 20 Zeichen haben.', invalid: 'Nur Buchstaben, Ziffern, Leerzeichen und _ . - sind erlaubt', taken: 'Dieser Spitzname ist bereits vergeben.', error: 'Speichern fehlgeschlagen. Versuch es erneut.',
     },
     friends: {
       title: 'Freunde', add: 'Freund hinzufügen', addPlaceholder: 'Spitzname des Spielers', addBtn: 'Hinzufügen',

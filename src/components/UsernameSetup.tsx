@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { updateProfile } from '@/lib/supabase'
+import { validateUsername, USERNAME_MAX } from '@/lib/username'
 
 // Vynucené nastavení přezdívky — zobrazí se přihlášenému uživateli,
 // který ještě nemá username (první přihlášení nebo historický účet bez ní).
@@ -14,11 +15,11 @@ export default function UsernameSetup() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = name.trim()
-    if (trimmed.length < 3) { setError(t('setup.tooShort')); return }
+    const v = validateUsername(name)
+    if (!v.ok) { setError(t('setup.' + v.error)); return }
     if (!user) return
     setSaving(true); setError(null)
-    const { error: err } = await updateProfile(user.id, { username: trimmed })
+    const { error: err } = await updateProfile(user.id, { username: v.value })
     if (err) {
       setSaving(false)
       // unikátní index na username → 23505
@@ -38,7 +39,7 @@ export default function UsernameSetup() {
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <input
             className="input" value={name} onChange={e => setName(e.target.value)}
-            placeholder={t('setup.placeholder')} maxLength={24} autoFocus
+            placeholder={t('setup.placeholder')} maxLength={USERNAME_MAX} autoFocus
           />
           {error && <div className="alert alert-error">{error}</div>}
           <button className="btn btn-accent" type="submit" disabled={saving || name.trim().length < 3}>

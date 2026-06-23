@@ -167,20 +167,15 @@ export default function AdminPage() {
 
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/menu')}>← Menu</button>
+          <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Správa událostí</h1>
           <span className="badge badge-neutral">{events.length} událostí</span>
         </div>
         {panel === 'list' && (
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadCSVTemplate}>↓ CSV šablona</button>
-            <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={downloadXLSTemplate}>↓ XLS šablona</button>
-            <button className="btn btn-ghost" onClick={() => navigate('/admin/import')}>↑ Hromadný import</button>
             <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={regen?.running} onClick={() => handleRegeneratePreviews(false)} title="Vytvoří malý náhled z každého panoramatu pro okamžité zobrazení ve hře">
               {regen?.running ? `♻ ${regen.done}/${regen.total}…` : '♻ Přegenerovat náhledy'}
             </button>
-            <button className="btn btn-ghost" onClick={() => navigate('/admin/daily')}>📅 Tento den v historii</button>
-            <button className="btn btn-ghost" onClick={() => navigate('/admin/reports')}>📊 Reporting</button>
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
         )}

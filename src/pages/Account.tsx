@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { updateProfile, signOut } from '@/lib/supabase'
+import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
 import BackButton from '@/components/BackButton'
 
@@ -17,11 +18,14 @@ export default function AccountPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!user) return
+    const v = validateUsername(username)
+    if (!v.ok) { setMessage({ type: 'error', text: t('setup.' + v.error) }); return }
     setSaving(true); setMessage(null)
-    const { error } = await updateProfile(user.id, { username })
+    const { error } = await updateProfile(user.id, { username: v.value })
     setSaving(false)
+    if (!error) setUsername(v.value)
     setMessage(error
-      ? { type: 'error', text: t('account.saveError') }
+      ? { type: 'error', text: (error as { code?: string }).code === '23505' ? t('setup.taken') : t('account.saveError') }
       : { type: 'success', text: t('account.saved') }
     )
   }
@@ -56,7 +60,7 @@ export default function AccountPage() {
             </div>
             <div>
               <label className="label">{t('account.username')}</label>
-              <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder={t('account.usernamePlaceholder')} maxLength={32}/>
+              <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder={t('account.usernamePlaceholder')} maxLength={USERNAME_MAX}/>
             </div>
             {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
             <button className="btn btn-primary" type="submit" disabled={saving}>

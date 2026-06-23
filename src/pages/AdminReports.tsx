@@ -46,7 +46,7 @@ export default function AdminReportsPage() {
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Správa událostí</button>
+          <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>📊 Reporting</h1>
         </div>
         <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 4, gap: 4 }}>
