@@ -200,7 +200,7 @@ export default function MenuPage() {
       {/* Upoutávka na hru */}
       <button onClick={() => navigate('/play')} style={{
         position: 'relative', margin: '4px 22px 18px', borderRadius: 20, overflow: 'hidden',
-        border: 'none', height: 162, display: 'flex', alignItems: 'flex-end', cursor: 'pointer',
+        border: 'none', minHeight: 162, display: 'flex', alignItems: 'flex-end', cursor: 'pointer',
         boxShadow: 'var(--shadow-lg)', textAlign: 'left',
         opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(14px)',
         transition: 'all 0.45s 0.06s cubic-bezier(0.16,1,0.3,1)',
@@ -208,8 +208,8 @@ export default function MenuPage() {
         {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
         <div style={{ position: 'relative', padding: '18px 20px' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
-          <p style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 0', color: '#f5ce8b', fontFamily: 'var(--font-serif)', fontSize: 14, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
-            <OliveSprig/>{t('menu.heroTagline')}<OliveSprig flip/>
+          <p style={{ margin: '8px 0 0', color: '#f5ce8b', fontFamily: 'var(--font-serif)', fontSize: 14, lineHeight: 1.45, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
+            <OliveSprig/>&nbsp;{t('menu.heroTagline')}&nbsp;<OliveSprig flip/>
           </p>
         </div>
         <div style={{
@@ -358,11 +358,10 @@ function ListItem({ icon, title, sub, onClick, dailyState, badge }: {
           position: 'absolute', top: -3, right: -3, width: 13, height: 13, borderRadius: '50%',
           background: 'var(--accent)', border: '2.5px solid var(--surface)', animation: 'glow 2s infinite',
         }}/>}
-        {!!badge && badge > 0 && <NotifBadge count={badge}/>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 9 }}>
-          {title}{dailyState && <DailyBadge state={dailyState}/>}
+          {title}{dailyState && <DailyBadge state={dailyState}/>}{!!badge && badge > 0 && <NotifBadge count={badge}/>}
         </div>
         <div style={{ fontSize: 12, marginTop: 2, color: active ? 'var(--accent-deep)' : done ? 'var(--success-deep)' : 'var(--ink-3)', fontWeight: active || done ? 500 : 400 }}>{sub}</div>
       </div>
@@ -375,7 +374,7 @@ function ListItem({ icon, title, sub, onClick, dailyState, badge }: {
 function OliveSprig({ flip }: { flip?: boolean }) {
   return (
     <svg width="22" height="16" viewBox="0 0 28 18" fill="none"
-      style={{ color: '#f5ce8b', transform: flip ? 'scaleX(-1)' : 'none', flexShrink: 0 }} aria-hidden>
+      style={{ color: '#f5ce8b', transform: flip ? 'scaleX(-1)' : 'none', flexShrink: 0, verticalAlign: 'middle' }} aria-hidden>
       <path d="M3 14 C11 13 21 11 26 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
       <g fill="currentColor">
         <ellipse cx="8" cy="11.5" rx="2.6" ry="1.2" transform="rotate(-28 8 11.5)"/>
@@ -387,17 +386,16 @@ function OliveSprig({ flip }: { flip?: boolean }) {
   )
 }
 
-// Červená notifikační bublina s počtem (např. žádosti o přátelství)
+// Notifikační pilulka s počtem (stejný styl jako DailyBadge)
 function NotifBadge({ count, floating }: { count: number; floating?: boolean }) {
   return (
     <span style={{
-      position: 'absolute',
-      ...(floating ? { top: 10, right: 10 } : { top: -5, right: -5 }),
-      minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999,
-      background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      border: '2px solid var(--surface)', lineHeight: 1,
-    }}>{count > 9 ? '9+' : count}</span>
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.07em', textTransform: 'uppercase',
+      padding: '3px 8px', borderRadius: 999, whiteSpace: 'nowrap',
+      background: '#e23b3b', color: '#fff',
+      ...(floating ? { position: 'absolute', top: 11, right: 11 } : {}),
+    }}>{count > 9 ? '9+' : count} nové</span>
   )
 }
 
