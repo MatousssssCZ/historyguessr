@@ -77,7 +77,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { compressPanorama, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
-import { generateEventDraft } from '@/lib/ai'
+import { generateEventDraft, generatePanorama } from '@/lib/ai'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -441,6 +441,36 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
     }
   }
 
+  // ── AI generování panoramatu ──
+  const [panoModel, setPanoModel] = useState<'gpt-image-1' | 'dall-e-3'>('gpt-image-1')
+  const [panoLoading, setPanoLoading] = useState(false)
+  const [panoError, setPanoError] = useState<string | null>(null)
+
+  async function handleGeneratePanorama() {
+    if (!form.title.trim()) { setPanoError('Nejdřív vyplň název události.'); return }
+    setPanoError(null); setPanoLoading(true)
+    try {
+      const period = form.year_from && form.year_to && form.year_from !== form.year_to
+        ? `${form.year_from}–${form.year_to}` : (form.year_from || form.year_to || '')
+      const file = await generatePanorama({
+        title: form.title.trim(),
+        event_date: form.event_date.trim(),
+        period,
+        location: form.lat && form.lng ? `${form.lat}, ${form.lng}` : '',
+        description: form.description.trim(),
+        model: panoModel,
+      })
+      setPanoramaFile(file)
+      setCompressionInfo(`AI panorama vygenerováno (${formatFileSize(file.size)}) — bude zkomprimováno`)
+      const url = URL.createObjectURL(file)
+      setPanoramaPreview(url)
+    } catch (e: any) {
+      setPanoError(e?.message || 'Generování selhalo.')
+    } finally {
+      setPanoLoading(false)
+    }
+  }
+
   function set(key: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm(f => ({ ...f, [key]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }))
@@ -761,6 +791,24 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label className="label">360° panorama * (JPG/PNG, max 50 MB)</label>
+
+              {/* AI generování panoramatu */}
+              <div style={{ marginBottom: 12, padding: 14, borderRadius: 10, border: '1px solid var(--accent)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button type="button" className="btn btn-primary" onClick={handleGeneratePanorama} disabled={panoLoading} style={{ fontSize: 13 }}>
+                  {panoLoading ? 'Generuji panorama… (~30–60 s)' : '✨ Vygenerovat panorama AI'}
+                </button>
+                <select value={panoModel} onChange={e => setPanoModel(e.target.value as any)} disabled={panoLoading}
+                  className="input" style={{ width: 'auto', padding: '6px 10px', fontSize: 12 }}>
+                  <option value="gpt-image-1">gpt-image-1 (kvalita)</option>
+                  <option value="dall-e-3">DALL·E 3 (širší 1.75:1)</option>
+                </select>
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', flex: '1 1 100%' }}>
+                  Použije název, datum, období, GPS a popis z formuláře. Po vygenerování zkontroluj náhled; když nesedí, generuj znovu.
+                </span>
+                {panoLoading && <span style={{ fontSize: 11, color: 'var(--ink-3)', flex: '1 1 100%' }}><span className="spinner" style={{ width: 12, height: 12 }}/> Může to chvíli trvat, nezavírej okno.</span>}
+                {panoError && <span style={{ fontSize: 12, color: 'var(--accent-dark, #b85a3e)', flex: '1 1 100%' }}>⚠️ {panoError}</span>}
+              </div>
+
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={(f) => { setPanoramaFile(f); setCompressionInfo(f ? `Vybráno: ${formatFileSize(f.size)} — bude zkomprimováno` : null) }} ref={panoramaRef}/>
               {compressionInfo && (
                 <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>
