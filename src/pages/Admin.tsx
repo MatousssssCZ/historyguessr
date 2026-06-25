@@ -430,7 +430,10 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
         lng: d.lng != null ? d.lng.toFixed(6) : f.lng,
         category: d.category ?? f.category,
       }))
-      setAiNote(d.note || 'Pole předvyplněna. Zkontroluj prosím vše (hlavně GPS na mapě) před uložením.')
+      const gpsWarn = (d.lat == null || d.lng == null)
+        ? '⚠️ GPS se nepodařilo spolehlivě určit — souřadnice zadej ručně kliknutím do mapy. '
+        : ''
+      setAiNote(gpsWarn + (d.note || 'Pole předvyplněna. Zkontroluj prosím vše (hlavně GPS na mapě) před uložením.'))
     } catch (e: any) {
       setAiError(e?.message || 'Generování selhalo.')
     } finally {

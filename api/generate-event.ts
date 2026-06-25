@@ -49,7 +49,7 @@ export default async function handler(req: any, res: any) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         temperature: 0.2,
         response_format: { type: 'json_object' },
         messages: [
@@ -67,8 +67,42 @@ export default async function handler(req: any, res: any) {
     let parsed: any
     try { parsed = JSON.parse(content) } catch { res.status(502).json({ error: 'bad_json' }); return }
 
-    // sanitizace
-    const num = (v: any) => (typeof v === 'number' && isFinite(v) ? v : null)
+    // sanitizace — přijmi i číslo zapsané jako text ("49.25")
+    const num = (v: any) => {
+      const n = typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v.replace(',', '.')) : NaN)
+      return isFinite(n) ? n : null
+    }
+
+    // ── GPS přes samostatné, zaměřené volání (přesnější než hlavní popisové volání) ──
+    let lat = num(parsed.lat)
+    let lng = num(parsed.lng)
+    try {
+      const gpsRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4.1',
+          temperature: 0,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: 'Jsi expert na historickou geografii. Urči PŘESNÉ místo, kde se událost fyzicky odehrála (ne kde se o ní rozhodlo obecně), a jeho GPS souřadnice. Pokud místo neznáš jistě, vrať null. Souřadnice jako desetinná čísla s tečkou.' },
+            { role: 'user', content: `Událost: "${title}"${year != null && year !== '' ? `, rok: ${year}` : ''}.\nVrať JSON: { "place": "<konkrétní místo, město/budova/země>", "lat": <číslo nebo null>, "lng": <číslo nebo null> }` },
+          ],
+        }),
+      })
+      if (gpsRes.ok) {
+        const gd = await gpsRes.json()
+        const gp = JSON.parse(gd?.choices?.[0]?.message?.content || '{}')
+        const glat = num(gp.lat), glng = num(gp.lng)
+        if (glat != null && glng != null) { lat = glat; lng = glng }
+      }
+    } catch { /* fallback na lat/lng z hlavního volání */ }
+
+    // validace rozsahu — mimo rozsah = neplatné
+    if (lat == null || lat < -90 || lat > 90) lat = null
+    if (lng == null || lng < -180 || lng > 180) lng = null
+    if (lat == null || lng == null) { lat = null; lng = null }
+
     const out = {
       title_cs: parsed.title_cs ?? title,
       title_en: parsed.title_en ?? null,
@@ -79,8 +113,8 @@ export default async function handler(req: any, res: any) {
       event_date: /^\d{4}-\d{2}-\d{2}$/.test(String(parsed.event_date)) ? parsed.event_date : null,
       year_from: Number.isInteger(parsed.year_from) ? parsed.year_from : (num(parsed.year_from) != null ? Math.round(parsed.year_from) : null),
       year_to: Number.isInteger(parsed.year_to) ? parsed.year_to : (num(parsed.year_to) != null ? Math.round(parsed.year_to) : null),
-      lat: num(parsed.lat),
-      lng: num(parsed.lng),
+      lat,
+      lng,
       category: CATEGORIES.includes(parsed.category) ? parsed.category : null,
       note: typeof parsed.note === 'string' ? parsed.note : null,
     }
