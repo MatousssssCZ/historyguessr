@@ -77,6 +77,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { compressPanorama, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
+import { generateEventDraft } from '@/lib/ai'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -402,6 +403,41 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const panoramaRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
 
+  // ── AI předvyplnění ──
+  const [aiTitle, setAiTitle] = useState('')
+  const [aiYear, setAiYear] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiNote, setAiNote] = useState<string | null>(null)
+
+  async function handleAiGenerate() {
+    if (!aiTitle.trim()) { setAiError('Zadej název události.'); return }
+    setAiError(null); setAiNote(null); setAiLoading(true)
+    try {
+      const d = await generateEventDraft(aiTitle.trim(), aiYear.trim())
+      setForm(f => ({
+        ...f,
+        title: d.title_cs ?? aiTitle.trim(),
+        title_en: d.title_en ?? f.title_en,
+        title_de: d.title_de ?? f.title_de,
+        description: d.description_cs ?? f.description,
+        description_en: d.description_en ?? f.description_en,
+        description_de: d.description_de ?? f.description_de,
+        event_date: d.event_date ?? f.event_date,
+        year_from: d.year_from != null ? String(d.year_from) : f.year_from,
+        year_to: d.year_to != null ? String(d.year_to) : f.year_to,
+        lat: d.lat != null ? d.lat.toFixed(6) : f.lat,
+        lng: d.lng != null ? d.lng.toFixed(6) : f.lng,
+        category: d.category ?? f.category,
+      }))
+      setAiNote(d.note || 'Pole předvyplněna. Zkontroluj prosím vše (hlavně GPS na mapě) před uložením.')
+    } catch (e: any) {
+      setAiError(e?.message || 'Generování selhalo.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   function set(key: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm(f => ({ ...f, [key]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }))
@@ -543,6 +579,41 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
       </h2>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* AI předvyplnění */}
+        <div className="card" style={{ padding: 24, border: '1px solid var(--accent)', background: 'var(--paper-100, var(--surface))' }}>
+          <p className="eyebrow" style={{ marginBottom: 6, color: 'var(--accent)' }}>✨ Předvyplnit přes AI</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 16px' }}>
+            Zadej název a (přibližný) rok. AI navrhne datum, popisy CS/EN/DE, názvy EN/DE, rozsah let, kategorii a GPS.
+            Vše si pak <strong>zkontroluj a uprav</strong> před uložením.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ flex: '1 1 240px' }}>
+              <label className="label">Název události</label>
+              <input className="input" value={aiTitle} onChange={e => setAiTitle(e.target.value)}
+                placeholder="např. Bitva na Bílé hoře"
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAiGenerate() } }}/>
+            </div>
+            <div style={{ width: 120 }}>
+              <label className="label">Rok</label>
+              <input className="input" type="number" value={aiYear} onChange={e => setAiYear(e.target.value)}
+                placeholder="1620" min={-3000} max={2025}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAiGenerate() } }}/>
+            </div>
+            <button type="button" className="btn btn-primary" onClick={handleAiGenerate} disabled={aiLoading}
+              style={{ height: 44 }}>
+              {aiLoading ? 'Generuji…' : '✨ Vygenerovat'}
+            </button>
+          </div>
+          {aiError && (
+            <p style={{ marginTop: 12, fontSize: 13, color: 'var(--accent-dark, #b85a3e)' }}>⚠️ {aiError}</p>
+          )}
+          {aiNote && (
+            <p style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-2)', background: 'var(--paper-200, rgba(0,0,0,0.03))', padding: '10px 12px', borderRadius: 8 }}>
+              ℹ️ {aiNote}
+            </p>
+          )}
+        </div>
 
         {/* Základní info */}
         <div className="card" style={{ padding: 24 }}>
