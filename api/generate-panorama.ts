@@ -98,9 +98,9 @@ export default async function handler(req: any, res: any) {
 
   try {
     const payload: any = model === 'dall-e-3'
-      ? { model, prompt, size: '1792x1024', quality: 'hd', response_format: 'b64_json', n: 1 }
+      ? { model, prompt, size: '1792x1024', quality: 'hd', n: 1 }
       : { model, prompt, size: '1536x1024', quality: String(body.quality || 'medium'), n: 1, output_format: 'webp', output_compression: 90 }
-    const mime = model === 'dall-e-3' ? 'image/png' : 'image/webp'
+    let mime = model === 'dall-e-3' ? 'image/png' : 'image/webp'
 
     const aiRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -112,7 +112,16 @@ export default async function handler(req: any, res: any) {
       res.status(502).json({ error: 'openai_error', detail: txt.slice(0, 500) }); return
     }
     const data = await aiRes.json()
-    const b64 = data?.data?.[0]?.b64_json
+    let b64 = data?.data?.[0]?.b64_json
+    const url = data?.data?.[0]?.url
+    if (!b64 && url) {
+      // Model vrátil URL (dall-e-3 default) → stáhni a převeď na base64
+      const imgRes = await fetch(url)
+      if (!imgRes.ok) { res.status(502).json({ error: 'image_fetch_failed' }); return }
+      const buf = Buffer.from(await imgRes.arrayBuffer())
+      b64 = buf.toString('base64')
+      mime = imgRes.headers.get('content-type') || mime
+    }
     if (!b64) { res.status(502).json({ error: 'no_image' }); return }
 
     res.status(200).json({ image: `data:${mime};base64,${b64}`, model })
