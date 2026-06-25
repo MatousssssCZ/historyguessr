@@ -34,7 +34,8 @@ export default async function handler(req: any, res: any) {
 
   const sys = `Jsi pečlivý asistent pro historii a zeměpis. Z názvu události a roku vrať PŘESNÁ strukturovaná data jako JSON. ` +
     `Pokud si nějakým polem nejsi jistý, vrať null (nehádej souřadnice ani datum). ` +
-    `Souřadnice = skutečné místo události. Popisy 2–3 věty, faktické, bez markdownu. ` +
+    `Souřadnice = skutečné místo události. ` +
+    `Popisy piš populárně-naučným stylem (čtivě, poutavě, ale fakticky přesně), každý popis cca 80 slov, bez markdownu. ` +
     `event_date jen pro n. l. (formát YYYY-MM-DD); pokud je rok př. n. l. nebo datum neznámé, vrať null. ` +
     `year_from/year_to celá čísla (záporná = př. n. l.); u přesné události oba stejné, u nejisté/víceleté rozsah. ` +
     `category jedno z: ${CATEGORIES.join(', ')} nebo null.`
