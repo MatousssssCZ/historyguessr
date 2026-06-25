@@ -3,7 +3,7 @@
 //
 // ENV (Vercel): OPENAI_API_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 
-export const config = { maxDuration: 60 }
+export const config = { maxDuration: 180 }
 
 function buildPrompt(p: {
   title: string; date: string; period: string; location: string; description: string
