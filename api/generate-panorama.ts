@@ -87,7 +87,7 @@ export default async function handler(req: any, res: any) {
   const title = String(body.title || '').trim()
   if (!title) { res.status(400).json({ error: 'missing_title' }); return }
 
-  const model = body.model === 'dall-e-3' ? 'dall-e-3' : 'gpt-image-1'
+  const model = body.model === 'gpt-image-2' ? 'gpt-image-2' : 'gpt-image-1'
   const prompt = buildPrompt({
     title,
     date: String(body.event_date || '').trim(),
@@ -97,10 +97,10 @@ export default async function handler(req: any, res: any) {
   })
 
   try {
-    const payload: any = model === 'dall-e-3'
-      ? { model, prompt, size: '1792x1024', quality: 'hd', n: 1 }
+    const payload: any = model === 'gpt-image-2'
+      ? { model, prompt, size: '1776x896', quality: String(body.quality || 'medium'), n: 1, output_format: 'webp', output_compression: 90 }
       : { model, prompt, size: '1536x1024', quality: String(body.quality || 'medium'), n: 1, output_format: 'webp', output_compression: 90 }
-    let mime = model === 'dall-e-3' ? 'image/png' : 'image/webp'
+    let mime = 'image/webp'
 
     const aiRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',

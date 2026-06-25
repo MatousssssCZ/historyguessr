@@ -442,7 +442,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   }
 
   // ── AI generování panoramatu ──
-  const [panoModel, setPanoModel] = useState<'gpt-image-1' | 'dall-e-3'>('gpt-image-1')
+  const [panoModel, setPanoModel] = useState<'gpt-image-1' | 'gpt-image-2'>('gpt-image-2')
   const [panoLoading, setPanoLoading] = useState(false)
   const [panoError, setPanoError] = useState<string | null>(null)
 
@@ -799,8 +799,8 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
                 </button>
                 <select value={panoModel} onChange={e => setPanoModel(e.target.value as any)} disabled={panoLoading}
                   className="input" style={{ width: 'auto', padding: '6px 10px', fontSize: 12 }}>
-                  <option value="gpt-image-1">gpt-image-1 (kvalita)</option>
-                  <option value="dall-e-3">DALL·E 3 (širší 1.75:1)</option>
+                  <option value="gpt-image-2">gpt-image-2 (panorama 1776×896)</option>
+                  <option value="gpt-image-1">gpt-image-1 (1536×1024)</option>
                 </select>
                 <span style={{ fontSize: 11, color: 'var(--ink-3)', flex: '1 1 100%' }}>
                   Použije název, datum, období, GPS a popis z formuláře. Po vygenerování zkontroluj náhled; když nesedí, generuj znovu.
