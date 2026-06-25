@@ -73,9 +73,12 @@ export default async function handler(req: any, res: any) {
       return isFinite(n) ? n : null
     }
 
-    // ── GPS přes samostatné, zaměřené volání (přesnější než hlavní popisové volání) ──
+    // ── GPS: model určí KONKRÉTNÍ místo/budovu → geokóduje se přes Nominatim (OSM) ──
+    // Nejpřesnější je reálný geokódovací rejstřík; odhad modelu slouží jen jako záloha.
     let lat = num(parsed.lat)
     let lng = num(parsed.lng)
+    let place: string | null = null
+    let placeQuery: string | null = null
     try {
       const gpsRes = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -85,8 +88,8 @@ export default async function handler(req: any, res: any) {
           temperature: 0,
           response_format: { type: 'json_object' },
           messages: [
-            { role: 'system', content: 'Jsi expert na historickou geografii. Urči PŘESNÉ místo, kde se událost fyzicky odehrála (ne kde se o ní rozhodlo obecně), a jeho GPS souřadnice. Pokud místo neznáš jistě, vrať null. Souřadnice jako desetinná čísla s tečkou.' },
-            { role: 'user', content: `Událost: "${title}"${year != null && year !== '' ? `, rok: ${year}` : ''}.\nVrať JSON: { "place": "<konkrétní místo, město/budova/země>", "lat": <číslo nebo null>, "lng": <číslo nebo null> }` },
+            { role: 'system', content: 'Jsi expert na historickou geografii. Urči PŘESNÉ fyzické místo, kde se událost odehrála (konkrétní budova/památník/náměstí, ne jen město). Pokud místo neznáš jistě, vrať null. Souřadnice jako desetinná čísla s tečkou.' },
+            { role: 'user', content: `Událost: "${title}"${year != null && year !== '' ? `, rok: ${year}` : ''}.\nVrať JSON:\n{\n  "place": "<lidský popis místa, např. 'Lycée Roosevelt, Remeš, Francie'>",\n  "geocode_query": "<co nejpřesnější vyhledávací dotaz pro OpenStreetMap: budova/ulice + město + země, anglicky nebo místním jazykem>",\n  "lat": <číslo nebo null>,\n  "lng": <číslo nebo null>\n}` },
           ],
         }),
       })
@@ -95,8 +98,32 @@ export default async function handler(req: any, res: any) {
         const gp = JSON.parse(gd?.choices?.[0]?.message?.content || '{}')
         const glat = num(gp.lat), glng = num(gp.lng)
         if (glat != null && glng != null) { lat = glat; lng = glng }
+        if (typeof gp.place === 'string') place = gp.place
+        if (typeof gp.geocode_query === 'string') placeQuery = gp.geocode_query
       }
     } catch { /* fallback na lat/lng z hlavního volání */ }
+
+    // Geokódování konkrétního místa přes Nominatim → přesné souřadnice budovy
+    if (placeQuery) {
+      try {
+        const gq = encodeURIComponent(placeQuery)
+        const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${gq}&format=json&limit=1&addressdetails=0`, {
+          headers: { 'User-Agent': 'HistoryGuessr/1.0 (admin event geocoding)' },
+        })
+        if (nomRes.ok) {
+          const hits = await nomRes.json()
+          const hit = Array.isArray(hits) ? hits[0] : null
+          const nlat = num(hit?.lat), nlng = num(hit?.lon)
+          if (nlat != null && nlng != null) {
+            // Geokóder má přednost jen když je „blízko" odhadu modelu (do ~50 km) —
+            // chrání před tím, aby vyhledávač trefil stejnojmenné místo jinde ve světě.
+            const near = lat == null || lng == null ||
+              (Math.abs(nlat - lat) < 0.5 && Math.abs(nlng - lng) < 0.5)
+            if (near) { lat = nlat; lng = nlng }
+          }
+        }
+      } catch { /* ponech souřadnice z modelu */ }
+    }
 
     // validace rozsahu — mimo rozsah = neplatné
     if (lat == null || lat < -90 || lat > 90) lat = null
@@ -116,7 +143,7 @@ export default async function handler(req: any, res: any) {
       lat,
       lng,
       category: CATEGORIES.includes(parsed.category) ? parsed.category : null,
-      note: typeof parsed.note === 'string' ? parsed.note : null,
+      note: [place ? `📍 ${place}` : null, typeof parsed.note === 'string' ? parsed.note : null].filter(Boolean).join(' · ') || null,
     }
     res.status(200).json(out)
   } catch (e: any) {
