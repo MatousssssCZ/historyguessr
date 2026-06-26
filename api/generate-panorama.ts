@@ -98,9 +98,9 @@ export default async function handler(req: any, res: any) {
 
   try {
     const payload: any = model === 'gpt-image-2'
-      ? { model, prompt, size: '1776x896', quality: String(body.quality || 'medium'), n: 1, output_format: 'webp', output_compression: 90 }
-      : { model, prompt, size: '1536x1024', quality: String(body.quality || 'medium'), n: 1, output_format: 'webp', output_compression: 90 }
-    let mime = 'image/webp'
+      ? { model, prompt, size: '1776x896', quality: String(body.quality || 'medium'), n: 1, output_format: 'jpeg', output_compression: 90 }
+      : { model, prompt, size: '1536x1024', quality: String(body.quality || 'medium'), n: 1, output_format: 'jpeg', output_compression: 90 }
+    let mime = 'image/jpeg'
 
     const aiRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
