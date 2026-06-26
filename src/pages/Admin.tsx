@@ -923,18 +923,32 @@ declare const pannellum: {
 
 function PanoramaPreviewModal({ url, onClose }: { url: string; onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
+  // blob: URL + Pannellum (crossOrigin) v Safari hází „could not be accessed".
+  // Převedeme blob na data URL (CORS-čistý); https/data URL necháme být.
+  const [resolved, setResolved] = useState<string | null>(url.startsWith('blob:') ? null : url)
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!url.startsWith('blob:')) { setResolved(url); return }
+    let cancelled = false
+    fetch(url).then(r => r.blob()).then(b => {
+      const fr = new FileReader()
+      fr.onload = () => { if (!cancelled) setResolved(fr.result as string) }
+      fr.readAsDataURL(b)
+    }).catch(() => { if (!cancelled) setResolved(url) })
+    return () => { cancelled = true }
+  }, [url])
+
+  useEffect(() => {
+    if (!containerRef.current || !resolved) return
     const viewer = pannellum.viewer(containerRef.current, {
       type: 'equirectangular',
-      panorama: url,
+      panorama: resolved,
       autoLoad: true,
       showControls: true,
       hfov: 120,
     })
     return () => { viewer.destroy() }
-  }, [url])
+  }, [resolved])
 
   return (
     <div style={{
