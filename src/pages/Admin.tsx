@@ -92,6 +92,32 @@ export default function AdminPage() {
   const [fetching, setFetching] = useState(true)
   const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number; firstError?: string } | null>(null)
 
+  // ── Filtry (zvednuté sem, aby šlo navigovat „na další dle filtru") ──
+  const [search, setSearch] = useState('')
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<'' | 'published' | 'draft'>('')
+
+  const allCategories = Array.from(new Set(events.map(e => e.category).filter(Boolean))) as string[]
+  const filteredEvents = events.filter(ev => {
+    const matchSearch = !search || ev.title.toLowerCase().includes(search.toLowerCase())
+    const matchCategory = categoryFilters.length === 0 || (ev.category != null && categoryFilters.includes(ev.category))
+    const matchStatus = !statusFilter || (statusFilter === 'published' ? ev.published : !ev.published)
+    return matchSearch && matchCategory && matchStatus
+  })
+  function toggleCategory(c: string) {
+    setCategoryFilters(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
+  }
+  function clearFilters() { setSearch(''); setCategoryFilters([]); setStatusFilter('') }
+
+  // Po „Publikovat a další": najdi další událost v aktuálně filtrovaném seznamu.
+  function editNextOf(currentId: string) {
+    const idx = filteredEvents.findIndex(e => e.id === currentId)
+    const next = idx >= 0 ? filteredEvents[idx + 1] : undefined
+    loadEvents()
+    if (next) { setEditingEvent(next); setPanel('edit') }
+    else { setPanel('list'); setEditingEvent(null) }
+  }
+
   useEffect(() => {
     if (!loading && !isAdmin) navigate('/menu')
   }, [isAdmin, loading])
@@ -201,37 +227,43 @@ export default function AdminPage() {
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
         {panel === 'list' && (
-          <EventList events={events} onEdit={openEdit} onToggle={handleToggle} onDelete={handleDelete} />
+          <EventList
+            events={filteredEvents} total={events.length}
+            onEdit={openEdit} onToggle={handleToggle} onDelete={handleDelete}
+            search={search} setSearch={setSearch}
+            allCategories={allCategories} categoryFilters={categoryFilters} toggleCategory={toggleCategory}
+            statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            clearFilters={clearFilters}
+          />
         )}
         {panel === 'new' && <EventForm onDone={closePanel} />}
-        {panel === 'edit' && editingEvent && <EventForm event={editingEvent} onDone={closePanel} />}
+        {panel === 'edit' && editingEvent && (
+          <EventForm key={editingEvent.id} event={editingEvent} onDone={closePanel} onPublishNext={() => editNextOf(editingEvent.id)} />
+        )}
       </div>
     </div>
   )
 }
 
 // ── Event list ────────────────────────────────────────────
-function EventList({ events, onEdit, onToggle, onDelete }: {
+function EventList({ events: filtered, total, onEdit, onToggle, onDelete, search, setSearch, allCategories, categoryFilters, toggleCategory, statusFilter, setStatusFilter, clearFilters }: {
   events: Event[]
+  total: number
   onEdit: (e: Event) => void
   onToggle: (id: string, published: boolean) => void
   onDelete: (id: string) => void
+  search: string
+  setSearch: (s: string) => void
+  allCategories: string[]
+  categoryFilters: string[]
+  toggleCategory: (c: string) => void
+  statusFilter: '' | 'published' | 'draft'
+  setStatusFilter: (s: '' | 'published' | 'draft') => void
+  clearFilters: () => void
 }) {
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const hasFilters = !!search || categoryFilters.length > 0 || !!statusFilter
 
-  // Unikátní kategorie z událostí
-  const categories = Array.from(new Set(events.map(e => e.category).filter(Boolean))) as string[]
-
-  const filtered = events.filter(ev => {
-    const matchSearch = !search || ev.title.toLowerCase().includes(search.toLowerCase())
-    const matchCategory = !categoryFilter || ev.category === categoryFilter
-    const matchStatus = !statusFilter || (statusFilter === 'published' ? ev.published : !ev.published)
-    return matchSearch && matchCategory && matchStatus
-  })
-
-  if (events.length === 0) {
+  if (total === 0) {
     return (
       <div className="card" style={{ padding: 48, textAlign: 'center' }}>
         <p style={{ color: 'var(--ink-3)', marginBottom: 16 }}>Žádné události. Začni přidáním první.</p>
@@ -242,45 +274,61 @@ function EventList({ events, onEdit, onToggle, onDelete }: {
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
       {/* Filtry */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', background: 'var(--paper-100)' }}>
-        <input
-          className="input"
-          placeholder="Hledat název…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ width: 200, padding: '7px 12px', fontSize: 13 }}
-        />
-        <select
-          className="input"
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          style={{ width: 160, padding: '7px 12px', fontSize: 13 }}
-        >
-          <option value="">Všechny kategorie</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select
-          className="input"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          style={{ width: 140, padding: '7px 12px', fontSize: 13 }}
-        >
-          <option value="">Všechny stavy</option>
-          <option value="published">Publikované</option>
-          <option value="draft">Drafty</option>
-        </select>
-        {(search || categoryFilter || statusFilter) && (
-          <button
-            className="btn btn-ghost"
-            style={{ padding: '7px 12px', fontSize: 13 }}
-            onClick={() => { setSearch(''); setCategoryFilter(''); setStatusFilter('') }}
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--paper-100)' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            className="input"
+            placeholder="Hledat název…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ width: 200, padding: '7px 12px', fontSize: 13 }}
+          />
+          <select
+            className="input"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value as '' | 'published' | 'draft')}
+            style={{ width: 150, padding: '7px 12px', fontSize: 13 }}
           >
-            ✕ Zrušit filtry
-          </button>
+            <option value="">Všechny stavy</option>
+            <option value="published">Publikované</option>
+            <option value="draft">Nepublikované</option>
+          </select>
+          {hasFilters && (
+            <button
+              className="btn btn-ghost"
+              style={{ padding: '7px 12px', fontSize: 13 }}
+              onClick={clearFilters}
+            >
+              ✕ Zrušit filtry
+            </button>
+          )}
+          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
+            {filtered.length} / {total}
+          </span>
+        </div>
+        {/* Kategorie — vícenásobný výběr (klikni pro přepnutí) */}
+        {allCategories.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {allCategories.map(c => {
+              const active = categoryFilters.includes(c)
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleCategory(c)}
+                  style={{
+                    padding: '5px 11px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
+                    border: `1px solid ${active ? 'var(--accent)' : 'var(--line-strong)'}`,
+                    background: active ? 'var(--accent)' : 'transparent',
+                    color: active ? '#fff' : 'var(--ink-2)',
+                  }}
+                >
+                  {active ? '✓ ' : ''}{c}
+                </button>
+              )
+            })}
+          </div>
         )}
-        <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-          {filtered.length} / {events.length}
-        </span>
       </div>
 
       {filtered.length === 0 && (
@@ -377,7 +425,7 @@ type FormData = {
 // Dočasné skrytí AI generování panoramatu (kód zůstává, jen se nerenderuje).
 const SHOW_AI_PANORAMA = false
 
-function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
+function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: () => void; onPublishNext?: () => void }) {
   const { user } = useAuth()
   const [form, setForm] = useState<FormData>({
     title: event?.title ?? '',
@@ -399,6 +447,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const [panoramaFile, setPanoramaFile] = useState<File | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingNext, setSavingNext] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [panoramaPreview, setPanoramaPreview] = useState<string | null>(null)
   const [compressionInfo, setCompressionInfo] = useState<string | null>(null)
@@ -483,15 +532,20 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
     setForm(f => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }))
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    doSave()
+  }
+
+  async function doSave(opts: { forcePublish?: boolean; next?: boolean } = {}) {
     if (!user) return
-    setError(null); setSaving(true)
+    setError(null)
+    if (opts.next) setSavingNext(true); else setSaving(true)
 
     try {
       const yearFrom = parseInt(form.year_from) || 1900
       const yearTo = parseInt(form.year_to) || 1900
-      if (yearFrom > yearTo) { setError('Rok od musí být ≤ roku do.'); setSaving(false); return }
+      if (yearFrom > yearTo) { setError('Rok od musí být ≤ roku do.'); setSaving(false); setSavingNext(false); return }
       const yearMid = Math.round((yearFrom + yearTo) / 2)
       const payload = {
         title: form.title,
@@ -510,7 +564,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
         location_radius_km: parseInt(form.location_radius_km) || 0,
         category: form.category || null,
         difficulty: parseInt(form.difficulty) as 1 | 2 | 3,
-        published: form.published,
+        published: opts.forcePublish ? true : form.published,
         panorama_url: event?.panorama_url ?? '',
         event_image_url: event?.event_image_url ?? null,
         created_by: user.id,
@@ -575,7 +629,8 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
         track(event ? 'admin_event_updated' : 'admin_event_created', { event_id: savedId })
       }
 
-      onDone()
+      if (opts.next && onPublishNext) onPublishNext()
+      else onDone()
     } catch (err: unknown) {
       // Vytáhni skutečnou hlášku i z PostgrestError (není to Error instance)
       let msg = 'Nastala chyba.'
@@ -588,6 +643,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
       setError(msg)
     } finally {
       setSaving(false)
+      setSavingNext(false)
     }
   }
 
@@ -859,12 +915,24 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="button" className="btn btn-ghost" onClick={onDone}>Zrušit</button>
-          <button type="submit" className="btn btn-accent" disabled={saving}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn-ghost" onClick={onDone} disabled={saving || savingNext}>Zrušit</button>
+          <button type="submit" className="btn btn-accent" disabled={saving || savingNext}>
             {saving ? <span className="spinner" style={{ width: 14, height: 14 }}/> : null}
             {saving ? 'Ukládám…' : isEdit ? 'Uložit změny' : 'Vytvořit událost'}
           </button>
+          {isEdit && onPublishNext && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={saving || savingNext}
+              onClick={() => doSave({ forcePublish: true, next: true })}
+              title="Publikuje tuto událost a otevře další podle aktuálního filtru"
+            >
+              {savingNext ? <span className="spinner" style={{ width: 14, height: 14 }}/> : null}
+              {savingNext ? 'Ukládám…' : 'Publikovat a další →'}
+            </button>
+          )}
         </div>
       </form>
     </div>
