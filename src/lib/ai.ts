@@ -67,7 +67,16 @@ export async function generatePanorama(params: PanoramaParams): Promise<File> {
     throw new Error(`Generování panoramatu selhalo (${res.status}). ${detail}`)
   }
   const { image } = await res.json() as { image: string }
-  const blob = await (await fetch(image)).blob()
-  const ext = blob.type === 'image/webp' ? 'webp' : 'png'
-  return new File([blob], `ai-panorama.${ext}`, { type: blob.type || 'image/png' })
+  // Pozor: NEPOUŽÍVAT fetch(dataURL) — Safari má limit na velikost data: URL
+  // a u velkého obrázku spadne s „Load failed". Dekódujeme base64 ručně.
+  const comma = image.indexOf(',')
+  const meta = image.slice(0, comma)
+  const b64 = image.slice(comma + 1)
+  const mime = /data:(.*?);/.exec(meta)?.[1] || 'image/png'
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  const blob = new Blob([bytes], { type: mime })
+  const ext = mime === 'image/webp' ? 'webp' : (mime === 'image/jpeg' ? 'jpg' : 'png')
+  return new File([blob], `ai-panorama.${ext}`, { type: mime })
 }
