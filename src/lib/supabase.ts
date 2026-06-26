@@ -209,14 +209,15 @@ export async function updateEvent(id: string, updates: EventUpdate) {
 }
 
 export async function deleteEvent(id: string) {
-  // Smaž soubory ze Storage (panorama + event image)
-  // Zkusíme všechny možné přípony
-  const extensions = ['jpg', 'jpeg', 'png', 'webp']
-  const panoramaPaths = extensions.map(ext => `${id}/panorama.${ext}`)
-  const coverPaths = extensions.map(ext => `${id}/cover.${ext}`)
-
-  await supabase.storage.from('panorama').remove(panoramaPaths)
-  await supabase.storage.from('events').remove(coverPaths)
+  // Smaž všechny soubory ve složce události z obou bucketů (názvy nejsou pevné).
+  for (const bucket of ['panorama', 'events'] as const) {
+    try {
+      const { data: files } = await supabase.storage.from(bucket).list(id)
+      if (files && files.length) {
+        await supabase.storage.from(bucket).remove(files.map(f => `${id}/${f.name}`))
+      }
+    } catch { /* mazání souborů nesmí zablokovat smazání záznamu */ }
+  }
 
   // Smaž záznam z DB
   return supabase.from('events').delete().eq('id', id)
@@ -387,9 +388,20 @@ export async function addEventRating(eventId: string, rating: number) {
 
 // ─── Storage ──────────────────────────────────────────────
 
-export async function uploadPanorama(file: File, eventId: string) {
+// Bezpečný název souboru z titulu události (zachová diakritiku, odstraní znaky
+// problematické pro cesty/URL, mezery → _). Výsledné názvy: "ID_Název_pano" apod.
+function fileSlug(title?: string): string {
+  return ((title || 'udalost')
+    .normalize('NFC')
+    .trim()
+    .replace(/[\\/:*?"<>|#%]+/g, '')
+    .replace(/\s+/g, '_')
+    .slice(0, 60)) || 'udalost'
+}
+
+export async function uploadPanorama(file: File, eventId: string, title?: string) {
   const ext = file.name.split('.').pop()
-  const path = `${eventId}/panorama.${ext}`
+  const path = `${eventId}/${eventId}_${fileSlug(title)}_pano.${ext}`
   const { error } = await supabase.storage
     .from('panorama')
     .upload(path, file, { upsert: true, contentType: file.type })
@@ -422,8 +434,8 @@ export async function downloadEventImageBlob(imageUrl: string): Promise<Blob | n
 }
 
 // Náhled panoramatu (malý WebP) do stejného bucketu — pro okamžité zobrazení
-export async function uploadPanoramaPreview(file: File, eventId: string) {
-  const path = `${eventId}/preview.webp`
+export async function uploadPanoramaPreview(file: File, eventId: string, title?: string) {
+  const path = `${eventId}/${eventId}_${fileSlug(title)}_pano_preview.webp`
   const { error } = await supabase.storage
     .from('panorama')
     .upload(path, file, { upsert: true, contentType: 'image/webp' })
@@ -432,9 +444,9 @@ export async function uploadPanoramaPreview(file: File, eventId: string) {
   return { url: data.publicUrl, error: null }
 }
 
-export async function uploadEventImage(file: File, eventId: string) {
+export async function uploadEventImage(file: File, eventId: string, title?: string) {
   const ext = file.name.split('.').pop()
-  const path = `${eventId}/cover.${ext}`
+  const path = `${eventId}/${eventId}_${fileSlug(title)}_ilustrace.${ext}`
   const { error } = await supabase.storage
     .from('events')
     .upload(path, file, { upsert: true, contentType: file.type })
@@ -474,9 +486,10 @@ export async function uploadPanoramaWithCleanup(
   file: File,
   eventId: string,
   oldPanoramaUrl: string | null,
+  title?: string,
 ): Promise<{ url: string | null; error: Error | null }> {
   // 1. Upload nového souboru
-  const { url, error: uploadError } = await uploadPanorama(file, eventId)
+  const { url, error: uploadError } = await uploadPanorama(file, eventId, title)
   if (uploadError || !url) {
     return { url: null, error: uploadError as Error ?? new Error('Upload selhal') }
   }

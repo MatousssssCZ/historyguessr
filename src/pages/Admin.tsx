@@ -135,7 +135,7 @@ export default function AdminPage() {
         if (!blob) { failed++; firstError ||= 'Panorama se nepodařilo stáhnout (cesta / oprávnění bucketu).' }
         else if (!preview) { failed++; firstError ||= 'Náhled se nepodařilo vykreslit (WebP/canvas).' }
         else {
-          const { url, error: upErr } = await uploadPanoramaPreview(preview, ev.id)
+          const { url, error: upErr } = await uploadPanoramaPreview(preview, ev.id, ev.title)
           if (upErr || !url) { failed++; firstError ||= `Upload náhledu: ${upErr?.message ?? 'neznámá chyba'}` }
           else {
             const { error: dbErr } = await updateEvent(ev.id, { preview_url: url })
@@ -374,6 +374,9 @@ type FormData = {
   category: string; difficulty: string; published: boolean
 }
 
+// Dočasné skrytí AI generování panoramatu (kód zůstává, jen se nerenderuje).
+const SHOW_AI_PANORAMA = false
+
 function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
   const { user } = useAuth()
   const [form, setForm] = useState<FormData>({
@@ -547,8 +550,8 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           // Při editaci použij bezpečné nahrazení (smaže starý soubor)
           const oldUrl = event?.panorama_url ?? null
           const { url, error } = event
-            ? await uploadPanoramaWithCleanup(fileToUpload, savedId, oldUrl)
-            : await uploadPanorama(fileToUpload, savedId)
+            ? await uploadPanoramaWithCleanup(fileToUpload, savedId, oldUrl, form.title)
+            : await uploadPanorama(fileToUpload, savedId, form.title)
           if (error) throw error
           if (!event) await updateEvent(savedId, { panorama_url: url! })
 
@@ -556,7 +559,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           try {
             const previewFile = await generatePreview(fileToUpload)
             if (previewFile) {
-              const { url: pvUrl } = await uploadPanoramaPreview(previewFile, savedId)
+              const { url: pvUrl } = await uploadPanoramaPreview(previewFile, savedId, form.title)
               if (pvUrl) await updateEvent(savedId, { preview_url: pvUrl })
             }
           } catch (e) {
@@ -564,7 +567,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
           }
         }
         if (imageFile) {
-          const { url, error } = await uploadEventImage(imageFile, savedId)
+          const { url, error } = await uploadEventImage(imageFile, savedId, form.title)
           if (error) throw error
           await updateEvent(savedId, { event_image_url: url! })
         }
@@ -792,7 +795,8 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
             <div>
               <label className="label">360° panorama * (JPG/PNG, max 50 MB)</label>
 
-              {/* AI generování panoramatu */}
+              {/* AI generování panoramatu — dočasně skryto (SHOW_AI_PANORAMA) */}
+              {SHOW_AI_PANORAMA && (
               <div style={{ marginBottom: 12, padding: 14, borderRadius: 10, border: '1px solid var(--accent)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                 <button type="button" className="btn btn-primary" onClick={handleGeneratePanorama} disabled={panoLoading} style={{ fontSize: 13 }}>
                   {panoLoading ? 'Generuji panorama… (~30–60 s)' : '✨ Vygenerovat panorama AI'}
@@ -808,6 +812,7 @@ function EventForm({ event, onDone }: { event?: Event; onDone: () => void }) {
                 {panoLoading && <span style={{ fontSize: 11, color: 'var(--ink-3)', flex: '1 1 100%' }}><span className="spinner" style={{ width: 12, height: 12 }}/> Může to chvíli trvat, nezavírej okno.</span>}
                 {panoError && <span style={{ fontSize: 12, color: 'var(--accent-dark, #b85a3e)', flex: '1 1 100%' }}>⚠️ {panoError}</span>}
               </div>
+              )}
 
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={(f) => { setPanoramaFile(f); setCompressionInfo(f ? `Vybráno: ${formatFileSize(f.size)} — bude zkomprimováno` : null) }} ref={panoramaRef}/>
               {compressionInfo && (
