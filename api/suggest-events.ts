@@ -42,6 +42,28 @@ export default async function handler(req: any, res: any) {
     if (exRes.ok) existing = await exRes.json()
   } catch { /* když selže, model navrhne i bez kontextu */ }
 
+  // ── Denní výzva: zjisti, které nadcházející dny nemají přiřazenou událost ──
+  const assigned = new Set<string>()
+  try {
+    const daRes = await fetch(`${SUPA}/rest/v1/daily_challenge_assignments?select=month,day&event_id=not.is.null`, {
+      headers: { apikey: ANON!, Authorization: `Bearer ${token}` },
+    })
+    if (daRes.ok) {
+      const rows = await daRes.json()
+      if (Array.isArray(rows)) for (const r of rows) assigned.add(`${r.month}-${r.day}`)
+    }
+  } catch { /* bez denní kontroly to navrhne i tak */ }
+
+  const upcomingMissing: string[] = []
+  const now = new Date()
+  for (let i = 0; i < 6; i++) {
+    const dt = new Date(now)
+    dt.setDate(now.getDate() + i)
+    const m = dt.getMonth() + 1
+    const d = dt.getDate()
+    if (!assigned.has(`${m}-${d}`)) upcomingMissing.push(`${d}. ${m}.`)
+  }
+
   // Kompaktní souhrn pokrytí (po stoletích a kontinentech podle lat/lng).
   const titles = existing.map(e => e.title).filter(Boolean)
   const byCentury: Record<string, number> = {}
@@ -59,14 +81,23 @@ export default async function handler(req: any, res: any) {
     `Cíl: vyplnit MEZERY v pokrytí — málo zastoupená historická období, málo zastoupené části světa a kategorie. ` +
     `Vyhni se DUPLICITÁM se seznamem existujících událostí (ani blízké varianty téhož). ` +
     `Každá událost musí mít konkrétní místo (ne abstraktní) a být reálná a doložitelná. ` +
+    `Část návrhů uspořádej do 1–3 tematických SÉRIÍ / kampaní (např. „Velké objevné plavby", „Vědecká revoluce", „Cesta k měsíci") — ` +
+    `události ve stejné sérii nech tematicky a chronologicky navazovat, aby z nich šla poskládat postupná kampaň. ` +
     `category je jedno z: ${CATEGORIES.join(', ')}.`
 
+  const dailyHint = upcomingMissing.length > 0
+    ? `DENNÍ VÝZVA — tyto NADCHÁZEJÍCÍ dny zatím NEMAJÍ přiřazenou událost: ${upcomingMissing.join(', ')}.\n` +
+      `Zařaď do návrhů konkrétní událost pro alespoň 2–3 z těchto dní — událost, která se stala přesně v daný DEN a MĚSÍC (libovolný rok), aby šla použít pro „Tento den v historii". U takových v "reason" uveď to datum.\n\n`
+    : ''
+
   const userMsg = `Navrhni ${count} nových událostí.\n\n` +
+    dailyHint +
     `EXISTUJÍCÍ NÁZVY (vyhni se jim a jejich variantám):\n${titles.slice(0, 400).join('; ') || '(žádné)'}\n\n` +
     `POKRYTÍ PODLE STOLETÍ (stoletíIndex:počet): ${JSON.stringify(byCentury)}\n` +
     `POKRYTÍ PODLE KATEGORIÍ: ${JSON.stringify(byCat)}\n\n` +
     `Vrať JSON objekt s klíčem "events" = pole ${count} položek, každá:\n` +
-    `{ "title": "název česky", "year": <celé číslo, záporné = př. n. l.>, "country": "stát/lokalita", "category": "<jedna z povolených>", "reason": "krátké zdůvodnění (česky), proč doplňuje sbírku" }`
+    `{ "title": "název česky", "year": <celé číslo, záporné = př. n. l.>, "country": "stát/lokalita", "category": "<jedna z povolených>", ` +
+    `"series": "název série/kampaně nebo null, pokud událost nepatří do žádné", "reason": "krátké zdůvodnění (česky), proč doplňuje sbírku (případně které datum denní výzvy plní)" }`
 
   try {
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -97,6 +128,7 @@ export default async function handler(req: any, res: any) {
       year: Number.isFinite(e.year) ? Math.round(e.year) : null,
       country: String(e.country || '').trim() || null,
       category: CATEGORIES.includes(e.category) ? e.category : null,
+      series: typeof e.series === 'string' && e.series.trim() ? e.series.trim() : null,
       reason: String(e.reason || '').trim() || null,
     })).filter((e: any) => e.title)
 
