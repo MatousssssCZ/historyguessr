@@ -221,6 +221,38 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
       <div ref={containerRef} style={{ width: '100%', height: '100%' }}/>
       <FullscreenButton/>
 
+      {/* Loading overlay — sépiový „hledající kompas" */}
+      {error === 'loading' && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 4,
+          background: 'radial-gradient(circle at 50% 42%, #3a2a1d 0%, var(--sepia-900) 70%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 20, animation: 'fadeIn 250ms ease',
+        }}>
+          <div style={{ position: 'relative', width: 76, height: 76, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid var(--accent)', animation: 'pulseRing 1.8s ease-out infinite' }}/>
+            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid var(--accent)', animation: 'pulseRing 1.8s ease-out infinite', animationDelay: '0.9s' }}/>
+            {/* statický kruh kompasu */}
+            <svg width="76" height="76" viewBox="0 0 24 24" style={{ position: 'absolute', inset: 0 }} fill="none" stroke="rgba(245,241,232,0.28)" strokeWidth="1">
+              <circle cx="12" cy="12" r="10.5"/>
+              <path d="M12 1.5v2M12 20.5v2M1.5 12h2M20.5 12h2" stroke="rgba(245,241,232,0.4)" strokeWidth="1.2"/>
+            </svg>
+            {/* rotující střelka */}
+            <svg width="76" height="76" viewBox="0 0 24 24" style={{ position: 'absolute', inset: 0, animation: 'spin 2.8s cubic-bezier(0.5,0,0.5,1) infinite' }}>
+              <polygon points="12,3.5 9.6,12 14.4,12" fill="var(--accent)"/>
+              <polygon points="12,20.5 9.6,12 14.4,12" fill="rgba(245,241,232,0.75)"/>
+              <circle cx="12" cy="12" r="1.4" fill="#fff"/>
+            </svg>
+          </div>
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
+            color: 'var(--feature-fg)', margin: 0, animation: 'textPulse 1.6s ease-in-out infinite',
+          }}>
+            {t('game.loadingPanorama')}
+          </p>
+        </div>
+      )}
+
       {/* Fallback overlay — chyba i zaseknuté načítání */}
       {error === 'failed' && (
         <div style={{
