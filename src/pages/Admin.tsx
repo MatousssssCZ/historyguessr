@@ -75,7 +75,7 @@ import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
-import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, track } from '@/lib/supabase'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, getEventFileSizes, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
 import { generateEventDraft, generatePanorama } from '@/lib/ai'
 import type { Event } from '@/types/database'
@@ -92,6 +92,28 @@ export default function AdminPage() {
   const [fetching, setFetching] = useState(true)
   const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number; firstError?: string } | null>(null)
   const [imgComp, setImgComp] = useState<{ running: boolean; done: number; total: number; saved: number; skipped: number; failed: number; firstError?: string } | null>(null)
+  // Velikosti souborů (panorama/ilustrace) — načítají se na pozadí ze Storage.
+  const [sizes, setSizes] = useState<Map<string, { panorama: number | null; illustration: number | null }>>(new Map())
+
+  // Po načtení seznamu doplň velikosti souborů (omezená souběžnost).
+  useEffect(() => {
+    if (events.length === 0) return
+    let alive = true
+    ;(async () => {
+      const queue = [...events]
+      const result = new Map<string, { panorama: number | null; illustration: number | null }>()
+      const worker = async () => {
+        while (queue.length && alive) {
+          const ev = queue.shift()!
+          const s = await getEventFileSizes(ev.id).catch(() => ({ panorama: null, illustration: null }))
+          result.set(ev.id, s)
+          if (alive) setSizes(new Map(result))
+        }
+      }
+      await Promise.all(Array.from({ length: 6 }, worker))
+    })()
+    return () => { alive = false }
+  }, [events])
 
   // Dávkové komprimování stávajících ilustračních obrázků.
   async function handleRecompressIllustrations() {
@@ -276,7 +298,7 @@ export default function AdminPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
         {panel === 'list' && (
           <EventList
-            events={filteredEvents} total={events.length}
+            events={filteredEvents} total={events.length} sizes={sizes}
             onEdit={openEdit} onToggle={handleToggle} onDelete={handleDelete}
             search={search} setSearch={setSearch}
             allCategories={allCategories} categoryFilters={categoryFilters} toggleCategory={toggleCategory}
@@ -294,9 +316,10 @@ export default function AdminPage() {
 }
 
 // ── Event list ────────────────────────────────────────────
-function EventList({ events: filtered, total, onEdit, onToggle, onDelete, search, setSearch, allCategories, categoryFilters, toggleCategory, statusFilter, setStatusFilter, clearFilters }: {
+function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete, search, setSearch, allCategories, categoryFilters, toggleCategory, statusFilter, setStatusFilter, clearFilters }: {
   events: Event[]
   total: number
+  sizes: Map<string, { panorama: number | null; illustration: number | null }>
   onEdit: (e: Event) => void
   onToggle: (id: string, published: boolean) => void
   onDelete: (id: string) => void
@@ -389,7 +412,7 @@ function EventList({ events: filtered, total, onEdit, onToggle, onDelete, search
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
-            {['ID', 'Název', 'Rok', 'Radius', 'Obtížnost', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
+            {['ID', 'Název', 'Rok', 'Radius', 'Obtížnost', 'Soubory', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
               <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>
                 {h}
               </th>
@@ -418,6 +441,18 @@ function EventList({ events: filtered, total, onEdit, onToggle, onDelete, search
                 {ev.location_radius_km > 0 ? `${ev.location_radius_km} km` : '—'}
               </td>
               <td style={{ padding: '12px 16px' }}>{'★'.repeat(ev.difficulty)}{'☆'.repeat(3 - ev.difficulty)}</td>
+              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+                {(() => {
+                  const s = sizes.get(ev.id)
+                  if (!s) return <span style={{ opacity: 0.5 }}>…</span>
+                  return (
+                    <div style={{ lineHeight: 1.5 }}>
+                      <div>🖼 {s.panorama != null ? formatFileSize(s.panorama) : '—'}</div>
+                      <div>🎨 {s.illustration != null ? formatFileSize(s.illustration) : '—'}</div>
+                    </div>
+                  )
+                })()}
+              </td>
               <td style={{ padding: '12px 16px' }}>
                 {ev.rating_count > 0 ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -496,6 +531,50 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   const [savingNext, setSavingNext] = useState(false)
+  // Per-událost komprimace
+  const [compPano, setCompPano] = useState<{ busy: boolean; msg?: string } | null>(null)
+  const [compIllu, setCompIllu] = useState<{ busy: boolean; msg?: string } | null>(null)
+
+  async function handleCompressPanorama() {
+    if (!event?.panorama_url || event.panorama_url === 'pending') return
+    setCompPano({ busy: true, msg: 'Stahuji panorama…' })
+    try {
+      const blob = await downloadPanoramaBlob(event.panorama_url)
+      if (!blob) throw new Error('Panorama se nepodařilo stáhnout (cesta / CORS).')
+      const srcFile = new File([blob], 'panorama', { type: blob.type || 'image/webp' })
+      setCompPano({ busy: true, msg: 'Komprimuji…' })
+      const result = await compressPanorama(srcFile)
+      if (result.compressedSize >= blob.size) { setCompPano({ busy: false, msg: `Bez úspory (${formatFileSize(blob.size)}) — necháno.` }); return }
+      const { url, error } = await uploadPanoramaWithCleanup(result.file, event.id, event.panorama_url, form.title)
+      if (error || !url) throw error ?? new Error('Upload selhal')
+      // přegeneruj náhled z nově zkomprimované verze
+      try {
+        const preview = await generatePreview(result.file)
+        if (preview) { const { url: pv } = await uploadPanoramaPreview(preview, event.id, form.title); if (pv) await updateEvent(event.id, { preview_url: pv }) }
+      } catch { /* náhled není kritický */ }
+      setCompPano({ busy: false, msg: `✓ ${formatFileSize(blob.size)} → ${formatFileSize(result.compressedSize)} (−${result.savings}%)` })
+    } catch (e: any) {
+      setCompPano({ busy: false, msg: `⚠️ ${e?.message || 'Komprese selhala.'}` })
+    }
+  }
+
+  async function handleCompressIllustration() {
+    if (!event?.event_image_url) return
+    setCompIllu({ busy: true, msg: 'Stahuji ilustraci…' })
+    try {
+      const blob = await downloadEventImageBlob(event.event_image_url)
+      if (!blob) throw new Error('Obrázek se nepodařilo stáhnout (cesta / CORS).')
+      setCompIllu({ busy: true, msg: 'Komprimuji…' })
+      const src = new File([blob], 'ilustrace', { type: blob.type || 'image/jpeg' })
+      const compressed = await compressIllustration(src)
+      if (compressed.size >= blob.size) { setCompIllu({ busy: false, msg: `Bez úspory (${formatFileSize(blob.size)}) — necháno.` }); return }
+      const { error } = await recompressEventImage(compressed, event.id, event.title, event.event_image_url)
+      if (error) throw error
+      setCompIllu({ busy: false, msg: `✓ ${formatFileSize(blob.size)} → ${formatFileSize(compressed.size)}` })
+    } catch (e: any) {
+      setCompIllu({ busy: false, msg: `⚠️ ${e?.message || 'Komprese selhala.'}` })
+    }
+  }
   const [error, setError] = useState<string | null>(null)
   const [panoramaPreview, setPanoramaPreview] = useState<string | null>(null)
   const [compressionInfo, setCompressionInfo] = useState<string | null>(null)
@@ -943,10 +1022,28 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
                   👁 Náhled panoramy
                 </button>
               )}
+              {/* Komprimace stávajícího panoramatu */}
+              {event?.panorama_url && event.panorama_url !== 'pending' && (
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} disabled={compPano?.busy} onClick={handleCompressPanorama}>
+                    {compPano?.busy ? <><span className="spinner" style={{ width: 12, height: 12 }}/> {compPano.msg}</> : '🗜 Komprimovat panorama'}
+                  </button>
+                  {compPano && !compPano.busy && <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{compPano.msg}</span>}
+                </div>
+              )}
             </div>
             <div>
               <label className="label">Doplňkový obrázek události (JPG/PNG, max 10 MB)</label>
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={10} file={imageFile} currentUrl={event?.event_image_url ?? undefined} onChange={setImageFile} ref={imageRef}/>
+              {/* Komprimace stávající ilustrace */}
+              {event?.event_image_url && (
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} disabled={compIllu?.busy} onClick={handleCompressIllustration}>
+                    {compIllu?.busy ? <><span className="spinner" style={{ width: 12, height: 12 }}/> {compIllu.msg}</> : '🗜 Komprimovat ilustraci'}
+                  </button>
+                  {compIllu && !compIllu.busy && <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{compIllu.msg}</span>}
+                </div>
+              )}
             </div>
           </div>
         </div>

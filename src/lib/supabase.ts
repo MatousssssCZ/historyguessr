@@ -200,6 +200,28 @@ export function transformedImageUrl(publicUrl: string, opts: { width?: number; q
   } catch { return publicUrl }
 }
 
+/** Velikost panoramatu a ilustrace dané události v bajtech (z metadat Storage). */
+export async function getEventFileSizes(eventId: string): Promise<{ panorama: number | null; illustration: number | null }> {
+  let panorama: number | null = null
+  let illustration: number | null = null
+  try {
+    const { data } = await supabase.storage.from('panorama').list(eventId)
+    if (data) {
+      const main = data.filter(f => !f.name.includes('preview'))
+      const sum = main.reduce((s, f) => s + ((f as { metadata?: { size?: number } }).metadata?.size ?? 0), 0)
+      panorama = sum || null
+    }
+  } catch { /* ignore */ }
+  try {
+    const { data } = await supabase.storage.from('events').list(eventId)
+    if (data) {
+      const sum = data.reduce((s, f) => s + ((f as { metadata?: { size?: number } }).metadata?.size ?? 0), 0)
+      illustration = sum || null
+    }
+  } catch { /* ignore */ }
+  return { panorama, illustration }
+}
+
 export async function getAdminEvents() {
   return supabase
     .from('events')
