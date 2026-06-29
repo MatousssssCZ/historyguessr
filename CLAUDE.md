@@ -205,7 +205,7 @@ jsou líně načítané (`React.lazy`).
 Exponenciální pokles, **MAX_SCORE = 500** za složku:
 
 - **Poloha:** `500 · e^(−max(0, distKm − radiusKm) / 1500)`
-- **Rok:** `500` v rozsahu `[year_from, year_to]`, jinak `500 · e^(−roky_mimo / 120)`
+- **Rok:** `500` v rozsahu `[year_from, year_to]`, jinak `500 · e^(−roky_mimo / 240)`
 - **Max za kolo:** 1 000 bodů (500 + 500)
 
 V multiplayeru skóre počítá a ukládá **server** (RPC `submit_multiplayer_answer`,
