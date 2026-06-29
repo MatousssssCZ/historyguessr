@@ -51,18 +51,22 @@ export default function AdminDailyChallengePage() {
     if (!selectedDay) return
     setSaving(true)
     const { error } = await setDailyAssignment(selectedDay.month, selectedDay.day, eventId)
-    if (!error) {
-      const key = `${selectedDay.month}-${selectedDay.day}`
-      const newMap = new Map(assignments)
-      if (eventId === null) {
-        newMap.delete(key)
-      } else {
-        const ev = events.find(e => e.id === eventId)
-        newMap.set(key, { month: selectedDay.month, day: selectedDay.day, event_id: eventId, events: ev })
-      }
-      setAssignments(newMap)
-    }
     setSaving(false)
+    if (error) {
+      console.error('[Daily] setDailyAssignment error:', error)
+      const e = error as { message?: string; details?: string; hint?: string; code?: string }
+      alert('Přiřazení se nepodařilo uložit:\n' + [e.message, e.details, e.hint, e.code && `(${e.code})`].filter(Boolean).join(' · '))
+      return
+    }
+    const key = `${selectedDay.month}-${selectedDay.day}`
+    const newMap = new Map(assignments)
+    if (eventId === null) {
+      newMap.delete(key)
+    } else {
+      const ev = events.find(e => e.id === eventId)
+      newMap.set(key, { month: selectedDay.month, day: selectedDay.day, event_id: eventId, events: ev })
+    }
+    setAssignments(newMap)
     setSelectedDay(null)
     setSearch('')
   }
