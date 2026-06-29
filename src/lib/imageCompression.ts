@@ -154,7 +154,7 @@ export async function compressPanorama(
  * Zmenší na max šířku 1600 px a uloží jako WebP (q ~0.72). Když WebP není
  * podporován, vrátí originál beze změny.
  */
-export async function compressIllustration(file: File, maxWidth = 1600, quality = 0.72): Promise<File> {
+export async function compressIllustration(file: File, maxDim = 1600): Promise<File> {
   try {
     const testCanvas = document.createElement('canvas')
     testCanvas.width = 1; testCanvas.height = 1
@@ -162,13 +162,20 @@ export async function compressIllustration(file: File, maxWidth = 1600, quality 
 
     const img = await loadImage(file)
     const w = img.naturalWidth, h = img.naturalHeight
-    const ratio = w > maxWidth ? maxWidth / w : 1
+    // Omez DELŠÍ stranu (ne jen šířku) — funguje i pro obrázky na výšku.
+    const ratio = Math.min(1, maxDim / Math.max(w, h))
     const width = Math.round(w * ratio), height = Math.round(h * ratio)
-    const blob = await canvasCompress(img, width, height, quality)
-    // Když by komprese paradoxně zvětšila (malý originál), nech originál.
-    if (blob.size >= file.size) return file
+
+    // Kvalitativní žebříček — vyber nejmenší výstup, který je menší než originál.
+    let best: Blob | null = null
+    for (const q of [0.72, 0.6, 0.5]) {
+      const blob = await canvasCompress(img, width, height, q)
+      if (!best || blob.size < best.size) best = blob
+      if (blob.size < file.size * 0.9) break // dost úspory, dál nezkoušej
+    }
+    if (!best || best.size >= file.size) return file
     const base = file.name.replace(/\.[^.]+$/, '') || 'ilustrace'
-    return new File([blob], `${base}.webp`, { type: 'image/webp' })
+    return new File([best], `${base}.webp`, { type: 'image/webp' })
   } catch (e) {
     console.warn('[Illustration] Komprese selhala, nahrávám originál:', e)
     return file
