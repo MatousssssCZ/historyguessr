@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, getEventImages, downloadEventImageBlob, transformedImageUrl, getFriendRequests, type DailyResult } from '@/lib/supabase'
-import { luminanceFromBlob } from '@/lib/imageColor'
+import { signOut, getTodayDailyResult, getEventImages, transformedImageUrl, getFriendRequests, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -23,50 +22,30 @@ export default function MenuPage() {
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
   const [friendReqs, setFriendReqs] = useState(0)
 
-  // ── Obrázek na hero dlaždici (z událostí) + barva textu dle jasu ──
-  const [heroImg, setHeroImg] = useState<string | null>(null)
-  const [heroTextDark, setHeroTextDark] = useState<boolean | null>(null)
+  // ── Slideshow obrázků na hero dlaždici (Ken Burns + prolínání) ──
+  const [heroImgs, setHeroImgs] = useState<string[]>([])
 
   useEffect(() => {
     let alive = true
+    const toShow = (urls: string[]) => urls.map(u => transformedImageUrl(u, { width: 1400, quality: 60 }))
 
-    // Zobraz zmenšenou variantu (rychlé), s fallbackem na originál,
-    // kdyby projekt image transformace nepodporoval.
-    const show = (url: string) => {
-      const small = transformedImageUrl(url, { width: 1400, quality: 60 })
-      setHeroImg(small)
-      const probe = new Image()
-      probe.onerror = () => { if (alive) setHeroImg(url) }
-      probe.src = small
-    }
-
-    // 1) Session cache — stejný obrázek napříč navigací = cache hit prohlížeče.
+    // 1) Session cache — stejná sada napříč navigací = cache hit prohlížeče.
     try {
-      const cached = sessionStorage.getItem('heroImg')
+      const cached = sessionStorage.getItem('heroImgs')
       if (cached) {
-        const { url, dark } = JSON.parse(cached) as { url: string; dark?: boolean }
-        if (url) {
-          show(url)
-          if (typeof dark === 'boolean') setHeroTextDark(dark)
-          return
-        }
+        const urls = JSON.parse(cached) as string[]
+        if (Array.isArray(urls) && urls.length) { setHeroImgs(toShow(urls)); return }
       }
     } catch { /* ignore */ }
 
-    // 2) Jinak vyber náhodný a zapamatuj na session.
-    getEventImages().then(async imgs => {
+    // 2) Vyber až 5 náhodných a zapamatuj na session.
+    getEventImages().then(imgs => {
       if (!alive || imgs.length === 0) return
-      const url = imgs[Math.floor(Math.random() * imgs.length)]
-      show(url)
-      // jas → bílý/černý text (stahujeme přes SDK kvůli CORS)
-      const blob = await downloadEventImageBlob(url)
-      if (!alive || !blob) return
-      const lum = await luminanceFromBlob(blob)
-      if (alive && lum != null) {
-        const dark = lum > 0.58
-        setHeroTextDark(dark)
-        try { sessionStorage.setItem('heroImg', JSON.stringify({ url, dark })) } catch { /* ignore */ }
-      }
+      const pool = [...imgs]
+      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[pool[i], pool[j]] = [pool[j], pool[i]] }
+      const chosen = pool.slice(0, 5)
+      setHeroImgs(toShow(chosen))
+      try { sessionStorage.setItem('heroImgs', JSON.stringify(chosen)) } catch { /* ignore */ }
     }).catch(() => {})
     return () => { alive = false }
   }, [])
@@ -99,11 +78,10 @@ export default function MenuPage() {
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
 
-  // Barvy textu hero dlaždice: na obrázku bílá/černá dle jasu, jinak feature tokeny
-  const onHeroImg = !!heroImg
-  const heroTxtDark = onHeroImg && heroTextDark === true
-  const heroFg = onHeroImg ? (heroTxtDark ? '#1a1208' : '#ffffff') : 'var(--feature-fg)'
-  const heroScrimDark = onHeroImg && !heroTxtDark
+  // Na slideshow obrázcích držíme bílý text + tmavý scrim (jas se mezi obrázky mění)
+  const onHeroImg = heroImgs.length > 0
+  const heroFg = onHeroImg ? '#ffffff' : 'var(--feature-fg)'
+  const heroScrimDark = onHeroImg
 
   // Podtitul + stav pro denní výzvu
   const dailySub =
@@ -139,7 +117,7 @@ export default function MenuPage() {
             opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(18px)',
             transition: 'all 0.55s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={320}/>}
+            {onHeroImg ? <HeroSlideshow urls={heroImgs} scrimDark={heroScrimDark}/> : <HeroBackdrop height={320}/>}
             <div style={{ position: 'relative', height: 320, display: 'flex', alignItems: 'flex-end', padding: '0 38px 34px' }}>
               <div style={{ flex: 1 }}>
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 50, color: heroFg, margin: 0, letterSpacing: '-0.025em', lineHeight: 0.98, textShadow: onHeroImg ? '0 2px 18px rgba(0,0,0,0.35)' : 'none' }}>
@@ -234,7 +212,7 @@ export default function MenuPage() {
         opacity: mounted ? 1 : 0, transform: mounted ? 'none' : 'translateY(14px)',
         transition: 'all 0.45s 0.06s cubic-bezier(0.16,1,0.3,1)',
       }}>
-        {heroImg ? <HeroImage url={heroImg} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
+        {onHeroImg ? <HeroSlideshow urls={heroImgs} scrimDark={heroScrimDark}/> : <HeroBackdrop height={162} sideFade/>}
         <div style={{ position: 'relative', padding: '18px 82px 18px 20px' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: heroFg, lineHeight: 1.04, textShadow: onHeroImg ? '0 2px 14px rgba(0,0,0,0.35)' : 'none' }}>{t('menu.playCardTitle')}</div>
           <p style={{ margin: '8px 0 0', color: '#f5ce8b', fontFamily: 'var(--font-serif)', fontSize: 14, lineHeight: 1.45, textShadow: onHeroImg ? '0 1px 8px rgba(0,0,0,0.45)' : 'none' }}>
@@ -272,13 +250,37 @@ export default function MenuPage() {
 }
 
 // ─── Obrázek události jako pozadí hero (+ scrim pro čitelnost) ─────
-function HeroImage({ url, scrimDark }: { url: string; scrimDark: boolean }) {
+// Slideshow ilustračních obrázků: pomalý Ken Burns zoom + prolínání mezi snímky.
+function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean }) {
+  const [idx, setIdx] = useState(0)
+  useEffect(() => {
+    if (urls.length < 2) return
+    const t = setInterval(() => setIdx(i => (i + 1) % urls.length), 7000)
+    return () => clearInterval(t)
+  }, [urls.length])
+
   const scrim = scrimDark
-    ? 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.5) 100%)'
+    ? 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.55) 100%)'
     : 'linear-gradient(180deg, rgba(250,247,240,0.1) 0%, rgba(250,247,240,0.45) 100%)'
+
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      {urls.map((u, i) => (
+        <div key={u + i} style={{
+          position: 'absolute', inset: 0,
+          opacity: i === idx ? 1 : 0,
+          transition: 'opacity 1600ms ease-in-out',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${u})`, backgroundSize: 'cover', backgroundPosition: 'center',
+            animation: 'kenburns 22s ease-in-out infinite alternate',
+            animationDelay: `${i * -5}s`,
+            transformOrigin: i % 2 === 0 ? 'center 30%' : 'left center',
+            willChange: 'transform',
+          }}/>
+        </div>
+      ))}
       <div style={{ position: 'absolute', inset: 0, background: scrim }}/>
     </div>
   )
