@@ -81,8 +81,9 @@ export default async function handler(req: any, res: any) {
     `Cíl: vyplnit MEZERY v pokrytí — málo zastoupená historická období, málo zastoupené části světa a kategorie. ` +
     `Vyhni se DUPLICITÁM se seznamem existujících událostí (ani blízké varianty téhož). ` +
     `Každá událost musí mít konkrétní místo (ne abstraktní) a být reálná a doložitelná. ` +
-    `Část návrhů uspořádej do 1–3 tematických SÉRIÍ / kampaní (např. „Velké objevné plavby", „Vědecká revoluce", „Cesta k měsíci") — ` +
-    `události ve stejné sérii nech tematicky a chronologicky navazovat, aby z nich šla poskládat postupná kampaň. ` +
+    `Návrhy uspořádej do tematických SÉRIÍ / kampaní (např. „Velké objevné plavby", „Vědecká revoluce", „Cesta k měsíci"). ` +
+    `Každá série má typicky PŘESNĚ 5 událostí, které spolu tematicky a chronologicky navazují, aby z nich šla poskládat postupná kampaň. ` +
+    `Pokud počet návrhů není dělitelný 5, zbytek může tvořit menší sérii nebo samostatné události (series = null). ` +
     `category je jedno z: ${CATEGORIES.join(', ')}.`
 
   const dailyHint = upcomingMissing.length > 0
