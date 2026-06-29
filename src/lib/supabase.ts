@@ -474,6 +474,23 @@ export async function uploadEventImage(file: File, eventId: string, title?: stri
   return { url: data.publicUrl, error: null }
 }
 
+/** Nahradí ilustrační obrázek nově zkomprimovaným, uloží URL a smaže starý soubor. */
+export async function recompressEventImage(
+  file: File, eventId: string, title: string, oldUrl: string | null,
+): Promise<{ url: string | null; error: Error | null }> {
+  const { url, error } = await uploadEventImage(file, eventId, title)
+  if (error || !url) return { url: null, error: (error as Error) ?? new Error('Upload selhal') }
+  const { error: dbErr } = await updateEvent(eventId, { event_image_url: url })
+  if (dbErr) return { url: null, error: dbErr as Error }
+  if (oldUrl && oldUrl !== url) {
+    try {
+      const m = new URL(oldUrl).pathname.match(/\/storage\/v1\/object\/public\/events\/(.+)/)
+      if (m?.[1]) await supabase.storage.from('events').remove([decodeURIComponent(m[1])])
+    } catch { /* úklid není kritický */ }
+  }
+  return { url, error: null }
+}
+
 // ─── Analytics ───────────────────────────────────────────
 
 export async function track(

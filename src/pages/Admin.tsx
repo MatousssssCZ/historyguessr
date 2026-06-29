@@ -75,7 +75,7 @@ import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
-import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, track } from '@/lib/supabase'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
 import { generateEventDraft, generatePanorama } from '@/lib/ai'
 import type { Event } from '@/types/database'
@@ -91,6 +91,37 @@ export default function AdminPage() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [fetching, setFetching] = useState(true)
   const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number; firstError?: string } | null>(null)
+  const [imgComp, setImgComp] = useState<{ running: boolean; done: number; total: number; saved: number; skipped: number; failed: number; firstError?: string } | null>(null)
+
+  // Dávkové komprimování stávajících ilustračních obrázků.
+  async function handleRecompressIllustrations() {
+    const targets = events.filter(e => e.event_image_url)
+    if (targets.length === 0) { alert('Žádné ilustrace ke komprimaci.'); return }
+    if (!confirm(`Zkomprimovat ${targets.length} ilustrací?\nStáhne to každý obrázek, zmenší a nahraje zpět. Nech kartu otevřenou až do konce.`)) return
+
+    setImgComp({ running: true, done: 0, total: targets.length, saved: 0, skipped: 0, failed: 0 })
+    let done = 0, saved = 0, skipped = 0, failed = 0, firstError = ''
+    for (const ev of targets) {
+      try {
+        const blob = await downloadEventImageBlob(ev.event_image_url!)
+        if (!blob) { failed++; firstError ||= 'Obrázek se nepodařilo stáhnout (cesta / CORS).' }
+        else {
+          const src = new File([blob], 'ilustrace', { type: blob.type || 'image/jpeg' })
+          const compressed = await compressIllustration(src)
+          if (compressed.size >= blob.size) { skipped++ } // už malý / bez úspory
+          else {
+            const { error } = await recompressEventImage(compressed, ev.id, ev.title, ev.event_image_url!)
+            if (error) { failed++; firstError ||= error.message }
+            else saved++
+          }
+        }
+      } catch (e) { failed++; firstError ||= e instanceof Error ? e.message : String(e) }
+      done++
+      setImgComp({ running: true, done, total: targets.length, saved, skipped, failed, firstError })
+    }
+    setImgComp({ running: false, done, total: targets.length, saved, skipped, failed, firstError })
+    await loadEvents()
+  }
 
   // ── Filtry (zvednuté sem, aby šlo navigovat „na další dle filtru") ──
   const [search, setSearch] = useState('')
@@ -203,6 +234,9 @@ export default function AdminPage() {
             <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={regen?.running} onClick={() => handleRegeneratePreviews(false)} title="Vytvoří malý náhled z každého panoramatu pro okamžité zobrazení ve hře">
               {regen?.running ? `♻ ${regen.done}/${regen.total}…` : '♻ Přegenerovat náhledy'}
             </button>
+            <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={imgComp?.running} onClick={handleRecompressIllustrations} title="Zmenší a zkomprimuje všechny doplňkové obrázky událostí (WebP, max 1600 px)">
+              {imgComp?.running ? `🗜 ${imgComp.done}/${imgComp.total}…` : '🗜 Komprimovat ilustrace'}
+            </button>
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
         )}
@@ -222,6 +256,20 @@ export default function AdminPage() {
             )}
           </span>
           {!regen.running && <button className="btn btn-ghost" style={{ fontSize: 12, color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => setRegen(null)}>Zavřít</button>}
+        </div>
+      )}
+
+      {imgComp && (
+        <div style={{ background: imgComp.running ? 'var(--accent)' : 'var(--success-deep, #1d6b3a)', color: '#fff', padding: '10px 32px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>
+            {imgComp.running
+              ? `🗜 Komprimuji ilustrace… ${imgComp.done} / ${imgComp.total}`
+              : `✓ Hotovo — ${imgComp.saved} zkomprimováno${imgComp.skipped ? `, ${imgComp.skipped} bez úspory` : ''}${imgComp.failed ? `, ${imgComp.failed} se nezdařilo` : ''}`}
+            {!imgComp.running && imgComp.failed > 0 && imgComp.firstError && (
+              <span style={{ display: 'block', fontSize: 12, opacity: 0.85, marginTop: 4 }}>Důvod: {imgComp.firstError}</span>
+            )}
+          </span>
+          {!imgComp.running && <button className="btn btn-ghost" style={{ fontSize: 12, color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => setImgComp(null)}>Zavřít</button>}
         </div>
       )}
 
