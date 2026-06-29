@@ -9,6 +9,8 @@ export interface Profile {
   created_at: string
 }
 
+export type EventStatus = 'draft' | 'awaiting_panorama' | 'awaiting_review' | 'published'
+
 export interface Event {
   id: string
   seq: number
@@ -30,6 +32,8 @@ export interface Event {
   category: string | null
   difficulty: 1 | 2 | 3
   published: boolean
+  status: EventStatus
+  panorama_prompt: string | null
   play_count: number
   created_by: string | null
   created_at: string
@@ -63,6 +67,8 @@ export interface EventInsert {
   category?: string | null
   difficulty?: 1 | 2 | 3
   published?: boolean
+  status?: EventStatus
+  panorama_prompt?: string | null
   created_by?: string | null
   location_radius_km?: number
   year_range?: number
@@ -88,6 +94,8 @@ export interface EventUpdate {
   category?: string | null
   difficulty?: 1 | 2 | 3
   published?: boolean
+  status?: EventStatus
+  panorama_prompt?: string | null
   updated_at?: string
   location_radius_km?: number
   year_range?: number
