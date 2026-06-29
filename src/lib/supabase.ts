@@ -643,7 +643,7 @@ export async function setDailyAssignment(
   }
   const { error } = await supabase
     .from('daily_challenge_assignments')
-    .upsert({ month, day, event_id: eventId, updated_at: new Date().toISOString() })
+    .upsert({ month, day, event_id: eventId, updated_at: new Date().toISOString() }, { onConflict: 'month,day' })
   return { error: error as Error | null }
 }
 
