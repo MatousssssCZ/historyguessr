@@ -134,6 +134,16 @@ body {
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Načítání panoramatu — pulzující prstenec + dýchající text */
+@keyframes pulseRing {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes textPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.9; }
+}
+
 /* Ken Burns — pomalý zoom + jemný posun pro slideshow v menu */
 @keyframes kenburns {
   from { transform: scale(1.06) translate(0, 0); }
