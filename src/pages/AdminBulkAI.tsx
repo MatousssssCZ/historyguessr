@@ -60,7 +60,15 @@ export default function AdminBulkAIPage() {
     setSuggesting(true); setSuggestError(null)
     try {
       const list = await suggestEvents(n)
-      setItems(list.map((s, i) => ({ key: `${Date.now()}_${i}`, suggestion: s, approved: true, generating: false })))
+      // Seskup série pohromadě (události bez série na konec), jinak zachovej pořadí.
+      const ordered = list
+        .map((s, i) => ({ s, i }))
+        .sort((a, b) => {
+          const sa = a.s.series ?? '￿', sb = b.s.series ?? '￿'
+          return sa === sb ? a.i - b.i : sa.localeCompare(sb, 'cs')
+        })
+        .map(x => x.s)
+      setItems(ordered.map((s, i) => ({ key: `${Date.now()}_${i}`, suggestion: s, approved: true, generating: false })))
     } catch (e: any) {
       setSuggestError(e?.message || 'Návrh selhal.')
     } finally {
@@ -218,7 +226,14 @@ export default function AdminBulkAIPage() {
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <input type="checkbox" checked={it.approved} onChange={() => patch(it.key, { approved: !it.approved })} style={{ width: 18, height: 18, marginTop: 3, accentColor: 'var(--accent)' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 15 }}>{it.suggestion.title}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, fontSize: 15 }}>{it.suggestion.title}</span>
+                        {it.suggestion.series && (
+                          <span className="badge" style={{ background: 'var(--feature-bg)', color: 'var(--feature-fg)', fontSize: 10 }}>
+                            🎬 {it.suggestion.series}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>
                         {fmtYear(it.suggestion.year)} · {it.suggestion.country ?? '—'} · {it.suggestion.category ? (CAT_LABELS[it.suggestion.category] ?? it.suggestion.category) : '—'}
                       </div>

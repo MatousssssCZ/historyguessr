@@ -43,6 +43,7 @@ export type EventSuggestion = {
   year: number | null
   country: string | null
   category: string | null
+  series: string | null
   reason: string | null
 }
 
