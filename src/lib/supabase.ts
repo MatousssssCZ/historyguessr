@@ -184,6 +184,22 @@ export async function getEventImages(limit = 60): Promise<string[]> {
     .filter((u): u is string => !!u)
 }
 
+/**
+ * Převede veřejnou Storage URL na zmenšenou (render/image) variantu — výrazně
+ * menší přenos pro náhledy/hero. Pokud projekt transformace nepodporuje, render
+ * endpoint vrátí chybu → volající má fallback na originální URL.
+ */
+export function transformedImageUrl(publicUrl: string, opts: { width?: number; quality?: number } = {}): string {
+  try {
+    const u = new URL(publicUrl)
+    if (!u.pathname.includes('/storage/v1/object/public/')) return publicUrl
+    u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+    if (opts.width) u.searchParams.set('width', String(opts.width))
+    if (opts.quality) u.searchParams.set('quality', String(opts.quality))
+    return u.toString()
+  } catch { return publicUrl }
+}
+
 export async function getAdminEvents() {
   return supabase
     .from('events')

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, getEventImages, downloadEventImageBlob, getFriendRequests, type DailyResult } from '@/lib/supabase'
+import { signOut, getTodayDailyResult, getEventImages, downloadEventImageBlob, transformedImageUrl, getFriendRequests, type DailyResult } from '@/lib/supabase'
 import { luminanceFromBlob } from '@/lib/imageColor'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
@@ -29,15 +29,44 @@ export default function MenuPage() {
 
   useEffect(() => {
     let alive = true
+
+    // Zobraz zmenšenou variantu (rychlé), s fallbackem na originál,
+    // kdyby projekt image transformace nepodporoval.
+    const show = (url: string) => {
+      const small = transformedImageUrl(url, { width: 1400, quality: 60 })
+      setHeroImg(small)
+      const probe = new Image()
+      probe.onerror = () => { if (alive) setHeroImg(url) }
+      probe.src = small
+    }
+
+    // 1) Session cache — stejný obrázek napříč navigací = cache hit prohlížeče.
+    try {
+      const cached = sessionStorage.getItem('heroImg')
+      if (cached) {
+        const { url, dark } = JSON.parse(cached) as { url: string; dark?: boolean }
+        if (url) {
+          show(url)
+          if (typeof dark === 'boolean') setHeroTextDark(dark)
+          return
+        }
+      }
+    } catch { /* ignore */ }
+
+    // 2) Jinak vyber náhodný a zapamatuj na session.
     getEventImages().then(async imgs => {
       if (!alive || imgs.length === 0) return
       const url = imgs[Math.floor(Math.random() * imgs.length)]
-      setHeroImg(url)
+      show(url)
       // jas → bílý/černý text (stahujeme přes SDK kvůli CORS)
       const blob = await downloadEventImageBlob(url)
       if (!alive || !blob) return
       const lum = await luminanceFromBlob(blob)
-      if (alive && lum != null) setHeroTextDark(lum > 0.58)
+      if (alive && lum != null) {
+        const dark = lum > 0.58
+        setHeroTextDark(dark)
+        try { sessionStorage.setItem('heroImg', JSON.stringify({ url, dark })) } catch { /* ignore */ }
+      }
     }).catch(() => {})
     return () => { alive = false }
   }, [])
