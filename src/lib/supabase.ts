@@ -391,12 +391,15 @@ export async function addEventRating(eventId: string, rating: number) {
 // Bezpečný název souboru z titulu události (zachová diakritiku, odstraní znaky
 // problematické pro cesty/URL, mezery → _). Výsledné názvy: "ID_Název_pano" apod.
 function fileSlug(title?: string): string {
-  return ((title || 'udalost')
-    .normalize('NFC')
-    .trim()
-    .replace(/[\\/:*?"<>|#%]+/g, '')
-    .replace(/\s+/g, '_')
-    .slice(0, 60)) || 'udalost'
+  const base = (title || 'udalost')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // odstraň diakritiku (á→a, č→c…)
+    .replace(/ß/g, 'ss')
+    .replace(/[^A-Za-z0-9]+/g, '_')                   // vše ostatní (mezery, znaky) → _
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60)
+    .replace(/_+$/g, '')                              // ořež případné _ na konci po slice
+  return base || 'udalost'
 }
 
 export async function uploadPanorama(file: File, eventId: string, title?: string) {
