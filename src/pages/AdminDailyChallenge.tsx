@@ -278,16 +278,17 @@ export default function AdminDailyChallengePage() {
                         style={{
                           width: 28, height: 28,
                           borderRadius: 6,
-                          border: isToday ? '2px solid var(--accent)' : '1px solid var(--line-strong)',
-                          background: hasEvent ? 'rgba(217,119,87,0.15)' : 'var(--surface)',
-                          color: hasEvent ? 'var(--accent-deep)' : 'var(--ink-3)',
+                          border: isToday ? '2px solid var(--ink)' : `1px solid ${hasEvent ? 'var(--accent-deep)' : 'var(--line-strong)'}`,
+                          background: hasEvent ? 'var(--accent)' : 'var(--surface)',
+                          color: hasEvent ? '#fff' : 'var(--ink-3)',
                           fontSize: 11, fontFamily: 'var(--font-mono)',
                           cursor: 'pointer',
-                          fontWeight: isToday ? 700 : 400,
+                          fontWeight: hasEvent || isToday ? 700 : 400,
+                          boxShadow: hasEvent ? '0 1px 3px rgba(217,119,87,0.4)' : 'none',
                           transition: 'all 100ms',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = hasEvent ? 'rgba(217,119,87,0.25)' : 'var(--paper-200)' }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = hasEvent ? 'rgba(217,119,87,0.15)' : 'var(--surface)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = hasEvent ? 'var(--accent-deep)' : 'var(--paper-200)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = hasEvent ? 'var(--accent)' : 'var(--surface)' }}
                       >
                         {day}
                       </button>
@@ -302,11 +303,11 @@ export default function AdminDailyChallengePage() {
         {/* Legenda */}
         <div style={{ display: 'flex', gap: 20, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 14, height: 14, borderRadius: 3, background: 'rgba(217,119,87,0.15)', border: '1px solid var(--line-strong)' }}/>
+            <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--accent)', border: '1px solid var(--accent-deep)' }}/>
             <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Přiřazená událost</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--surface)', border: '2px solid var(--accent)' }}/>
+            <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--surface)', border: '2px solid var(--ink)' }}/>
             <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Dnešní den</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
