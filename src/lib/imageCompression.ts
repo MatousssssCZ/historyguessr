@@ -150,6 +150,32 @@ export async function compressPanorama(
 }
 
 /**
+ * Komprimuje ilustrační (doplňkový) obrázek události před uploadem.
+ * Zmenší na max šířku 1600 px a uloží jako WebP (q ~0.72). Když WebP není
+ * podporován, vrátí originál beze změny.
+ */
+export async function compressIllustration(file: File, maxWidth = 1600, quality = 0.72): Promise<File> {
+  try {
+    const testCanvas = document.createElement('canvas')
+    testCanvas.width = 1; testCanvas.height = 1
+    if (!testCanvas.toDataURL('image/webp').startsWith('data:image/webp')) return file
+
+    const img = await loadImage(file)
+    const w = img.naturalWidth, h = img.naturalHeight
+    const ratio = w > maxWidth ? maxWidth / w : 1
+    const width = Math.round(w * ratio), height = Math.round(h * ratio)
+    const blob = await canvasCompress(img, width, height, quality)
+    // Když by komprese paradoxně zvětšila (malý originál), nech originál.
+    if (blob.size >= file.size) return file
+    const base = file.name.replace(/\.[^.]+$/, '') || 'ilustrace'
+    return new File([blob], `${base}.webp`, { type: 'image/webp' })
+  } catch (e) {
+    console.warn('[Illustration] Komprese selhala, nahrávám originál:', e)
+    return file
+  }
+}
+
+/**
  * Vygeneruje malý náhled (preview) panoramatu — 1024×512 WebP.
  * Pannellum ho zobrazí okamžitě, než dotáhne plnou verzi.
  * Vstup: ideálně už zkomprimovaná plná verze (nebo originál).

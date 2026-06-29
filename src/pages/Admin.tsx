@@ -74,7 +74,7 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { compressPanorama, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
+import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
 import { generateEventDraft, generatePanorama } from '@/lib/ai'
@@ -621,7 +621,8 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
           }
         }
         if (imageFile) {
-          const { url, error } = await uploadEventImage(imageFile, savedId, form.title)
+          const illustration = await compressIllustration(imageFile)
+          const { url, error } = await uploadEventImage(illustration, savedId, form.title)
           if (error) throw error
           await updateEvent(savedId, { event_image_url: url! })
         }
