@@ -586,8 +586,18 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     </>
   )
 
+  const infoSection = (
+    <div style={{ padding: isMobile ? '0 12px 12px' : '0 20px 16px' }}>
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 10px' }}>{t('game.tabInfo')}</p>
+      {event.event_image_url && (
+        <img src={event.event_image_url} alt={eventTitle(event)} loading="lazy" style={{ width: '100%', borderRadius: 10, border: '0.5px solid var(--line)', marginBottom: 10, display: 'block', maxHeight: 200, objectFit: 'cover' }}/>
+      )}
+      <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+    </div>
+  )
+
   const leaderboardSection = (
-    <div style={{ padding: isMobile ? '0 12px 8px' : '0 20px 16px' }}>
+    <div style={{ padding: isMobile ? '0 12px 8px' : '18px 20px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.leaderboard')}</p>
         {leaderboard.length > 0 && (
@@ -647,6 +657,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               </div>
             </div>
             {scoreSection}
+            {infoSection}
             {evalSection}
             <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto' }}>
               <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
@@ -686,6 +697,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {scoreSection}
+        {infoSection}
         {evalSection}
         {leaderboardSection}
       </div>
