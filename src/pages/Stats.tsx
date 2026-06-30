@@ -3,7 +3,7 @@ import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getUserSessions, getUserDailyResults, getCategoryHits, type SessionRow } from '@/lib/supabase'
+import { getUserSessions, getUserDailyResults, getCategoryHits, localDateISO, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
 import BackButton from '@/components/BackButton'
@@ -51,7 +51,7 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
   const days = new Set(daily.map(d => d.date))
   let dailyStreak = 0
   const d = new Date()
-  const iso = (x: Date) => x.toISOString().split('T')[0]
+  const iso = (x: Date) => localDateISO(x)
   if (!days.has(iso(d))) d.setDate(d.getDate() - 1) // pokud dnes nehrál, počítej od včera
   while (days.has(iso(d))) { dailyStreak++; d.setDate(d.getDate() - 1) }
 
@@ -320,7 +320,7 @@ function TrendChart({ scores, trendPct }: { scores: number[]; trendPct: number }
 const CAL_MONTHS = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro']
 function DailyYearCalendar({ played }: { played: Set<string> }) {
   const year = new Date().getFullYear()
-  const todayIso = new Date().toISOString().split('T')[0]
+  const todayIso = localDateISO()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       {CAL_MONTHS.map((mn, mi) => {

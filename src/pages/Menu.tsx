@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, type DailyResult } from '@/lib/supabase'
+import { signOut, getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, localDateISO, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -75,7 +75,7 @@ export default function MenuPage() {
       const d = new Date()
       for (let i = 6; i >= 0; i--) {
         const dd = new Date(d); dd.setDate(d.getDate() - i)
-        days.push(played.has(dd.toISOString().split('T')[0]))
+        days.push(played.has(localDateISO(dd)))
       }
       setDailyDays(days)
     }).catch(() => {})
