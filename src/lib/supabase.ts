@@ -586,6 +586,14 @@ export async function uploadPanoramaWithCleanup(
 // ─── Daily Challenge ──────────────────────────────────────
 
 /** Načte událost pro dnešní den (podle měsíce a dne) */
+/** Lokální datum YYYY-MM-DD (denní výzva běží podle lokálního dne, ne UTC). */
+export function localDateISO(d = new Date()): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export async function getDailyChallenge(): Promise<Event | null> {
   const today = new Date()
   const month = today.getMonth() + 1
@@ -604,7 +612,7 @@ export async function getDailyChallenge(): Promise<Event | null> {
 
 /** Vrátí výsledek hráče pro dnešní den (pokud již hrál) */
 export async function getTodayDailyResult(userId: string): Promise<DailyResult | null> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateISO()
   const { data } = await supabase
     .from('daily_results')
     .select('*')
@@ -623,7 +631,7 @@ export async function saveDailyResult(
   guessYear: number,
   xpMultiplier = 1,
 ): Promise<{ error: Error | null }> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateISO()
   const { error } = await supabase.from('daily_results').insert({
     user_id: userId,
     date: today,
@@ -641,7 +649,7 @@ export async function saveDailyResult(
 
 /** Top 10 hráčů pro dnešní den */
 export async function getDailyLeaderboard(): Promise<DailyResult[]> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateISO()
   const { data } = await supabase
     .from('daily_results')
     .select('*, profiles(username)')
