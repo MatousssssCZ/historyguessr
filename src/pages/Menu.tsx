@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, getEventImages, transformedImageUrl, getFriendRequests, type DailyResult } from '@/lib/supabase'
+import { signOut, getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -20,6 +20,7 @@ export default function MenuPage() {
   // ── Stav denní výzvy ──────────────────────────────────
   const [dailyState, setDailyState] = useState<DailyState>('loading')
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
+  const [dailyDays, setDailyDays] = useState<boolean[]>([])
   const [friendReqs, setFriendReqs] = useState(0)
 
   // ── Slideshow obrázků na hero dlaždici (Ken Burns + prolínání) ──
@@ -65,6 +66,18 @@ export default function MenuPage() {
       setDailyResult(res)
       setDailyState(res ? 'done' : 'new')
     }).catch(() => { if (alive) setDailyState('new') })
+    // Posledních 7 dní: odehráno (✓) / vynecháno (✕) — pro streak na dlaždici
+    getUserDailyResults(user.id).then(rows => {
+      if (!alive) return
+      const played = new Set(rows.map(r => r.date))
+      const days: boolean[] = []
+      const d = new Date()
+      for (let i = 6; i >= 0; i--) {
+        const dd = new Date(d); dd.setDate(d.getDate() - i)
+        days.push(played.has(dd.toISOString().split('T')[0]))
+      }
+      setDailyDays(days)
+    }).catch(() => {})
     getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
     return () => { alive = false }
   }, [user?.id])
@@ -156,7 +169,7 @@ export default function MenuPage() {
             transition: 'all 0.5s 0.14s cubic-bezier(0.16,1,0.3,1)',
           }}>
             <ModeTileDark icon="📅" title={t('menu.daily')} sub={dailySub} onClick={() => navigate('/daily')}
-              dailyState={dailyState}/>
+              dailyState={dailyState} streak={dailyDays}/>
             <ModeTileDark icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={() => navigate('/multiplayer/lobby')}/>
             <ModeTileDark icon="👤" title={t('menu.accountTitle')} sub={t('menu.accountSub')} onClick={() => navigate('/account')}/>
             <ModeTileDark icon="🏆" title={t('menu.scoreTitle')} sub={t('menu.scoreSub')} onClick={() => navigate('/stats')}/>
@@ -234,7 +247,7 @@ export default function MenuPage() {
         transition: 'all 0.45s 0.12s cubic-bezier(0.16,1,0.3,1)',
       }}>
         <ListItem icon="📅" title={t('menu.dailyMobile')} sub={dailySub}
-          onClick={() => navigate('/daily')} dailyState={dailyState}/>
+          onClick={() => navigate('/daily')} dailyState={dailyState} streak={dailyDays}/>
         <ListItem icon="🎮" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub2')} onClick={() => navigate('/multiplayer/lobby')}/>
         <ListItem icon="🏆" title={t('menu.scoreMobile')} sub={t('menu.scoreMobileSub')} onClick={() => navigate('/stats')}/>
         <ListItem icon="👥" title={t('menu.friendsTitle')} sub={t('menu.friendsSub')} onClick={() => navigate('/friends')} badge={friendReqs}/>
@@ -338,8 +351,8 @@ function DailyBadge({ state, floating }: { state: DailyState; floating?: boolean
 }
 
 // ─── Desktop dlaždice režimu ──────────────────────────────
-function ModeTileDark({ icon, title, sub, onClick, dailyState, badge }: {
-  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState; badge?: number
+function ModeTileDark({ icon, title, sub, onClick, dailyState, badge, streak }: {
+  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState; badge?: number; streak?: boolean[]
 }) {
   const [pressed, setPressed] = useState(false)
   const active = dailyState === 'new'
@@ -359,13 +372,32 @@ function ModeTileDark({ icon, title, sub, onClick, dailyState, badge }: {
       <div style={{ fontSize: 20 }}>{icon}</div>
       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--feature-fg)', marginTop: 18 }}>{title}</div>
       <div style={{ fontSize: 11, color: 'var(--feature-fg2)', marginTop: 2 }}>{sub}</div>
+      {streak && streak.length > 0 && <DailyStreak days={streak} tone="dark"/>}
     </button>
   )
 }
 
+// Streak posledních dní: ✓ odehráno, ✕ vynecháno
+function DailyStreak({ days, tone = 'dark' }: { days: boolean[]; tone?: 'dark' | 'light' }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, marginTop: 10 }}>
+      {days.map((played, i) => (
+        <span key={i} title={played ? 'Odehráno' : 'Vynecháno'} style={{
+          width: 15, height: 15, borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 9, lineHeight: 1,
+          background: played ? 'var(--success, #5c9468)' : (tone === 'dark' ? 'rgba(245,241,232,0.08)' : 'var(--paper-300)'),
+          color: played ? '#fff' : (tone === 'dark' ? 'var(--feature-fg2)' : 'var(--ink-3)'),
+          border: played ? 'none' : `1px solid ${tone === 'dark' ? 'var(--feature-line)' : 'var(--line)'}`,
+        }}>{played ? '✓' : '✕'}</span>
+      ))}
+    </div>
+  )
+}
+
 // ─── Mobil položka seznamu ────────────────────────────────
-function ListItem({ icon, title, sub, onClick, dailyState, badge }: {
-  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState; badge?: number
+function ListItem({ icon, title, sub, onClick, dailyState, badge, streak }: {
+  icon: string; title: string; sub: string; onClick: () => void; dailyState?: DailyState; badge?: number; streak?: boolean[]
 }) {
   const [pressed, setPressed] = useState(false)
   const active = dailyState === 'new'
@@ -395,6 +427,7 @@ function ListItem({ icon, title, sub, onClick, dailyState, badge }: {
           {title}{dailyState && <DailyBadge state={dailyState}/>}{!!badge && badge > 0 && <NotifBadge count={badge}/>}
         </div>
         <div style={{ fontSize: 12, marginTop: 2, color: active ? 'var(--accent-deep)' : done ? 'var(--success-deep)' : 'var(--ink-3)', fontWeight: active || done ? 500 : 400 }}>{sub}</div>
+        {streak && streak.length > 0 && <DailyStreak days={streak} tone="light"/>}
       </div>
       <div style={{ color: 'var(--paper-400)', fontSize: 20, flexShrink: 0 }}>›</div>
     </button>

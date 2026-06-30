@@ -621,6 +621,7 @@ export async function saveDailyResult(
   guessLat: number,
   guessLng: number,
   guessYear: number,
+  xpMultiplier = 1,
 ): Promise<{ error: Error | null }> {
   const today = new Date().toISOString().split('T')[0]
   const { error } = await supabase.from('daily_results').insert({
@@ -632,8 +633,8 @@ export async function saveDailyResult(
     guess_year: guessYear,
   })
   if (error) return { error: error as Error }
-  // XP: skóre + bonus za denní výzvu
-  await addXp(userId, score + XP_BONUS_DAILY)
+  // XP: (skóre + bonus) × násobič za rychlost
+  await addXp(userId, Math.round((score + XP_BONUS_DAILY) * xpMultiplier))
   track('daily_challenge_completed', { score }, userId)
   return { error: null }
 }

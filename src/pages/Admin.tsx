@@ -77,7 +77,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, getEventFileSizes, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
-import { generateEventDraft, generatePanorama } from '@/lib/ai'
+import { generateEventDraft, generatePanorama, generateIllustration } from '@/lib/ai'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -505,8 +505,7 @@ type FormData = {
   category: string; difficulty: string; published: boolean
 }
 
-// Dočasné skrytí AI generování panoramatu (kód zůstává, jen se nerenderuje).
-const SHOW_AI_PANORAMA = false
+const SHOW_AI_PANORAMA = true
 
 function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: () => void; onPublishNext?: () => void }) {
   const { user } = useAuth()
@@ -647,6 +646,32 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
       setPanoError(e?.message || 'Generování selhalo.')
     } finally {
       setPanoLoading(false)
+    }
+  }
+
+  // ── AI generování ilustrace ──
+  const [illuLoading, setIlluLoading] = useState(false)
+  const [illuError, setIlluError] = useState<string | null>(null)
+
+  async function handleGenerateIllustration() {
+    if (!form.title.trim()) { setIlluError('Nejdřív vyplň název události.'); return }
+    setIlluError(null); setIlluLoading(true)
+    try {
+      const period = form.year_from && form.year_to && form.year_from !== form.year_to
+        ? `${form.year_from}–${form.year_to}` : (form.year_from || form.year_to || '')
+      const file = await generateIllustration({
+        title: form.title.trim(),
+        event_date: form.event_date.trim(),
+        period,
+        location: form.lat && form.lng ? `${form.lat}, ${form.lng}` : '',
+        description: form.description.trim(),
+        model: 'gpt-image-2',
+      })
+      setImageFile(file)
+    } catch (e: any) {
+      setIlluError(e?.message || 'Generování selhalo.')
+    } finally {
+      setIlluLoading(false)
     }
   }
 
@@ -1031,10 +1056,29 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
                   {compPano && !compPano.busy && <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{compPano.msg}</span>}
                 </div>
               )}
+              {/* Náhled již nahraného / vybraného panoramatu (plochý obrázek) */}
+              <ThumbPreview file={panoramaFile} url={event?.preview_url || event?.panorama_url}/>
             </div>
             <div>
               <label className="label">Doplňkový obrázek události (JPG/PNG, max 10 MB)</label>
+
+              {/* AI generování ilustrace */}
+              {SHOW_AI_PANORAMA && (
+              <div style={{ marginBottom: 12, padding: 14, borderRadius: 10, border: '1px solid var(--accent)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button type="button" className="btn btn-primary" onClick={handleGenerateIllustration} disabled={illuLoading} style={{ fontSize: 13 }}>
+                  {illuLoading ? 'Generuji ilustraci… (~30–60 s)' : '✨ Vygenerovat ilustraci AI'}
+                </button>
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', flex: '1 1 100%' }}>
+                  Vytvoří doplňkový obrázek události z názvu, data, období, GPS a popisu.
+                </span>
+                {illuLoading && <span style={{ fontSize: 11, color: 'var(--ink-3)', flex: '1 1 100%' }}><span className="spinner" style={{ width: 12, height: 12 }}/> Může to chvíli trvat, nezavírej okno.</span>}
+                {illuError && <span style={{ fontSize: 12, color: 'var(--accent-dark, #b85a3e)', flex: '1 1 100%' }}>⚠️ {illuError}</span>}
+              </div>
+              )}
+
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={10} file={imageFile} currentUrl={event?.event_image_url ?? undefined} onChange={setImageFile} ref={imageRef}/>
+              {/* Náhled již nahrané / vybrané ilustrace */}
+              <ThumbPreview file={imageFile} url={event?.event_image_url}/>
               {/* Komprimace stávající ilustrace */}
               {event?.event_image_url && (
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -1086,6 +1130,17 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
 }
 
 // ── Drop zone ─────────────────────────────────────────────
+// Náhled obrázku: z vybraného souboru (object URL) nebo z už nahrané URL.
+function ThumbPreview({ file, url }: { file?: File | null; url?: string | null }) {
+  const [src, setSrc] = useState<string | null>(null)
+  useEffect(() => {
+    if (file) { const u = URL.createObjectURL(file); setSrc(u); return () => URL.revokeObjectURL(u) }
+    setSrc(url && url !== 'pending' ? url : null)
+  }, [file, url])
+  if (!src) return null
+  return <img src={src} alt="náhled" loading="lazy" style={{ marginTop: 10, width: '100%', maxWidth: 300, borderRadius: 8, border: '1px solid var(--line)', display: 'block' }}/>
+}
+
 const DropZone = forwardRef<HTMLInputElement, {
   accept: string; maxMB: number; file: File | null
   currentUrl?: string; onChange: (f: File | null) => void

@@ -27,6 +27,7 @@ export default function GamePage() {
     state, currentEvent, lastRound, canSubmit,
     startGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
+  const [confirmQuit, setConfirmQuit] = useState(false)
 
   useEffect(() => {
     if (state.phase === 'idle') startGame(options)
@@ -72,11 +73,25 @@ export default function GamePage() {
           <BackButton
             tone="dark"
             style={{ padding: '7px 13px', fontSize: 13 }}
-            onClick={() => { resetGame(); navigate('/menu') }}
+            onClick={() => setConfirmQuit(true)}
             label={t('game.quit')}
           />
         </div>
       </div>
+
+      {/* Potvrzení ukončení hry */}
+      {confirmQuit && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 18, padding: 28, maxWidth: 380, width: '100%', boxShadow: 'var(--shadow-xl)', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 21, marginBottom: 8 }}>{t('game.quitConfirmTitle')}</div>
+            <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: '0 0 22px', lineHeight: 1.5 }}>{t('game.quitConfirmBody')}</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setConfirmQuit(false)} style={{ flex: 1, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 500, color: 'var(--ink)', cursor: 'pointer' }}>{t('game.quitCancel')}</button>
+              <button onClick={() => { resetGame(); navigate('/menu') }} style={{ flex: 1, background: '#c0392b', border: 'none', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 500, color: '#fff', cursor: 'pointer' }}>{t('game.quitConfirm')}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ flex: 1, position: 'relative' }}>
         {state.phase === 'playing' && <PanoramaViewer url={currentEvent.panorama_url} preview={currentEvent.preview_url}/>}

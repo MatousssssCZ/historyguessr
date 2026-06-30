@@ -98,8 +98,12 @@ export async function generatePanorama(params: PanoramaParams): Promise<File> {
     throw new Error(`Generování panoramatu selhalo (${res.status}). ${detail}`)
   }
   const { image } = await res.json() as { image: string }
-  // Pozor: NEPOUŽÍVAT fetch(dataURL) — Safari má limit na velikost data: URL
-  // a u velkého obrázku spadne s „Load failed". Dekódujeme base64 ručně.
+  return dataUrlToFile(image, 'ai-panorama')
+}
+
+// Pozor: NEPOUŽÍVAT fetch(dataURL) — Safari má limit na velikost data: URL
+// a u velkého obrázku spadne s „Load failed". Dekódujeme base64 ručně.
+function dataUrlToFile(image: string, baseName: string): File {
   const comma = image.indexOf(',')
   const meta = image.slice(0, comma)
   const b64 = image.slice(comma + 1)
@@ -109,5 +113,28 @@ export async function generatePanorama(params: PanoramaParams): Promise<File> {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
   const blob = new Blob([bytes], { type: mime })
   const ext = mime === 'image/webp' ? 'webp' : (mime === 'image/jpeg' ? 'jpg' : 'png')
-  return new File([blob], `ai-panorama.${ext}`, { type: mime })
+  return new File([blob], `${baseName}.${ext}`, { type: mime })
+}
+
+/** Vygeneruje ilustrační obrázek události (běžný obrázek, ne 360°). */
+export async function generateIllustration(params: PanoramaParams): Promise<File> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Nejsi přihlášený.')
+
+  const res = await fetch('/api/generate-illustration', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(params),
+  })
+  if (!res.ok) {
+    let detail = ''
+    try { const j = await res.json(); detail = j.detail || j.error || '' } catch { /* ignore */ }
+    if (res.status === 403) throw new Error('Přístup jen pro administrátory.')
+    if (res.status === 500 && detail === 'missing_openai_key') throw new Error('Na serveru chybí OPENAI_API_KEY.')
+    if (res.status === 504) throw new Error('Generování trvalo příliš dlouho (timeout). Zkus to znovu nebo nižší kvalitu.')
+    throw new Error(`Generování ilustrace selhalo (${res.status}). ${detail}`)
+  }
+  const { image } = await res.json() as { image: string }
+  return dataUrlToFile(image, 'ai-ilustrace')
 }
