@@ -78,6 +78,7 @@ export default function StatsPage() {
   const navigate = useNavigate()
   const [stats, setStats] = useState<Stats | null>(null)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
+  const [dailyDates, setDailyDates] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -87,6 +88,7 @@ export default function StatsPage() {
       if (!alive) return
       setStats(computeStats(sessions, daily, profile?.games_played ?? 0, profile?.total_score ?? 0))
       setCatHits(hits)
+      setDailyDates(new Set(daily.map(d => d.date)))
       setLoading(false)
     }).catch(() => { if (alive) setLoading(false) })
     return () => { alive = false }
@@ -154,6 +156,10 @@ export default function StatsPage() {
                 <Card icon="🔥" value={String(stats.dailyStreak)} unit={t('stats.unitDays')} k={t('stats.streak')}/>
                 <Card icon="📆" value={n(stats.dailyCount)} k={t('stats.dailyCount')}/>
               </Grid>
+            </Section>
+
+            <Section label={t('stats.dailyCalendar')}>
+              <DailyYearCalendar played={dailyDates}/>
             </Section>
 
             <Section label={t('stats.trend')}>
@@ -305,6 +311,47 @@ function TrendChart({ scores, trendPct }: { scores: number[]; trendPct: number }
       </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', marginTop: 6 }}>
         <span>{t('stats.firstGames')}</span><span>{t('stats.lastGames')}</span>
+      </div>
+    </div>
+  )
+}
+
+// Roční kalendář denní výzvy: ✓ odehráno, ✕ vynecháno (minulost), prázdné = budoucnost
+const CAL_MONTHS = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro']
+function DailyYearCalendar({ played }: { played: Set<string> }) {
+  const year = new Date().getFullYear()
+  const todayIso = new Date().toISOString().split('T')[0]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {CAL_MONTHS.map((mn, mi) => {
+        const dim = new Date(year, mi + 1, 0).getDate()
+        return (
+          <div key={mi} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={{ width: 26, flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase' }}>{mn}</div>
+            <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {Array.from({ length: dim }, (_, di) => {
+                const day = di + 1
+                const iso = `${year}-${String(mi + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                const isPlayed = played.has(iso)
+                const isFuture = iso > todayIso
+                const isToday = iso === todayIso
+                return (
+                  <span key={day} title={`${day}. ${mi + 1}.`} style={{
+                    width: 13, height: 13, borderRadius: 3, fontSize: 8, lineHeight: 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: isToday ? '1.5px solid var(--ink)' : '1px solid var(--line)',
+                    background: isPlayed ? 'var(--success, #5c9468)' : (isFuture ? 'var(--surface)' : 'rgba(192,57,43,0.10)'),
+                    color: isPlayed ? '#fff' : (isFuture ? 'transparent' : '#c0392b'),
+                  }}>{isPlayed ? '✓' : (isFuture ? '' : '✕')}</span>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--ink-3)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--success, #5c9468)' }}/>Odehráno</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(192,57,43,0.10)', border: '1px solid var(--line)' }}/>Vynecháno</span>
       </div>
     </div>
   )

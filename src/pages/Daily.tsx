@@ -52,8 +52,9 @@ export default function DailyChallengePage() {
 
   // Result state
   const [result, setResult] = useState<{
-    distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number
+    distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number
   } | null>(null)
+  const timeLeftRef = useRef(TIMER_SECONDS)
 
   useEffect(() => {
     if (!user) return
@@ -79,7 +80,7 @@ export default function DailyChallengePage() {
         const yf = ev.year_from ?? ev.year; const yt = ev.year_to ?? ev.year
         const { location_score: locSc, year_score: yrSc } = roundScore(dist, existing.guess_year, yf, yt, ev.location_radius_km ?? 0)
         setGuessLat(existing.guess_lat); setGuessLng(existing.guess_lng); setGuessYear(existing.guess_year)
-        setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: existing.score, yrDiff: yearDiff(existing.guess_year, yf, yt) })
+        setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: existing.score, yrDiff: yearDiff(existing.guess_year, yf, yt), xpMult: 1 })
       }
       setPhase('already_played')
       return
@@ -110,10 +111,12 @@ export default function DailyChallengePage() {
       setTimeLeft(t => {
         if (t <= 1) {
           clearInterval(timerRef.current!)
+          timeLeftRef.current = 0
           // Auto-submit při vypršení
           if (!hasSubmittedRef.current) doSubmit()
           return 0
         }
+        timeLeftRef.current = t - 1
         return t - 1
       })
     }, 1000)
@@ -153,14 +156,18 @@ export default function DailyChallengePage() {
     const yrDiff_ = yearDiff(year, yf, yt)
     const { location_score: locSc, year_score: yrSc, round_score: total } = roundScore(dist, year, yf, yt, event.location_radius_km ?? 0)
 
+    // XP násobič z zbylého času: čas/10, jen když zbývá ≥ 10 s (jinak 1×)
+    const remain = timeLeftRef.current
+    const xpMult = remain >= 10 ? remain / 10 : 1
+
     if (lat != null) setGuessLat(lat)
     if (lng != null) setGuessLng(lng)
     setGuessYear(year)
-    setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: total, yrDiff: yrDiff_ })
+    setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: total, yrDiff: yrDiff_, xpMult })
 
     recordEventScore(event.id, locSc, yrSc)
     recordCategoryHit(event.id, total)
-    await saveDailyResult(user.id, total, lat ?? 0, lng ?? 0, year)
+    await saveDailyResult(user.id, total, lat ?? 0, lng ?? 0, year, xpMult)
     const lb = await getDailyLeaderboard()
     setLeaderboard(lb)
     setSubmitting(false)
@@ -614,7 +621,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     <div style={{ padding: isMobile ? '0 12px 8px' : '0 20px 14px' }}>
       <GameEvaluation
         userId={userId}
-        gainedXp={result.totalScore + XP_BONUS_DAILY}
+        gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)}
         gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}}
       />
     </div>
