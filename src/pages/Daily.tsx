@@ -555,6 +555,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 }) {
   const { t } = useTranslation()
   const [histModal, setHistModal] = useState(false)
+  const [tab, setTab] = useState<'score' | 'info'>('score')
   const isMobile = window.innerWidth < 768
   const locPct = Math.round(result.locScore / 5)
   const yrPct = Math.round(result.yrScore / 5)
@@ -587,12 +588,31 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   )
 
   const infoSection = (
-    <div style={{ padding: isMobile ? '0 12px 12px' : '0 20px 16px' }}>
-      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 10px' }}>{t('game.tabInfo')}</p>
+    <div style={{ padding: isMobile ? '12px 14px 14px' : '16px 20px 18px' }}>
       {event.event_image_url && (
-        <img src={event.event_image_url} alt={eventTitle(event)} loading="lazy" style={{ width: '100%', borderRadius: 10, border: '0.5px solid var(--line)', marginBottom: 10, display: 'block', maxHeight: 200, objectFit: 'cover' }}/>
+        <img src={event.event_image_url} alt={eventTitle(event)} loading="lazy" style={{ width: '100%', borderRadius: 12, border: '0.5px solid var(--line)', marginBottom: 14, display: 'block', maxHeight: isMobile ? 220 : 280, objectFit: 'cover' }}/>
       )}
-      <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+      <p style={{ fontSize: 14.5, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+    </div>
+  )
+
+  const resultTabs = (
+    <div style={{ display: 'flex', gap: 8, padding: isMobile ? '10px 12px 2px' : '12px 20px 4px', flexShrink: 0 }}>
+      {(['score', 'info'] as const).map(k => {
+        const active = tab === k
+        return (
+          <button key={k} type="button" onClick={() => setTab(k)} style={{
+            flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer',
+            border: active ? '1px solid var(--accent)' : '1px solid var(--line)',
+            background: active ? 'rgba(217,119,87,0.08)' : 'transparent',
+            color: active ? 'var(--accent-deep)' : 'var(--ink-3)',
+            fontSize: 13, fontWeight: active ? 500 : 400,
+            fontFamily: 'var(--font-mono)', letterSpacing: '0.04em',
+          }}>
+            {k === 'score' ? `🏆 ${t('game.tabScore')}` : `📖 ${t('game.tabInfo')}`}
+          </button>
+        )
+      })}
     </div>
   )
 
@@ -656,9 +676,8 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
                 </div>
               </div>
             </div>
-            {scoreSection}
-            {infoSection}
-            {evalSection}
+            {resultTabs}
+            {tab === 'score' ? <>{scoreSection}{evalSection}</> : infoSection}
             <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto' }}>
               <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
@@ -695,10 +714,9 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         </div>
       </div>
 
+      {resultTabs}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {scoreSection}
-        {infoSection}
-        {evalSection}
+        {tab === 'score' ? <>{scoreSection}{evalSection}</> : infoSection}
         {leaderboardSection}
       </div>
 
