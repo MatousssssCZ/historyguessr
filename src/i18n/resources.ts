@@ -152,7 +152,7 @@ export const resources = {
     },
     menu: {
       welcomeBack: 'Vítej zpět', greeting: 'Vítej zpět, {{name}}',
-      heroTitle: 'Začni novou výpravu', heroTag: 'Klasický mód · 5 kol', heroSub: '360° panoramy · tipni místo + rok', heroTagline: 'Historie čeká. Kam tě zavede příště?',
+      heroTitle: 'Začni novou výpravu', heroTag: 'Klasický mód · 5 kol', heroSub: '360° panoramy · tipni místo + rok', heroTagline: 'Buď u toho, když se psaly dějiny.',
       playCardTitle: 'Hrát klasickou hru',
       stHer: 'her', stBody: 'bodů', games: 'odehraných her', score: 'celkem bodů',
       daily: 'Tento den', dailyMobile: 'Tento den v historii', dailyWaiting: 'Denní výzva tě dnes ještě čeká', dailyNext: 'Další výzva za {{time}}',
@@ -317,7 +317,7 @@ export const resources = {
     },
     menu: {
       welcomeBack: 'Welcome back', greeting: 'Welcome back, {{name}}',
-      heroTitle: 'Start a new journey', heroTag: 'Classic mode · 5 rounds', heroSub: '360° panoramas · guess place + year', heroTagline: 'History awaits. Where will it take you next?',
+      heroTitle: 'Start a new journey', heroTag: 'Classic mode · 5 rounds', heroSub: '360° panoramas · guess place + year', heroTagline: 'Be there when history was written.',
       playCardTitle: 'Play classic game',
       stHer: 'games', stBody: 'points', games: 'games played', score: 'total points',
       daily: 'This day', dailyMobile: 'This day in history', dailyWaiting: "Today's challenge is still waiting", dailyNext: 'Next challenge in {{time}}',
@@ -482,7 +482,7 @@ export const resources = {
     },
     menu: {
       welcomeBack: 'Willkommen zurück', greeting: 'Willkommen zurück, {{name}}',
-      heroTitle: 'Starte eine neue Reise', heroTag: 'Klassischer Modus · 5 Runden', heroSub: '360°-Panoramen · Ort + Jahr raten', heroTagline: 'Die Geschichte wartet. Wohin führt sie dich als Nächstes?',
+      heroTitle: 'Starte eine neue Reise', heroTag: 'Klassischer Modus · 5 Runden', heroSub: '360°-Panoramen · Ort + Jahr raten', heroTagline: 'Sei dabei, wenn Geschichte geschrieben wird.',
       playCardTitle: 'Klassisches Spiel spielen',
       stHer: 'Spiele', stBody: 'Punkte', games: 'gespielte Spiele', score: 'Punkte gesamt',
       daily: 'Dieser Tag', dailyMobile: 'Dieser Tag in der Geschichte', dailyWaiting: 'Die heutige Challenge wartet noch', dailyNext: 'Nächste Challenge in {{time}}',
