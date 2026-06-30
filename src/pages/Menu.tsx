@@ -21,6 +21,7 @@ export default function MenuPage() {
   const [dailyState, setDailyState] = useState<DailyState>('loading')
   const [dailyResult, setDailyResult] = useState<DailyResult | null>(null)
   const [dailyDays, setDailyDays] = useState<boolean[]>([])
+  const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
 
   // ── Slideshow obrázků na hero dlaždici (Ken Burns + prolínání) ──
@@ -96,10 +97,27 @@ export default function MenuPage() {
   const heroFg = onHeroImg ? '#ffffff' : 'var(--feature-fg)'
   const heroScrimDark = onHeroImg
 
+  // Odpočet do další výzvy (do půlnoci) — tiká jen když už je dnešní odehraná
+  useEffect(() => {
+    if (dailyState !== 'done') return
+    const tick = () => {
+      const now = new Date()
+      const mid = new Date(now); mid.setHours(24, 0, 0, 0)
+      let s = Math.max(0, Math.floor((mid.getTime() - now.getTime()) / 1000))
+      const hh = String(Math.floor(s / 3600)).padStart(2, '0'); s %= 3600
+      const mm = String(Math.floor(s / 60)).padStart(2, '0')
+      const ss = String(s % 60).padStart(2, '0')
+      setCountdown(`${hh}:${mm}:${ss}`)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [dailyState])
+
   // Podtitul + stav pro denní výzvu
   const dailySub =
     dailyState === 'done'
-      ? t('menu.dailyDone', { score: (dailyResult?.score ?? 0).toLocaleString(currentLocale()) })
+      ? t('menu.dailyNext', { time: countdown || '00:00:00' })
       : t('menu.dailyWaiting')
 
   // ═══════════════════════════════════════════════════════
