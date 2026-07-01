@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getUserSessions, getUserDailyResults, getCategoryHits, localDateISO, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
+import MobileNav from '@/components/MobileNav'
 import BackButton from '@/components/BackButton'
 import type { RoundResult } from '@/types/database'
 
@@ -98,7 +99,7 @@ export default function StatsPage() {
   const n = (v: number) => v.toLocaleString(currentLocale())
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', paddingBottom: 'max(20px, var(--safe-bottom))' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
       {/* Hlavička */}
       <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
@@ -177,6 +178,7 @@ export default function StatsPage() {
           </>
         )}
       </div>
+      <MobileNav active="badges"/>
     </div>
   )
 }
