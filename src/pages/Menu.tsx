@@ -178,6 +178,19 @@ export default function MenuPage() {
         <DailyHero {...dailyProps}/>
         <div style={{ height: 12 }}/>
         <ProgressCard lvl={lvl} world={world}/>
+        <div style={{ height: 12 }}/>
+        <button onClick={() => navigate('/friends')} style={{
+          display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+          background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
+        }}>
+          <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👥</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('menu.friendsTitle')}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.friendsSub')}</div>
+          </div>
+          {friendReqs > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 7px', borderRadius: 999 }}>{friendReqs}</span>}
+          <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
+        </button>
       </div>
 
       {/* Bottom nav + FAB */}
@@ -254,9 +267,9 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, onPlay, tall }: {
             <div style={{ fontSize: 10.5, color: 'var(--ink-3)' }}>{done ? t('menu.dailyNext', { time: countdown || '00:00:00' }) : t('menu.dontMissToday')}</div>
           </div>
         </div>
-        <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: '11px 16px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-          {t('menu.playChallenge')} →
-        </span>
+        {done
+          ? <span style={{ background: 'rgba(92,148,104,0.18)', color: 'var(--success-deep, #3f7a4d)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: '11px 16px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>{t('menu.results')} →</span>
+          : <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: '11px 16px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>{t('menu.playChallenge')} →</span>}
       </div>
     </button>
   )
