@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { updateProfile, signOut } from '@/lib/supabase'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
+import MobileNav from '@/components/MobileNav'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
 const fieldLabel: React.CSSProperties = { fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: 'var(--ink-2)', margin: '0 0 6px' }
@@ -36,7 +37,7 @@ export default function AccountPage() {
   async function handleSignOut() { await signOut(); navigate('/auth') }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>
@@ -95,6 +96,7 @@ export default function AccountPage() {
           }}>{t('account.signOut')}</button>
         </div>
       </div>
+      <MobileNav active="profile"/>
     </div>
   )
 }
