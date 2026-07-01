@@ -189,38 +189,35 @@ export default function MultiplayerLobbyPage() {
     }))
   }
 
-  // ── Menu ──────────────────────────────────────────────
+  // ── Menu (vstup) ──────────────────────────────────────
   if (screen === 'menu') {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--feature-bg)', justifyContent: 'center', padding: 24 }}>
-        <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
-          <div style={{ marginBottom: 24 }}>
-            <BackButton onClick={() => navigate('/menu')} label={t('daily.menu')} />
-          </div>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>{t('menu.multiplayer')}</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--feature-fg)', margin: '0 0 32px', letterSpacing: '-0.02em' }}>{t('menu.multiplayerSub2')}</h1>
+      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
+        <div style={{ maxWidth: 460, margin: '0 auto', padding: '16px 18px' }}>
+          <MpBack onClick={() => navigate('/menu')} label={t('daily.menu')}/>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: '18px 0 8px' }}>{t('menu.multiplayer')}</p>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--ink)', margin: '0 0 26px', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{t('menu.multiplayerSub2')}</h1>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button
-              onClick={handleCreate}
-              disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: 'rgba(217,119,87,0.1)', border: '1px solid rgba(217,119,87,0.25)', borderRadius: 16, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-            >
-              <span style={{ fontSize: 28 }}>🎮</span>
+            <button onClick={handleCreate} disabled={loading} style={{
+              display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',
+              background: 'rgba(217,119,87,0.09)', border: '1px solid var(--accent)', borderRadius: 18,
+            }}>
+              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 23, color: '#fff', background: 'linear-gradient(150deg,#d97757,#b85a3e)' }}>＋</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)', lineHeight: 1 }}>{t('lobby.create')}</div>
-                <div style={{ fontSize: 12, color: 'var(--feature-fg3)', marginTop: 4 }}>{t('lobby.createSub')}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{t('lobby.create')}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.createSub')}</div>
               </div>
             </button>
 
-            <button
-              onClick={() => setScreen('join_code')}
-              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid var(--feature-line)', borderRadius: 16, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-            >
-              <span style={{ fontSize: 28 }}>🔗</span>
+            <button onClick={() => setScreen('join_code')} style={{
+              display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',
+              background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18,
+            }}>
+              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--accent)', background: 'var(--paper-300)' }}>🔗</span>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--feature-fg)', lineHeight: 1 }}>{t('lobby.join')}</div>
-                <div style={{ fontSize: 12, color: 'var(--feature-fg3)', marginTop: 4 }}>{t('lobby.joinSub')}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>{t('lobby.join')}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.joinSub')}</div>
               </div>
             </button>
           </div>
@@ -232,32 +229,40 @@ export default function MultiplayerLobbyPage() {
   // ── Zadání kódu ────────────────────────────────────────
   if (screen === 'join_code') {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--feature-bg)', justifyContent: 'center', padding: 24 }}>
-        <div style={{ maxWidth: 400, margin: '0 auto', width: '100%' }}>
-          <div style={{ marginBottom: 24 }}>
-            <BackButton onClick={() => setScreen('menu')} label={t('lobby.back')} />
+      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
+        <div style={{ maxWidth: 400, margin: '0 auto', padding: '16px 18px' }}>
+          <MpBack onClick={() => setScreen('menu')} label={t('lobby.back')}/>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--ink)', margin: '18px 0 6px', letterSpacing: '-0.01em' }}>{t('lobby.joinTitle')}</h2>
+          <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: '0 0 24px' }}>{t('lobby.joinHint')}</p>
+
+          {/* 5-box kód */}
+          <div style={{ position: 'relative', marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 9, justifyContent: 'center' }}>
+              {[0, 1, 2, 3, 4].map(i => (
+                <div key={i} style={{
+                  width: 46, height: 58, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--surface)', fontFamily: 'var(--font-mono)', fontSize: 24, color: 'var(--ink)',
+                  border: `2px solid ${i === joinCode.length ? 'var(--accent)' : 'var(--line-strong)'}`,
+                }}>{joinCode[i] ?? ''}</div>
+              ))}
+            </div>
+            <input
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5))}
+              maxLength={5} autoFocus inputMode="text" aria-label={t('lobby.codePlaceholder')}
+              onKeyDown={e => e.key === 'Enter' && joinCode.length === 5 && handleJoin()}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'text', border: 'none', background: 'transparent' }}
+            />
           </div>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--feature-fg)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>{t('lobby.joinTitle')}</h2>
-          <p style={{ fontSize: 14, color: 'var(--feature-fg3)', margin: '0 0 28px' }}>{t('lobby.joinHint')}</p>
+          <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', margin: '0 0 18px' }}>{t('lobby.codePlaceholder')}</p>
 
-          <input
-            className="input"
-            value={joinCode}
-            onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 5))}
-            placeholder={t('lobby.codePlaceholder')}
-            maxLength={5}
-            style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 28, letterSpacing: '0.3em', marginBottom: 12, background: 'var(--feature-chip)', color: 'var(--feature-fg)', border: '1px solid rgba(255,255,255,0.15)', padding: '16px' }}
-            onKeyDown={e => e.key === 'Enter' && joinCode.length === 5 && handleJoin()}
-          />
+          {error && <p style={{ fontSize: 13, color: '#c0392b', marginBottom: 12 }}>⚠ {error}</p>}
 
-          {error && <p style={{ fontSize: 13, color: '#e74c3c', marginBottom: 12 }}>⚠ {error}</p>}
-
-          <button
-            className="btn btn-accent"
-            style={{ width: '100%', padding: '14px', fontSize: 15 }}
-            disabled={joinCode.length !== 5 || loading}
-            onClick={handleJoin}
-          >
+          <button disabled={joinCode.length !== 5 || loading} onClick={handleJoin} style={{
+            width: '100%', padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
+            background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15,
+            opacity: joinCode.length !== 5 || loading ? 0.55 : 1,
+          }}>
             {loading ? t('lobby.joining') : t('lobby.joinBtn')}
           </button>
         </div>
@@ -475,5 +480,15 @@ export default function MultiplayerLobbyPage() {
         <StartButton/>
       </div>
     </div>
+  )
+}
+
+function MpBack({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button onClick={onClick} aria-label={label} style={{
+      width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+      background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
+    }}>←</button>
   )
 }
