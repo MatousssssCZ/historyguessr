@@ -363,75 +363,67 @@ function CalIcon({ color }: { color: string }) {
 }
 
 // ── Dlaždice MÍSTO (varianta A) — živý náhled mapy + pin ──
-function MapTile({ guessLat, guessLng, mapPin, onClick, height }: {
-  guessLat: number | null; guessLng: number | null; mapPin: string | null; onClick: () => void; height: number
-}) {
+// ── Ovládací dlaždice (#1b): 92px svisle, Mapa (accent) / Rok (sklo) ──
+const GLASS = 'rgba(246,240,230,0.86)'
+
+function MapTile({ set, onClick }: { set: boolean; onClick: () => void }) {
   const { t } = useTranslation()
-  const set = guessLat !== null
   return (
     <button onClick={onClick} style={{
-      position: 'relative', height, borderRadius: 14, overflow: 'hidden', cursor: 'pointer', padding: 0,
-      display: 'flex', flexDirection: 'column', width: '100%',
-      background: 'var(--paper-50)',
-      border: set ? `3px solid ${GREEN}` : '1.5px solid rgba(217,119,87,0.35)',
-      boxShadow: '0 6px 22px rgba(0,0,0,0.28)',
+      width: 92, borderRadius: 20, padding: '13px 0', cursor: 'pointer', border: 'none',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      background: set ? GREEN : 'var(--accent)', color: '#fff',
+      boxShadow: set ? '0 12px 26px -6px rgba(39,174,96,0.5)' : '0 12px 26px -6px rgba(190,98,64,0.5)',
     }}>
-      {/* Pevná výška v px (ne flex) — iOS Safari jinak nevyřeší výšku mapy */}
-      <div style={{ height: height - 30, position: 'relative' }}>
-        <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={() => {}} compact/>
-      </div>
-      {set && <div style={tileBadge}>✓</div>}
-      <div style={{
-        height: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px',
-        background: set ? 'rgba(39,174,96,0.1)' : 'var(--paper-50)',
-        borderTop: `0.5px solid ${set ? 'rgba(39,174,96,0.2)' : 'var(--line)'}`,
-      }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: set ? GREEN_DEEP : 'var(--ink-2)', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-          <PinIcon color={set ? GREEN_DEEP : '#5a4632'}/> {set ? mapPin : t('game.place')}
-        </span>
-        <span style={{ fontSize: 13, color: set ? GREEN_DEEP : 'var(--ink-3)', flexShrink: 0 }}>{set ? '✓' : '›'}</span>
-      </div>
+      <PinIcon color="#fff"/>
+      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12.5 }}>{t('game.mapTile')}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>{set ? '✓' : t('game.placeHint')}</span>
     </button>
   )
 }
 
-// ── Dlaždice ROK (varianta A) — dobová pilulka / timeline ──
-function YearTile({ guessYear, guessYearSet, onClick, height }: {
-  guessYear: number; guessYearSet: boolean; onClick: () => void; height: number
-}) {
+function YearTile({ guessYear, guessYearSet, onClick }: { guessYear: number; guessYearSet: boolean; onClick: () => void }) {
   const { t } = useTranslation()
   const bc = guessYear < 0
+  const label = guessYearSet ? `${Math.abs(guessYear)} ${bc ? t('game.bcShort') : t('game.adShort')}` : '—'
   return (
     <button onClick={onClick} style={{
-      position: 'relative', height, borderRadius: 14, cursor: 'pointer', padding: '11px 13px', textAlign: 'left',
-      display: 'flex', flexDirection: 'column', width: '100%',
-      background: 'var(--paper-50)',
-      border: guessYearSet ? `3px solid ${GREEN}` : '1.5px solid rgba(217,119,87,0.35)',
-      boxShadow: '0 6px 22px rgba(0,0,0,0.28)',
+      width: 92, borderRadius: 20, padding: '13px 0', cursor: 'pointer',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      background: GLASS, backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.5)', color: 'var(--ink)',
     }}>
-      {guessYearSet && <div style={tileBadge}>✓</div>}
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>
-        <CalIcon color="#8a7a5d"/> {t('game.year')}
-      </span>
-      {guessYearSet ? (
-        <>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.03em', color: 'var(--ink)', lineHeight: 1, marginTop: 'auto' }}>{Math.abs(guessYear)}</div>
-          <span style={{
-            alignSelf: 'flex-start', marginTop: 5, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase',
-            padding: '2px 8px', borderRadius: 999,
-            background: bc ? 'rgba(90,143,181,0.16)' : 'rgba(217,119,87,0.14)', color: bc ? '#3f6f97' : 'var(--accent-deep)',
-          }}>{bc ? t('game.bc') : t('game.ad')} ✓</span>
-        </>
-      ) : (
-        <>
-          <div style={{ marginTop: 'auto', fontSize: 14, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
-          <div style={{ marginTop: 8, height: 14, position: 'relative' }}>
-            <div style={{ position: 'absolute', top: 6, left: 0, right: 0, height: 2, background: 'repeating-linear-gradient(90deg, var(--line-strong) 0 2px, transparent 2px 7px)' }}/>
-            <div style={{ position: 'absolute', top: 3, left: '60%', width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)' }}/>
-          </div>
-        </>
-      )}
+      <CalIcon color="var(--accent)"/>
+      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, color: '#26211C' }}>{t('game.year')}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8C8175' }}>{t('game.tip')}: {label}</span>
     </button>
+  )
+}
+
+// Ovládací panel dole: hint pilulka vlevo + svislé dlaždice vpravo + odeslat
+function ControlDock({ set, guessYear, guessYearSet, canSubmit, submitLabel, onMap, onYear, onSubmit }: {
+  set: boolean; guessYear: number; guessYearSet: boolean; canSubmit: boolean; submitLabel: string
+  onMap: () => void; onYear: () => void; onSubmit: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20, padding: '12px 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))', pointerEvents: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        <span style={{ pointerEvents: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(246,240,230,0.78)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.5)', borderRadius: 20, padding: '8px 12px', color: '#4a4033', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11 }}>
+          ✥ {t('game.dragHint')}
+        </span>
+        <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
+          <YearTile guessYear={guessYear} guessYearSet={guessYearSet} onClick={onYear}/>
+          <MapTile set={set} onClick={onMap}/>
+        </div>
+      </div>
+      {canSubmit && (
+        <button onClick={onSubmit} style={{
+          pointerEvents: 'auto', width: '100%', marginTop: 12, fontSize: 15, padding: '14px 0', borderRadius: 14,
+          border: 'none', fontFamily: 'var(--font-sans)', fontWeight: 700, cursor: 'pointer',
+          background: GREEN, color: '#fff', boxShadow: '0 8px 24px -6px rgba(39,174,96,0.5)',
+        }}>{submitLabel}</button>
+      )}
+    </div>
   )
 }
 
@@ -503,26 +495,11 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
           </div>
         )}
 
-        {/* Základ — dvě dlaždice + odeslat (dole vpravo) */}
+        {/* Základ — dock (dvě svislé dlaždice + odeslat) */}
         {!mapExpanded && !yearExpanded && (
-          <div style={{ position: 'absolute', bottom: 16, right: 16, width: 320, zIndex: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <MapTile guessLat={guessLat} guessLng={guessLng} mapPin={mapPin} onClick={() => setMapExpanded(true)} height={92}/>
-              <YearTile guessYear={guessYear} guessYearSet={guessYearSet} onClick={() => setYearExpanded(true)} height={92}/>
-            </div>
-
-            {/* Odeslat — po vyplnění zelené */}
-            <button
-              style={{ width: '100%', fontSize: 14, padding: '11px 0', borderRadius: 11, border: 'none', fontWeight: 500, cursor: canSubmit ? 'pointer' : 'default', background: canSubmit ? GREEN : 'rgba(245,241,232,0.8)', backdropFilter: 'blur(16px)', color: canSubmit ? '#fff' : 'var(--ink-3)', boxShadow: canSubmit ? '0 6px 22px rgba(39,174,96,0.4)' : 'none' }}
-              onClick={() => {
-                if (canSubmit) { onSubmit(); return }
-                if (missingLocation) { setMapExpanded(true); return }
-                if (missingYear) { setYearExpanded(true) }
-              }}
-            >
-              {submitLabel}
-            </button>
-          </div>
+          <ControlDock set={guessLat !== null} guessYear={guessYear} guessYearSet={guessYearSet}
+            canSubmit={canSubmit} submitLabel={submitLabel}
+            onMap={() => setMapExpanded(true)} onYear={() => setYearExpanded(true)} onSubmit={onSubmit}/>
         )}
       </>
     )
@@ -616,42 +593,11 @@ function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, on
         </div>
       )}
 
-      {/* Kompaktní UI — 2 dlaždice + odeslat */}
+      {/* Kompaktní UI — dock (2 svislé dlaždice + odeslat) */}
       {!mapExpanded && !yearExpanded && (
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          zIndex: 20,
-          padding: '10px 12px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-          display: 'flex', flexDirection: 'column', gap: 8,
-        }}>
-          {/* 2 dlaždice vedle sebe (varianta A) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <MapTile guessLat={guessLat} guessLng={guessLng} mapPin={mapPin} onClick={() => setMapExpanded(true)} height={100}/>
-            <YearTile guessYear={guessYear} guessYearSet={guessYearSet} onClick={() => setYearExpanded(true)} height={100}/>
-          </div>
-
-          {/* Tlačítko odeslat — po vyplnění zelené */}
-          <button
-            style={{
-              width: '100%', fontSize: 15, padding: '14px 0',
-              borderRadius: 12, border: 'none', fontWeight: 500,
-              cursor: canSubmit ? 'pointer' : 'default',
-              background: canSubmit ? GREEN : 'rgba(245,241,232,0.7)',
-              backdropFilter: 'blur(16px)',
-              color: canSubmit ? '#fff' : 'var(--ink-3)',
-              boxShadow: canSubmit ? '0 4px 20px rgba(39,174,96,0.4)' : 'none',
-              transition: 'all 200ms',
-            }}
-            onClick={() => {
-              if (canSubmit) { onSubmit(); return }
-              if (missingLocation) { setMapExpanded(true); return }
-              if (missingYear) { setYearExpanded(true) }
-            }}
-          >
-            {submitLabel}
-          </button>
-        </div>
+        <ControlDock set={guessLat !== null} guessYear={guessYear} guessYearSet={guessYearSet}
+          canSubmit={canSubmit} submitLabel={submitLabel}
+          onMap={() => setMapExpanded(true)} onYear={() => setYearExpanded(true)} onSubmit={onSubmit}/>
       )}
     </>
   )
