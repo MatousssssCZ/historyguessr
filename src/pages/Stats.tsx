@@ -7,7 +7,6 @@ import { getUserSessions, getUserDailyResults, getCategoryHits, localDateISO, ty
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
 import MobileNav from '@/components/MobileNav'
-import BackButton from '@/components/BackButton'
 import type { RoundResult } from '@/types/database'
 
 const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
@@ -99,22 +98,24 @@ export default function StatsPage() {
   const n = (v: number) => v.toLocaleString(currentLocale())
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
-      {/* Hlavička */}
-      <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', marginBottom: 14 }}>
-          <BackButton onClick={() => navigate('/menu')} label={t('pregame.backToMenu')} />
-          <button onClick={() => navigate('/account')} style={{ background: 'var(--feature-line)', border: '1px solid var(--feature-line)', borderRadius: 8, padding: '6px 12px', color: 'var(--feature-fg2)', fontSize: 12, cursor: 'pointer' }}>⚙ {t('common.account')}</button>
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
+      {/* Hlavička (Pergamen) */}
+      <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 18px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 16px' }}>
+          <button onClick={() => navigate('/menu')} aria-label={t('pregame.backToMenu')} style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
+          }}>←</button>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', letterSpacing: '-0.01em', margin: 0 }}>{t('stats.title')}</h1>
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', position: 'relative', margin: 0 }}>{t('stats.title')}</h1>
-        <div style={{ marginTop: 16, position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--feature-fg)' }}>{t('menu.level')} {lvl.level}</b>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--feature-fg2)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+            <b style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t('menu.level')} {lvl.level}</b>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
           </div>
-          <div style={{ height: 8, borderRadius: 999, background: 'var(--feature-line)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #e89a82)' }}/>
+          <div style={{ height: 8, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #d89a54)' }}/>
           </div>
         </div>
       </div>
