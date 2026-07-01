@@ -183,7 +183,7 @@ export default function MenuPage() {
       </div>
 
       {/* Bottom nav + FAB */}
-      <BottomNav navigate={navigate} onPlay={() => setSheetOpen(true)} friendReqs={friendReqs}/>
+      <BottomNav navigate={navigate} onPlay={() => setSheetOpen(true)} onCampaigns={() => alert(t('menu.campaigns') + ' — ' + t('menu.comingSoon'))} friendReqs={friendReqs}/>
 
       {/* Play launcher */}
       {sheetOpen && (
@@ -342,13 +342,32 @@ function QuickLinks({ navigate, friendReqs }: { navigate: ReturnType<typeof useN
   )
 }
 
-// ─── Mobil bottom nav + FAB ───────────────────────────────
-function BottomNav({ navigate, onPlay, friendReqs }: { navigate: ReturnType<typeof useNavigate>; onPlay: () => void; friendReqs: number }) {
+// ─── Mobil bottom nav + FAB (přesně dle návrhu) ───────────
+function NavIcon({ name, active }: { name: 'home' | 'compass' | 'medal' | 'user'; active?: boolean }) {
+  const s = { width: 23, height: 23, fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (name === 'home') return (
+    <svg viewBox="0 0 24 24" style={{ ...s, fill: active ? 'currentColor' : 'none' }}>
+      <path d="M3.5 11.5 L12 4 L20.5 11.5 V19.5 a1 1 0 0 1-1 1 H4.5 a1 1 0 0 1-1-1 Z"/>
+      {!active && <path d="M9.5 20.5 V14.5 h5 v6" fill="none"/>}
+    </svg>
+  )
+  if (name === 'compass') return (
+    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5 L10.7 10.7 L8.5 15.5 L13.3 13.3 Z"/></svg>
+  )
+  if (name === 'medal') return (
+    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="15" r="5"/><path d="M8.5 10.6 L6.5 3.5 M15.5 10.6 L17.5 3.5"/></svg>
+  )
+  return (
+    <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="8" r="4"/><path d="M5 20.5 a7 7 0 0 1 14 0"/></svg>
+  )
+}
+
+function BottomNav({ navigate, onPlay, onCampaigns, friendReqs }: { navigate: ReturnType<typeof useNavigate>; onPlay: () => void; onCampaigns: () => void; friendReqs: number }) {
   const { t } = useTranslation()
-  const item = (icon: string, label: string, to: string, badge?: number, active?: boolean) => (
-    <button onClick={() => navigate(to)} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--accent)' : 'var(--ink-3)', padding: 0 }}>
-      <span style={{ fontSize: 20 }}>{icon}</span>
-      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 8.5 }}>{label}</span>
+  const item = (icon: 'home' | 'compass' | 'medal' | 'user', label: string, onClick: () => void, badge?: number, active?: boolean) => (
+    <button onClick={onClick} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--accent)' : 'var(--ink-3)', padding: 0 }}>
+      <NavIcon name={icon} active={active}/>
+      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: active ? 700 : 600, fontSize: 9 }}>{label}</span>
       {!!badge && badge > 0 && <span style={{ position: 'absolute', top: -4, right: -8, background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 999 }}>{badge}</span>}
     </button>
   )
@@ -356,20 +375,22 @@ function BottomNav({ navigate, onPlay, friendReqs }: { navigate: ReturnType<type
     <div style={{
       position: 'fixed', left: 0, right: 0, bottom: 0, height: 'calc(66px + var(--safe-bottom))',
       paddingBottom: 'var(--safe-bottom)', background: 'var(--surface-blur, rgba(251,247,240,0.9))', backdropFilter: 'blur(16px)',
-      borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 30px', zIndex: 50,
+      borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', zIndex: 50,
     }}>
-      <div style={{ display: 'flex', gap: 40 }}>
-        {item('🏠', t('menu.navHome'), '/menu', 0, true)}
-        {item('🏅', t('menu.navBadges'), '/stats')}
+      <div style={{ display: 'flex', gap: 38 }}>
+        {item('home', t('menu.navHome'), () => navigate('/menu'), 0, true)}
+        {item('compass', t('menu.campaigns'), onCampaigns)}
       </div>
       <button onClick={onPlay} aria-label={t('menu.navPlay')} style={{
         position: 'absolute', left: '50%', top: -16, transform: 'translateX(-50%)',
         width: 56, height: 56, borderRadius: '50%', background: ACCENT_GRAD, border: 'none', cursor: 'pointer',
-        boxShadow: '0 14px 30px -6px rgba(217,119,87,0.5)', color: '#fff', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>▶</button>
-      <div style={{ display: 'flex', gap: 40 }}>
-        {item('👥', t('menu.friendsTitle'), '/friends', friendReqs)}
-        {item('👤', t('menu.navProfile'), '/account')}
+        boxShadow: '0 14px 30px -6px rgba(217,119,87,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5 L18.5 12 L8 18.5 Z"/></svg>
+      </button>
+      <div style={{ display: 'flex', gap: 38 }}>
+        {item('medal', t('menu.navBadges'), () => navigate('/stats'))}
+        {item('user', t('menu.navProfile'), () => navigate('/account'), friendReqs)}
       </div>
     </div>
   )
