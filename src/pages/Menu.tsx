@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { signOut, getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, localDateISO, type DailyResult } from '@/lib/supabase'
+import { signOut, getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, localDateISO, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -23,6 +23,7 @@ export default function MenuPage() {
   const [dailyStreak, setDailyStreak] = useState(0)
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
+  const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [sheetOpen, setSheetOpen] = useState(false)
 
@@ -72,8 +73,9 @@ export default function MenuPage() {
       setDailyStreak(streak)
     }).catch(() => {})
     getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
+    getWorldRank(profile?.xp ?? 0).then(w => { if (alive) setWorld(w) }).catch(() => {})
     return () => { alive = false }
-  }, [user?.id])
+  }, [user?.id, profile?.xp])
 
   // Odpočet do další výzvy (do půlnoci) — tiká jen když je dnešní odehraná
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function MenuPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <ProgressCard lvl={lvl} games={games} total={totalScore} avg={avgScore}/>
+              <ProgressCard lvl={lvl} world={world}/>
               <QuickLinks navigate={navigate} friendReqs={friendReqs}/>
             </div>
           </div>
@@ -175,7 +177,7 @@ export default function MenuPage() {
 
         <DailyHero {...dailyProps}/>
         <div style={{ height: 12 }}/>
-        <ProgressCard lvl={lvl} games={games} total={totalScore} avg={avgScore}/>
+        <ProgressCard lvl={lvl} world={world}/>
       </div>
 
       {/* Bottom nav + FAB */}
@@ -260,38 +262,37 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, onPlay, tall }: {
   )
 }
 
-// ─── Progres karta ────────────────────────────────────────
-function ProgressCard({ lvl, games, total, avg }: { lvl: LevelInfo; games: number; total: number; avg: number }) {
+// ─── Progres karta (Level + XP + světový žebříček) ────────
+function ProgressCard({ lvl, world }: { lvl: LevelInfo; world: { rank: number; total: number } | null }) {
   const { t } = useTranslation()
   const loc = currentLocale()
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, padding: '15px 16px' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, padding: '16px 18px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
         <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t('menu.level')} {lvl.level}</span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{lvl.into.toLocaleString(loc)} / {lvl.need.toLocaleString(loc)} XP</span>
       </div>
-      <div style={{ height: 8, borderRadius: 10, background: 'var(--paper-300)', overflow: 'hidden', marginBottom: 14 }}>
+      <div style={{ height: 8, borderRadius: 10, background: 'var(--paper-300)', overflow: 'hidden', marginBottom: 18 }}>
         <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg,#d97757,#d89a54)', transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
       </div>
-      <div style={{ display: 'flex' }}>
-        <Stat value={games.toLocaleString(loc)} label={t('menu.statGames')}/>
-        <Divider/>
-        <Stat value={total.toLocaleString(loc)} label={t('menu.statTotalScore')}/>
-        <Divider/>
-        <Stat value={avg.toLocaleString(loc)} label={t('menu.statAvgScore')} accent/>
+      {/* Světový žebříček — využívá uvolněné místo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌍</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('menu.worldRank')}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
+              {world ? `#${world.rank.toLocaleString(loc)}` : '—'}
+            </span>
+            {world && world.total > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{t('menu.ofPlayers', { n: world.total.toLocaleString(loc) })}</span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
 }
-function Stat({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
-  return (
-    <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: accent ? 'var(--accent)' : 'var(--ink)' }}>{value}</div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.04em', color: 'var(--ink-3)', marginTop: 2, textTransform: 'uppercase' }}>{label}</div>
-    </div>
-  )
-}
-function Divider() { return <div style={{ width: 1, background: 'var(--line)' }}/> }
 
 // ─── Dlaždice režimu (desktop / sheet řádek) ──────────────
 function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; title: string; sub: string; onClick: () => void; recommended?: boolean }) {
