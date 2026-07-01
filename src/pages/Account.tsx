@@ -5,7 +5,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { updateProfile, signOut } from '@/lib/supabase'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
-import BackButton from '@/components/BackButton'
+
+const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
+const fieldLabel: React.CSSProperties = { fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: 'var(--ink-2)', margin: '0 0 6px' }
+const cardStyle: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: 16, marginBottom: 13 }
 
 export default function AccountPage() {
   const { t } = useTranslation()
@@ -30,64 +33,66 @@ export default function AccountPage() {
     )
   }
 
-  async function handleSignOut() {
-    await signOut()
-    navigate('/auth')
-  }
+  async function handleSignOut() { await signOut(); navigate('/auth') }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
-      {/* Top bar */}
-      <header style={{
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '16px 32px',
-        background: 'var(--surface)',
-        borderBottom: '1px solid var(--line)',
-      }}>
-        <BackButton onClick={() => navigate('/menu')} label={t('common.back')} />
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{t('account.title')}</h1>
-      </header>
-
-      <div style={{ maxWidth: 560, margin: '40px auto', padding: '0 24px' }}>
-
-        {/* Profil */}
-        <div className="card" style={{ padding: 28, marginBottom: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 20 }}>{t('account.profile')}</p>
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label className="label">{t('auth.email')}</label>
-              <input className="input" value={user?.email ?? ''} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}/>
-            </div>
-            <div>
-              <label className="label">{t('account.username')}</label>
-              <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder={t('account.usernamePlaceholder')} maxLength={USERNAME_MAX}/>
-            </div>
-            {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
-            <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? <span className="spinner" style={{ width: 16, height: 16 }}/> : null}
-              {saving ? t('account.saving') : t('common.save')}
-            </button>
-          </form>
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>
+          <button onClick={() => navigate('/menu')} aria-label={t('common.back')} style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
+          }}>←</button>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em' }}>{t('account.title')}</h1>
         </div>
 
+        {/* Profil */}
+        <form onSubmit={handleSave} style={cardStyle}>
+          <p style={eyebrow}>{t('account.profile')}</p>
+          <p style={fieldLabel}>{t('auth.email')}</p>
+          <input value={user?.email ?? ''} disabled style={{
+            width: '100%', boxSizing: 'border-box', background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 11,
+            padding: '11px 13px', fontFamily: 'var(--font-sans)', fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 14,
+          }}/>
+          <p style={fieldLabel}>{t('account.username')}</p>
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder={t('account.usernamePlaceholder')} maxLength={USERNAME_MAX} style={{
+            width: '100%', boxSizing: 'border-box', background: 'var(--surface)', border: '1px solid var(--line-strong)', borderRadius: 11,
+            padding: '11px 13px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)', marginBottom: 16,
+          }}/>
+          {message && (
+            <div style={{ fontSize: 12.5, marginBottom: 12, color: message.type === 'error' ? '#c0392b' : 'var(--success-deep, #3f7a4d)' }}>{message.text}</div>
+          )}
+          <button type="submit" disabled={saving} style={{
+            width: '100%', background: 'var(--ink)', color: 'var(--paper-50)', border: 'none', borderRadius: 13,
+            padding: 13, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>
+            {saving && <span className="spinner" style={{ width: 15, height: 15 }}/>}
+            {saving ? t('account.saving') : t('common.save')}
+          </button>
+        </form>
+
         {/* Vzhled */}
-        <div className="card" style={{ padding: 28, marginBottom: 24 }}>
-          <p className="eyebrow" style={{ marginBottom: 16 }}>{t('account.appearance')}</p>
+        <div style={cardStyle}>
+          <p style={eyebrow}>{t('account.appearance')}</p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, color: 'var(--ink-2)' }}>{t('account.themeLabel')}</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 13, color: 'var(--ink)' }}>{t('account.themeLabel')}</span>
             <ThemeToggle/>
           </div>
         </div>
 
-        {/* Odhlášení */}
-        <div className="card" style={{ padding: 28 }}>
-          <p className="eyebrow" style={{ marginBottom: 12 }}>{t('account.session')}</p>
-          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 16 }}>
-            {t('account.loggedInAs')} <strong>{user?.email}</strong>
+        {/* Relace */}
+        <div style={cardStyle}>
+          <p style={eyebrow}>{t('account.session')}</p>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: 12, lineHeight: 1.4, color: 'var(--ink-2)', margin: '0 0 12px' }}>
+            {t('account.loggedInAs')} <strong style={{ color: 'var(--ink)' }}>{user?.email}</strong>
           </p>
-          <button className="btn btn-danger" onClick={handleSignOut}>
-            {t('account.signOut')}
-          </button>
+          <button onClick={handleSignOut} style={{
+            width: '100%', background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)', borderRadius: 12,
+            padding: 11, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+          }}>{t('account.signOut')}</button>
         </div>
       </div>
     </div>
