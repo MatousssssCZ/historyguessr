@@ -318,6 +318,15 @@ export async function addScoreToProfile(userId: string, score: number) {
   })
 }
 
+/** Pořadí hráče ve světovém žebříčku podle XP (rank = kolik má víc XP + 1). */
+export async function getWorldRank(xp: number): Promise<{ rank: number; total: number }> {
+  const [higher, total] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).gt('xp', xp),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+  ])
+  return { rank: (higher.count ?? 0) + 1, total: total.count ?? 0 }
+}
+
 /** Přičte XP hráči (atomicky přes RPC; tiše ignoruje chybu) */
 export async function addXp(userId: string, amount: number) {
   if (!userId || amount <= 0) return
