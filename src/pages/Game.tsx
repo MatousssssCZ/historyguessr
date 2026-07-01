@@ -9,7 +9,6 @@ import { useGame, type GameOptions } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, track } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
-import BackButton from '@/components/BackButton'
 import GameEvaluation from '@/components/GameEvaluation'
 import type { Event, RoundResult } from '@/types/database'
 
@@ -50,33 +49,33 @@ export default function GamePage() {
 
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906', position: 'relative', overflow: 'hidden' }}>
-      {/* HUD — kompaktní */}
+      {/* HUD — plovoucí skleněné pilulky nad panoramatem */}
       <div style={{
-        position: 'relative',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 16px',
-        background: 'rgba(13,9,6,0.75)',
-        backdropFilter: 'blur(8px)',
-        borderBottom: '1px solid rgba(245,241,232,0.06)',
-        zIndex: 25, flexShrink: 0,
-      }} className="game-hud">
-        <div className="eyebrow" style={{ color: 'var(--accent)', fontSize: 10 }}>
-          {t('game.round', { n: state.currentRound + 1, total: roundsCount })}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div className="eyebrow" style={{ color: 'rgba(245,241,232,0.35)', fontSize: 9 }}>{t('game.score')}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--on-dark)' }}>
-              {state.totalScore.toLocaleString(currentLocale())}
-            </div>
+        position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 12px)', left: 0, right: 0, zIndex: 25,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none',
+      }}>
+        {/* ✕ Skončit */}
+        <button onClick={() => setConfirmQuit(true)} aria-label={t('game.quit')} style={{
+          pointerEvents: 'auto', width: 38, height: 38, borderRadius: '50%', cursor: 'pointer',
+          background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)',
+          color: '#26211C', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>✕</button>
+        {/* Kolo / mód */}
+        <div style={{
+          pointerEvents: 'auto', textAlign: 'center', borderRadius: 16, padding: '6px 16px',
+          background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)',
+        }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: '#26211C', letterSpacing: '0.05em' }}>
+            {String(state.currentRound + 1).padStart(2, '0')} / {String(roundsCount).padStart(2, '0')}
           </div>
-          <BackButton
-            tone="dark"
-            style={{ padding: '7px 13px', fontSize: 13 }}
-            onClick={() => setConfirmQuit(true)}
-            label={t('game.quit')}
-          />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7.5, letterSpacing: '0.12em', color: '#8C8175', marginTop: 1 }}>{t('pregame.mode')}</div>
         </div>
+        {/* Skóre */}
+        <div style={{
+          pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 5, height: 38, borderRadius: 20, padding: '0 13px',
+          background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)',
+          fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: '#26211C',
+        }}>★ {state.totalScore.toLocaleString(currentLocale())}</div>
       </div>
 
       {/* Potvrzení ukončení hry */}
@@ -106,7 +105,7 @@ export default function GamePage() {
         {/* Název — výrazný overlay vlevo nahoře, pluje nad mapou i panelem roku */}
         {state.phase === 'playing' && (
           <div style={{
-            position: 'absolute', top: 14, left: 16, zIndex: 45,
+            position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 62px)', left: 16, zIndex: 45,
             maxWidth: 'min(400px, 58vw)', pointerEvents: 'none',
           }}>
             <div style={{
