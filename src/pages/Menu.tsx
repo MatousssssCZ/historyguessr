@@ -129,7 +129,6 @@ export default function MenuPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <LanguageSwitcher/>
                 <ThemeToggle variant="light"/>
-                <Avatar monogram={monogram} streak={dailyStreak} size={46}/>
               </div>
             </div>
 
@@ -172,9 +171,6 @@ export default function MenuPage() {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', color: 'var(--accent-deep)', marginBottom: 5 }}>{dateStr}</div>
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: 'var(--ink)', lineHeight: 1.02, margin: 0, letterSpacing: '-0.01em' }}>{greet},<br/>{name}</h1>
           </div>
-          <button onClick={() => navigate('/account')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            <Avatar monogram={monogram} streak={dailyStreak} size={42}/>
-          </button>
         </div>
 
         <DailyHero {...dailyProps}/>
@@ -237,12 +233,12 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, onPlay, tall }: {
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f5ce8b', boxShadow: '0 0 10px #f5ce8b', animation: 'glow 2s infinite' }}/>
           {t('menu.dailyLabel').toUpperCase()}
         </div>
-        {/* countdown / NEW */}
-        <div style={{ position: 'absolute', top: 12, right: 13 }}>
-          {done
-            ? <span style={{ background: 'rgba(0,0,0,0.42)', backdropFilter: 'blur(6px)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10.5, padding: '4px 9px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 5 }}>⏱ {countdown || '00:00:00'}</span>
-            : <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.06em', padding: '4px 9px', borderRadius: 20 }}>{t('menu.badgeNew')}</span>}
-        </div>
+        {/* jen NOVÁ pro neodehrané; odpočet je v patičce (žádný duplicitní horní) */}
+        {!done && (
+          <div style={{ position: 'absolute', top: 12, right: 13 }}>
+            <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.06em', padding: '4px 9px', borderRadius: 20 }}>{t('menu.badgeNew')}</span>
+          </div>
+        )}
         {/* title */}
         <div style={{ position: 'absolute', left: 15, right: 15, bottom: 12, color: '#fff', fontFamily: 'var(--font-serif)', fontSize: tall ? 26 : 18, lineHeight: 1.12, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
           {t('menu.dailyHeroTitle')}
@@ -386,7 +382,7 @@ function BottomNav({ navigate, onPlay, onCampaigns, friendReqs }: { navigate: Re
         width: 56, height: 56, borderRadius: '50%', background: ACCENT_GRAD, border: 'none', cursor: 'pointer',
         boxShadow: '0 14px 30px -6px rgba(217,119,87,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5 L18.5 12 L8 18.5 Z"/></svg>
+        <svg width="35" height="35" viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5 L18.5 12 L8 18.5 Z"/></svg>
       </button>
       <div style={{ display: 'flex', gap: 38 }}>
         {item('medal', t('menu.navBadges'), () => navigate('/stats'))}
