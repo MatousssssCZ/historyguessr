@@ -4,7 +4,6 @@ import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
 import { getCandidateEvents, type CandidateEvent } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
-import BackButton from '@/components/BackButton'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
 import type { GameOptions } from '@/hooks/useGame'
 
@@ -96,19 +95,24 @@ export default function PreGameLobbyPage() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-100)', display: 'flex', flexDirection: 'column', paddingBottom: 'max(16px, var(--safe-bottom))' }}>
-      {/* Hlavička */}
-      <div style={{ position: 'relative', background: 'var(--feature-bg)', padding: 'calc(var(--safe-top) + 18px) 22px 22px', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -60, right: -50, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.16), transparent 70%)', pointerEvents: 'none' }}/>
-        <div style={{ position: 'relative', marginBottom: 14 }}>
-          <BackButton onClick={() => navigate('/menu')} label={t('pregame.backToMenu')} />
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex', flexDirection: 'column', paddingTop: 'var(--safe-top)', paddingBottom: 'max(16px, var(--safe-bottom))' }}>
+      {/* Hlavička (Pergamen) */}
+      <div style={{ maxWidth: 560, width: '100%', margin: '0 auto', padding: '16px 20px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 14px' }}>
+          <button onClick={() => navigate('/menu')} aria-label={t('pregame.backToMenu')} style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
+          }}>←</button>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent-deep)', marginBottom: 2 }}>{t('pregame.mode')}</div>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: 'var(--ink)', letterSpacing: '-0.01em', margin: 0, lineHeight: 1.02 }}>{t('pregame.title')}</h1>
+          </div>
         </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-soft)', position: 'relative' }}>{t('pregame.mode')}</div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--feature-fg)', letterSpacing: '-0.02em', margin: '6px 0 0', position: 'relative' }}>{t('pregame.title')}</h1>
       </div>
 
       {/* Obsah */}
-      <div style={{ flex: 1, padding: '20px 20px 0', maxWidth: 560, width: '100%', margin: '0 auto' }}>
+      <div style={{ flex: 1, padding: '8px 20px 0', maxWidth: 560, width: '100%', margin: '0 auto' }}>
         {/* Počet kol */}
         <Section label={t('pregame.rounds')}>
           <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 4, gap: 4 }}>
