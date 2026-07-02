@@ -73,7 +73,7 @@ export default function MenuPage() {
       setDailyStreak(streak)
     }).catch(() => {})
     getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
-    getWorldRank(profile?.xp ?? 0).then(w => { if (alive) setWorld(w) }).catch(() => {})
+    getWorldRank().then(w => { if (alive) setWorld(w) }).catch(() => {})
     return () => { alive = false }
   }, [user?.id, profile?.xp])
 
