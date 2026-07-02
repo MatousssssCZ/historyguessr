@@ -12,6 +12,7 @@ import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
 import GameEvaluation from '@/components/GameEvaluation'
+import ControlDock from '@/components/GameControls'
 import type { Event } from '@/types/database'
 import type { DailyResult } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
@@ -290,107 +291,32 @@ export default function DailyChallengePage() {
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906', position: 'relative', overflow: 'hidden' }}>
 
-        {/* HUD */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 16px',
-          background: 'rgba(13,9,6,0.85)', backdropFilter: 'blur(8px)',
-          flexShrink: 0, zIndex: 10,
-          paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
-        }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>{t('menu.dailyMobile')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{eventTitle(event)}</div>
+        {/* Tenký proužek času nahoře */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.18)', zIndex: 26 }}>
+          <div style={{ height: '100%', width: `${timerPct}%`, background: timerColor, transition: 'width 1s linear, background 500ms' }}/>
+        </div>
+
+        {/* Plovoucí skleněný HUD */}
+        <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 12px)', left: 0, right: 0, zIndex: 25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '0 14px', pointerEvents: 'none' }}>
+          <div style={{ pointerEvents: 'auto', minWidth: 0, maxWidth: '58%', borderRadius: 16, padding: '6px 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', color: 'var(--accent-deep)', textTransform: 'uppercase' }}>{t('menu.dailyMobile')}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: '#26211C', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eventTitle(event)}</div>
           </div>
-          {/* Timer */}
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('daily.remaining')}</div>
-            <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 600,
-              color: timerColor,
-              transition: 'color 500ms',
-              lineHeight: 1,
-            }}>
-              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-            </div>
+          <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: timerColor, transition: 'color 500ms' }}>
+            ⏱ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
           </div>
         </div>
 
-        {/* Timer progress bar */}
-        <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}>
-          <div style={{
-            height: '100%', background: timerColor,
-            width: `${timerPct}%`,
-            transition: 'width 1s linear, background 500ms',
-          }}/>
-        </div>
-
-        {/* Panorama */}
+        {/* Panorama — celá plocha */}
         <div style={{ flex: 1, position: 'relative' }}>
           <PanoramaViewer url={event.panorama_url}/>
         </div>
 
-        {/* Guess UI */}
+        {/* Ovládací dock (dle #1b) */}
         {!mapExpanded && !yearExpanded && (
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            zIndex: 20, padding: '10px 12px',
-            paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-            display: 'flex', flexDirection: 'column', gap: 8,
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <button onClick={() => setMapExpanded(true)} style={{
-                display: 'flex', flexDirection: 'column',
-                background: 'rgba(245,241,232,0.95)', backdropFilter: 'blur(16px)',
-                border: `${guessLat !== null ? '3px solid #27ae60' : '1.5px solid rgba(217,119,87,0.35)'}`,
-                borderRadius: 14, overflow: 'hidden', cursor: 'pointer', padding: 0,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.25)', height: 100,
-              }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                  <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { setGuessLat(lat); setGuessLng(lng) }} compact/>
-                </div>
-                <div style={{ padding: '6px 10px', background: guessLat !== null ? 'rgba(39,174,96,0.12)' : 'rgba(245,241,232,0.95)', borderTop: '0.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: guessLat !== null ? '#1d6b3a' : 'var(--ink-3)', textTransform: 'uppercase' }}>
-                    {guessLat !== null ? t('daily.placeSet') : t('daily.pickPlace')}
-                  </span>
-                </div>
-              </button>
-
-              <button onClick={() => setYearExpanded(true)} style={{
-                display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                background: 'rgba(245,241,232,0.95)', backdropFilter: 'blur(16px)',
-                border: `${guessYearSet ? '3px solid #27ae60' : '1.5px solid rgba(217,119,87,0.35)'}`,
-                borderRadius: 14, cursor: 'pointer', padding: '14px 16px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.25)', height: 100, textAlign: 'left',
-              }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>{t('game.year')}</div>
-                {guessYearSet ? (
-                  <>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>{Math.abs(guessYear)}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? t('daily.bc') : 'N. l.'} ✓</div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
-                )}
-              </button>
-            </div>
-
-            <button
-              disabled={!canSubmit || submitting}
-              onClick={handleSubmit}
-              style={{
-                width: '100%', fontSize: 15, padding: '14px 0',
-                borderRadius: 12, border: 'none', fontWeight: 500,
-                background: canSubmit ? 'var(--accent)' : 'rgba(245,241,232,0.7)',
-                backdropFilter: 'blur(16px)',
-                color: canSubmit ? '#fff' : 'var(--ink-3)',
-                boxShadow: canSubmit ? '0 4px 20px rgba(217,119,87,0.4)' : 'none',
-                cursor: canSubmit ? 'pointer' : 'default',
-              }}
-            >
-              {submitting ? t('daily.submitting') : canSubmit ? t('game.submit') : guessLat === null ? t('game.submitPlace') : t('game.submitYear')}
-            </button>
-          </div>
+          <ControlDock set={guessLat !== null} guessYear={guessYear} guessYearSet={guessYearSet}
+            canSubmit={!!canSubmit} submitLabel={submitting ? t('daily.submitting') : t('game.submit')} submitting={submitting}
+            onMap={() => setMapExpanded(true)} onYear={() => setYearExpanded(true)} onSubmit={handleSubmit}/>
         )}
 
         {/* Rozbalená mapa */}
@@ -549,7 +475,7 @@ function ScoreHistogram({ leaderboard, myScore }: { leaderboard: DailyResult[]; 
 
 // ── Výsledková obrazovka ──────────────────────────────────
 function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, userId, alreadyPlayed, onMenu }: {
-  event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number }
+  event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
   leaderboard: DailyResult[]; userId?: string; alreadyPlayed: boolean; onMenu: () => void
 }) {

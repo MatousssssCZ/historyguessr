@@ -15,6 +15,7 @@ import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { supabase, recordEventScore, recordCategoryHit } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import { GuessMap, ResultMap } from '@/components/GameMap'
+import ControlDock from '@/components/GameControls'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -595,30 +596,25 @@ export default function MultiplayerGamePage() {
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906', position: 'relative', overflow: 'hidden' }}>
 
-        {/* HUD */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(13,9,6,0.85)', backdropFilter: 'blur(8px)', flexShrink: 0, zIndex: 10, paddingTop: 'calc(10px + env(safe-area-inset-top,0px))' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-              {isBR
-                ? `☠️ ${t('lobby.brAlive')}: ${aliveCount}`
-                : t('mp.roundPlayers', { n: currentRound?.round_number, total: room?.settings.rounds, count: players.length })}
-            </div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--on-dark)', marginTop: 2 }}>{eventTitle(event)}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('daily.remaining')}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 600, color: timerColor, lineHeight: 1, transition: 'color 500ms' }}>
-              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-            </div>
-          </div>
-        </div>
-
-        {/* Timer bar — šířku řídí useLayoutEffect (plynulý CSS přechod) */}
-        <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}>
+        {/* Tenký proužek času nahoře */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.18)', zIndex: 26 }}>
           <div ref={barRef} style={{ height: '100%', background: timerColor }}/>
         </div>
 
-        {/* Panorama */}
+        {/* Plovoucí skleněný HUD */}
+        <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 12px)', left: 0, right: 0, zIndex: 25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '0 14px', pointerEvents: 'none' }}>
+          <div style={{ pointerEvents: 'auto', minWidth: 0, maxWidth: '58%', borderRadius: 16, padding: '6px 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', color: 'var(--accent-deep)', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {isBR ? `☠️ ${t('lobby.brAlive')}: ${aliveCount}` : t('mp.roundPlayers', { n: currentRound?.round_number, total: room?.settings.rounds, count: players.length })}
+            </div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: '#26211C', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eventTitle(event)}</div>
+          </div>
+          <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: timerColor, transition: 'color 500ms' }}>
+            ⏱ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </div>
+        </div>
+
+        {/* Panorama — celá plocha */}
         <div style={{ flex: 1, position: 'relative' }}>
           <PanoramaViewer url={event.panorama_url} preview={event.preview_url}/>
         </div>
@@ -630,42 +626,12 @@ export default function MultiplayerGamePage() {
           </div>
         )}
 
-        {/* Guess UI */}
+        {/* Ovládací dock (dle #1b) */}
         {!mapExpanded && !yearExpanded && !amEliminated && (
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '10px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <button onClick={() => setMapExpanded(true)} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(245,241,232,0.95)', backdropFilter: 'blur(16px)', border: guessLat !== null ? '3px solid #27ae60' : '1.5px solid rgba(217,119,87,0.35)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer', padding: 0, height: 100 }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                  <GuessMap guessLat={guessLat} guessLng={guessLng} onGuess={(lat, lng) => { setGuessLat(lat); setGuessLng(lng) }} compact/>
-                </div>
-                <div style={{ padding: '6px 10px', background: guessLat !== null ? 'rgba(39,174,96,0.12)' : 'rgba(245,241,232,0.95)', borderTop: '0.5px solid var(--line)' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: guessLat !== null ? '#1d6b3a' : 'var(--ink-3)', textTransform: 'uppercase' }}>
-                    {guessLat !== null ? t('daily.placeSet') : t('daily.pickPlace')}
-                  </span>
-                </div>
-              </button>
-
-              <button onClick={() => setYearExpanded(true)} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(245,241,232,0.95)', backdropFilter: 'blur(16px)', border: guessYearSet ? '3px solid #27ae60' : '1.5px solid rgba(217,119,87,0.35)', borderRadius: 14, cursor: 'pointer', padding: '14px 16px', height: 100, textAlign: 'left' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>{t('game.year')}</div>
-                {guessYearSet ? (
-                  <>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1 }}>{Math.abs(guessYear)}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#1d6b3a', marginTop: 3 }}>{guessYear < 0 ? t('daily.bc') : t('game.ad')} ✓</div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 15, color: 'var(--accent-deep)', fontWeight: 500 }}>{t('game.pickYear')}</div>
-                )}
-              </button>
-            </div>
-
-            <button
-              disabled={!canSubmit}
-              onClick={() => event && doSubmit(event, guessLat, guessLng, guessYear, guessYearSet)}
-              style={{ width: '100%', fontSize: 15, padding: '14px 0', borderRadius: 12, border: 'none', fontWeight: 500, background: canSubmit ? 'var(--accent)' : 'rgba(245,241,232,0.7)', backdropFilter: 'blur(16px)', color: canSubmit ? '#fff' : 'var(--ink-3)', boxShadow: canSubmit ? '0 4px 20px rgba(217,119,87,0.4)' : 'none', cursor: canSubmit ? 'pointer' : 'default' }}
-            >
-              {canSubmit ? t('game.submit') : guessLat === null ? t('game.submitPlace') : t('game.submitYear')}
-            </button>
-          </div>
+          <ControlDock set={guessLat !== null} guessYear={guessYear} guessYearSet={guessYearSet}
+            canSubmit={!!canSubmit} submitLabel={t('game.submit')}
+            onMap={() => setMapExpanded(true)} onYear={() => setYearExpanded(true)}
+            onSubmit={() => event && doSubmit(event, guessLat, guessLng, guessYear, guessYearSet)}/>
         )}
 
         {/* Rozbalená mapa */}
