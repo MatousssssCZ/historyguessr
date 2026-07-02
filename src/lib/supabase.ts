@@ -318,13 +318,11 @@ export async function addScoreToProfile(userId: string, score: number) {
   })
 }
 
-/** Pořadí hráče ve světovém žebříčku podle XP (rank = kolik má víc XP + 1). */
-export async function getWorldRank(xp: number): Promise<{ rank: number; total: number }> {
-  const [higher, total] = await Promise.all([
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).gt('xp', xp),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-  ])
-  return { rank: (higher.count ?? 0) + 1, total: total.count ?? 0 }
+/** Pořadí hráče ve světovém žebříčku dle XP (přes RPC — RLS profilů obchází server). */
+export async function getWorldRank(): Promise<{ rank: number; total: number }> {
+  const { data } = await supabase.rpc('get_world_rank')
+  const row = Array.isArray(data) ? data[0] : data
+  return { rank: Number(row?.rank ?? 0), total: Number(row?.total ?? 0) }
 }
 
 /** Přičte XP hráči (atomicky přes RPC; tiše ignoruje chybu) */
