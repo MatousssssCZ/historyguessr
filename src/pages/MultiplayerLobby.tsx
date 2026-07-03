@@ -8,7 +8,6 @@ import {
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
-import BackButton from '@/components/BackButton'
 import YearRange from '@/components/YearRange'
 
 const DEFAULT_SETTINGS: RoomSettings = {
@@ -274,22 +273,27 @@ export default function MultiplayerLobbyPage() {
 
   // ── Sdílené komponenty ─────────────────────────────────
   const PlayerList = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {players.map(p => (
-        <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, background: p.user_id === user?.id ? 'rgba(217,119,87,0.06)' : 'rgba(255,255,255,0.04)' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: p.is_host ? 'rgba(217,119,87,0.2)' : 'var(--feature-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: p.is_host ? 'var(--accent-soft)' : 'var(--feature-fg2)', flexShrink: 0 }}>
-            {p.username[0].toUpperCase()}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {players.map(p => {
+        const me = p.user_id === user?.id
+        let hash = 0; for (let i = 0; i < p.username.length; i++) hash = (hash * 31 + p.username.charCodeAt(i)) >>> 0
+        const hue = hash % 360
+        return (
+          <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 14, background: me ? 'rgba(217,119,87,0.07)' : 'var(--surface)', border: `1px solid ${me ? 'var(--accent)' : 'var(--line)'}` }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(150deg, hsl(${hue} 35% 78%), hsl(${hue} 40% 62%))`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: `hsl(${hue} 45% 30%)`, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14 }}>
+              {p.username[0].toUpperCase()}
+            </div>
+            <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sans)', fontWeight: me ? 600 : 500, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {p.username}
+              {me && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>{t('lobby.you')}</span>}
+            </span>
+            {p.is_host
+              ? <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', background: 'rgba(217,119,87,0.12)', color: 'var(--accent-deep)', padding: '3px 9px', borderRadius: 999 }}>{t('lobby.host')}</span>
+              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success, #5c9468)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            }
           </div>
-          <span style={{ flex: 1, fontSize: 14, color: 'var(--feature-fg)', fontWeight: p.user_id === user?.id ? 500 : 400 }}>
-            {p.username}
-            {p.user_id === user?.id && <span style={{ fontSize: 10, color: 'var(--feature-fg3)', marginLeft: 6 }}>{t('lobby.you')}</span>}
-          </span>
-          {p.is_host
-            ? <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', background: 'rgba(217,119,87,0.15)', color: 'var(--accent-soft)', padding: '2px 8px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.3)' }}>{t('lobby.host')}</span>
-            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          }
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 
@@ -384,53 +388,39 @@ export default function MultiplayerLobbyPage() {
   // ── Desktop — split layout ────────────────────────────
   if (!isMobile) {
     return (
-      <div style={{ height: '100dvh', display: 'grid', gridTemplateColumns: '420px 1fr', background: 'var(--feature-bg)', overflow: 'hidden' }}>
+      <div style={{ height: '100dvh', display: 'grid', gridTemplateColumns: '420px 1fr', background: 'var(--paper-200)', overflow: 'hidden' }}>
 
-        {/* Levá — tmavá: kód + hráči */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--feature-chip)', position: 'relative', overflow: 'hidden' }}>
-          {/* Dekorativní pozadí */}
-          <svg style={{ position: 'absolute', inset: 0, opacity: 0.04, pointerEvents: 'none' }} width="100%" height="100%">
-            <defs><pattern id="mp-grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M 36 0 L 0 0 0 36" fill="none" stroke="#f5f1e8" strokeWidth="0.5"/></pattern></defs>
-            <rect width="100%" height="100%" fill="url(#mp-grid)"/>
-          </svg>
-          <div style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.08) 0%, transparent 70%)', pointerEvents: 'none' }}/>
-
+        {/* Levá — kód + hráči */}
+        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', background: 'var(--surface)', overflow: 'hidden' }}>
           {/* Kód místnosti */}
-          <div style={{ padding: '40px 36px 32px', position: 'relative' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 10px' }}>{t('lobby.roomCode')}</p>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 52, fontWeight: 700, letterSpacing: '0.22em', color: 'var(--feature-fg)', lineHeight: 1, marginBottom: 16 }}>
-              {room?.code}
+          <div style={{ padding: '32px 36px 26px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: '0 0 10px' }}>{t('lobby.roomCode')}</p>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--ink)', lineHeight: 1, marginBottom: 14 }}>
+                {room?.code}
+              </div>
+              <button
+                onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                {t('lobby.copy')}
+              </button>
             </div>
-            <button
-              onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--feature-chip)', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: 8, padding: '7px 16px', fontSize: 12, color: 'var(--feature-fg2)', cursor: 'pointer', transition: 'all 160ms' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--feature-line)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--feature-chip)')}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Kopírovat kód
-            </button>
+            <MpBack onClick={handleLeave} label={t('lobby.leave')}/>
           </div>
 
           {/* Hráči */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 36px', position: 'relative' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--feature-fg3)', textTransform: 'uppercase', margin: '0 0 10px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px' }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 12px 10px' }}>
               Hráči {players.length} / 12
             </p>
             <PlayerList/>
           </div>
-
-          {/* Odejít */}
-          <div style={{ padding: '24px 36px', position: 'relative' }}>
-            <BackButton
-              onClick={handleLeave}
-              label={t('lobby.leave')}
-            />
-          </div>
         </div>
 
-        {/* Pravá — světlá: nastavení + start */}
-        <div style={{ background: 'var(--paper-100)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Pravá — nastavení + start */}
+        <div style={{ background: 'var(--paper-200)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px' }}>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 0 4px' }}>{t('lobby.gameSettings')}</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 32px', letterSpacing: '-0.01em' }}>{t('lobby.customize')}</h2>
@@ -453,15 +443,15 @@ export default function MultiplayerLobbyPage() {
   // ── Mobil — původní layout ────────────────────────────
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex', flexDirection: 'column' }}>
-      <header style={{ background: 'var(--feature-bg)', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 'calc(14px + env(safe-area-inset-top,0px))' }}>
-        <div>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 2px' }}>{t('lobby.roomCode')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 600, letterSpacing: '0.2em', color: 'var(--feature-fg)' }}>{room?.code}</span>
-            <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--feature-line)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--feature-fg2)', cursor: 'pointer' }}>{t('lobby.copy')}</button>
+      <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--line)', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 'calc(14px + env(safe-area-inset-top,0px))' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <MpBack onClick={handleLeave} label={t('lobby.leave')}/>
+          <div>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.16em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: '0 0 2px' }}>{t('lobby.roomCode')}</p>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--ink)' }}>{room?.code}</span>
           </div>
         </div>
-        <BackButton onClick={handleLeave} label={t('lobby.leave')} />
+        <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 14px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>{t('lobby.copy')}</button>
       </header>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
