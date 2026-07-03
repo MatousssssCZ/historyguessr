@@ -25,6 +25,7 @@ export default function MenuPage() {
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
+  const [rankDelta, setRankDelta] = useState(0)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
 
   // Slideshow obrázků (session cache → cache hit prohlížeče)
@@ -73,7 +74,21 @@ export default function MenuPage() {
       setDailyStreak(streak)
     }).catch(() => {})
     getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
-    getWorldRank().then(w => { if (alive) setWorld(w) }).catch(() => {})
+    getWorldRank().then(w => {
+      if (!alive) return
+      setWorld(w)
+      // Týdenní posun v pořadí (baseline v localStorage; roluje se po 7 dnech)
+      try {
+        const raw = localStorage.getItem('hg_rank_baseline')
+        const b = raw ? JSON.parse(raw) as { rank: number; ts: number } : null
+        if (!b || typeof b.rank !== 'number' || Date.now() - b.ts > 7 * 864e5) {
+          localStorage.setItem('hg_rank_baseline', JSON.stringify({ rank: w.rank, ts: Date.now() }))
+          setRankDelta(0)
+        } else {
+          setRankDelta(b.rank - w.rank) // kladné = posun nahoru (menší číslo pořadí)
+        }
+      } catch { setRankDelta(0) }
+    }).catch(() => {})
     return () => { alive = false }
   }, [user?.id, profile?.xp])
 
@@ -143,7 +158,7 @@ export default function MenuPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <ProgressCard lvl={lvl} world={world}/>
+              <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
               <QuickLinks navigate={navigate} friendReqs={friendReqs}/>
             </div>
           </div>
@@ -169,13 +184,13 @@ export default function MenuPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', color: 'var(--accent-deep)', marginBottom: 5 }}>{dateStr}</div>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: 'var(--ink)', lineHeight: 1.02, margin: 0, letterSpacing: '-0.01em' }}>{greet},<br/>{name}</h1>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: 'var(--ink)', lineHeight: 1.05, margin: 0, letterSpacing: '-0.01em' }}>{greet}, {name}</h1>
           </div>
         </div>
 
         <DailyHero {...dailyProps}/>
         <div style={{ height: 12 }}/>
-        <ProgressCard lvl={lvl} world={world}/>
+        <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
         <div style={{ height: 12 }}/>
         <button onClick={() => navigate('/friends')} style={{
           display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
@@ -267,9 +282,10 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, onPlay, tall }: {
 }
 
 // ─── Progres karta (Level + XP + světový žebříček) ────────
-function ProgressCard({ lvl, world }: { lvl: LevelInfo; world: { rank: number; total: number } | null }) {
+function ProgressCard({ lvl, world, delta }: { lvl: LevelInfo; world: { rank: number; total: number } | null; delta: number }) {
   const { t } = useTranslation()
   const loc = currentLocale()
+  const up = delta > 0, down = delta < 0
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, padding: '16px 18px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
@@ -288,8 +304,13 @@ function ProgressCard({ lvl, world }: { lvl: LevelInfo; world: { rank: number; t
             <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
               {world ? `#${world.rank.toLocaleString(loc)}` : '—'}
             </span>
-            {world && world.total > 0 && (
-              <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{t('menu.ofPlayers', { n: world.total.toLocaleString(loc) })}</span>
+            {world && (up || down) && (
+              <span title={t('menu.rankPeriod')} style={{
+                alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: 2,
+                fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 999,
+                background: up ? 'rgba(92,148,104,0.16)' : 'rgba(192,57,43,0.14)',
+                color: up ? 'var(--success-deep, #3f7a4d)' : '#c0392b',
+              }}>{up ? '▲' : '▼'} {Math.abs(delta).toLocaleString(loc)}</span>
             )}
           </div>
         </div>
