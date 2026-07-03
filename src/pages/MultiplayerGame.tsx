@@ -201,7 +201,7 @@ export default function MultiplayerGamePage() {
       setTimeLeft(Math.ceil(remaining))
       if (remaining <= 0) {
         clearInterval(timerRef.current!)
-        if (!hasSubmittedRef.current) handleAutoSubmit()
+        if (!hasSubmittedRef.current) handleAutoSubmitRef.current()
       }
     }, 200)
   }
@@ -215,6 +215,10 @@ export default function MultiplayerGamePage() {
     hasSubmittedRef.current = true
     await doSubmit(currentRound.events, guessLat, guessLng, guessYear, guessYearSet)
   }, [currentRound, user, roomId, guessLat, guessLng, guessYear, guessYearSet])
+
+  // Vždy ukazuje na AKTUÁLNÍ handleAutoSubmit (časovač jinak volá zastaralou closure s prázdným tipem)
+  const handleAutoSubmitRef = useRef(handleAutoSubmit)
+  useEffect(() => { handleAutoSubmitRef.current = handleAutoSubmit }, [handleAutoSubmit])
 
   async function doSubmit(
     event: Event,
