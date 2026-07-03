@@ -56,6 +56,8 @@ export default function DailyChallengePage() {
     distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number
   } | null>(null)
   const timeLeftRef = useRef(TIMER_SECONDS)
+  // Vždy ukazuje na AKTUÁLNÍ doSubmit (časovač jinak volá zastaralou closure s prázdným tipem)
+  const doSubmitRef = useRef<(fl?: number | null, fln?: number | null, fy?: number) => void>(() => {})
 
   useEffect(() => {
     if (!user) return
@@ -113,8 +115,8 @@ export default function DailyChallengePage() {
         if (t <= 1) {
           clearInterval(timerRef.current!)
           timeLeftRef.current = 0
-          // Auto-submit při vypršení
-          if (!hasSubmittedRef.current) doSubmit()
+          // Auto-submit při vypršení — přes ref, ať se použije aktuální tip
+          if (!hasSubmittedRef.current) doSubmitRef.current()
           return 0
         }
         timeLeftRef.current = t - 1
@@ -174,6 +176,8 @@ export default function DailyChallengePage() {
     setSubmitting(false)
     setPhase('result')
   }, [event, user, guessLat, guessLng, guessYear])
+
+  useEffect(() => { doSubmitRef.current = doSubmit }, [doSubmit])
 
   async function handleSubmit() {
     await doSubmit()
