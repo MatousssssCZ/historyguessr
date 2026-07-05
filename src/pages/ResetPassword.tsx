@@ -52,8 +52,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--feature-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 400, background: 'var(--paper-50)', borderRadius: 18, padding: 'clamp(24px, 6vw, 36px)', boxShadow: 'var(--shadow-lg)' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 400, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: 'clamp(24px, 6vw, 36px)', boxShadow: 'var(--shadow-lg)' }}>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: 0 }}>HistoryGuessr</p>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', margin: '8px 0 6px' }}>{t('reset.title')}</h1>
 
