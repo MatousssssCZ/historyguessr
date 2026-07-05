@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { signIn, signUp, requestPasswordReset, track } from '@/lib/supabase'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -21,7 +21,8 @@ const PASSWORD_RULES = [
 export default function AuthPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [mode, setMode] = useState<Mode>('login')
+  const location = useLocation()
+  const [mode, setMode] = useState<Mode>((location.state as { mode?: Mode } | null)?.mode === 'register' ? 'register' : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -180,6 +181,10 @@ export default function AuthPage() {
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
             </form>
+            <button onClick={() => navigate('/try')} style={{ width: '100%', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'transparent', border: '1.5px solid var(--line-strong)', borderRadius: 12, padding: 13, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', cursor: 'pointer' }}>
+              <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
+            </button>
+            <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 9 }}>{t('menu.trialFree')}</div>
           </div>
         </div>
       </div>
@@ -423,6 +428,11 @@ export default function AuthPage() {
               }
             </button>
           </form>
+
+          <button onClick={() => navigate('/try')} style={{ width: '100%', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'transparent', border: '1.5px solid var(--line-strong)', borderRadius: 13, padding: 12, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', cursor: 'pointer' }}>
+            <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
+          </button>
+          <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 8 }}>{t('menu.trialFree')}</div>
 
           {/* Legal links */}
           <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: 20, lineHeight: 1.6 }}>

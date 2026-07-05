@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import UsernameSetup from '@/components/UsernameSetup'
 import AuthPage from '@/pages/Auth'
+import TryGamePage from '@/pages/TryGame'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
 import PreGameLobbyPage from '@/pages/PreGameLobby'
@@ -76,6 +77,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<RootRedirect/>}/>
               <Route path="/auth" element={<AuthPage/>}/>
+              <Route path="/try" element={<TryGamePage/>}/>
               <Route path="/auth/callback" element={<RootRedirect/>}/>
               <Route path="/reset-password" element={<ResetPasswordPage/>}/>
               <Route path="/menu"    element={<RequireAuth><MenuPage/></RequireAuth>}/>
