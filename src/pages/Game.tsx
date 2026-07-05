@@ -166,7 +166,7 @@ export default function GamePage() {
 }
 
 // ── Panorama viewer ───────────────────────────────────────
-function PanoramaViewer({ url, preview }: { url: string; preview?: string | null }) {
+export function PanoramaViewer({ url, preview }: { url: string; preview?: string | null }) {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<{ destroy: () => void } | null>(null)
@@ -336,7 +336,7 @@ function FullscreenButton() {
 
 // ── Guess panel — GeoGuessr styl ─────────────────────────
 
-function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, onLocationChange, onYearChange, onSubmit }: {
+export function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSubmit, onLocationChange, onYearChange, onSubmit }: {
   guessLat: number | null; guessLng: number | null; guessYear: number
   guessYearSet: boolean
   canSubmit: boolean; onLocationChange: (lat: number, lng: number) => void
@@ -807,7 +807,7 @@ function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score
 }
 
 // ── Sdílený obsah info ────────────────────────────────────
-function InfoContent({ event }: { event: Event }) {
+export function InfoContent({ event }: { event: Event }) {
   const { t } = useTranslation()
 
   return (
