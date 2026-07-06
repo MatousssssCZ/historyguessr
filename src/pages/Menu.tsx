@@ -22,6 +22,7 @@ export default function MenuPage() {
   const [dailyState, setDailyState] = useState<DailyState>('loading')
   const [, setDailyResult] = useState<DailyResult | null>(null)
   const [dailyStreak, setDailyStreak] = useState(0)
+  const [dailyWeek, setDailyWeek] = useState<boolean[]>([])
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
@@ -72,6 +73,17 @@ export default function MenuPage() {
       if (!played.has(localDateISO(d))) d.setDate(d.getDate() - 1)
       while (played.has(localDateISO(d))) { streak++; d.setDate(d.getDate() - 1) }
       setDailyStreak(streak)
+      // ✓/✕ za posledních 7 dní, ale jen ode dne registrace (dřív hráč nemohl hrát)
+      const regIso = profile?.created_at ? localDateISO(new Date(profile.created_at)) : null
+      const week: boolean[] = []
+      const now = new Date()
+      for (let i = 6; i >= 0; i--) {
+        const dd = new Date(now); dd.setDate(now.getDate() - i)
+        const iso = localDateISO(dd)
+        if (regIso && iso < regIso) continue
+        week.push(played.has(iso))
+      }
+      setDailyWeek(week)
     }).catch(() => {})
     getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
     getWorldRank().then(w => {
@@ -90,7 +102,7 @@ export default function MenuPage() {
       } catch { setRankDelta(0) }
     }).catch(() => {})
     return () => { alive = false }
-  }, [user?.id, profile?.xp])
+  }, [user?.id, profile?.xp, profile?.created_at])
 
   // Odpočet do další výzvy (do půlnoci) — tiká jen když je dnešní odehraná
   useEffect(() => {
@@ -126,7 +138,7 @@ export default function MenuPage() {
   const goDaily = () => navigate('/daily')
   const goMP = () => navigate('/multiplayer/lobby')
 
-  const dailyProps = { heroImgs, dailyState, countdown, streak: dailyStreak, onPlay: goDaily }
+  const dailyProps = { heroImgs, dailyState, countdown, streak: dailyStreak, week: dailyWeek, onPlay: goDaily }
 
   // ═══════════════════ DESKTOP ═══════════════════
   if (!isMobile) {
@@ -233,9 +245,26 @@ function Avatar({ monogram, streak, size }: { monogram: string; streak: number; 
   )
 }
 
+// ✓/✕ za posledních 7 dní (jen ode dne registrace)
+function DailyMarks({ days }: { days: boolean[] }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+      {days.map((p, i) => (
+        <span key={i} title={p ? 'Odehráno' : 'Vynecháno'} style={{
+          width: 15, height: 15, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 9, lineHeight: 1,
+          background: p ? 'var(--success, #5c9468)' : 'var(--paper-300)',
+          color: p ? '#fff' : 'var(--ink-3)',
+          border: p ? 'none' : '1px solid var(--line)',
+        }}>{p ? '✓' : '✕'}</span>
+      ))}
+    </div>
+  )
+}
+
 // ─── Hero denní výzvy ─────────────────────────────────────
-function DailyHero({ heroImgs, dailyState, countdown, streak, onPlay, tall }: {
-  heroImgs: string[]; dailyState: DailyState; countdown: string; streak: number; onPlay: () => void; tall?: boolean
+function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall }: {
+  heroImgs: string[]; dailyState: DailyState; countdown: string; streak: number; week: boolean[]; onPlay: () => void; tall?: boolean
 }) {
   const { t } = useTranslation()
   const done = dailyState === 'done'
@@ -270,7 +299,9 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, onPlay, tall }: {
           <span style={{ fontSize: 22 }}>🔥</span>
           <div style={{ lineHeight: 1.18, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{t('menu.streakDays', { n: streak })}</div>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-3)' }}>{done ? t('menu.dailyNext', { time: countdown || '00:00:00' }) : t('menu.dontMissToday')}</div>
+            {week.length > 0
+              ? <DailyMarks days={week}/>
+              : <div style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 2 }}>{done ? t('menu.dailyNext', { time: countdown || '00:00:00' }) : t('menu.dontMissToday')}</div>}
           </div>
         </div>
         {done
