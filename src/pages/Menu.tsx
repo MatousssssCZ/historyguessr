@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import MobileNav from '@/components/MobileNav'
+import HowToPlay from '@/components/HowToPlay'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -28,6 +29,13 @@ export default function MenuPage() {
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
+  const [showHowTo, setShowHowTo] = useState(false)
+
+  // Onboarding při prvním spuštění
+  useEffect(() => {
+    try { if (!localStorage.getItem('hg_onboarded')) setShowHowTo(true) } catch { /* ignore */ }
+  }, [])
+  const closeHowTo = () => { try { localStorage.setItem('hg_onboarded', '1') } catch { /* ignore */ }; setShowHowTo(false) }
 
   // Slideshow obrázků (session cache → cache hit prohlížeče)
   useEffect(() => {
@@ -154,6 +162,7 @@ export default function MenuPage() {
                 <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--ink)', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{greet}, {name}</h1>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <HelpButton onClick={() => setShowHowTo(true)}/>
                 <LanguageSwitcher/>
                 <ThemeToggle variant="light"/>
               </div>
@@ -175,6 +184,7 @@ export default function MenuPage() {
             </div>
           </div>
         </div>
+        {showHowTo && <HowToPlay onClose={closeHowTo}/>}
       </div>
     )
   }
@@ -186,6 +196,7 @@ export default function MenuPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 0' }}>
         <Wordmark/>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <HelpButton onClick={() => setShowHowTo(true)}/>
           <LanguageSwitcher/>
           <ThemeToggle variant="light"/>
         </div>
@@ -220,7 +231,19 @@ export default function MenuPage() {
 
       {/* Sdílená spodní lišta */}
       <MobileNav active="home"/>
+      {showHowTo && <HowToPlay onClose={closeHowTo}/>}
     </div>
+  )
+}
+
+// „?" tlačítko → onboarding
+function HelpButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} aria-label="Jak hrát?" style={{
+      width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
+      background: 'var(--surface)', border: '1px solid var(--line-strong)', color: 'var(--ink-2)',
+      fontFamily: 'var(--font-serif)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>?</button>
   )
 }
 

@@ -6,6 +6,7 @@ import { updateProfile, signOut } from '@/lib/supabase'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
 import MobileNav from '@/components/MobileNav'
+import HowToPlay from '@/components/HowToPlay'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
 const fieldLabel: React.CSSProperties = { fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: 'var(--ink-2)', margin: '0 0 6px' }
@@ -18,6 +19,7 @@ export default function AccountPage() {
   const [username, setUsername] = useState(profile?.username ?? '')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showHowTo, setShowHowTo] = useState(false)
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -84,6 +86,16 @@ export default function AccountPage() {
           </div>
         </div>
 
+        {/* Nápověda */}
+        <button onClick={() => setShowHowTo(true)} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
+          <span style={{ fontSize: 22 }}>🎓</span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('menu.htHow')}</span>
+            <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.htHowSub')}</span>
+          </span>
+          <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
+        </button>
+
         {/* Relace */}
         <div style={cardStyle}>
           <p style={eyebrow}>{t('account.session')}</p>
@@ -97,6 +109,7 @@ export default function AccountPage() {
         </div>
       </div>
       <MobileNav active="profile"/>
+      {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)}/>}
     </div>
   )
 }
