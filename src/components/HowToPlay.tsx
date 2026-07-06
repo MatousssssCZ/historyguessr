@@ -1,19 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { getRandomEvents } from '@/lib/supabase'
+import type { Event } from '@/types/database'
+import { GuessMap } from '@/components/GameMap'
+import { PanoramaViewer, YearPicker } from '@/pages/Game'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
 type Step = { icon: string; art: React.ReactNode; titleKey: string; descKey: string }
 
-/** Onboarding „Jak hrát" — 4 kroky (#10). Fullscreen overlay, volá onClose po dokončení/přeskočení. */
+/** Onboarding „Jak hrát" — 4 kroky (#10), první 3 jsou reálně vyzkoušitelné. Fullscreen overlay, volá onClose po dokončení/přeskočení. */
 export default function HowToPlay({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const [i, setI] = useState(0)
+  const [demoEvent, setDemoEvent] = useState<Event | null>(null)
+  const [guessLat, setGuessLat] = useState<number | null>(null)
+  const [guessLng, setGuessLng] = useState<number | null>(null)
+  const [guessYear, setGuessYear] = useState(1900)
+
+  useEffect(() => {
+    getRandomEvents(1).then(evs => { if (evs[0]) setDemoEvent(evs[0]) }).catch(() => {})
+  }, [])
 
   const steps: Step[] = [
-    { icon: '🖼', titleKey: 'menu.ht1t', descKey: 'menu.ht1d', art: <PanoramaArt/> },
-    { icon: '📍', titleKey: 'menu.ht2t', descKey: 'menu.ht2d', art: <MapArt/> },
-    { icon: '📅', titleKey: 'menu.ht3t', descKey: 'menu.ht3d', art: <YearArt/> },
+    { icon: '🖼', titleKey: 'menu.ht1t', descKey: 'menu.ht1d', art: <PanoramaArt event={demoEvent}/> },
+    { icon: '📍', titleKey: 'menu.ht2t', descKey: 'menu.ht2d', art: <MapArt lat={guessLat} lng={guessLng} onGuess={(lat, lng) => { setGuessLat(lat); setGuessLng(lng) }}/> },
+    { icon: '📅', titleKey: 'menu.ht3t', descKey: 'menu.ht3d', art: <YearArt year={guessYear} onChange={setGuessYear}/> },
     { icon: '🏆', titleKey: 'menu.ht4t', descKey: 'menu.ht4d', art: <ScoreArt/> },
   ]
   const step = steps[i]
@@ -27,7 +39,7 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
           {!last && <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink-3)' }}>{t('menu.htSkip')}</button>}
         </div>
 
-        {/* Ilustrace */}
+        {/* Ilustrace / interaktivní ukázka */}
         <div style={{ flex: 1, minHeight: 0, borderRadius: 22, overflow: 'hidden', marginBottom: 20, display: 'flex' }}>{step.art}</div>
 
         {/* Text */}
@@ -53,35 +65,34 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Ilustrace (jednoduché, v paletě) ──
-function PanoramaArt() {
+// ── Ilustrace (krok 1–3 reálně vyzkoušitelné, krok 4 náhled) ──
+function PanoramaArt({ event }: { event: Event | null }) {
   return (
-    <div style={{ flex: 1, position: 'relative', background: 'linear-gradient(180deg,#CBBAA0 0%,#AD957A 40%,#7A6650 68%,#3a2e1d 100%)' }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(122deg,rgba(255,255,255,.05) 0 1px,transparent 1px 12px)' }}/>
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 75% at 50% 34%, transparent 42%, rgba(0,0,0,0.55))' }}/>
-      <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-56px,-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(251,247,240,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4a4033', fontSize: 19 }}>‹</div>
-      <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(12px,-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(251,247,240,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4a4033', fontSize: 19 }}>›</div>
-      <div style={{ position: 'absolute', left: 16, bottom: 16, background: 'rgba(20,17,14,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 20, padding: '8px 13px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11 }}>✥ Táhni prstem po obraze</div>
+    <div style={{ flex: 1, position: 'relative', background: '#2a2015' }}>
+      {event
+        ? <PanoramaViewer url={event.panorama_url} preview={event.preview_url}/>
+        : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="spinner" style={{ width: 24, height: 24 }}/></div>
+      }
+      <div style={{ position: 'absolute', left: 16, bottom: 16, background: 'rgba(20,17,14,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 20, padding: '8px 13px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11, pointerEvents: 'none' }}>✥ Táhni prstem po obraze</div>
     </div>
   )
 }
-function MapArt() {
+function MapArt({ lat, lng, onGuess }: { lat: number | null; lng: number | null; onGuess: (lat: number, lng: number) => void }) {
   return (
-    <div style={{ flex: 1, position: 'relative', background: 'linear-gradient(160deg,#dfe6e2 0%,#cdd8d4 45%,#a9c4cf 100%)' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '70%', background: 'linear-gradient(120deg,#e9e3d4,#dcd7c6)', clipPath: 'polygon(0 0,90% 0,74% 24%,86% 44%,62% 62%,80% 82%,52% 100%,0 100%)', opacity: 0.9 }}/>
-      <div style={{ position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-100%)', fontSize: 40, filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.35))' }}>📍</div>
+    <div style={{ flex: 1, position: 'relative' }}>
+      <GuessMap onGuess={onGuess} guessLat={lat} guessLng={lng}/>
     </div>
   )
 }
-function YearArt() {
+function YearArt({ year, onChange }: { year: number; onChange: (y: number) => void }) {
   return (
-    <div style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', marginBottom: 16, textTransform: 'uppercase' }}>Tvůj tip na rok</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 52, color: 'var(--accent)', marginBottom: 24 }}>1863</div>
-      <div style={{ position: 'relative', width: '100%', maxWidth: 240, height: 22 }}>
-        <div style={{ position: 'absolute', top: 9, left: 0, right: 0, height: 4, borderRadius: 4, background: 'var(--paper-300)' }}/>
-        <div style={{ position: 'absolute', top: 9, left: 0, width: '64%', height: 4, borderRadius: 4, background: 'linear-gradient(90deg,#d97757,#d89a54)' }}/>
-        <div style={{ position: 'absolute', top: 0, left: '64%', width: 22, height: 22, borderRadius: '50%', background: 'var(--surface)', border: '3px solid var(--accent)', transform: 'translateX(-50%)' }}/>
+    <div style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 20 }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', marginBottom: 10, textTransform: 'uppercase' }}>Tvůj tip na rok</div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 48, color: 'var(--accent)' }}>{year < 0 ? `${-year} př. n. l.` : year}</div>
+      </div>
+      <div style={{ width: '100%', maxWidth: 280 }}>
+        <YearPicker value={year} onChange={onChange}/>
       </div>
     </div>
   )

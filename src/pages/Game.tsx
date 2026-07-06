@@ -513,7 +513,7 @@ export function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSub
 }
 
 // ── Year picker — barevný slider + numerický input ───────
-function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
+export function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
   const { t } = useTranslation()
   const MIN = -3000; const MAX = 2025
   const TOTAL = MAX - MIN  // 5025
