@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
-  saveDailyResult, getDailyLeaderboard, recordEventScore, recordCategoryHit, track,
+  saveDailyResult, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
@@ -33,6 +33,7 @@ export default function DailyChallengePage() {
   const [phase, setPhase] = useState<Phase>('loading')
   const [event, setEvent] = useState<Event | null>(null)
   const [leaderboard, setLeaderboard] = useState<DailyResult[]>([])
+  const [allScores, setAllScores] = useState<number[]>([])
   const [panoramaReady, setPanoramaReady] = useState(false)
 
   // Guess state
@@ -66,12 +67,14 @@ export default function DailyChallengePage() {
 
   async function load() {
     setPhase('loading')
-    const [ev, existing, lb] = await Promise.all([
+    const [ev, existing, lb, scores] = await Promise.all([
       getDailyChallenge(),
       getTodayDailyResult(user!.id),
-      getDailyLeaderboard(),
+      getDailyFriendsLeaderboard(user!.id, profile?.username ?? null),
+      getDailyAllScores(),
     ])
     setLeaderboard(lb)
+    setAllScores(scores)
 
     if (!ev) { setPhase('no_challenge'); return }
     setEvent(ev)
@@ -171,11 +174,15 @@ export default function DailyChallengePage() {
     recordEventScore(event.id, locSc, yrSc)
     recordCategoryHit(event.id, total)
     await saveDailyResult(user.id, total, lat ?? 0, lng ?? 0, year, xpMult)
-    const lb = await getDailyLeaderboard()
+    const [lb, scores] = await Promise.all([
+      getDailyFriendsLeaderboard(user.id, profile?.username ?? null),
+      getDailyAllScores(),
+    ])
     setLeaderboard(lb)
+    setAllScores(scores)
     setSubmitting(false)
     setPhase('result')
-  }, [event, user, guessLat, guessLng, guessYear])
+  }, [event, user, guessLat, guessLng, guessYear, profile?.username])
 
   useEffect(() => { doSubmitRef.current = doSubmit }, [doSubmit])
 
@@ -224,6 +231,7 @@ export default function DailyChallengePage() {
         guessLng={guessLng ?? 0}
         guessYear={guessYear}
         leaderboard={leaderboard}
+        allScores={allScores}
         userId={user?.id}
         alreadyPlayed={phase === 'already_played'}
         onMenu={() => navigate('/menu')}
@@ -441,17 +449,17 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 }
 
 // ── Histogram ─────────────────────────────────────────────
-function ScoreHistogram({ leaderboard, myScore }: { leaderboard: DailyResult[]; myScore: number }) {
+function ScoreHistogram({ scores, myScore }: { scores: number[]; myScore: number }) {
   const BINS = 20
   const bins = Array(BINS).fill(0)
-  leaderboard.forEach(r => {
-    const idx = Math.min(BINS - 1, Math.floor((r.score / 1000) * BINS))
+  scores.forEach(s => {
+    const idx = Math.min(BINS - 1, Math.floor((s / 1000) * BINS))
     bins[idx]++
   })
   const max = Math.max(...bins, 1)
   const myBin = Math.min(BINS - 1, Math.floor((myScore / 1000) * BINS))
-  const rank = leaderboard.filter(r => r.score > myScore).length + 1
-  const pct = Math.round((rank / Math.max(leaderboard.length, 1)) * 100)
+  const rank = scores.filter(s => s > myScore).length + 1
+  const pct = Math.round((rank / Math.max(scores.length, 1)) * 100)
 
   return (
     <div>
@@ -471,17 +479,17 @@ function ScoreHistogram({ leaderboard, myScore }: { leaderboard: DailyResult[]; 
         ))}
       </div>
       <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', margin: '8px 0 0' }}>
-        Top {pct}% z {leaderboard.length} hráčů
+        Top {pct}% z {scores.length} hráčů
       </p>
     </div>
   )
 }
 
 // ── Výsledková obrazovka ──────────────────────────────────
-function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, userId, alreadyPlayed, onMenu }: {
+function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
-  leaderboard: DailyResult[]; userId?: string; alreadyPlayed: boolean; onMenu: () => void
+  leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; onMenu: () => void
 }) {
   const { t } = useTranslation()
   const [histModal, setHistModal] = useState(false)
@@ -618,7 +626,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             {leaderboard.length > 1 && (
               <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--line)', paddingTop: 16 }}>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 12px' }}>{t('daily.distribution')}</p>
-                <ScoreHistogram leaderboard={leaderboard} myScore={result.totalScore}/>
+                <ScoreHistogram scores={allScores} myScore={result.totalScore}/>
               </div>
             )}
           </div>
@@ -675,7 +683,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
               <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{result.totalScore.toLocaleString(currentLocale())}</span>
             </div>
-            <ScoreHistogram leaderboard={leaderboard} myScore={result.totalScore}/>
+            <ScoreHistogram scores={allScores} myScore={result.totalScore}/>
           </div>
         </div>
       )}

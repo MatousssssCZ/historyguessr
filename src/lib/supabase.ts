@@ -666,6 +666,33 @@ export async function getDailyLeaderboard(): Promise<DailyResult[]> {
   return (data ?? []) as DailyResult[]
 }
 
+/** Žebříček dne jen z přátel (+ vlastní řádek), včetně nicků. */
+export async function getDailyFriendsLeaderboard(userId: string, ownUsername: string | null): Promise<DailyResult[]> {
+  const friends = await getFriends().catch(() => [] as Friend[])
+  const nameById = new Map<string, string | null>()
+  friends.forEach(f => nameById.set(f.id, f.username))
+  nameById.set(userId, ownUsername)
+  const ids = [...nameById.keys()]
+  const today = localDateISO()
+  const { data } = await supabase
+    .from('daily_results')
+    .select('id, user_id, date, score, guess_lat, guess_lng, guess_year, created_at')
+    .eq('date', today)
+    .in('user_id', ids)
+    .order('score', { ascending: false })
+  return (data ?? []).map(r => ({
+    ...(r as Record<string, unknown>),
+    profiles: { username: nameById.get((r as { user_id: string }).user_id) ?? null },
+  })) as unknown as DailyResult[]
+}
+
+/** Všechna dnešní skóre (pro histogram — celý svět). */
+export async function getDailyAllScores(): Promise<number[]> {
+  const today = localDateISO()
+  const { data } = await supabase.from('daily_results').select('score').eq('date', today)
+  return (data ?? []).map(r => (r as { score: number }).score)
+}
+
 // ─── Daily Challenge Admin ────────────────────────────────
 
 /** Načte všechna přiřazení (pro admin kalendář) */
