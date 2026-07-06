@@ -185,6 +185,7 @@ export default function AuthPage() {
               <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
             </button>
             <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 9 }}>{t('menu.trialFree')}</div>
+            <DisclaimerBox text={t('auth.disclaimer')}/>
           </div>
         </div>
       </div>
@@ -434,6 +435,8 @@ export default function AuthPage() {
           </button>
           <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 8 }}>{t('menu.trialFree')}</div>
 
+          <DisclaimerBox text={t('auth.disclaimer')}/>
+
           {/* Legal links */}
           <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', marginTop: 20, lineHeight: 1.6 }}>
             {t('auth.legal')}{' '}
@@ -443,6 +446,24 @@ export default function AuthPage() {
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DisclaimerBox({ text }: { text: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+      background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 14,
+      padding: '13px 15px', marginTop: 18,
+    }}>
+      <span style={{
+        flexShrink: 0, width: 18, height: 18, borderRadius: '50%', marginTop: 1,
+        border: '1.5px solid var(--ink-3)', color: 'var(--ink-3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'var(--font-serif)', fontSize: 12, fontStyle: 'italic',
+      }}>i</span>
+      <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>{text}</span>
     </div>
   )
 }
