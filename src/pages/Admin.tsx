@@ -984,11 +984,14 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
             </div>
             <div>
               <label className="label">Radius přesnosti (km, volitelné)</label>
-              <input className="input" type="number" value={form.location_radius_km} onChange={set('location_radius_km')} min={0} max={500} placeholder="0 = přesné místo"/>
+              <input className="input" type="number" value={form.location_radius_km} onChange={set('location_radius_km')} min={0} max={4000} placeholder="0 = přesné místo"/>
               <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
                 {radiusKm > 0
-                  ? `Plný počet bodů do ${radiusKm} km. Pak -1 bod/km.`
+                  ? `Plný počet bodů do ${radiusKm} km, pak exponenciální pokles.`
                   : '0 = bodování podle přesné vzdálenosti'}
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>
+                🏳 Pro událost vázanou na celý stát: střed = centroid státu, radius pokryj stát (např. ~300 km ČR, ~1500 km velké státy).
               </p>
             </div>
           </div>
