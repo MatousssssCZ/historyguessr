@@ -10,6 +10,7 @@ import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, track } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
+import CompassLoader from '@/components/CompassLoader'
 import ControlDock from '@/components/GameControls'
 import type { Event, RoundResult } from '@/types/database'
 
@@ -244,21 +245,7 @@ export function PanoramaViewer({ url, preview }: { url: string; preview?: string
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           gap: 20, animation: 'fadeIn 250ms ease',
         }}>
-          <div style={{ position: 'relative', width: 76, height: 76, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid var(--accent)', animation: 'pulseRing 1.8s ease-out infinite' }}/>
-            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid var(--accent)', animation: 'pulseRing 1.8s ease-out infinite', animationDelay: '0.9s' }}/>
-            {/* statický kruh kompasu */}
-            <svg width="76" height="76" viewBox="0 0 24 24" style={{ position: 'absolute', inset: 0 }} fill="none" stroke="rgba(245,241,232,0.28)" strokeWidth="1">
-              <circle cx="12" cy="12" r="10.5"/>
-              <path d="M12 1.5v2M12 20.5v2M1.5 12h2M20.5 12h2" stroke="rgba(245,241,232,0.4)" strokeWidth="1.2"/>
-            </svg>
-            {/* rotující střelka */}
-            <svg width="76" height="76" viewBox="0 0 24 24" style={{ position: 'absolute', inset: 0, animation: 'spin 2.8s cubic-bezier(0.5,0,0.5,1) infinite' }}>
-              <polygon points="12,3.5 9.6,12 14.4,12" fill="var(--accent)"/>
-              <polygon points="12,20.5 9.6,12 14.4,12" fill="rgba(245,241,232,0.75)"/>
-              <circle cx="12" cy="12" r="1.4" fill="#fff"/>
-            </svg>
-          </div>
+          <CompassLoader size={76}/>
           <p style={{
             fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
             color: 'var(--feature-fg)', margin: 0, animation: 'textPulse 1.6s ease-in-out infinite',
@@ -912,8 +899,8 @@ function LoadingScreen() {
   const { t } = useTranslation()
 
   return (
-    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#0d0906' }}>
-      <div className="spinner" style={{ width: 32, height: 32 }}/>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, background: '#0d0906' }}>
+      <CompassLoader size={72}/>
       <p style={{ color: 'var(--paper-300)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.16em' }}>{t('game.loading')}</p>
     </div>
   )

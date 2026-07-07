@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import UsernameSetup from '@/components/UsernameSetup'
+import CompassLoader from '@/components/CompassLoader'
 import AuthPage from '@/pages/Auth'
 import TryGamePage from '@/pages/TryGame'
 import MenuPage from '@/pages/Menu'
@@ -62,7 +63,7 @@ function FullScreenSpinner() {
       alignItems: 'center', justifyContent: 'center', gap: 16,
       background: 'var(--paper-200)',
     }}>
-      <span className="spinner" style={{ width: 28, height: 28 }}/>
+      <CompassLoader size={64} light/>
     </div>
   )
 }
