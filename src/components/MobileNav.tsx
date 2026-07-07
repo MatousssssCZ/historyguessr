@@ -55,7 +55,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
       }}>
         <div style={{ display: 'flex', gap: 38 }}>
           {item('home', t('menu.navHome'), () => navigate('/menu'), 'home')}
-          {item('compass', t('menu.campaigns'), () => alert(t('menu.campaigns') + ' — ' + t('menu.comingSoon')))}
+          {item('compass', t('menu.campaigns'), () => navigate('/campaigns'))}
         </div>
         <button onClick={() => setSheet(true)} aria-label={t('menu.navPlay')} style={{
           position: 'absolute', left: '50%', top: -16, transform: 'translateX(-50%)',

@@ -400,6 +400,7 @@ function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; ti
 function QuickLinks({ navigate, friendReqs }: { navigate: ReturnType<typeof useNavigate>; friendReqs: number }) {
   const { t } = useTranslation()
   const items: { icon: string; label: string; to: string; badge?: number }[] = [
+    { icon: '🏛', label: t('menu.campaigns'), to: '/campaigns' },
     { icon: '🏅', label: t('menu.navBadges'), to: '/stats' },
     { icon: '👥', label: t('menu.friendsTitle'), to: '/friends', badge: friendReqs },
     { icon: '👤', label: t('menu.navProfile'), to: '/account' },
@@ -428,6 +429,7 @@ function Sidebar({ navigate, isAdmin, name, monogram, lvl, streak }: {
   const { t } = useTranslation()
   const nav: { icon: string; label: string; to: string; active?: boolean }[] = [
     { icon: '🏠', label: t('menu.navHome'), to: '/menu', active: true },
+    { icon: '🏛', label: t('menu.campaigns'), to: '/campaigns' },
     { icon: '🏅', label: t('menu.navBadges'), to: '/stats' },
     { icon: '👥', label: t('menu.friendsTitle'), to: '/friends' },
     { icon: '👤', label: t('menu.navProfile'), to: '/account' },

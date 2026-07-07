@@ -8,6 +8,7 @@ import AuthPage from '@/pages/Auth'
 import TryGamePage from '@/pages/TryGame'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
+import CampaignsPage from '@/pages/Campaigns'
 import PreGameLobbyPage from '@/pages/PreGameLobby'
 import AccountPage from '@/pages/Account'
 import DailyChallengePage from '@/pages/Daily'
@@ -85,6 +86,8 @@ export default function App() {
               <Route path="/menu"    element={<RequireAuth><MenuPage/></RequireAuth>}/>
               <Route path="/play"    element={<RequireAuth><PreGameLobbyPage/></RequireAuth>}/>
               <Route path="/game"    element={<RequireAuth><GamePage/></RequireAuth>}/>
+              <Route path="/campaigns" element={<RequireAuth><CampaignsPage/></RequireAuth>}/>
+              <Route path="/campaigns/:categoryId" element={<RequireAuth><CampaignsPage/></RequireAuth>}/>
               <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
               <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>

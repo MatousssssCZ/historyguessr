@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Event, EventInsert, EventUpdate, Profile, RoundResult, CampaignCategory, Campaign, CampaignEvent } from '@/types/database'
+import type { Event, EventInsert, EventUpdate, Profile, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
 import { XP_BONUS_DAILY } from './leveling'
 
 export interface DailyResult {
@@ -781,6 +781,66 @@ export async function setCampaignEvents(campaignId: string, eventIds: string[]):
   if (rows.length === 0) return { error: null }
   const { error } = await supabase.from('campaign_events').insert(rows)
   return { error: error as Error | null }
+}
+
+// ─── Kampaně (hráč) ───────────────────────────────────────
+
+export interface CampaignBundle {
+  categories: CampaignCategory[]
+  campaignsByCat: Record<string, Campaign[]>
+  progress: Record<string, UserCampaignProgress>  // klíč = campaign_id
+  totalStars: number
+  energy: number
+  isPremium: boolean
+  energyResetAt: string | null
+}
+
+/** Načte vše pro hráčskou obrazovku kampaní (jen publikované + vlastní progress + energie). */
+export async function getCampaignBundle(userId: string): Promise<CampaignBundle> {
+  const [catsRes, campsRes, progRes, profRes] = await Promise.all([
+    supabase.from('campaign_categories').select('*').eq('published', true).order('seq'),
+    supabase.from('campaigns').select('*').eq('published', true).order('seq'),
+    supabase.from('user_campaign_progress').select('*').eq('user_id', userId),
+    supabase.from('profiles').select('energy, is_premium, energy_reset_at').eq('id', userId).single(),
+  ])
+  const categories = (catsRes.data ?? []) as CampaignCategory[]
+  const catIds = new Set(categories.map(c => c.id))
+  const campaigns = ((campsRes.data ?? []) as Campaign[]).filter(c => catIds.has(c.category_id))
+  const campaignsByCat: Record<string, Campaign[]> = {}
+  for (const c of campaigns) (campaignsByCat[c.category_id] ??= []).push(c)
+  const progress: Record<string, UserCampaignProgress> = {}
+  let totalStars = 0
+  for (const p of (progRes.data ?? []) as UserCampaignProgress[]) { progress[p.campaign_id] = p; totalStars += p.stars }
+  const prof = (profRes.data ?? {}) as { energy?: number; is_premium?: boolean; energy_reset_at?: string | null }
+  return {
+    categories, campaignsByCat, progress, totalStars,
+    energy: prof.energy ?? 5, isPremium: !!prof.is_premium, energyResetAt: prof.energy_reset_at ?? null,
+  }
+}
+
+/** Načte plné události v zadaném pořadí (pro campaign runner). */
+export async function getEventsByIds(ids: string[]): Promise<Event[]> {
+  if (!ids.length) return []
+  const { data } = await supabase.from('events').select('*').in('id', ids)
+  const byId = new Map((data ?? []).map(e => [(e as Event).id, e as Event]))
+  return ids.map(id => byId.get(id)).filter(Boolean) as Event[]
+}
+
+/** Spustí pokus o kampaň — server odečte energii a vrátí 5 event ID.
+ *  energyLeft = -1 → premium (∞). Vyhodí 'no_energy' když došla energie. */
+export async function startCampaignAttempt(campaignId: string): Promise<{ energyLeft: number; eventIds: string[] }> {
+  const { data, error } = await supabase.rpc('start_campaign_attempt', { p_campaign_id: campaignId })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return { energyLeft: row?.energy_left ?? 0, eventIds: (row?.event_ids ?? []) as string[] }
+}
+
+/** Odešle výsledek kampaně — server spočítá ★ a drží nejlepší skóre. */
+export async function submitCampaignResult(campaignId: string, totalScore: number): Promise<{ stars: number; bestScore: number; isBest: boolean }> {
+  const { data, error } = await supabase.rpc('submit_campaign_result', { p_campaign_id: campaignId, p_total_score: totalScore })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return { stars: row?.stars ?? 0, bestScore: row?.best_score ?? 0, isBest: !!row?.is_best }
 }
 
 // ─── Utils ────────────────────────────────────────────────

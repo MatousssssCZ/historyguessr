@@ -1,13 +1,16 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, recordCategoryHit, track, type EventFilters } from '@/lib/supabase'
+import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, recordCategoryHit, submitCampaignResult, track, type EventFilters } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 
 const DEFAULT_ROUNDS = 5
 
 export interface GameOptions extends EventFilters {
   rounds?: number
+  events?: Event[]         // pevný seznam událostí (kampaň) — přeskočí getRandomEvents
+  campaignId?: string      // po dohrání odešle výsledek + spočítá ★
+  campaignTitle?: string
 }
 
 export type GamePhase = 'idle' | 'loading' | 'playing' | 'round_result' | 'finished'
@@ -25,6 +28,9 @@ export interface GameState {
   guessYear: number
   guessYearSet: boolean
   error: string | null
+  campaignId: string | null
+  campaignTitle: string | null
+  campaignStars: number | null   // vyplní se po dohrání kampaně (0–3)
 }
 
 const INITIAL_STATE: GameState = {
@@ -40,6 +46,9 @@ const INITIAL_STATE: GameState = {
   guessYear: 0,
   guessYearSet: false,
   error: null,
+  campaignId: null,
+  campaignTitle: null,
+  campaignStars: null,
 }
 
 export function useGame(userId: string | undefined) {
@@ -56,8 +65,11 @@ export function useGame(userId: string | undefined) {
       excludeIds: options?.excludeIds,
     }
     update({ phase: 'loading', error: null })
-    const events = await getRandomEvents(rounds, filters)
-    if (events.length < rounds) {
+    // Kampaň: pevný seznam událostí; jinak náhodný výběr dle filtrů
+    const fixed = options?.events
+    const events = fixed ?? await getRandomEvents(rounds, filters)
+    const need = fixed ? fixed.length : rounds
+    if (events.length < need || events.length === 0) {
       update({ phase: 'idle', error: 'Není dostatek událostí pro zvolená kritéria. Uprav výběr nebo přidej události v admin panelu.' })
       return
     }
@@ -66,8 +78,12 @@ export function useGame(userId: string | undefined) {
       update({ phase: 'idle', error: 'Nepodařilo se spustit hru.' })
       return
     }
-    setState({ ...INITIAL_STATE, phase: 'playing', totalRounds: rounds, events, sessionId: (sessionData as { id: string }).id })
-    track('game_started', { rounds, categories: filters.categories ?? [], year_from: filters.yearFrom, year_to: filters.yearTo }, userId)
+    setState({
+      ...INITIAL_STATE, phase: 'playing', totalRounds: events.length, events,
+      sessionId: (sessionData as { id: string }).id,
+      campaignId: options?.campaignId ?? null, campaignTitle: options?.campaignTitle ?? null,
+    })
+    track('game_started', { rounds: events.length, campaign_id: options?.campaignId ?? null, categories: filters.categories ?? [], year_from: filters.yearFrom, year_to: filters.yearTo }, userId)
   }, [userId])
 
   const setGuessLocation = useCallback((lat: number, lng: number) => {
@@ -133,7 +149,14 @@ export function useGame(userId: string | undefined) {
       await addScoreToProfile(userId, newTotal)
       // XP: body + bonus za dohranou hru
       await addXp(userId, newTotal + XP_BONUS_GAME)
-      track('game_completed', { total_score: newTotal, rounds: state.totalRounds }, userId)
+      track('game_completed', { total_score: newTotal, rounds: state.totalRounds, campaign_id: state.campaignId }, userId)
+      // Kampaň — odešli výsledek na server (spočítá ★, drží nejlepší)
+      if (state.campaignId) {
+        try {
+          const res = await submitCampaignResult(state.campaignId, newTotal)
+          setState(prev => ({ ...prev, campaignStars: res.stars }))
+        } catch (e) { console.warn('[Campaign] submit selhal:', e) }
+      }
     }
   }, [state, userId])
 
