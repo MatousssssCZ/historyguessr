@@ -7,6 +7,7 @@ const TILES = [
   { icon: '🗂', title: 'Správa událostí', sub: 'Přidání, editace, náhledy', to: '/admin/events' },
   { icon: '✨', title: 'Hromadné AI zadávání', sub: 'AI navrhne události + data', to: '/admin/bulk-ai' },
   { icon: '↑', title: 'Hromadný import', sub: 'Import CSV/XLS + šablony', to: '/admin/import' },
+  { icon: '🏛', title: 'Kampaně', sub: 'Kategorie, kampaně, odemykání za ★', to: '/admin/campaigns' },
   { icon: '📅', title: 'Denní výzvy', sub: 'Kalendář „Tento den v historii"', to: '/admin/daily' },
   { icon: '📊', title: 'Reporting', sub: 'Statistiky a přehledy', to: '/admin/reports' },
 ]

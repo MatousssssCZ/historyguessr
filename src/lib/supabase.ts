@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Event, EventInsert, EventUpdate, Profile, RoundResult } from '@/types/database'
+import type { Event, EventInsert, EventUpdate, Profile, RoundResult, CampaignCategory, Campaign, CampaignEvent } from '@/types/database'
 import { XP_BONUS_DAILY } from './leveling'
 
 export interface DailyResult {
@@ -726,6 +726,60 @@ export async function setDailyAssignment(
   const { error } = await supabase
     .from('daily_challenge_assignments')
     .upsert({ month, day, event_id: eventId, updated_at: new Date().toISOString() }, { onConflict: 'month,day' })
+  return { error: error as Error | null }
+}
+
+// ─── Kampaně (admin CRUD) ─────────────────────────────────
+
+/** Všechny kategorie (admin — vidí i nepublikované). */
+export async function getAdminCampaignCategories(): Promise<CampaignCategory[]> {
+  const { data } = await supabase.from('campaign_categories').select('*').order('seq').order('created_at')
+  return (data ?? []) as CampaignCategory[]
+}
+
+export async function createCampaignCategory(patch: Partial<CampaignCategory>) {
+  return supabase.from('campaign_categories').insert(patch).select().single()
+}
+
+export async function updateCampaignCategory(id: string, patch: Partial<CampaignCategory>) {
+  return supabase.from('campaign_categories').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
+}
+
+export async function deleteCampaignCategory(id: string) {
+  return supabase.from('campaign_categories').delete().eq('id', id)
+}
+
+/** Kampaně dané kategorie (admin). */
+export async function getAdminCampaigns(categoryId: string): Promise<Campaign[]> {
+  const { data } = await supabase.from('campaigns').select('*').eq('category_id', categoryId).order('seq').order('created_at')
+  return (data ?? []) as Campaign[]
+}
+
+export async function createCampaign(patch: Partial<Campaign>) {
+  return supabase.from('campaigns').insert(patch).select().single()
+}
+
+export async function updateCampaign(id: string, patch: Partial<Campaign>) {
+  return supabase.from('campaigns').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
+}
+
+export async function deleteCampaign(id: string) {
+  return supabase.from('campaigns').delete().eq('id', id)
+}
+
+/** Události kampaně (position 1..5). */
+export async function getCampaignEvents(campaignId: string): Promise<CampaignEvent[]> {
+  const { data } = await supabase.from('campaign_events').select('*').eq('campaign_id', campaignId).order('position')
+  return (data ?? []) as CampaignEvent[]
+}
+
+/** Přepíše celou 5-tici událostí kampaně (smaže + vloží). eventIds = pole v pořadí (max 5). */
+export async function setCampaignEvents(campaignId: string, eventIds: string[]): Promise<{ error: Error | null }> {
+  const { error: delErr } = await supabase.from('campaign_events').delete().eq('campaign_id', campaignId)
+  if (delErr) return { error: delErr as Error }
+  const rows = eventIds.slice(0, 5).map((event_id, i) => ({ campaign_id: campaignId, position: i + 1, event_id }))
+  if (rows.length === 0) return { error: null }
+  const { error } = await supabase.from('campaign_events').insert(rows)
   return { error: error as Error | null }
 }
 

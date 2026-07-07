@@ -7,6 +7,56 @@ export interface Profile {
   games_played: number
   xp: number
   created_at: string
+  is_premium?: boolean
+  energy?: number
+  energy_reset_at?: string | null
+}
+
+// ── Kampaně ────────────────────────────────────────────────
+export interface CampaignCategory {
+  id: string
+  seq: number
+  slug: string | null
+  title: string
+  title_en: string | null
+  title_de: string | null
+  description: string | null
+  icon: string | null
+  color: string | null
+  unlock_stars: number
+  is_premium: boolean
+  published: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Campaign {
+  id: string
+  category_id: string
+  seq: number
+  title: string
+  title_en: string | null
+  title_de: string | null
+  description: string | null
+  unlock_stars: number
+  published: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CampaignEvent {
+  campaign_id: string
+  position: number   // 1..5
+  event_id: string
+}
+
+export interface UserCampaignProgress {
+  user_id: string
+  campaign_id: string
+  best_score: number
+  stars: number      // 0..3
+  attempts_used: number
+  completed_at: string | null
 }
 
 export type EventStatus = 'draft' | 'awaiting_panorama' | 'awaiting_review' | 'published'
