@@ -31,11 +31,14 @@ export default function MenuPage() {
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
 
-  // Onboarding při prvním spuštění
+  // Onboarding pouze po prvním přihlášení (příznak vázaný na účet).
+  // Znovu se otevře jen ručně přes „?" tlačítko.
+  const onboardKey = user ? `hg_onboarded_${user.id}` : null
   useEffect(() => {
-    try { if (!localStorage.getItem('hg_onboarded')) setShowHowTo(true) } catch { /* ignore */ }
-  }, [])
-  const closeHowTo = () => { try { localStorage.setItem('hg_onboarded', '1') } catch { /* ignore */ }; setShowHowTo(false) }
+    if (!onboardKey) return
+    try { if (!localStorage.getItem(onboardKey)) setShowHowTo(true) } catch { /* ignore */ }
+  }, [onboardKey])
+  const closeHowTo = () => { try { if (onboardKey) localStorage.setItem(onboardKey, '1') } catch { /* ignore */ }; setShowHowTo(false) }
 
   // Slideshow obrázků (session cache → cache hit prohlížeče)
   useEffect(() => {
