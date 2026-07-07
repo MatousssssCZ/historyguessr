@@ -11,6 +11,7 @@ import { addEventRating, track } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
+import { panoramaHfov } from '@/lib/panorama'
 import ControlDock from '@/components/GameControls'
 import type { Event, RoundResult } from '@/types/database'
 
@@ -192,8 +193,8 @@ export function PanoramaViewer({ url, preview }: { url: string; preview?: string
         autoLoad: true,
         showControls: false,
         mouseZoom: true,
-        hfov: 140,
-        maxHfov: 140,
+        hfov: panoramaHfov(),
+        maxHfov: panoramaHfov(),
         pitch: 0,
         yaw: 0,
         ...(preview ? { preview } : {}),

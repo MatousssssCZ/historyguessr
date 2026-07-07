@@ -9,6 +9,7 @@ import {
   getRoundAnswers, advanceRound, getRoomPanoramas, getMyMatchHits,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
+import { panoramaHfov } from '@/lib/panorama'
 import GameEvaluation from '@/components/GameEvaluation'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
@@ -698,7 +699,7 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
     let v: { destroy: () => void } | null = null
     try {
       v = pannellum.viewer(ref.current, {
-        type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: 140, maxHfov: 140,
+        type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov(),
         ...(preview ? { preview } : {}),
       })
     } catch {}

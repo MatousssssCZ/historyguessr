@@ -74,6 +74,7 @@ async function downloadXLSTemplate() {
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import CompassLoader from '@/components/CompassLoader'
 import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, getEventFileSizes, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
@@ -1028,8 +1029,8 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
 
               <DropZone accept="image/jpeg,image/png,image/webp" maxMB={50} file={panoramaFile} currentUrl={event?.panorama_url} onChange={(f) => { setPanoramaFile(f); setCompressionInfo(f ? `Vybráno: ${formatFileSize(f.size)} — bude zkomprimováno` : null) }} ref={panoramaRef}/>
               {compressionInfo && (
-                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>
-                  {compressing ? <><span className="spinner" style={{ width: 12, height: 12 }}/> </> : '💾 '}{compressionInfo}
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {compressing ? <CompassLoader size={16} light/> : <span>💾</span>}<span>{compressionInfo}</span>
                 </div>
               )}
               {/* Preview tlačítko — zobrazí existující nebo nově vybranou panoramu */}
