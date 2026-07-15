@@ -14,6 +14,22 @@ type DailyState = 'loading' | 'new' | 'done'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
+// Krátkodobá in-memory cache dat menu — drží se mezi překliky v rámci session
+// (nikoli po reloadu). Klíč obsahuje xp + datum registrace, takže po odehrání
+// (změna xp) se data automaticky obnoví. TTL zabrání zbytečným dotazům při
+// rychlém přepínání mezi obrazovkami.
+interface MenuData {
+  dailyResult: DailyResult | null
+  dailyState: DailyState
+  dailyStreak: number
+  dailyWeek: boolean[]
+  friendReqs: number
+  world: { rank: number; total: number } | null
+  rankDelta: number
+}
+let menuCache: { key: string; ts: number; data: MenuData } | null = null
+const MENU_TTL = 60_000
+
 export default function MenuPage() {
   const { t } = useTranslation()
   const { user, profile, isAdmin } = useAuth()
@@ -77,21 +93,38 @@ export default function MenuPage() {
 
   useEffect(() => {
     if (!user?.id) return
+    const key = `${user.id}:${profile?.xp ?? 0}:${profile?.created_at ?? ''}`
+
+    // Cache hit — hydratuj stav bez dotazu na API
+    const apply = (d: MenuData) => {
+      setDailyResult(d.dailyResult)
+      setDailyState(d.dailyState)
+      setDailyStreak(d.dailyStreak)
+      setDailyWeek(d.dailyWeek)
+      setFriendReqs(d.friendReqs)
+      setWorld(d.world)
+      setRankDelta(d.rankDelta)
+    }
+    if (menuCache && menuCache.key === key && Date.now() - menuCache.ts < MENU_TTL) {
+      apply(menuCache.data)
+      return
+    }
+
     let alive = true
-    getTodayDailyResult(user.id).then(res => {
+    Promise.all([
+      getTodayDailyResult(user.id).catch(() => null),
+      getUserDailyResults(user.id).catch(() => [] as { date: string }[]),
+      getFriendRequests().catch(() => [] as unknown[]),
+      getWorldRank().catch(() => null),
+    ]).then(([res, rows, reqs, w]) => {
       if (!alive) return
-      setDailyResult(res)
-      setDailyState(res ? 'done' : 'new')
-    }).catch(() => { if (alive) setDailyState('new') })
-    getUserDailyResults(user.id).then(rows => {
-      if (!alive) return
+
+      // Streak + ✓/✕ za posledních 7 dní (jen ode dne registrace)
       const played = new Set(rows.map(r => r.date))
       let streak = 0
       const d = new Date()
       if (!played.has(localDateISO(d))) d.setDate(d.getDate() - 1)
       while (played.has(localDateISO(d))) { streak++; d.setDate(d.getDate() - 1) }
-      setDailyStreak(streak)
-      // ✓/✕ za posledních 7 dní, ale jen ode dne registrace (dřív hráč nemohl hrát)
       const regIso = profile?.created_at ? localDateISO(new Date(profile.created_at)) : null
       const week: boolean[] = []
       const now = new Date()
@@ -101,23 +134,32 @@ export default function MenuPage() {
         if (regIso && iso < regIso) continue
         week.push(played.has(iso))
       }
-      setDailyWeek(week)
-    }).catch(() => {})
-    getFriendRequests().then(reqs => { if (alive) setFriendReqs(reqs.length) }).catch(() => {})
-    getWorldRank().then(w => {
-      if (!alive) return
-      setWorld(w)
+
       // Týdenní posun v pořadí (baseline v localStorage; roluje se po 7 dnech)
-      try {
-        const raw = localStorage.getItem('hg_rank_baseline')
-        const b = raw ? JSON.parse(raw) as { rank: number; ts: number } : null
-        if (!b || typeof b.rank !== 'number' || Date.now() - b.ts > 7 * 864e5) {
-          localStorage.setItem('hg_rank_baseline', JSON.stringify({ rank: w.rank, ts: Date.now() }))
-          setRankDelta(0)
-        } else {
-          setRankDelta(b.rank - w.rank) // kladné = posun nahoru (menší číslo pořadí)
-        }
-      } catch { setRankDelta(0) }
+      let rankDelta = 0
+      if (w) {
+        try {
+          const raw = localStorage.getItem('hg_rank_baseline')
+          const b = raw ? JSON.parse(raw) as { rank: number; ts: number } : null
+          if (!b || typeof b.rank !== 'number' || Date.now() - b.ts > 7 * 864e5) {
+            localStorage.setItem('hg_rank_baseline', JSON.stringify({ rank: w.rank, ts: Date.now() }))
+          } else {
+            rankDelta = b.rank - w.rank // kladné = posun nahoru (menší číslo pořadí)
+          }
+        } catch { /* ignore */ }
+      }
+
+      const data: MenuData = {
+        dailyResult: res,
+        dailyState: res ? 'done' : 'new',
+        dailyStreak: streak,
+        dailyWeek: week,
+        friendReqs: reqs.length,
+        world: w,
+        rankDelta,
+      }
+      menuCache = { key, ts: Date.now(), data }
+      apply(data)
     }).catch(() => {})
     return () => { alive = false }
   }, [user?.id, profile?.xp, profile?.created_at])
