@@ -450,7 +450,7 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 }
 
 // ── Histogram ─────────────────────────────────────────────
-function ScoreHistogram({ scores, myScore }: { scores: number[]; myScore: number }) {
+function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; myScore: number; height?: number }) {
   const BINS = 20
   const bins = Array(BINS).fill(0)
   scores.forEach(s => {
@@ -461,25 +461,27 @@ function ScoreHistogram({ scores, myScore }: { scores: number[]; myScore: number
   const myBin = Math.min(BINS - 1, Math.floor((myScore / 1000) * BINS))
   const rank = scores.filter(s => s > myScore).length + 1
   const pct = Math.round((rank / Math.max(scores.length, 1)) * 100)
+  const barMax = height - 8
+  const big = height >= 120
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 64 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: big ? 4 : 2, height }}>
         {bins.map((v, i) => (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', position: 'relative' }}>
             {i === myBin && (
-              <div style={{ position: 'absolute', bottom: '100%', marginBottom: 3, fontFamily: 'var(--font-mono)', fontSize: 9, color: '#d97757', whiteSpace: 'nowrap' }}>ty</div>
+              <div style={{ position: 'absolute', bottom: '100%', marginBottom: 3, fontFamily: 'var(--font-mono)', fontSize: big ? 11 : 9, color: '#d97757', whiteSpace: 'nowrap' }}>ty</div>
             )}
-            <div style={{ width: '100%', background: i === myBin ? '#d97757' : 'var(--line-strong)', borderRadius: '2px 2px 0 0', height: `${Math.max(4, (v / max) * 56)}px` }}/>
+            <div style={{ width: '100%', background: i === myBin ? '#d97757' : 'var(--line-strong)', borderRadius: big ? '3px 3px 0 0' : '2px 2px 0 0', height: `${Math.max(4, (v / max) * barMax)}px` }}/>
           </div>
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
         {['0', '250', '500', '750', '1 000'].map(l => (
-          <span key={l} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)' }}>{l}</span>
+          <span key={l} style={{ fontFamily: 'var(--font-mono)', fontSize: big ? 10 : 9, color: 'var(--ink-3)' }}>{l}</span>
         ))}
       </div>
-      <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', margin: '8px 0 0' }}>
+      <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: big ? 13 : 12, color: 'var(--ink-3)', margin: '10px 0 0' }}>
         Top {pct}% z {scores.length} hráčů
       </p>
     </div>
@@ -722,16 +724,18 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       {/* Histogram modal (bottom sheet) */}
       {histModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ width: '100%', background: 'var(--paper-50)', borderRadius: '20px 20px 0 0', padding: '20px 18px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 32px rgba(0,0,0,0.35)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ width: '100%', minHeight: '50vh', background: 'var(--paper-50)', borderRadius: '20px 20px 0 0', padding: '20px 18px', paddingBottom: 'max(24px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 32px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
               <button onClick={() => setHistModal(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.close')}</button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
               <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
               <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{result.totalScore.toLocaleString(currentLocale())}</span>
             </div>
-            <ScoreHistogram scores={allScores} myScore={result.totalScore}/>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <ScoreHistogram scores={allScores} myScore={result.totalScore} height={240}/>
+            </div>
           </div>
         </div>
       )}
