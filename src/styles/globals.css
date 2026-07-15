@@ -144,10 +144,11 @@ body {
   50%      { opacity: 0.9; }
 }
 
-/* Ken Burns — pomalý zoom + jemný posun pro slideshow v menu */
+/* Ken Burns — zoom + výrazný SVISLÝ posun (aby na fotkách s lidmi projely
+   i obličeje a nebyly useknuté). „alternate" v komponentě rozhýbe nahoru i dolů. */
 @keyframes kenburns {
-  from { transform: scale(1.06) translate(0, 0); }
-  to   { transform: scale(1.18) translate(-1.5%, -1%); }
+  from { transform: scale(1.07) translate(-1%, 4%); }
+  to   { transform: scale(1.17) translate(1%, -5%); }
 }
 @media (prefers-reduced-motion: reduce) {
   @keyframes kenburns { from { transform: scale(1.06); } to { transform: scale(1.06); } }

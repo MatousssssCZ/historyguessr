@@ -517,7 +517,7 @@ function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean
   const [idx, setIdx] = useState(0)
   useEffect(() => {
     if (urls.length < 2) return
-    const t = setInterval(() => setIdx(i => (i + 1) % urls.length), 7000)
+    const t = setInterval(() => setIdx(i => (i + 1) % urls.length), 5000)
     return () => clearInterval(t)
   }, [urls.length])
   const scrim = scrimDark
@@ -526,11 +526,12 @@ function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
       {urls.map((u, i) => (
-        <div key={u + i} style={{ position: 'absolute', inset: 0, opacity: i === idx ? 1 : 0, transition: 'opacity 1600ms ease-in-out' }}>
+        <div key={u + i} style={{ position: 'absolute', inset: 0, opacity: i === idx ? 1 : 0, transition: 'opacity 1100ms ease-in-out' }}>
           <div style={{
-            position: 'absolute', inset: 0, backgroundImage: `url(${u})`, backgroundSize: 'cover', backgroundPosition: 'center',
-            animation: 'kenburns 22s ease-in-out infinite alternate', animationDelay: `${i * -5}s`,
-            transformOrigin: i % 2 === 0 ? 'center 30%' : 'left center', willChange: 'transform',
+            // Bias na horní část snímku — obličeje bývají nahoře, ať nejsou useknuté
+            position: 'absolute', inset: 0, backgroundImage: `url(${u})`, backgroundSize: 'cover', backgroundPosition: 'center 35%',
+            animation: 'kenburns 13s ease-in-out infinite alternate', animationDelay: `${i * -3}s`,
+            transformOrigin: i % 2 === 0 ? 'center top' : 'center 40%', willChange: 'transform',
           }}/>
         </div>
       ))}
