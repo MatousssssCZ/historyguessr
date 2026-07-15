@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { clearResume } from '@/lib/resume'
 import {
   getRound, getPlayers, subscribeToRoom, submitAnswer,
   getRoundAnswers, advanceRound, getRoomPanoramas, getMyMatchHits,
@@ -36,6 +37,9 @@ export default function MultiplayerGamePage() {
   const { roomId } = useParams<{ roomId: string }>()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+
+  // Nová hra (multiplayer) → zahoď rozehranou solo hru („Pokračovat ve hře")
+  useEffect(() => { if (user?.id) clearResume(user.id) }, [user?.id])
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [room, setRoom] = useState<MultiplayerRoom | null>(null)

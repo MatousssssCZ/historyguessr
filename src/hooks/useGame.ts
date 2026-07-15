@@ -59,6 +59,8 @@ export function useGame(userId: string | undefined) {
 
   const startGame = useCallback(async (options?: GameOptions) => {
     if (!userId) return
+    // Nová hra (jakákoli mimo denní výzvu) → zahoď dosavadní rozehranou hru.
+    clearResume(userId)
     const rounds = options?.rounds ?? DEFAULT_ROUNDS
     const filters: EventFilters = {
       categories: options?.categories,

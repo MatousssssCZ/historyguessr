@@ -1,5 +1,5 @@
 // Ukládání rozehrané solo hry do localStorage — umožní „Pokračovat ve hře".
-// Platí 1 hodinu; multiplayer/daily/kampaně se neukládají.
+// Platí 5 minut; multiplayer/daily/kampaně se neukládají.
 import type { Event, RoundResult } from '@/types/database'
 
 export interface ResumeState {
@@ -12,7 +12,7 @@ export interface ResumeState {
 }
 
 const KEY = (uid: string) => `hg_resume_${uid}`
-export const RESUME_TTL = 3600_000 // 1 hodina
+export const RESUME_TTL = 300_000 // 5 minut
 
 export function saveResume(userId: string, s: ResumeState) {
   try { localStorage.setItem(KEY(userId), JSON.stringify(s)) } catch { /* ignore */ }

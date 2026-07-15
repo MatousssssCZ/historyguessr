@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
-  saveDailyResult, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
+  saveDailyResult, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track, localDateISO,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { panoramaHfov } from '@/lib/panorama'
@@ -61,6 +61,10 @@ export default function DailyChallengePage() {
   // Vždy ukazuje na AKTUÁLNÍ doSubmit (časovač jinak volá zastaralou closure s prázdným tipem)
   const doSubmitRef = useRef<(fl?: number | null, fln?: number | null, fy?: number) => void>(() => {})
 
+  // Klíč pro uložení času startu dnešní výzvy — čas běží od započetí, refresh
+  // ho neresetuje (spočítá se ze zbývajícího wall-clock času).
+  const dailyStartKey = user ? `hg_daily_start_${user.id}_${localDateISO(new Date())}` : null
+
   useEffect(() => {
     if (!user) return
     load()
@@ -93,6 +97,16 @@ export default function DailyChallengePage() {
       return
     }
 
+    // Rozehraná dnešní výzva (start uložen, ještě neodeslaná) → pokračuj,
+    // čas běží dál z původního startu; refresh ho neresetuje.
+    if (dailyStartKey) {
+      const stored = localStorage.getItem(dailyStartKey)
+      if (stored && !Number.isNaN(Number(stored))) {
+        beginPlaying(Number(stored))
+        return
+      }
+    }
+
     // Preload panoramy na pozadí během warning screenu
     if (ev.panorama_url && ev.panorama_url !== 'pending') {
       const link = document.createElement('link')
@@ -106,42 +120,39 @@ export default function DailyChallengePage() {
     setPhase('warning')
   }
 
-  // Spuštění hry po potvrzení
-  function startGame() {
+  // Spuštění / obnovení hry — čas se počítá z pevného startu (wall-clock),
+  // takže refresh stránky čas nerestartuje.
+  function beginPlaying(startMs: number) {
     hasSubmittedRef.current = false
-    setTimeLeft(TIMER_SECONDS)
+    if (timerRef.current) clearInterval(timerRef.current)
+    const compute = () => Math.max(0, TIMER_SECONDS - Math.floor((Date.now() - startMs) / 1000))
+    const rem = compute()
+    setTimeLeft(rem); timeLeftRef.current = rem
     setPhase('playing')
-    track('daily_challenge_started', {}, user?.id)
 
-    // Spusť timer
     timerRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          clearInterval(timerRef.current!)
-          timeLeftRef.current = 0
-          // Auto-submit při vypršení — přes ref, ať se použije aktuální tip
-          if (!hasSubmittedRef.current) doSubmitRef.current()
-          return 0
-        }
-        timeLeftRef.current = t - 1
-        return t - 1
-      })
-    }, 1000)
+      const r = compute()
+      timeLeftRef.current = r
+      setTimeLeft(r)
+      if (r <= 0) {
+        clearInterval(timerRef.current!)
+        // Auto-submit při vypršení — přes ref, ať se použije aktuální tip
+        if (!hasSubmittedRef.current) doSubmitRef.current()
+      }
+    }, 500)
   }
 
-  // Detekce odchodu ze hry — zaznamenat jako played (score 0)
-  useEffect(() => {
-    if (phase !== 'playing') return
-    const handleUnload = () => {
-      if (!hasSubmittedRef.current && user && event) {
-        // Synchronní beacon — při unloadu
-        navigator.sendBeacon?.('/api/noop') // jen wake-up, skutečné uložení níž
-        saveDailyResult(user.id, 0, 0, 0, 0)
-      }
+  // Spuštění hry po potvrzení (tlačítko Start)
+  function startGame() {
+    let start = Date.now()
+    if (dailyStartKey) {
+      const existing = localStorage.getItem(dailyStartKey)
+      if (existing && !Number.isNaN(Number(existing))) start = Number(existing)
+      else localStorage.setItem(dailyStartKey, String(start))
     }
-    window.addEventListener('beforeunload', handleUnload)
-    return () => window.removeEventListener('beforeunload', handleUnload)
-  }, [phase, user, event])
+    track('daily_challenge_started', {}, user?.id)
+    beginPlaying(start)
+  }
 
   // Cleanup timeru při unmount
   useEffect(() => {
@@ -152,6 +163,7 @@ export default function DailyChallengePage() {
     if (!event || !user || hasSubmittedRef.current) return
     hasSubmittedRef.current = true
     if (timerRef.current) clearInterval(timerRef.current)
+    if (dailyStartKey) { try { localStorage.removeItem(dailyStartKey) } catch { /* ignore */ } }
     setSubmitting(true)
 
     const lat = forceLat !== undefined ? forceLat : guessLat
@@ -259,9 +271,9 @@ export default function DailyChallengePage() {
             </span>
           </div>
 
-          {/* Název události */}
+          {/* Neutrální nadpis — bez prozrazení, jaká událost to bude */}
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(26px, 6vw, 36px)', color: 'var(--on-dark)', margin: '0 0 28px', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-            {eventTitle(event)}
+            {t('daily.warningTitle')}
           </h1>
 
           {/* Pravidla */}
