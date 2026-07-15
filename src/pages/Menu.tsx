@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, localDateISO, type DailyResult } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
+import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -26,6 +27,7 @@ interface MenuData {
   friendReqs: number
   world: { rank: number; total: number } | null
   rankDelta: number
+  catHits: Record<string, number>
 }
 let menuCache: { key: string; ts: number; data: MenuData } | null = null
 const MENU_TTL = 60_000
@@ -44,6 +46,7 @@ export default function MenuPage() {
   const [friendReqs, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
+  const [catHits, setCatHits] = useState<Record<string, number>>({})
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
 
@@ -104,6 +107,7 @@ export default function MenuPage() {
       setFriendReqs(d.friendReqs)
       setWorld(d.world)
       setRankDelta(d.rankDelta)
+      setCatHits(d.catHits)
     }
     if (menuCache && menuCache.key === key && Date.now() - menuCache.ts < MENU_TTL) {
       apply(menuCache.data)
@@ -116,7 +120,8 @@ export default function MenuPage() {
       getUserDailyResults(user.id).catch(() => [] as { date: string }[]),
       getFriendRequests().catch(() => [] as unknown[]),
       getWorldRank().catch(() => null),
-    ]).then(([res, rows, reqs, w]) => {
+      getCategoryHits(user.id).catch(() => ({} as Record<string, number>)),
+    ]).then(([res, rows, reqs, w, hits]) => {
       if (!alive) return
 
       // Streak + ✓/✕ za posledních 7 dní (jen ode dne registrace)
@@ -157,6 +162,7 @@ export default function MenuPage() {
         friendReqs: reqs.length,
         world: w,
         rankDelta,
+        catHits: hits,
       }
       menuCache = { key, ts: Date.now(), data }
       apply(data)
@@ -230,9 +236,12 @@ export default function MenuPage() {
               <ModeTile icon="⚔" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
               <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
-              <QuickLinks navigate={navigate} friendReqs={friendReqs}/>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <NearestBadges catHits={catHits} navigate={navigate}/>
+                <QuickLinks navigate={navigate} friendReqs={friendReqs}/>
+              </div>
             </div>
           </div>
         </div>
@@ -267,6 +276,8 @@ export default function MenuPage() {
         <div style={{ height: 12 }}/>
         <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
         <div style={{ height: 12 }}/>
+        <NearestBadges catHits={catHits} navigate={navigate}/>
+        <div style={{ height: 12 }}/>
         <button onClick={() => navigate('/friends')} style={{
           display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
           background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
@@ -284,6 +295,56 @@ export default function MenuPage() {
       {/* Sdílená spodní lišta */}
       <MobileNav active="home"/>
       {showHowTo && <HowToPlay onClose={closeHowTo}/>}
+    </div>
+  )
+}
+
+// ─── Nejbližší odznaky (nejblíž dalšímu stupni) ───────────
+function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>; navigate: ReturnType<typeof useNavigate> }) {
+  const { t } = useTranslation()
+  const items = ACHIEVEMENTS.map(cat => {
+    const hits = catHits[cat.id] ?? 0
+    const { next } = tierProgress(cat.tiers, hits)
+    if (!next) return null // vše odemčeno v kategorii
+    return { cat, hits, next, frac: hits / next.count }
+  }).filter(Boolean) as { cat: typeof ACHIEVEMENTS[number]; hits: number; next: { count: number; icon: string; name: string }; frac: number }[]
+
+  // Nejblíž dokončení první; při shodě méně zbývajících napřed
+  items.sort((a, b) => b.frac - a.frac || (a.next.count - a.hits) - (b.next.count - b.hits))
+  const top = items.slice(0, 3)
+  if (top.length === 0) return null
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '15px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('menu.nearestBadges')}</span>
+        <button onClick={() => navigate('/stats')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.seeAll')}</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {top.map(it => {
+          const active = it.hits > 0
+          const pct = Math.max(0, Math.min(100, Math.round(it.frac * 100)))
+          return (
+            <div key={it.cat.id} style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: active ? 1 : 0.55 }}>
+              <span style={{
+                width: 40, height: 40, borderRadius: 12, flexShrink: 0, fontSize: 19,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: active ? ACCENT_GRAD : 'var(--paper-300)',
+                filter: active ? 'none' : 'grayscale(1)',
+              }}>{it.next.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.next.name}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', flexShrink: 0 }}>· {it.hits}/{it.next.count}</span>
+                </div>
+                <div style={{ height: 5, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: ACCENT_GRAD, borderRadius: 999, transition: 'width 400ms' }}/>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
