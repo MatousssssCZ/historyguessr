@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getDailyAssignments, setDailyAssignment, getAdminEvents } from '@/lib/supabase'
@@ -46,6 +46,19 @@ export default function AdminDailyChallengePage() {
 
   const today = new Date()
   const todayKey = `${today.getMonth() + 1}-${today.getDate()}`
+
+  // Dny, pro které existuje v DB událost s odpovídajícím datem (event_date) —
+  // potenciální kandidát na denní výzvu, i když ještě není přiřazený.
+  const candidateDays = useMemo(() => {
+    const s = new Set<string>()
+    for (const e of events) {
+      if (!e.event_date) continue
+      const m = parseInt(e.event_date.slice(5, 7))
+      const d = parseInt(e.event_date.slice(8, 10))
+      if (m && d) s.add(`${m}-${d}`)
+    }
+    return s
+  }, [events])
 
   async function handleAssign(eventId: string | null) {
     if (!selectedDay) return
@@ -273,26 +286,38 @@ export default function AdminDailyChallengePage() {
                     const assignment = assignments.get(key)
                     const hasEvent = !!assignment?.event_id
                     const isToday = key === todayKey
+                    // Kandidát = existuje událost pro tento den, ale zatím není přiřazená
+                    const hasCandidate = !hasEvent && candidateDays.has(key)
+
+                    // Rámeček / pozadí: přiřazené = plná oranžová; kandidát = oranžový
+                    // rámeček + jemné pozadí; jinak neutrální
+                    const border = isToday
+                      ? '2px solid var(--ink)'
+                      : hasEvent ? '1px solid var(--accent-deep)'
+                      : hasCandidate ? '1.5px solid var(--accent)'
+                      : '1px solid var(--line-strong)'
+                    const baseBg = hasEvent ? 'var(--accent)' : hasCandidate ? 'rgba(217,119,87,0.14)' : 'var(--surface)'
+                    const hoverBg = hasEvent ? 'var(--accent-deep)' : hasCandidate ? 'rgba(217,119,87,0.24)' : 'var(--paper-200)'
 
                     return (
                       <button
                         key={day}
                         onClick={() => setSelectedDay({ month, day })}
-                        title={hasEvent ? assignment!.events?.title : `${day}. ${monthName} — nepřiřazeno`}
+                        title={hasEvent ? assignment!.events?.title : hasCandidate ? `${day}. ${monthName} — existuje událost pro tento den (nepřiřazeno)` : `${day}. ${monthName} — nepřiřazeno`}
                         style={{
                           width: 28, height: 28,
                           borderRadius: 6,
-                          border: isToday ? '2px solid var(--ink)' : `1px solid ${hasEvent ? 'var(--accent-deep)' : 'var(--line-strong)'}`,
-                          background: hasEvent ? 'var(--accent)' : 'var(--surface)',
-                          color: hasEvent ? '#fff' : 'var(--ink-3)',
+                          border,
+                          background: baseBg,
+                          color: hasEvent ? '#fff' : hasCandidate ? 'var(--accent-deep)' : 'var(--ink-3)',
                           fontSize: 11, fontFamily: 'var(--font-mono)',
                           cursor: 'pointer',
-                          fontWeight: hasEvent || isToday ? 700 : 400,
+                          fontWeight: hasEvent || isToday || hasCandidate ? 700 : 400,
                           boxShadow: hasEvent ? '0 1px 3px rgba(217,119,87,0.4)' : 'none',
                           transition: 'all 100ms',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = hasEvent ? 'var(--accent-deep)' : 'var(--paper-200)' }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = hasEvent ? 'var(--accent)' : 'var(--surface)' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = hoverBg }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = baseBg }}
                       >
                         {day}
                       </button>
@@ -309,6 +334,10 @@ export default function AdminDailyChallengePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--accent)', border: '1px solid var(--accent-deep)' }}/>
             <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Přiřazená událost</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 14, height: 14, borderRadius: 3, background: 'rgba(217,119,87,0.14)', border: '1.5px solid var(--accent)' }}/>
+            <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Existuje událost (nepřiřazeno)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 14, height: 14, borderRadius: 3, background: 'var(--surface)', border: '2px solid var(--ink)' }}/>

@@ -3,6 +3,7 @@ import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
 import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, recordCategoryHit, submitCampaignResult, track, type EventFilters } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
+import { saveResume, clearResume, loadResume } from '@/lib/resume'
 
 const DEFAULT_ROUNDS = 5
 
@@ -11,6 +12,7 @@ export interface GameOptions extends EventFilters {
   events?: Event[]         // pevný seznam událostí (kampaň) — přeskočí getRandomEvents
   campaignId?: string      // po dohrání odešle výsledek + spočítá ★
   campaignTitle?: string
+  resume?: boolean         // pokračovat v uložené rozehrané hře
 }
 
 export type GamePhase = 'idle' | 'loading' | 'playing' | 'round_result' | 'finished'
@@ -78,12 +80,30 @@ export function useGame(userId: string | undefined) {
       update({ phase: 'idle', error: 'Nepodařilo se spustit hru.' })
       return
     }
+    const sid = (sessionData as { id: string }).id
     setState({
       ...INITIAL_STATE, phase: 'playing', totalRounds: events.length, events,
-      sessionId: (sessionData as { id: string }).id,
+      sessionId: sid,
       campaignId: options?.campaignId ?? null, campaignTitle: options?.campaignTitle ?? null,
     })
+    // Ulož rozehranou hru (jen solo, ≥2 kola) pro „Pokračovat ve hře"
+    if (!options?.campaignId && events.length >= 2) {
+      saveResume(userId, { events, rounds: [], totalScore: 0, totalRounds: events.length, sessionId: sid, savedAt: Date.now() })
+    }
     track('game_started', { rounds: events.length, campaign_id: options?.campaignId ?? null, categories: filters.categories ?? [], year_from: filters.yearFrom, year_to: filters.yearTo }, userId)
+  }, [userId])
+
+  // Obnov rozehranou hru z localStorage; vrátí true při úspěchu
+  const resumeGame = useCallback(() => {
+    if (!userId) return false
+    const s = loadResume(userId)
+    if (!s) return false
+    setState({
+      ...INITIAL_STATE, phase: 'playing',
+      events: s.events, totalRounds: s.totalRounds, sessionId: s.sessionId,
+      currentRound: s.rounds.length, rounds: s.rounds, totalScore: s.totalScore,
+    })
+    return true
   }, [userId])
 
   const setGuessLocation = useCallback((lat: number, lng: number) => {
@@ -144,6 +164,12 @@ export function useGame(userId: string | undefined) {
     // Prefetchni panoramu dalšího kola na pozadí
     prefetchNext(state.events, currentRound)
 
+    // Ulož / ukliď rozehranou hru (jen solo, ≥2 kola)
+    if (!state.campaignId && state.totalRounds >= 2 && userId) {
+      if (isLast) clearResume(userId)
+      else saveResume(userId, { events: state.events, rounds: newRounds, totalScore: newTotal, totalRounds: state.totalRounds, sessionId, savedAt: Date.now() })
+    }
+
     if (isLast && sessionId && userId) {
       await finishGameSession(sessionId, newRounds, newTotal)
       await addScoreToProfile(userId, newTotal)
@@ -177,7 +203,7 @@ export function useGame(userId: string | undefined) {
     }
   }, [state])
 
-  const resetGame = useCallback(() => setState(INITIAL_STATE), [])
+  const resetGame = useCallback(() => { if (userId) clearResume(userId); setState(INITIAL_STATE) }, [userId])
 
   const currentEvent = state.events[state.currentRound] ?? null
   const lastRound = state.rounds[state.rounds.length - 1] ?? null
@@ -185,7 +211,7 @@ export function useGame(userId: string | undefined) {
 
   return {
     state, currentEvent, lastRound, canSubmit,
-    startGame, setGuessLocation, setGuessYear,
+    startGame, resumeGame, setGuessLocation, setGuessYear,
     submitRound, nextRound, resetGame,
     roundsCount: state.totalRounds,
   }

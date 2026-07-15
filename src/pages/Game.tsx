@@ -27,12 +27,15 @@ export default function GamePage() {
   const options = (location.state as GameOptions | null) ?? undefined
   const {
     state, currentEvent, lastRound, canSubmit,
-    startGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
+    startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
   const [confirmQuit, setConfirmQuit] = useState(false)
 
   useEffect(() => {
-    if (state.phase === 'idle') startGame(options)
+    if (state.phase !== 'idle') return
+    // Pokračování v rozehrané hře; když se nepodaří, spusť normálně
+    if (options?.resume) { if (!resumeGame()) startGame() }
+    else startGame(options)
   }, [])
 
   if (state.phase === 'loading') return <LoadingScreen/>

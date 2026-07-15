@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, type DailyResult } from '@/lib/supabase'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
+import { loadResume, RESUME_TTL, type ResumeState } from '@/lib/resume'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -47,6 +48,7 @@ export default function MenuPage() {
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
+  const [resume, setResume] = useState<ResumeState | null>(null)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
 
@@ -65,6 +67,11 @@ export default function MenuPage() {
     } catch { /* ignore */ }
   }, [onboardKey])
   const closeHowTo = () => setShowHowTo(false)
+
+  // Rozehraná hra (pro „Pokračovat ve hře") — čti při každém mountu
+  useEffect(() => {
+    if (user?.id) setResume(loadResume(user.id))
+  }, [user?.id])
 
   // Slideshow obrázků (session cache → cache hit prohlížeče)
   useEffect(() => {
@@ -203,6 +210,7 @@ export default function MenuPage() {
   const goClassic = () => navigate('/play')
   const goDaily = () => navigate('/daily')
   const goMP = () => navigate('/multiplayer/lobby')
+  const goResume = () => navigate('/game', { state: { resume: true } })
 
   const dailyProps = { heroImgs, dailyState, countdown, streak: dailyStreak, week: dailyWeek, onPlay: goDaily }
 
@@ -228,20 +236,18 @@ export default function MenuPage() {
 
             <DailyHero {...dailyProps} tall/>
 
+            {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
+
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', margin: '18px 0 13px' }}>{t('menu.newGame').toUpperCase()}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 18 }}>
               <ModeTile icon="⚡" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
               <ModeTile icon="🎚" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic}/>
-              <ModeTile icon="🔥" title={t('menu.daily')} sub={t('menu.dailyModeSub')} onClick={goDaily}/>
               <ModeTile icon="⚔" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
               <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <NearestBadges catHits={catHits} navigate={navigate}/>
-                <QuickLinks navigate={navigate} friendReqs={friendReqs}/>
-              </div>
+              <NearestBadges catHits={catHits} navigate={navigate}/>
             </div>
           </div>
         </div>
@@ -274,6 +280,7 @@ export default function MenuPage() {
 
         <DailyHero {...dailyProps}/>
         <div style={{ height: 12 }}/>
+        {resume && <><ResumeBar resume={resume} onResume={goResume}/><div style={{ height: 12 }}/></>}
         <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
         <div style={{ height: 12 }}/>
         <NearestBadges catHits={catHits} navigate={navigate}/>
@@ -296,6 +303,45 @@ export default function MenuPage() {
       <MobileNav active="home"/>
       {showHowTo && <HowToPlay onClose={closeHowTo}/>}
     </div>
+  )
+}
+
+// ─── Pokračovat ve hře (rozehraná solo hra) ───────────────
+function ResumeBar({ resume, onResume }: { resume: ResumeState; onResume: () => void }) {
+  const { t } = useTranslation()
+  const loc = currentLocale()
+  const [left, setLeft] = useState(() => Math.max(0, resume.savedAt + RESUME_TTL - Date.now()))
+  useEffect(() => {
+    const id = setInterval(() => setLeft(Math.max(0, resume.savedAt + RESUME_TTL - Date.now())), 1000)
+    return () => clearInterval(id)
+  }, [resume.savedAt])
+  if (left <= 0) return null
+  const s = Math.floor(left / 1000)
+  const mm = String(Math.floor(s / 60)).padStart(2, '0')
+  const ss = String(s % 60).padStart(2, '0')
+  const round = resume.rounds.length + 1
+
+  return (
+    <button onClick={onResume} style={{
+      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+      background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 16, padding: '11px 14px',
+    }}>
+      <span style={{ width: 44, height: 44, borderRadius: 11, flexShrink: 0, overflow: 'hidden', background: 'var(--paper-300)', backgroundImage: resume.events[resume.rounds.length]?.preview_url ? `url(${resume.events[resume.rounds.length].preview_url})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: 'var(--ink)' }}>{t('menu.resumeTitle')}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', letterSpacing: '0.04em' }}>
+            {t('menu.resumeRound', { n: round, total: resume.totalRounds })} · {resume.totalScore.toLocaleString(loc)} b.
+          </span>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--accent-deep)', marginTop: 3 }}>
+          ⏱ {mm}:{ss} · {t('menu.resumeWindow')}
+        </div>
+      </div>
+      <span style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5 L18.5 12 L8 18.5 Z"/></svg>
+      </span>
+    </button>
   )
 }
 
@@ -507,31 +553,6 @@ function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; ti
 }
 
 // ─── Rychlé odkazy (desktop pravý sloupec) ────────────────
-function QuickLinks({ navigate, friendReqs }: { navigate: ReturnType<typeof useNavigate>; friendReqs: number }) {
-  const { t } = useTranslation()
-  const items: { icon: string; label: string; to: string; badge?: number }[] = [
-    { icon: '🏛', label: t('menu.campaigns'), to: '/campaigns' },
-    { icon: '🏅', label: t('menu.navBadges'), to: '/stats' },
-    { icon: '👥', label: t('menu.friendsTitle'), to: '/friends', badge: friendReqs },
-    { icon: '👤', label: t('menu.navProfile'), to: '/account' },
-  ]
-  return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: 8, display: 'flex', flexDirection: 'column' }}>
-      {items.map((it, i) => (
-        <button key={it.to} onClick={() => navigate(it.to)} style={{
-          display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
-          padding: '12px 10px', background: 'none', border: 'none', borderBottom: i < items.length - 1 ? '1px solid var(--line)' : 'none',
-        }}>
-          <span style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>{it.icon}</span>
-          <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 14, color: 'var(--ink)' }}>{it.label}</span>
-          {!!it.badge && it.badge > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 7px', borderRadius: 999 }}>{it.badge}</span>}
-          <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
 // ─── Desktop sidebar ──────────────────────────────────────
 function Sidebar({ navigate, isAdmin, name, monogram, lvl, streak }: {
   navigate: ReturnType<typeof useNavigate>; isAdmin: boolean; name: string; monogram: string; lvl: LevelInfo; streak: number
