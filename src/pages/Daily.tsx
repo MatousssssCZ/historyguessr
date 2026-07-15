@@ -459,8 +459,10 @@ function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; my
   })
   const max = Math.max(...bins, 1)
   const myBin = Math.min(BINS - 1, Math.floor((myScore / 1000) * BINS))
-  const rank = scores.filter(s => s > myScore).length + 1
-  const pct = Math.round((rank / Math.max(scores.length, 1)) * 100)
+  // Percentil = kolik % OSTATNÍCH hráčů jsem porazil (nejhorší = 0 %, nejlepší = 100 %)
+  const others = Math.max(scores.length - 1, 0)
+  const beaten = scores.filter(s => s < myScore).length
+  const pct = others > 0 ? Math.round((beaten / others) * 100) : 0
   const barMax = height - 8
   const big = height >= 120
 
@@ -482,7 +484,7 @@ function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; my
         ))}
       </div>
       <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: big ? 13 : 12, color: 'var(--ink-3)', margin: '10px 0 0' }}>
-        Top {pct}% z {scores.length} hráčů
+        {others > 0 ? `Lepší než ${pct} % hráčů` : `Zatím jediný hráč`} · {scores.length} celkem
       </p>
     </div>
   )
