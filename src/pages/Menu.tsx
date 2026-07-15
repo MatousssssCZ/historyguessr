@@ -31,14 +31,21 @@ export default function MenuPage() {
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
 
-  // Onboarding pouze po prvním přihlášení (příznak vázaný na účet).
-  // Znovu se otevře jen ručně přes „?" tlačítko.
+  // Onboarding jen JEDNOU po prvním spuštění (příznak vázaný na účet).
+  // Příznak nastavíme HNED při prvním zobrazení — takže i když hráč obrazovku
+  // opustí reloadem/navigací (bez „Přeskočit"), znovu se už sám neukáže.
+  // Ručně jde vždy otevřít přes „?" tlačítko.
   const onboardKey = user ? `hg_onboarded_${user.id}` : null
   useEffect(() => {
     if (!onboardKey) return
-    try { if (!localStorage.getItem(onboardKey)) setShowHowTo(true) } catch { /* ignore */ }
+    try {
+      if (!localStorage.getItem(onboardKey)) {
+        localStorage.setItem(onboardKey, '1')
+        setShowHowTo(true)
+      }
+    } catch { /* ignore */ }
   }, [onboardKey])
-  const closeHowTo = () => { try { if (onboardKey) localStorage.setItem(onboardKey, '1') } catch { /* ignore */ }; setShowHowTo(false) }
+  const closeHowTo = () => setShowHowTo(false)
 
   // Slideshow obrázků (session cache → cache hit prohlížeče)
   useEffect(() => {

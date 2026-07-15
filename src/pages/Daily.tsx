@@ -494,8 +494,10 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 }) {
   const { t } = useTranslation()
   const [histModal, setHistModal] = useState(false)
-  const [tab, setTab] = useState<'score' | 'info'>('score')
+  const [showPano, setShowPano] = useState(false)
+  const [tab, setTab] = useState<'score' | 'leaderboard' | 'info'>('score')
   const isMobile = window.innerWidth < 768
+  const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
   const locPct = Math.round(result.locScore / 5)
   const yrPct = Math.round(result.yrScore / 5)
   const myRank = leaderboard.filter(r => r.score > result.totalScore).length + 1
@@ -536,19 +538,22 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   )
 
   const resultTabs = (
-    <div style={{ display: 'flex', gap: 8, padding: isMobile ? '10px 12px 2px' : '12px 20px 4px', flexShrink: 0 }}>
-      {(['score', 'info'] as const).map(k => {
+    <div style={{ display: 'flex', gap: 6, padding: isMobile ? '10px 12px 2px' : '12px 20px 4px', flexShrink: 0 }}>
+      {(['score', 'leaderboard', 'info'] as const).map(k => {
         const active = tab === k
+        const label = k === 'score' ? `🏆 ${t('game.tabScore')}`
+          : k === 'leaderboard' ? `🏅 ${t('daily.tabLeaderboard')}`
+          : `📖 ${t('game.tabInfo')}`
         return (
           <button key={k} type="button" onClick={() => setTab(k)} style={{
             flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer',
             border: active ? '1px solid var(--accent)' : '1px solid var(--line)',
             background: active ? 'rgba(217,119,87,0.08)' : 'transparent',
             color: active ? 'var(--accent-deep)' : 'var(--ink-3)',
-            fontSize: 13, fontWeight: active ? 500 : 400,
-            fontFamily: 'var(--font-mono)', letterSpacing: '0.04em',
+            fontSize: isMobile ? 12 : 13, fontWeight: active ? 500 : 400,
+            fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
           }}>
-            {k === 'score' ? `🏆 ${t('game.tabScore')}` : `📖 ${t('game.tabInfo')}`}
+            {label}
           </button>
         )
       })}
@@ -556,15 +561,23 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   )
 
   const leaderboardSection = (
-    <div style={{ padding: isMobile ? '0 12px 8px' : '18px 20px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.leaderboard')}</p>
+    <div style={{ padding: isMobile ? '10px 12px 8px' : '18px 20px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.leaderboard')}</p>
+          <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 5, fontStyle: 'italic' }}>
+            <span style={{ fontStyle: 'normal' }}>🤝</span> {t('daily.leaderboardFriends')}
+          </p>
+        </div>
         {leaderboard.length > 0 && (
-          <span style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent-deep)', fontSize: 11, fontFamily: 'var(--font-mono)', padding: '3px 10px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.25)' }}>
+          <span style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent-deep)', fontSize: 11, fontFamily: 'var(--font-mono)', padding: '3px 10px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.25)', flexShrink: 0 }}>
             #{myRank} z {leaderboard.length}
           </span>
         )}
       </div>
+      {leaderboard.length <= 1 && (
+        <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 8px', lineHeight: 1.5 }}>{t('daily.leaderboardEmpty')}</p>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {leaderboard.slice(0, 5).map((r, i) => {
           const isMe = r.user_id === userId
@@ -596,9 +609,40 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     </div>
   ) : null
 
+  // Obsah dle aktivního tabu
+  const tabContent = tab === 'score'
+    ? <>{scoreSection}{evalSection}</>
+    : tab === 'leaderboard' ? leaderboardSection : infoSection
+
+  // Fullscreen panorama (bez časového limitu) — vyvolá se tlačítkem
+  const panoramaOverlay = showPano && hasPanorama ? (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: '#0d0906' }}>
+      <PanoramaViewer url={event.panorama_url}/>
+      <button onClick={() => setShowPano(false)} aria-label={t('daily.close')} style={{
+        position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 14px)', right: 14, zIndex: 2,
+        width: 40, height: 40, borderRadius: '50%', cursor: 'pointer',
+        background: 'rgba(246,240,230,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)',
+        color: '#26211C', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>✕</button>
+      <div style={{
+        position: 'absolute', left: 16, bottom: 'calc(env(safe-area-inset-bottom,0px) + 16px)',
+        background: 'rgba(20,17,14,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)',
+        borderRadius: 20, padding: '8px 13px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 12,
+      }}>{eventTitle(event)}</div>
+    </div>
+  ) : null
+
+  const panoBtn = hasPanorama ? (
+    <button
+      onClick={() => setShowPano(true)}
+      style={{ width: '100%', padding: '10px', background: 'var(--paper-200)', border: '0.5px solid var(--line-strong)', borderRadius: 10, fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+    >🖼 {t('daily.panorama')}</button>
+  ) : null
+
   // ── Desktop ────────────────────────────────────────────
   if (!isMobile) {
-    return (
+    return (<>
+      {panoramaOverlay}
       <div style={{ height: '100dvh', background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <div style={{ background: 'var(--paper-50)', border: '1px solid var(--line)', borderRadius: 20, maxWidth: 860, width: '100%', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', maxHeight: 'calc(100dvh - 40px)' }}>
           {/* Levá — výsledky */}
@@ -616,28 +660,31 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               </div>
             </div>
             {resultTabs}
-            {tab === 'score' ? <>{scoreSection}{evalSection}</> : infoSection}
-            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto' }}>
+            {tabContent}
+            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {panoBtn}
               <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
           </div>
-          {/* Pravá — žebříček + histogram */}
-          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 1 }}>{leaderboardSection}</div>
-            {leaderboard.length > 1 && (
-              <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+          {/* Pravá — distribuce skóre (celý svět) */}
+          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px' }}>
+            {leaderboard.length > 1 ? (
+              <div>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 12px' }}>{t('daily.distribution')}</p>
                 <ScoreHistogram scores={allScores} myScore={result.totalScore}/>
               </div>
+            ) : (
+              <p style={{ fontSize: 13, color: 'var(--ink-3)', textAlign: 'center', margin: 0 }}>{t('daily.distributionEmpty')}</p>
             )}
           </div>
         </div>
       </div>
-    )
+    </>)
   }
 
   // ── Mobil ──────────────────────────────────────────────
-  return (
+  return (<>
+    {panoramaOverlay}
     <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 'env(safe-area-inset-top,0px)' }}>
       {/* Header */}
       <div style={{ padding: '14px 16px 12px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
@@ -655,20 +702,22 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 
       {resultTabs}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {tab === 'score' ? <>{scoreSection}{evalSection}</> : infoSection}
-        {leaderboardSection}
+        {tabContent}
       </div>
 
       {/* Tlačítka */}
       <div style={{ flexShrink: 0, padding: '8px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {leaderboard.length > 1 && (
-          <button
-            onClick={() => setHistModal(true)}
-            style={{ width: '100%', padding: '10px', background: 'var(--paper-200)', border: '0.5px solid var(--line-strong)', borderRadius: 10, fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-          >
-            📊 Zobrazit distribuci skóre
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {panoBtn}
+          {leaderboard.length > 1 && (
+            <button
+              onClick={() => setHistModal(true)}
+              style={{ flex: 1, padding: '10px', background: 'var(--paper-200)', border: '0.5px solid var(--line-strong)', borderRadius: 10, fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              📊 {t('daily.distribution')}
+            </button>
+          )}
+        </div>
         <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
       </div>
 
@@ -689,7 +738,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         </div>
       )}
     </div>
-  )
+  </>)
 }
 
 // ── Score karta ───────────────────────────────────────────
