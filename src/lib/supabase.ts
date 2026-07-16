@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
 import { XP_BONUS_DAILY } from './leveling'
+import { FREE_ENTITLEMENTS, isPremiumUser, type Entitlements } from './entitlements'
 
 export interface DailyResult {
   id: string
@@ -783,6 +784,26 @@ export async function setCampaignEvents(campaignId: string, eventIds: string[]):
   return { error: error as Error | null }
 }
 
+// ─── Entitlementy (Free / Premium) ────────────────────────
+
+/** Načte práva přihlášeného uživatele. Server respektuje expiraci (migrace 030). */
+export async function getMyEntitlements(): Promise<Entitlements> {
+  const { data, error } = await supabase.rpc('get_my_entitlements')
+  if (error) return FREE_ENTITLEMENTS
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    isPremium: !!row?.is_premium,
+    premiumUntil: (row?.premium_until as string | null) ?? null,
+  }
+}
+
+/** Admin: nastaví/odebere Premium (s auditem). `until = null` → trvalé. */
+export async function adminSetPremium(userId: string, isPremium: boolean, until: string | null, reason?: string) {
+  return supabase.rpc('admin_set_premium', {
+    p_user: userId, p_is_premium: isPremium, p_until: until, p_reason: reason ?? null,
+  })
+}
+
 // ─── Kampaně (hráč) ───────────────────────────────────────
 
 export interface CampaignBundle {
@@ -792,16 +813,18 @@ export interface CampaignBundle {
   totalStars: number
   energy: number
   isPremium: boolean
+  entitlements: Entitlements
   energyResetAt: string | null
 }
 
 /** Načte vše pro hráčskou obrazovku kampaní (jen publikované + vlastní progress + energie). */
 export async function getCampaignBundle(userId: string): Promise<CampaignBundle> {
-  const [catsRes, campsRes, progRes, profRes] = await Promise.all([
+  const [catsRes, campsRes, progRes, profRes, ent] = await Promise.all([
     supabase.from('campaign_categories').select('*').eq('published', true).order('seq'),
     supabase.from('campaigns').select('*').eq('published', true).order('seq'),
     supabase.from('user_campaign_progress').select('*').eq('user_id', userId),
-    supabase.from('profiles').select('energy, is_premium, energy_reset_at').eq('id', userId).single(),
+    supabase.from('profiles').select('energy, energy_reset_at').eq('id', userId).single(),
+    getMyEntitlements(),
   ])
   const categories = (catsRes.data ?? []) as CampaignCategory[]
   const catIds = new Set(categories.map(c => c.id))
@@ -811,10 +834,14 @@ export async function getCampaignBundle(userId: string): Promise<CampaignBundle>
   const progress: Record<string, UserCampaignProgress> = {}
   let totalStars = 0
   for (const p of (progRes.data ?? []) as UserCampaignProgress[]) { progress[p.campaign_id] = p; totalStars += p.stars }
-  const prof = (profRes.data ?? {}) as { energy?: number; is_premium?: boolean; energy_reset_at?: string | null }
+  const prof = (profRes.data ?? {}) as { energy?: number; energy_reset_at?: string | null }
   return {
     categories, campaignsByCat, progress, totalStars,
-    energy: prof.energy ?? 5, isPremium: !!prof.is_premium, energyResetAt: prof.energy_reset_at ?? null,
+    energy: prof.energy ?? 5,
+    // Premium bere z entitlementů (respektuje expiraci), ne z profiles.is_premium
+    isPremium: isPremiumUser(ent),
+    entitlements: ent,
+    energyResetAt: prof.energy_reset_at ?? null,
   }
 }
 

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getCampaignBundle, startCampaignAttempt, getEventsByIds, type CampaignBundle } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
+import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
 import CompassLoader from '@/components/CompassLoader'
 import {
   effectiveEnergy, isCategoryUnlocked, isCampaignUnlocked, categoryStars, DAILY_ENERGY,
@@ -22,7 +23,10 @@ export default function CampaignsPage() {
       setBundle(await getCampaignBundle(user.id))
     } catch (e) {
       console.warn('[Campaigns] načtení selhalo (běží migrace 028?):', e)
-      setBundle({ categories: [], campaignsByCat: {}, progress: {}, totalStars: 0, energy: DAILY_ENERGY, isPremium: false, energyResetAt: null })
+      setBundle({
+        categories: [], campaignsByCat: {}, progress: {}, totalStars: 0,
+        energy: DAILY_ENERGY, isPremium: false, entitlements: FREE_ENTITLEMENTS, energyResetAt: null,
+      })
     }
     setLoading(false)
   }, [user])
