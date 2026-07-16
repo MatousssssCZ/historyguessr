@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
-  starsForScore, starThresholds, maxScoreFor, remainingDailyExpeditions,
+  starsForScore, starThresholds, maxScoreFor,
   categoryAccess, campaignAccess, categoryStars, globalStars, isCategoryVisible,
-  DAILY_EXPEDITIONS, STAR_THRESHOLD_PCT,
+  STAR_THRESHOLD_PCT,
 } from './campaignLogic'
 import { FREE_ENTITLEMENTS, type Entitlements } from './entitlements'
 import type { CampaignCategory, Campaign, UserCampaignProgress } from '@/types/database'
@@ -74,28 +74,6 @@ describe('starsForScore — jiný počet kol (nesmí být natvrdo 5)', () => {
   it('vlastní prahy kampaně přebijí výchozí', () => {
     expect(starsForScore(2500, 5, [0.5, 0.7, 0.9])).toBe(1)   // 2500/3500/4500
     expect(starsForScore(2499, 5, [0.5, 0.7, 0.9])).toBe(0)
-  })
-})
-
-describe('remainingDailyExpeditions', () => {
-  const today = new Date().toISOString().slice(0, 10)
-
-  it('premium = neomezeně', () => {
-    expect(remainingDailyExpeditions(0, today, true)).toBe(Infinity)
-  })
-
-  it('nový den = plný příděl', () => {
-    expect(remainingDailyExpeditions(0, '2020-01-01', false)).toBe(DAILY_EXPEDITIONS)
-    expect(remainingDailyExpeditions(0, null, false)).toBe(DAILY_EXPEDITIONS)
-  })
-
-  it('dnešek = zbytek, nikdy záporně', () => {
-    expect(remainingDailyExpeditions(3, today, false)).toBe(3)
-    expect(remainingDailyExpeditions(-1, today, false)).toBe(0)
-  })
-
-  it('konfigurovatelný počet výprav', () => {
-    expect(remainingDailyExpeditions(0, null, false, 10)).toBe(10)
   })
 })
 

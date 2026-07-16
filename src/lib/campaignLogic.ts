@@ -40,22 +40,15 @@ export function starsForScore(
 
 // ─── Výpravy (denní limit) ────────────────────────────────
 
+/**
+ * Výchozí denní příděl. AUTORITA JE SERVER (app_config + RPC get_my_expeditions,
+ * migrace 032) — tahle konstanta je jen fallback pro UI, než dorazí data.
+ */
 export const DAILY_EXPEDITIONS = 5
 
-/**
- * Zbývající výpravy s ohledem na líný denní reset (UTC — rozhodnutí projektu).
- * Premium = Infinity. POZOR: autorita je server, tohle je jen pro UI.
- */
-export function remainingDailyExpeditions(
-  energy: number,
-  resetAt: string | null,
-  isPremium: boolean,
-  perDay: number = DAILY_EXPEDITIONS,
-): number {
-  if (isPremium) return Infinity
-  const todayUtc = new Date().toISOString().slice(0, 10)
-  if (!resetAt || resetAt < todayUtc) return perDay
-  return Math.max(0, energy)
+/** Formátuje zbývající výpravy: -1 ze serveru = neomezeně. */
+export function formatExpeditions(remaining: number, perDay: number): string {
+  return remaining < 0 ? '∞' : `${remaining}/${perDay}`
 }
 
 // ─── Odemykání ────────────────────────────────────────────

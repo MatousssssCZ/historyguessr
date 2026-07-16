@@ -7,11 +7,12 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
-import { addEventRating } from '@/lib/supabase'
+import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
 import { panoramaHfov } from '@/lib/panorama'
+import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
 import type { Event, RoundResult } from '@/types/database'
 
@@ -40,6 +41,25 @@ export default function GamePage() {
 
   if (state.phase === 'loading') return <LoadingScreen/>
   if (state.error) return <ErrorScreen msg={state.error} onRetry={() => startGame(options)}/>
+  // Zopakování KAMPANĚ musí projít serverem (nový pokus = nová výprava),
+  // nesmí se jen lokálně restartovat s vyčerpaným attemptem.
+  async function retryCampaign() {
+    const campaignId = state.campaignId
+    if (!campaignId) return
+    try {
+      const { attemptId, eventIds } = await startCampaignAttempt(campaignId)
+      const evs = await getEventsByIds(eventIds)
+      resetGame()
+      await startGame({
+        events: evs, attemptId, campaignId,
+        campaignTitle: state.campaignTitle ?? undefined, rounds: evs.length,
+      })
+    } catch {
+      // Došly výpravy / ztracený přístup → zpět na kampaně, kde je upsell
+      navigate('/campaigns')
+    }
+  }
+
   if (state.phase === 'finished') return (
     <FinishedScreen
       totalScore={state.totalScore}
@@ -50,7 +70,7 @@ export default function GamePage() {
       campaignStars={state.campaignStars}
       campaignTitle={state.campaignTitle}
       onCampaigns={state.campaignId ? () => navigate('/campaigns') : undefined}
-      onPlayAgain={() => { resetGame(); startGame(options) }}
+      onPlayAgain={state.campaignId ? retryCampaign : () => { resetGame(); startGame(options) }}
       onMenu={() => navigate('/menu')}
     />
   )
@@ -928,23 +948,76 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
     }
   }
 
+  // ── Výsledek KAMPANĚ — tmavá „síň slávy" s hvězdami ──
+  if (isCampaign) {
+    const stars = campaignStars ?? 0
+    const maxScore = maxScoreFor(rounds)
+    const [t1, t2, t3] = starThresholds(rounds)
+    const nextThreshold = stars === 0 ? t1 : stars === 1 ? t2 : stars === 2 ? t3 : null
+    const toNext = nextThreshold ? nextThreshold - totalScore : 0
+
+    return (
+      <div style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '32px 22px', background: 'radial-gradient(circle at 50% 32%, #2e2519 0%, #17120c 70%)',
+      }}>
+        <div style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
+            color: '#f5ce8b', margin: '0 0 20px',
+          }}>Kampaň dokončena</p>
+
+          {/* Hvězdy */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 18 }}>
+            {[0, 1, 2].map(i => {
+              const on = stars > i
+              return (
+                <span key={i} style={{
+                  fontSize: 52, lineHeight: 1,
+                  color: on ? '#f5ce8b' : 'transparent',
+                  WebkitTextStroke: on ? '0' : '2px rgba(245,206,139,0.35)',
+                  filter: on ? 'drop-shadow(0 4px 14px rgba(245,206,139,0.55))' : 'none',
+                }}>★</span>
+              )
+            })}
+          </div>
+
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: '#f6f0e6', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
+            {campaignTitle}
+          </h1>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 26, marginBottom: 22 }}>
+            <span style={{ color: '#d97757' }}>{totalScore.toLocaleString(currentLocale())}</span>
+            <span style={{ color: 'rgba(246,240,230,0.45)' }}> / {maxScore.toLocaleString(currentLocale())} b.</span>
+          </div>
+
+          {/* Kolik chybí do další hvězdy */}
+          {nextThreshold && toNext > 0 && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 22,
+              background: 'rgba(246,240,230,0.06)', border: '1px solid rgba(246,240,230,0.14)',
+              borderRadius: 999, padding: '9px 16px', color: 'rgba(246,240,230,0.85)', fontSize: 13,
+            }}>
+              <span style={{ color: '#f5ce8b' }}>★</span>
+              Ještě {toNext.toLocaleString(currentLocale())} b. do {stars + 1}. hvězdy
+            </div>
+          )}
+
+          <button className="btn btn-accent" style={{ width: '100%', padding: 15, fontSize: 15.5 }} onClick={onCampaigns}>
+            Zpět na kampaně
+          </button>
+          <button onClick={onPlayAgain} style={{
+            background: 'none', border: 'none', cursor: 'pointer', marginTop: 14, padding: 6,
+            color: 'rgba(246,240,230,0.5)', fontSize: 13.5,
+          }}>Zkusit znovu na lepší skóre</button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 22px', background: 'var(--paper-100)' }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
-        {isCampaign ? (
-          <>
-            {campaignTitle && <p className="eyebrow" style={{ marginBottom: 6, textAlign: 'center' }}>{campaignTitle}</p>}
-            {/* Hvězdy kampaně */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 10 }}>
-              {[0, 1, 2].map(i => {
-                const on = (campaignStars ?? 0) > i
-                return <span key={i} style={{ fontSize: 44, lineHeight: 1, color: on ? '#f5ce8b' : 'var(--line-strong)', filter: on ? 'drop-shadow(0 3px 6px rgba(245,206,139,0.5))' : 'none', transition: 'color 300ms' }}>★</span>
-              })}
-            </div>
-          </>
-        ) : (
-          <p className="eyebrow" style={{ marginBottom: 12, textAlign: 'center' }}>{t('game.gameOver')}</p>
-        )}
+        <p className="eyebrow" style={{ marginBottom: 12, textAlign: 'center' }}>{t('game.gameOver')}</p>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 68, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--accent)', textAlign: 'center' }}>
           {totalScore.toLocaleString(currentLocale())}
         </div>
@@ -955,14 +1028,8 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
         <GameEvaluation userId={userId} gainedXp={gainedXp} gameHits={gameHits}/>
 
         <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-          {isCampaign ? (
-            <button className="btn btn-accent" style={{ flex: 1 }} onClick={onCampaigns}>Zpět na kampaně</button>
-          ) : (
-            <>
-              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onMenu}>{t('game.menu')}</button>
-              <button className="btn btn-accent" style={{ flex: 1 }} onClick={onPlayAgain}>{t('game.playAgain')}</button>
-            </>
-          )}
+          <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onMenu}>{t('game.menu')}</button>
+          <button className="btn btn-accent" style={{ flex: 1 }} onClick={onPlayAgain}>{t('game.playAgain')}</button>
         </div>
       </div>
     </div>

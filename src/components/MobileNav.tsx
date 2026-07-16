@@ -6,7 +6,7 @@ import { getFriendRequests, signOut } from '@/lib/supabase'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
-type Tab = 'home' | 'badges' | 'profile'
+type Tab = 'home' | 'campaigns' | 'badges' | 'profile'
 
 /** Sdílená mobilní spodní lišta (Domů · Kampaně · [Play] · Odznaky · Profil).
  *  Na desktopu se nevykresluje. Play otevře bottom-sheet launcher. */
@@ -55,7 +55,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
       }}>
         <div style={{ display: 'flex', gap: 38 }}>
           {item('home', t('menu.navHome'), () => navigate('/menu'), 'home')}
-          {item('compass', t('menu.campaigns'), () => navigate('/campaigns'))}
+          {item('compass', t('menu.campaigns'), () => navigate('/campaigns'), 'campaigns')}
         </div>
         <button onClick={() => setSheet(true)} aria-label={t('menu.navPlay')} style={{
           position: 'absolute', left: '50%', top: -16, transform: 'translateX(-50%)',

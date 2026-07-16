@@ -807,24 +807,59 @@ export async function adminSetPremium(userId: string, isPremium: boolean, until:
 
 // ─── Kampaně (hráč) ───────────────────────────────────────
 
+export interface Expeditions {
+  /** -1 = neomezeně (Premium nebo vypnutý limit) */
+  remaining: number
+  perDay: number
+  used: number
+  bonus: number
+  isPremium: boolean
+  /** ISO čas obnovení (nejbližší půlnoc UTC) */
+  resetsAt: string | null
+}
+
+export const FREE_EXPEDITIONS: Expeditions = {
+  remaining: DAILY_EXPEDITIONS, perDay: DAILY_EXPEDITIONS, used: 0, bonus: 0,
+  isPremium: false, resetsAt: null,
+}
+
+/** Zbývající výpravy — autoritativně ze serveru (migrace 032). */
+export async function getMyExpeditions(): Promise<Expeditions> {
+  const { data, error } = await supabase.rpc('get_my_expeditions')
+  if (error) return FREE_EXPEDITIONS
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    remaining: row?.remaining ?? 0,
+    perDay: row?.per_day ?? DAILY_EXPEDITIONS,
+    used: row?.used ?? 0,
+    bonus: row?.bonus ?? 0,
+    isPremium: !!row?.is_premium,
+    resetsAt: (row?.resets_at as string | null) ?? null,
+  }
+}
+
+/** Admin: přidá hráči bonusové výpravy na dnešek (nebo zadané datum). */
+export async function adminGrantExpeditions(userId: string, count: number, date?: string) {
+  return supabase.rpc('admin_grant_expeditions', { p_user: userId, p_count: count, p_date: date ?? null })
+}
+
 export interface CampaignBundle {
   categories: CampaignCategory[]
   campaignsByCat: Record<string, Campaign[]>
   progress: Record<string, UserCampaignProgress>  // klíč = campaign_id
   totalStars: number
-  energy: number
+  expeditions: Expeditions
   isPremium: boolean
   entitlements: Entitlements
-  energyResetAt: string | null
 }
 
 /** Načte vše pro hráčskou obrazovku kampaní (jen publikované + vlastní progress + výpravy). */
 export async function getCampaignBundle(userId: string): Promise<CampaignBundle> {
-  const [catsRes, campsRes, progRes, profRes, ent] = await Promise.all([
+  const [catsRes, campsRes, progRes, exp, ent] = await Promise.all([
     supabase.from('campaign_categories').select('*').eq('status', 'published').order('seq'),
     supabase.from('campaigns').select('*').eq('status', 'published').order('seq'),
     supabase.from('user_campaign_progress').select('*').eq('user_id', userId),
-    supabase.from('profiles').select('energy, energy_reset_at').eq('id', userId).single(),
+    getMyExpeditions(),
     getMyEntitlements(),
   ])
   const allCats = (catsRes.data ?? []) as CampaignCategory[]
@@ -836,15 +871,13 @@ export async function getCampaignBundle(userId: string): Promise<CampaignBundle>
 
   const progress: Record<string, UserCampaignProgress> = {}
   for (const p of (progRes.data ?? []) as UserCampaignProgress[]) progress[p.campaign_id] = p
-  const prof = (profRes.data ?? {}) as { energy?: number; energy_reset_at?: string | null }
   return {
     categories, campaignsByCat, progress,
     totalStars: globalStars(progress),
-    energy: prof.energy ?? DAILY_EXPEDITIONS,
-    // Premium bere z entitlementů (respektuje expiraci), ne z profiles.is_premium
+    expeditions: exp,
+    // Premium z entitlementů (respektuje expiraci)
     isPremium: isPremiumUser(ent),
     entitlements: ent,
-    energyResetAt: prof.energy_reset_at ?? null,
   }
 }
 
