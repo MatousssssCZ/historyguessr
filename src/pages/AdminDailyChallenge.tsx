@@ -10,8 +10,9 @@ const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen',
                 'Červenec','Srpen','Září','Říjen','Listopad','Prosinec']
 
 function daysInMonth(month: number): number {
-  // month: 1-12, použij nepřestupný rok pro zobrazení
-  return new Date(2023, month, 0).getDate()
+  // month: 1-12. Použij PŘESTUPNÝ rok, ať jde přiřadit i 29. 2. (celkem 366 dní).
+  // V nepřestupných letech se tento den prostě nevyskytne.
+  return new Date(2024, month, 0).getDate()
 }
 
 export default function AdminDailyChallengePage() {
