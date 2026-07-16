@@ -4,7 +4,7 @@ export const USERNAME_MAX = 20
 
 // Povolené znaky: písmena (vč. diakritiky), číslice, mezera, _ . -
 // Zakázané: emoji a jiné speciální znaky.
-const ALLOWED = /^[\p{L}\p{N} _.\-]+$/u
+const ALLOWED = /^[\p{L}\p{N} _.-]+$/u
 
 export type UsernameError = 'tooShort' | 'tooLong' | 'invalid'
 

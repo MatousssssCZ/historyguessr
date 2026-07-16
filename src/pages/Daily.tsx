@@ -416,7 +416,7 @@ function PanoramaViewer({ url }: { url: string }) {
     let v: { destroy: () => void } | null = null
     try {
       v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov() })
-    } catch {}
+    } catch { /* pannellum selhal — viewer zůstane prázdný */ }
     return () => { v?.destroy() }
   }, [url])
   return <div ref={ref} style={{ width: '100%', height: '100%' }}/>

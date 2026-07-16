@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Event, EventInsert, EventUpdate, Profile, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
+import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
 import { XP_BONUS_DAILY } from './leveling'
 
 export interface DailyResult {

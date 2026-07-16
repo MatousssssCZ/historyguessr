@@ -81,7 +81,7 @@ async function downloadXLSTemplate() {
 }
 
 // ── CSV parser ────────────────────────────────────────────
-// Robustní vůči: BOM (﻿ z Excelu/Sheets), oddělovači , ; nebo tab
+// Robustní vůči: BOM (U+FEFF z Excelu/Sheets), oddělovači , ; nebo tab
 // (české Excel ukládá se středníky) a koncům řádků \r\n / \r.
 function detectDelimiter(headerLine: string): string {
   const candidates = [',', ';', '\t']
@@ -95,8 +95,8 @@ function detectDelimiter(headerLine: string): string {
 }
 
 function parseCSV(text: string): Record<string, string>[] {
-  // Odstraň BOM a normalizuj konce řádků
-  const clean = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+  // Odstraň BOM (U+FEFF) a normalizuj konce řádků
+  const clean = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
   const lines = clean.split('\n').filter(l => l.trim())
   if (lines.length < 2) return []
   const delimiter = detectDelimiter(lines[0])

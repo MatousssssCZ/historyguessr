@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { eventTitle, eventDescription } from '@/lib/eventLocale'
+import { eventTitle } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
 import { getCandidateEvents, type CandidateEvent } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
@@ -17,7 +17,6 @@ const CATEGORIES = [
   { id: 'mysteries', label: '🔮 Záhady a legendy' },
   { id: 'disasters', label: '🌋 Katastrofy' },
 ]
-const CAT_LABEL: Record<string, string> = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]))
 
 const ROUND_OPTIONS = [3, 5, 10]
 
@@ -77,7 +76,7 @@ export default function PreGameLobbyPage() {
   function toggleExclude(id: string) {
     setExcluded(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id); else next.add(id)
       return next
     })
   }

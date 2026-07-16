@@ -15,8 +15,8 @@ export default function YearRange({ from, to, onFrom, onTo }: {
   const rightPct = ((hi - YEAR_MIN) / span) * 100
 
   // Když se úchyty kříží, „od" řídí spodní hodnotu a „do" horní
-  function handleFrom(v: number) { v <= to ? onFrom(v) : (onFrom(to), onTo(v)) }
-  function handleTo(v: number) { v >= from ? onTo(v) : (onTo(from), onFrom(v)) }
+  function handleFrom(v: number) { if (v <= to) onFrom(v); else { onFrom(to); onTo(v) } }
+  function handleTo(v: number) { if (v >= from) onTo(v); else { onTo(from); onFrom(v) } }
 
   const { t } = useTranslation()
   return (

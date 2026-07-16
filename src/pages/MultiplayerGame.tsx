@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
-import { eventTitle, eventDescription } from '@/lib/eventLocale'
+import { eventTitle } from '@/lib/eventLocale'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { clearResume } from '@/lib/resume'
@@ -35,7 +35,7 @@ const NEXT_ROUND_DELAY = 8000
 export default function MultiplayerGamePage() {
   const { t } = useTranslation()
   const { roomId } = useParams<{ roomId: string }>()
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
 
   // Nová hra (multiplayer) → zahoď rozehranou solo hru („Pokračovat ve hře")
@@ -474,7 +474,6 @@ export default function MultiplayerGamePage() {
 
   // ── Round results ─────────────────────────────────────
   if (phase === 'round_results' && event) {
-    const myPlayer = players.find(p => p.user_id === user?.id)
     const sortedByRound = [...roundAnswers].sort((a, b) => b.round_score - a.round_score)
     const sortedByTotal = [...players].sort((a, b) => b.total_score - a.total_score)
 
@@ -706,7 +705,7 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
         type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov(),
         ...(preview ? { preview } : {}),
       })
-    } catch {}
+    } catch { /* pannellum selhal — viewer zůstane prázdný */ }
     return () => { v?.destroy() }
   }, [url, preview])
   return <div ref={ref} style={{ width: '100%', height: '100%' }}/>

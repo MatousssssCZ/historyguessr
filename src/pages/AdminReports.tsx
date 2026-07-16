@@ -182,7 +182,7 @@ function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
   const W = 1000, H = 160, pad = 10
   const bw = (W - pad * 2) / rows.length
   const y = (v: number) => H - pad - (v / max) * (H - pad * 2)
-  const line = (key: keyof DailySeriesRow, color: string) =>
+  const line = (key: keyof DailySeriesRow, _color: string) =>
     rows.map((r, i) => `${pad + i * bw + bw / 2},${y(r[key] as number)}`).join(' ')
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: 16 }}>

@@ -197,9 +197,6 @@ export default function MenuPage() {
   const name = profile?.username ?? 'Hráči'
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
-  const games = profile?.games_played ?? 0
-  const totalScore = profile?.total_score ?? 0
-  const avgScore = games > 0 ? Math.round(totalScore / games) : 0
 
   const hour = new Date().getHours()
   const greet = t(hour < 11 ? 'menu.greetMorning' : hour < 18 ? 'menu.greetAfternoon' : 'menu.greetEvening')

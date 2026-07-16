@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
 import { formatYear, formatDistance } from '@/lib/scoring'
-import { addEventRating, track } from '@/lib/supabase'
+import { addEventRating } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
@@ -639,18 +639,21 @@ function RoundResult({ event, round, onNext, isLast }: {
   onNext: () => void; isLast: boolean
 }) {
   const { t } = useTranslation()
-  if (!round) return null
+  // Hooky musí být volané bezpodmínečně a ve stejném pořadí — early return až za nimi.
   const [tab, setTab] = useState<'score' | 'info'>('score')
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
-  const yearDiffLabel = round.year_diff === 0 ? t('game.exactTip') : t('game.yearOff', { n: round.year_diff })
-  const locPct = Math.round(round.location_score / 5)
-  const yrPct = Math.round(round.year_score / 5)
 
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth <= 640)
     window.addEventListener('resize', h)
     return () => window.removeEventListener('resize', h)
   }, [])
+
+  if (!round) return null
+
+  const yearDiffLabel = round.year_diff === 0 ? t('game.exactTip') : t('game.yearOff', { n: round.year_diff })
+  const locPct = Math.round(round.location_score / 5)
+  const yrPct = Math.round(round.year_score / 5)
 
   const nextBtn = (
     <button
@@ -881,25 +884,6 @@ function StarRating({ eventId }: { eventId: string }) {
 }
 
 // ── Helper komponenty ─────────────────────────────────────
-function DetailRow({ label, value, highlight, strong }: {
-  label: string; value: string; highlight?: boolean; strong?: boolean
-}) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--ink-3)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-        {label}
-      </span>
-      <span style={{
-        fontFamily: 'var(--font-serif)',
-        fontSize: strong ? 16 : 14,
-        color: highlight ? 'var(--accent)' : strong ? 'var(--ink)' : 'var(--ink-2)',
-        whiteSpace: 'nowrap',
-      }}>
-        {value}
-      </span>
-    </div>
-  )
-}
 
 // ── Loading / Error / Finished screens ───────────────────
 function LoadingScreen() {

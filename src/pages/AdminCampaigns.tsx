@@ -509,8 +509,12 @@ function Modal({ title, children, onClose, wide }: { title: string; children: Re
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(42,31,23,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: wide ? 620 : 480, boxShadow: 'var(--shadow-xl)', maxHeight: '88vh', overflowY: 'auto' }}>
-        <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--line)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+        <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--line)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 19, margin: 0 }}>{title}</h3>
+          <button onClick={onClose} aria-label="Zavřít" style={{
+            width: 30, height: 30, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+            background: 'var(--paper-200)', border: 'none', color: 'var(--ink-3)', fontSize: 13,
+          }}>✕</button>
         </div>
         <div style={{ padding: 22 }}>{children}</div>
       </div>
