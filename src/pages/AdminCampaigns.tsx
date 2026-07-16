@@ -8,7 +8,7 @@ import {
   getAdminCampaigns, createCampaign, updateCampaign, deleteCampaign,
   getCampaignEvents, setCampaignEvents,
 } from '@/lib/supabase'
-import type { CampaignCategory, Campaign, Event } from '@/types/database'
+import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
 // Předvyplněný práh ★ pro novou kategorii dle pořadí: round(0.7·(k−1)·k)
 function defaultUnlockStars(index0: number): number {
@@ -130,9 +130,9 @@ function CategoryList({ categories, onOpen, onReload }: {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--ink)' }}>{cat.title}</span>
-                <span className="badge" style={{ background: 'var(--paper-200)', color: 'var(--ink-2)', fontSize: 11 }}>⭐ {cat.unlock_stars}</span>
+                <span className="badge" style={{ background: 'var(--paper-200)', color: 'var(--ink-2)', fontSize: 11 }}>⭐ {cat.required_global_stars}</span>
                 {cat.is_premium && <span className="badge" style={{ background: 'rgba(245,206,139,0.3)', color: 'var(--accent-deep)', fontSize: 11 }}>PREMIUM</span>}
-                <span className="badge" style={{ background: cat.published ? 'rgba(92,148,104,0.18)' : 'var(--paper-200)', color: cat.published ? '#3f7a4d' : 'var(--ink-3)', fontSize: 11 }}>{cat.published ? 'Publikováno' : 'Skryté'}</span>
+                <StatusBadge status={cat.status}/>
               </div>
               {cat.description && <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.description}</div>}
             </div>
@@ -175,9 +175,9 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
     description: category?.description ?? '',
     icon: category?.icon ?? '',
     color: category?.color ?? '#BE6240',
-    unlock_stars: String(category?.unlock_stars ?? defaultUnlock ?? 0),
+    required_global_stars: String(category?.required_global_stars ?? defaultUnlock ?? 0),
     is_premium: category?.is_premium ?? false,
-    published: category?.published ?? false,
+    status: category?.status ?? 'draft',
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -193,9 +193,9 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
       description: f.description.trim() || null,
       icon: f.icon.trim() || null,
       color: f.color || null,
-      unlock_stars: parseInt(f.unlock_stars) || 0,
+      required_global_stars: parseInt(f.required_global_stars) || 0,
       is_premium: f.is_premium,
-      published: f.published,
+      status: f.status,
     }
     const res = category
       ? await updateCampaignCategory(category.id, patch)
@@ -217,11 +217,11 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
         <div style={{ display: 'grid', gridTemplateColumns: '80px 100px 1fr', gap: 12 }}>
           <Field label="Ikona"><input className="input" value={f.icon} onChange={e => set('icon', e.target.value)} placeholder="👑"/></Field>
           <Field label="Barva"><input type="color" value={f.color} onChange={e => set('color', e.target.value)} style={{ width: '100%', height: 40, border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer' }}/></Field>
-          <Field label="Odemknout za ★ (globální)"><input className="input" type="number" min={0} value={f.unlock_stars} onChange={e => set('unlock_stars', e.target.value)}/></Field>
+          <Field label="Odemknout za ★ (globální)"><input className="input" type="number" min={0} value={f.required_global_stars} onChange={e => set('required_global_stars', e.target.value)}/></Field>
         </div>
-        <div style={{ display: 'flex', gap: 20, marginTop: 2 }}>
+        <div style={{ display: 'flex', gap: 20, marginTop: 2, alignItems: 'flex-end' }}>
           <label style={checkLabel}><input type="checkbox" checked={f.is_premium} onChange={e => set('is_premium', e.target.checked)}/> Premium</label>
-          <label style={checkLabel}><input type="checkbox" checked={f.published} onChange={e => set('published', e.target.checked)}/> Publikováno</label>
+          <Field label="Stav"><StatusSelect value={f.status} onChange={v => set('status', v)}/></Field>
         </div>
         {err && <div className="alert alert-error">⚠ {err}</div>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
@@ -281,7 +281,7 @@ function CategoryDetail({ category, events, onBack, onReloadCategories }: {
         <span style={{ fontSize: 30 }}>{category.icon || '📁'}</span>
         <div>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: 0 }}>{category.title}</h2>
-          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '2px 0 0' }}>Odemyká se za ⭐ {category.unlock_stars} · {campaigns.length} kampaní</p>
+          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '2px 0 0' }}>Odemyká se za ⭐ {category.required_global_stars} · {campaigns.length} kampaní</p>
         </div>
       </div>
 
@@ -302,9 +302,9 @@ function CategoryDetail({ category, events, onBack, onReloadCategories }: {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16 }}>{c.title}</span>
-                    <span className="badge" style={{ background: n === 5 ? 'rgba(92,148,104,0.18)' : 'rgba(217,119,87,0.12)', color: n === 5 ? '#3f7a4d' : 'var(--accent-deep)', fontSize: 11 }}>{n}/5 událostí</span>
-                    <span className="badge" style={{ background: 'var(--paper-200)', color: 'var(--ink-2)', fontSize: 11 }}>⭐ {c.unlock_stars}</span>
-                    <span className="badge" style={{ background: c.published ? 'rgba(92,148,104,0.18)' : 'var(--paper-200)', color: c.published ? '#3f7a4d' : 'var(--ink-3)', fontSize: 11 }}>{c.published ? 'Publikováno' : 'Skryté'}</span>
+                    <span className="badge" style={{ background: n === c.rounds_count ? 'rgba(92,148,104,0.18)' : 'rgba(217,119,87,0.12)', color: n === c.rounds_count ? '#3f7a4d' : 'var(--accent-deep)', fontSize: 11 }}>{n}/{c.rounds_count} událostí</span>
+                    <span className="badge" style={{ background: 'var(--paper-200)', color: 'var(--ink-2)', fontSize: 11 }}>⭐ {c.required_category_stars}</span>
+                    <StatusBadge status={c.status}/>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
@@ -347,10 +347,13 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
     title_en: campaign?.title_en ?? '',
     title_de: campaign?.title_de ?? '',
     description: campaign?.description ?? '',
-    unlock_stars: String(campaign?.unlock_stars ?? 0),
-    published: campaign?.published ?? false,
+    required_category_stars: String(campaign?.required_category_stars ?? 0),
+    rounds_count: String(campaign?.rounds_count ?? 5),
+    is_premium: campaign?.is_premium ?? false,
+    status: campaign?.status ?? 'draft' as ContentStatus,
   })
-  const [slots, setSlots] = useState<(string | null)[]>([null, null, null, null, null])
+  const roundsWanted = Math.max(1, Math.min(20, parseInt(f.rounds_count) || 5))
+  const [slots, setSlots] = useState<(string | null)[]>(() => Array(5).fill(null))
   const [pickSlot, setPickSlot] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -360,8 +363,8 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
   useEffect(() => {
     if (!campaign) return
     getCampaignEvents(campaign.id).then(rows => {
-      const arr: (string | null)[] = [null, null, null, null, null]
-      for (const r of rows) if (r.position >= 1 && r.position <= 5) arr[r.position - 1] = r.event_id
+      const arr: (string | null)[] = Array(Math.max(roundsWanted, rows.length)).fill(null)
+      for (const r of rows) if (r.position >= 1) arr[r.position - 1] = r.event_id
       setSlots(arr)
     })
   }, [campaign])
@@ -370,7 +373,10 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
 
   async function save() {
     if (!f.title.trim()) { setErr('Vyplň název kampaně.'); return }
-    if (f.published && filled.length !== 5) { setErr('Pro publikování musí mít kampaň všech 5 událostí.'); return }
+    const roundsCount = parseInt(f.rounds_count) || 5
+    if (f.status === 'published' && filled.length !== roundsCount) {
+      setErr(`Pro publikování musí mít kampaň přesně ${roundsCount} událostí (má ${filled.length}).`); return
+    }
     setSaving(true); setErr(null)
     const patch: Partial<Campaign> = {
       category_id: category.id,
@@ -378,8 +384,10 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
       title_en: f.title_en.trim() || null,
       title_de: f.title_de.trim() || null,
       description: f.description.trim() || null,
-      unlock_stars: parseInt(f.unlock_stars) || 0,
-      published: f.published,
+      required_category_stars: parseInt(f.required_category_stars) || 0,
+      rounds_count: roundsCount,
+      is_premium: f.is_premium,
+      status: f.status,
     }
     let campaignId = campaign?.id
     if (campaign) {
@@ -407,13 +415,16 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
           <Field label="Název (DE)"><input className="input" value={f.title_de} onChange={e => set('title_de', e.target.value)}/></Field>
         </div>
         <Field label="Popis"><textarea className="input" rows={2} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
-        <Field label="Odemknout za ★ (v rámci kategorie)"><input className="input" type="number" min={0} value={f.unlock_stars} onChange={e => set('unlock_stars', e.target.value)} style={{ maxWidth: 160 }}/></Field>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Field label="Odemknout za ★ (v této kategorii)"><input className="input" type="number" min={0} value={f.required_category_stars} onChange={e => set('required_category_stars', e.target.value)}/></Field>
+          <Field label="Počet kol"><input className="input" type="number" min={1} max={20} value={f.rounds_count} onChange={e => set('rounds_count', e.target.value)}/></Field>
+        </div>
 
         {/* 5 slotů událostí */}
         <div>
-          <label className="label">Události ({filled.length}/5)</label>
+          <label className="label">Události ({filled.length}/{roundsWanted})</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {slots.map((eid, i) => {
+            {Array.from({ length: roundsWanted }, (_, i) => slots[i] ?? null).map((eid, i) => {
               const ev = eid ? eventById.get(eid) : null
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-100)', border: '1px solid var(--line)', borderRadius: 10, padding: '8px 12px' }}>
@@ -439,8 +450,11 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
         </div>
 
         {err && <div className="alert alert-error">⚠ {err}</div>}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-          <label style={checkLabel}><input type="checkbox" checked={f.published} onChange={e => set('published', e.target.checked)}/> Publikováno</label>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4, gap: 12 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+            <label style={checkLabel}><input type="checkbox" checked={f.is_premium} onChange={e => set('is_premium', e.target.checked)}/> Premium</label>
+            <Field label="Stav"><StatusSelect value={f.status} onChange={v => set('status', v)}/></Field>
+          </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="btn btn-ghost" onClick={onClose}>Zrušit</button>
             <button className="btn btn-accent" disabled={saving} onClick={save}>{saving ? 'Ukládám…' : 'Uložit'}</button>
@@ -519,6 +533,24 @@ function Modal({ title, children, onClose, wide }: { title: string; children: Re
         <div style={{ padding: 22 }}>{children}</div>
       </div>
     </div>
+  )
+}
+
+const STATUS_LABEL: Record<ContentStatus, string> = { draft: 'Koncept', published: 'Publikováno', archived: 'Archiv' }
+
+function StatusBadge({ status }: { status: ContentStatus }) {
+  const bg = status === 'published' ? 'rgba(92,148,104,0.18)' : status === 'archived' ? 'var(--paper-300)' : 'var(--paper-200)'
+  const fg = status === 'published' ? '#3f7a4d' : 'var(--ink-3)'
+  return <span className="badge" style={{ background: bg, color: fg, fontSize: 11 }}>{STATUS_LABEL[status]}</span>
+}
+
+function StatusSelect({ value, onChange }: { value: ContentStatus; onChange: (v: ContentStatus) => void }) {
+  return (
+    <select className="input" value={value} onChange={e => onChange(e.target.value as ContentStatus)} style={{ minWidth: 150 }}>
+      {(['draft', 'published', 'archived'] as ContentStatus[]).map(s => (
+        <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+      ))}
+    </select>
   )
 }
 

@@ -13,6 +13,8 @@ export interface Profile {
 }
 
 // ── Kampaně ────────────────────────────────────────────────
+export type ContentStatus = 'draft' | 'published' | 'archived'
+
 export interface CampaignCategory {
   id: string
   seq: number
@@ -21,11 +23,16 @@ export interface CampaignCategory {
   title_en: string | null
   title_de: string | null
   description: string | null
+  description_en: string | null
+  description_de: string | null
   icon: string | null
   color: string | null
-  unlock_stars: number
+  hero_image_url: string | null
+  /** Pevný globální práh ★ (Premium ho NIKDY neobchází) */
+  required_global_stars: number
   is_premium: boolean
-  published: boolean
+  status: ContentStatus
+  published_at: string | null
   created_at: string
   updated_at: string
 }
@@ -34,29 +41,59 @@ export interface Campaign {
   id: string
   category_id: string
   seq: number
+  slug: string | null
   title: string
   title_en: string | null
   title_de: string | null
   description: string | null
-  unlock_stars: number
-  published: boolean
+  description_en: string | null
+  description_de: string | null
+  visual_url: string | null
+  /** Konfigurovatelný počet kol (výchozí 5) */
+  rounds_count: number
+  /** Vlastní relativní prahy ★; null = globální z app_config */
+  star_thresholds_pct: number[] | null
+  /** Práh ★ v rámci kategorie — NE sekvenční odemykání */
+  required_category_stars: number
+  is_premium: boolean
+  status: ContentStatus
+  published_at: string | null
   created_at: string
   updated_at: string
 }
 
 export interface CampaignEvent {
   campaign_id: string
-  position: number   // 1..5
+  position: number
   event_id: string
+  is_active: boolean
+  admin_note: string | null
 }
 
 export interface UserCampaignProgress {
   user_id: string
   campaign_id: string
   best_score: number
-  stars: number      // 0..3
-  attempts_used: number
+  best_stars: number       // 0..3
+  completed_runs: number
+  attempts_count: number
+  first_completed_at: string | null
+  last_played_at: string | null
+}
+
+export type AttemptStatus = 'created' | 'in_progress' | 'completed' | 'abandoned' | 'expired'
+
+export interface CampaignAttempt {
+  id: string
+  user_id: string
+  campaign_id: string
+  status: AttemptStatus
+  rounds_total: number
+  total_score: number
+  stars: number
+  started_at: string
   completed_at: string | null
+  expires_at: string
 }
 
 export type EventStatus = 'draft' | 'awaiting_panorama' | 'awaiting_review' | 'published'

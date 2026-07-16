@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, recordCategoryHit, submitCampaignResult, track, type EventFilters } from '@/lib/supabase'
+import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, recordCategoryHit, submitCampaignRound, completeCampaignAttempt, track, type EventFilters } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import { saveResume, clearResume, loadResume } from '@/lib/resume'
 
@@ -12,6 +12,7 @@ export interface GameOptions extends EventFilters {
   events?: Event[]         // pevný seznam událostí (kampaň) — přeskočí getRandomEvents
   campaignId?: string      // po dohrání odešle výsledek + spočítá ★
   campaignTitle?: string
+  attemptId?: string       // ID serverového pokusu (kampaň) — skóre počítá server
   resume?: boolean         // pokračovat v uložené rozehrané hře
 }
 
@@ -32,6 +33,7 @@ export interface GameState {
   error: string | null
   campaignId: string | null
   campaignTitle: string | null
+  attemptId: string | null
   campaignStars: number | null   // vyplní se po dohrání kampaně (0–3)
 }
 
@@ -50,6 +52,7 @@ const INITIAL_STATE: GameState = {
   error: null,
   campaignId: null,
   campaignTitle: null,
+  attemptId: null,
   campaignStars: null,
 }
 
@@ -87,6 +90,7 @@ export function useGame(userId: string | undefined) {
       ...INITIAL_STATE, phase: 'playing', totalRounds: events.length, events,
       sessionId: sid,
       campaignId: options?.campaignId ?? null, campaignTitle: options?.campaignTitle ?? null,
+      attemptId: options?.attemptId ?? null,
     })
     // Ulož rozehranou hru (jen solo, ≥2 kola) pro „Pokračovat ve hře"
     if (!options?.campaignId && events.length >= 2) {
@@ -131,9 +135,28 @@ export function useGame(userId: string | undefined) {
     const event = events[currentRound]
     const yearFrom = event.year_from ?? event.year
     const yearTo = event.year_to ?? event.year
-    const distKm = haversineKm(guessLat, guessLng, event.lat, event.lng)
-    const ydiff = yearDiff(guessYear, yearFrom, yearTo)
-    const scores = roundScore(distKm, guessYear, yearFrom, yearTo, event.location_radius_km ?? 0)
+
+    // Kampaň: klient posílá JEN tip, skóre počítá a ukládá server (idempotentně).
+    // Ostatní režimy zatím počítají lokálně (viz plán — sjednotí se v další etapě).
+    let distKm: number
+    let ydiff: number
+    let scores: { location_score: number; year_score: number; round_score: number }
+    if (state.campaignId && state.attemptId) {
+      try {
+        const r = await submitCampaignRound(state.attemptId, currentRound + 1, guessLat, guessLng, guessYear)
+        distKm = r.distanceKm
+        ydiff = r.yearDiff
+        scores = { location_score: r.locationScore, year_score: r.yearScore, round_score: r.roundScore }
+      } catch (e) {
+        console.error('[Campaign] kolo se nepodařilo odeslat:', e)
+        update({ error: 'Kolo se nepodařilo odeslat. Zkontroluj připojení a zkus to znovu.' })
+        return
+      }
+    } else {
+      distKm = haversineKm(guessLat, guessLng, event.lat, event.lng)
+      ydiff = yearDiff(guessYear, yearFrom, yearTo)
+      scores = roundScore(distKm, guessYear, yearFrom, yearTo, event.location_radius_km ?? 0)
+    }
 
     const roundResult: RoundResult = {
       event_id: event.id,
@@ -178,12 +201,16 @@ export function useGame(userId: string | undefined) {
       // XP: body + bonus za dohranou hru
       await addXp(userId, newTotal + XP_BONUS_GAME)
       track('game_completed', { total_score: newTotal, rounds: state.totalRounds, campaign_id: state.campaignId }, userId)
-      // Kampaň — odešli výsledek na server (spočítá ★, drží nejlepší)
-      if (state.campaignId) {
+      // Kampaň — dokončení je idempotentní; ★ spočítá server ze svých uložených kol
+      if (state.campaignId && state.attemptId) {
         try {
-          const res = await submitCampaignResult(state.campaignId, newTotal)
-          setState(prev => ({ ...prev, campaignStars: res.stars }))
-        } catch (e) { console.warn('[Campaign] submit selhal:', e) }
+          const res = await completeCampaignAttempt(state.attemptId)
+          setState(prev => ({ ...prev, campaignStars: res.stars, totalScore: res.totalScore }))
+          track('campaign_completed', {
+            campaign_id: state.campaignId, total_score: res.totalScore,
+            stars: res.stars, is_best: res.isBest,
+          }, userId)
+        } catch (e) { console.warn('[Campaign] dokončení selhalo:', e) }
       }
     }
   }, [state, userId])

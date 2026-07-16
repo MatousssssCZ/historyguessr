@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getCampaignBundle, startCampaignAttempt, getEventsByIds, type CampaignBundle } from '@/lib/supabase'
+import { getCampaignBundle, startCampaignAttempt, getEventsByIds, campaignErrorOf, type CampaignBundle } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
 import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
 import CompassLoader from '@/components/CompassLoader'
 import {
-  effectiveEnergy, isCategoryUnlocked, isCampaignUnlocked, categoryStars, DAILY_ENERGY,
+  remainingDailyExpeditions, categoryAccess, campaignAccess, categoryStars, DAILY_EXPEDITIONS,
 } from '@/lib/campaignLogic'
 import type { Campaign } from '@/types/database'
 
@@ -25,7 +25,7 @@ export default function CampaignsPage() {
       console.warn('[Campaigns] načtení selhalo (běží migrace 028?):', e)
       setBundle({
         categories: [], campaignsByCat: {}, progress: {}, totalStars: 0,
-        energy: DAILY_ENERGY, isPremium: false, entitlements: FREE_ENTITLEMENTS, energyResetAt: null,
+        energy: DAILY_EXPEDITIONS, isPremium: false, entitlements: FREE_ENTITLEMENTS, energyResetAt: null,
       })
     }
     setLoading(false)
@@ -37,7 +37,7 @@ export default function CampaignsPage() {
     return <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)' }}><CompassLoader size={60} light/></div>
   }
 
-  const energy = effectiveEnergy(bundle.energy, bundle.energyResetAt, bundle.isPremium)
+  const energy = remainingDailyExpeditions(bundle.energy, bundle.energyResetAt, bundle.isPremium)
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
@@ -53,15 +53,15 @@ export default function CampaignsPage() {
             <span style={{ color: '#f5ce8b' }}>★</span> {bundle.totalStars}
           </div>
           {/* Energie */}
-          <div style={{ ...pill, color: energy === Infinity ? 'var(--accent-deep)' : (energy <= 0 ? '#c0392b' : 'var(--ink)') }} title="Pokusy dnes">
-            ⚡ {energy === Infinity ? '∞' : `${energy}/${DAILY_ENERGY}`}
+          <div style={{ ...pill, color: energy === Infinity ? 'var(--accent-deep)' : (energy <= 0 ? '#c0392b' : 'var(--ink)') }} title="Zbývající výpravy dnes">
+            ⚡ {energy === Infinity ? '∞' : `${energy}/${DAILY_EXPEDITIONS}`}
           </div>
         </div>
       </header>
 
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '20px 18px' }}>
         {categoryId
-          ? <CategoryView bundle={bundle} categoryId={categoryId} energy={energy} onReload={reload}/>
+          ? <CategoryView bundle={bundle} categoryId={categoryId} onReload={reload}/>
           : <CategoriesGrid bundle={bundle} onOpen={(id) => navigate(`/campaigns/${id}`)}/>}
       </div>
 
@@ -85,7 +85,8 @@ function CategoriesGrid({ bundle, onOpen }: { bundle: CampaignBundle; onOpen: (i
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
       {bundle.categories.map(cat => {
         const camps = bundle.campaignsByCat[cat.id] ?? []
-        const unlocked = isCategoryUnlocked(cat, bundle.totalStars, bundle.isPremium)
+        const acc = categoryAccess(cat, bundle.totalStars, bundle.entitlements)
+        const unlocked = acc.isUnlocked
         const cs = categoryStars(camps, bundle.progress)
         return (
           <button key={cat.id} disabled={!unlocked} onClick={() => onOpen(cat.id)}
@@ -112,7 +113,9 @@ function CategoriesGrid({ bundle, onOpen }: { bundle: CampaignBundle; onOpen: (i
               </span>
               {unlocked
                 ? <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{camps.length} kampaní ›</span>
-                : <span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>🔒 ★ {cat.unlock_stars}</span>}
+                : acc.lockReason === 'premium'
+                  ? <span style={{ fontSize: 12, color: 'var(--accent-deep)', fontFamily: 'var(--font-mono)' }}>🔒 Premium</span>
+                  : <span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>🔒 chybí ★ {acc.missingStars}</span>}
             </div>
           </button>
         )
@@ -122,8 +125,8 @@ function CategoriesGrid({ bundle, onOpen }: { bundle: CampaignBundle; onOpen: (i
 }
 
 // ═══════════════════ Detail kategorie ═══════════════════
-function CategoryView({ bundle, categoryId, energy, onReload }: {
-  bundle: CampaignBundle; categoryId: string; energy: number; onReload: () => Promise<void>
+function CategoryView({ bundle, categoryId, onReload }: {
+  bundle: CampaignBundle; categoryId: string; onReload: () => Promise<void>
 }) {
   const navigate = useNavigate()
   const [starting, setStarting] = useState<string | null>(null)
@@ -133,7 +136,7 @@ function CategoryView({ bundle, categoryId, energy, onReload }: {
   const cat = bundle.categories.find(c => c.id === categoryId)
   const camps = bundle.campaignsByCat[categoryId] ?? []
 
-  if (!cat || !isCategoryUnlocked(cat, bundle.totalStars, bundle.isPremium)) {
+  if (!cat || !categoryAccess(cat, bundle.totalStars, bundle.entitlements).isUnlocked) {
     return (
       <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--ink-3)' }}>
         <div style={{ fontSize: 34, marginBottom: 10 }}>🔒</div>
@@ -147,15 +150,26 @@ function CategoryView({ bundle, categoryId, energy, onReload }: {
     if (starting) return
     setErr(null); setStarting(campaign.id)
     try {
-      const { eventIds } = await startCampaignAttempt(campaign.id)
-      if (eventIds.length < 5) { setErr('Kampaň nemá kompletních 5 událostí.'); setStarting(null); return }
+      // Server ověří hvězdy, Premium i limit a teprve pak odečte výpravu.
+      // Rozehraný pokus se navrátí bez další útraty (resumed=true).
+      const { attemptId, eventIds } = await startCampaignAttempt(campaign.id)
       const events = await getEventsByIds(eventIds)
-      if (events.length < 5) { setErr('Události kampaně se nepodařilo načíst.'); setStarting(null); return }
-      navigate('/game', { state: { events, campaignId: campaign.id, campaignTitle: campaign.title, rounds: events.length } })
-    } catch (e: any) {
+      if (events.length < campaign.rounds_count) {
+        setErr('Události kampaně se nepodařilo načíst.'); setStarting(null); return
+      }
+      navigate('/game', {
+        state: { events, attemptId, campaignId: campaign.id, campaignTitle: campaign.title, rounds: events.length },
+      })
+    } catch (e: unknown) {
       setStarting(null)
-      if (e?.message?.includes('no_energy')) { setShowUpsell(true); return }
-      setErr(e?.message || 'Kampaň se nepodařilo spustit.')
+      const kind = campaignErrorOf(e)
+      if (kind === 'no_energy') { setShowUpsell(true); return }
+      setErr(
+        kind === 'premium_required' ? 'Tahle kampaň je součástí Premium.'
+        : kind === 'locked_global_stars' || kind === 'locked_category_stars' ? 'Na tuhle kampaň zatím nemáš dost hvězd.'
+        : kind === 'campaign_incomplete' ? 'Kampaň zatím nemá kompletní obsah.'
+        : 'Kampaň se nepodařilo spustit.',
+      )
     }
   }
 
@@ -181,9 +195,11 @@ function CategoryView({ bundle, categoryId, energy, onReload }: {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {camps.map((c, i) => {
-          const unlocked = isCampaignUnlocked(camps, i, bundle.progress)
+          // Odemyká se POČTEM ★ v kategorii — ne dokončením předchozí kampaně
+          const acc = campaignAccess(c, cs.earned, bundle.entitlements, cat)
+          const unlocked = acc.isUnlocked
           const prog = bundle.progress[c.id]
-          const stars = prog?.stars ?? 0
+          const stars = prog?.best_stars ?? 0
           const busy = starting === c.id
           return (
             <div key={c.id} style={{
@@ -203,34 +219,38 @@ function CategoryView({ bundle, categoryId, energy, onReload }: {
               </div>
               {unlocked ? (
                 <button className="btn btn-accent" style={{ fontSize: 13, flexShrink: 0 }} disabled={busy} onClick={() => play(c)}>
-                  {busy ? '…' : (prog ? 'Zopakovat' : 'Hrát')}
+                  {busy ? '…' : (prog?.completed_runs ? 'Zopakovat' : 'Hrát')}
                 </button>
+              ) : acc.lockReason === 'premium' ? (
+                <span style={{ fontSize: 11, color: 'var(--accent-deep)', flexShrink: 0, fontFamily: 'var(--font-mono)' }}>🔒 Premium</span>
               ) : (
-                <span style={{ fontSize: 11, color: 'var(--ink-3)', flexShrink: 0, textAlign: 'right', maxWidth: 110 }}>Dokonči předchozí kampaň</span>
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', flexShrink: 0, textAlign: 'right', maxWidth: 110 }}>
+                  Chybí ★ {acc.missingStars} v této kategorii
+                </span>
               )}
             </div>
           )
         })}
       </div>
 
-      {showUpsell && <EnergyUpsell energy={energy} onClose={() => { setShowUpsell(false); onReload() }}/>}
+      {showUpsell && <EnergyUpsell onClose={() => { setShowUpsell(false); onReload() }}/>}
     </div>
   )
 }
 
 // ═══════════════════ Upsell (došla energie) ═══════════════════
-function EnergyUpsell({ energy, onClose }: { energy: number; onClose: () => void }) {
+function EnergyUpsell({ onClose }: { onClose: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(42,31,23,0.6)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 22, padding: 28, maxWidth: 380, width: '100%', boxShadow: 'var(--shadow-xl)', textAlign: 'center' }}>
         <div style={{ fontSize: 44, marginBottom: 10 }}>⚡</div>
-        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: '0 0 8px' }}>Došly ti pokusy</h3>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: '0 0 8px' }}>Došly ti dnešní výpravy</h3>
         <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55, margin: '0 0 18px' }}>
-          Ve free verzi máš <strong>{DAILY_ENERGY} pokusů denně</strong> ({energy <= 0 ? 'dnes už 0' : energy}). Reset přijde zítra.
+          Ve free verzi máš <strong>{DAILY_EXPEDITIONS} výprav denně</strong>. Obnoví se zítra o půlnoci (UTC).
           S <strong>Premium</strong> hraješ kampaně neomezeně.
         </p>
         <div style={{ background: 'var(--paper-200)', borderRadius: 14, padding: 14, marginBottom: 18, textAlign: 'left' }}>
-          {['Neomezené pokusy o kampaně', 'Žádné čekání na reset', 'Podpora dalšího obsahu'].map(x => (
+          {['Neomezené výpravy do kampaní', 'Žádné čekání na obnovení', 'Přístup k Premium kampaním'].map(x => (
             <div key={x} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-2)', padding: '4px 0' }}>
               <span style={{ color: 'var(--accent)' }}>✓</span> {x}
             </div>

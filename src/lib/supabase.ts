@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
 import { XP_BONUS_DAILY } from './leveling'
 import { FREE_ENTITLEMENTS, isPremiumUser, type Entitlements } from './entitlements'
+import { isCategoryVisible, globalStars, DAILY_EXPEDITIONS } from './campaignLogic'
 
 export interface DailyResult {
   id: string
@@ -817,27 +818,29 @@ export interface CampaignBundle {
   energyResetAt: string | null
 }
 
-/** Načte vše pro hráčskou obrazovku kampaní (jen publikované + vlastní progress + energie). */
+/** Načte vše pro hráčskou obrazovku kampaní (jen publikované + vlastní progress + výpravy). */
 export async function getCampaignBundle(userId: string): Promise<CampaignBundle> {
   const [catsRes, campsRes, progRes, profRes, ent] = await Promise.all([
-    supabase.from('campaign_categories').select('*').eq('published', true).order('seq'),
-    supabase.from('campaigns').select('*').eq('published', true).order('seq'),
+    supabase.from('campaign_categories').select('*').eq('status', 'published').order('seq'),
+    supabase.from('campaigns').select('*').eq('status', 'published').order('seq'),
     supabase.from('user_campaign_progress').select('*').eq('user_id', userId),
     supabase.from('profiles').select('energy, energy_reset_at').eq('id', userId).single(),
     getMyEntitlements(),
   ])
-  const categories = (catsRes.data ?? []) as CampaignCategory[]
-  const catIds = new Set(categories.map(c => c.id))
-  const campaigns = ((campsRes.data ?? []) as Campaign[]).filter(c => catIds.has(c.category_id))
+  const allCats = (catsRes.data ?? []) as CampaignCategory[]
+  const campaigns = (campsRes.data ?? []) as Campaign[]
   const campaignsByCat: Record<string, Campaign[]> = {}
   for (const c of campaigns) (campaignsByCat[c.category_id] ??= []).push(c)
+  // Kategorie bez publikovaného obsahu se hráči vůbec nezobrazují (zadání: „Skrytá")
+  const categories = allCats.filter(c => isCategoryVisible(c, campaignsByCat[c.id] ?? []))
+
   const progress: Record<string, UserCampaignProgress> = {}
-  let totalStars = 0
-  for (const p of (progRes.data ?? []) as UserCampaignProgress[]) { progress[p.campaign_id] = p; totalStars += p.stars }
+  for (const p of (progRes.data ?? []) as UserCampaignProgress[]) progress[p.campaign_id] = p
   const prof = (profRes.data ?? {}) as { energy?: number; energy_reset_at?: string | null }
   return {
-    categories, campaignsByCat, progress, totalStars,
-    energy: prof.energy ?? 5,
+    categories, campaignsByCat, progress,
+    totalStars: globalStars(progress),
+    energy: prof.energy ?? DAILY_EXPEDITIONS,
     // Premium bere z entitlementů (respektuje expiraci), ne z profiles.is_premium
     isPremium: isPremiumUser(ent),
     entitlements: ent,
@@ -853,22 +856,86 @@ export async function getEventsByIds(ids: string[]): Promise<Event[]> {
   return ids.map(id => byId.get(id)).filter(Boolean) as Event[]
 }
 
-/** Spustí pokus o kampaň — server odečte energii a vrátí 5 event ID.
- *  energyLeft = -1 → premium (∞). Vyhodí 'no_energy' když došla energie. */
-export async function startCampaignAttempt(campaignId: string): Promise<{ energyLeft: number; eventIds: string[] }> {
+/** Chyby, které vrací serverové RPC kampaní (rozlišujeme je v UI). */
+export type CampaignError =
+  | 'no_energy' | 'premium_required' | 'locked_global_stars' | 'locked_category_stars'
+  | 'campaign_not_available' | 'campaign_incomplete' | 'rounds_incomplete' | 'unknown'
+
+export function campaignErrorOf(e: unknown): CampaignError {
+  const msg = (e as { message?: string })?.message ?? ''
+  for (const k of ['no_energy', 'premium_required', 'locked_global_stars', 'locked_category_stars',
+    'campaign_not_available', 'campaign_incomplete', 'rounds_incomplete'] as const) {
+    if (msg.includes(k)) return k
+  }
+  return 'unknown'
+}
+
+export interface CampaignAttemptStart {
+  attemptId: string
+  roundsTotal: number
+  eventIds: string[]
+  /** -1 = premium (neomezeně) */
+  energyLeft: number
+  /** true = navázali jsme na rozehraný pokus (výprava se NEodečetla znovu) */
+  resumed: boolean
+}
+
+/**
+ * Spustí (nebo obnoví) pokus o kampaň. Server ověří hvězdy, Premium i denní limit
+ * a teprve pak odečte výpravu. Rozehraný pokus vrátí bez další útraty.
+ */
+export async function startCampaignAttempt(campaignId: string): Promise<CampaignAttemptStart> {
   const { data, error } = await supabase.rpc('start_campaign_attempt', { p_campaign_id: campaignId })
   if (error) throw error
   const row = Array.isArray(data) ? data[0] : data
-  return { energyLeft: row?.energy_left ?? 0, eventIds: (row?.event_ids ?? []) as string[] }
+  return {
+    attemptId: row?.attempt_id as string,
+    roundsTotal: row?.rounds_total ?? 0,
+    eventIds: (row?.event_ids ?? []) as string[],
+    energyLeft: row?.energy_left ?? 0,
+    resumed: !!row?.resumed,
+  }
 }
 
-/** Odešle výsledek kampaně — server spočítá ★ a drží nejlepší skóre. */
-export async function submitCampaignResult(campaignId: string, totalScore: number): Promise<{ stars: number; bestScore: number; isBest: boolean }> {
-  const { data, error } = await supabase.rpc('submit_campaign_result', { p_campaign_id: campaignId, p_total_score: totalScore })
+/**
+ * Odešle JEDNO kolo — klient posílá pouze tip, skóre počítá server.
+ * Idempotentní: opakované odeslání vrátí původní výsledek, nepřepíše ho.
+ */
+export async function submitCampaignRound(
+  attemptId: string, position: number,
+  guessLat: number | null, guessLng: number | null, guessYear: number,
+): Promise<{ locationScore: number; yearScore: number; roundScore: number; distanceKm: number; yearDiff: number }> {
+  const { data, error } = await supabase.rpc('submit_campaign_round', {
+    p_attempt_id: attemptId, p_position: position,
+    p_guess_lat: guessLat, p_guess_lng: guessLng, p_guess_year: guessYear,
+  })
   if (error) throw error
   const row = Array.isArray(data) ? data[0] : data
-  return { stars: row?.stars ?? 0, bestScore: row?.best_score ?? 0, isBest: !!row?.is_best }
+  return {
+    locationScore: row?.location_score ?? 0,
+    yearScore: row?.year_score ?? 0,
+    roundScore: row?.round_score ?? 0,
+    distanceKm: row?.distance_km ?? 0,
+    yearDiff: row?.year_diff ?? 0,
+  }
 }
+
+/** Dokončí pokus — server sečte kola, spočítá ★ a uloží rekord. Idempotentní. */
+export async function completeCampaignAttempt(attemptId: string): Promise<{
+  totalScore: number; stars: number; bestScore: number; bestStars: number; isBest: boolean
+}> {
+  const { data, error } = await supabase.rpc('complete_campaign_attempt', { p_attempt_id: attemptId })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    totalScore: row?.total_score ?? 0,
+    stars: row?.stars ?? 0,
+    bestScore: row?.best_score ?? 0,
+    bestStars: row?.best_stars ?? 0,
+    isBest: !!row?.is_best,
+  }
+}
+
 
 // ─── Utils ────────────────────────────────────────────────
 

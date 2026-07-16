@@ -1,120 +1,197 @@
 import { describe, it, expect } from 'vitest'
 import {
-  starsForScore, effectiveEnergy, isCategoryUnlocked, isCampaignUnlocked, categoryStars,
-  DAILY_ENERGY, STAR_THRESHOLDS,
+  starsForScore, starThresholds, maxScoreFor, remainingDailyExpeditions,
+  categoryAccess, campaignAccess, categoryStars, globalStars, isCategoryVisible,
+  DAILY_EXPEDITIONS, STAR_THRESHOLD_PCT,
 } from './campaignLogic'
+import { FREE_ENTITLEMENTS, type Entitlements } from './entitlements'
 import type { CampaignCategory, Campaign, UserCampaignProgress } from '@/types/database'
 
-// ── pomocné továrničky ──
+const free: Entitlements = FREE_ENTITLEMENTS
+const premium: Entitlements = { isPremium: true, premiumUntil: null }
+
 const cat = (p: Partial<CampaignCategory> = {}): CampaignCategory => ({
   id: 'c1', seq: 0, slug: null, title: 'Kategorie', title_en: null, title_de: null,
-  description: null, icon: null, color: null, unlock_stars: 0, is_premium: false,
-  published: true, created_at: '', updated_at: '', ...p,
+  description: null, description_en: null, description_de: null, icon: null, color: null,
+  hero_image_url: null, required_global_stars: 0, is_premium: false, status: 'published',
+  published_at: null, created_at: '', updated_at: '', ...p,
 })
 const camp = (id: string, p: Partial<Campaign> = {}): Campaign => ({
-  id, category_id: 'c1', seq: 0, title: id, title_en: null, title_de: null,
-  description: null, unlock_stars: 0, published: true, created_at: '', updated_at: '', ...p,
+  id, category_id: 'c1', seq: 0, slug: null, title: id, title_en: null, title_de: null,
+  description: null, description_en: null, description_de: null, visual_url: null,
+  rounds_count: 5, star_thresholds_pct: null, required_category_stars: 0,
+  is_premium: false, status: 'published', published_at: null, created_at: '', updated_at: '', ...p,
 })
 const prog = (campaignId: string, stars: number): UserCampaignProgress => ({
-  user_id: 'u1', campaign_id: campaignId, best_score: stars * 1500, stars,
-  attempts_used: 1, completed_at: null,
+  user_id: 'u1', campaign_id: campaignId, best_score: stars * 1500, best_stars: stars,
+  completed_runs: 1, attempts_count: 1, first_completed_at: null, last_played_at: null,
 })
 
-describe('starsForScore — hranice dle zadání', () => {
-  it('0–1999 bodů = 0 hvězd', () => {
+describe('starsForScore — hranice ze zadání (5 kol)', () => {
+  it('0–1999 = 0★, 2000–3249 = 1★, 3250–4249 = 2★, 4250–5000 = 3★', () => {
     expect(starsForScore(0)).toBe(0)
     expect(starsForScore(1999)).toBe(0)
-  })
-
-  it('2000–3249 bodů = 1 hvězda', () => {
     expect(starsForScore(2000)).toBe(1)
     expect(starsForScore(3249)).toBe(1)
-  })
-
-  it('3250–4249 bodů = 2 hvězdy', () => {
     expect(starsForScore(3250)).toBe(2)
     expect(starsForScore(4249)).toBe(2)
-  })
-
-  it('4250–5000 bodů = 3 hvězdy', () => {
     expect(starsForScore(4250)).toBe(3)
     expect(starsForScore(5000)).toBe(3)
   })
 
-  it('prahy odpovídají konstantám (jediný zdroj pravdy)', () => {
-    expect(STAR_THRESHOLDS).toEqual([2000, 3250, 4250])
+  it('relativní prahy dávají pro 5 kol přesně 2000/3250/4250', () => {
+    expect(starThresholds(5)).toEqual([2000, 3250, 4250])
+    expect(maxScoreFor(5)).toBe(5000)
+  })
+
+  it('prahy jsou vždy celá čísla (zaokrouhlení chrání před float driftem)', () => {
+    for (const rounds of [1, 3, 5, 7, 10, 13, 20]) {
+      for (const t of starThresholds(rounds)) {
+        expect(Number.isInteger(t)).toBe(true)
+      }
+    }
+    // hranice musí sedět přesně, ne o 0.0000001 vedle
+    expect(starsForScore(3250)).toBe(2)
+    expect(STAR_THRESHOLD_PCT).toEqual([0.40, 0.65, 0.85])
   })
 })
 
-describe('effectiveEnergy', () => {
+describe('starsForScore — jiný počet kol (nesmí být natvrdo 5)', () => {
+  it('3 kola: max 3000, prahy 1200/1950/2550', () => {
+    expect(maxScoreFor(3)).toBe(3000)
+    expect(starThresholds(3)).toEqual([1200, 1950, 2550])
+    expect(starsForScore(1199, 3)).toBe(0)
+    expect(starsForScore(1200, 3)).toBe(1)
+    expect(starsForScore(2550, 3)).toBe(3)
+  })
+
+  it('10 kol: max 10000, prahy 4000/6500/8500', () => {
+    expect(starThresholds(10)).toEqual([4000, 6500, 8500])
+    expect(starsForScore(4000, 10)).toBe(1)
+    expect(starsForScore(3999, 10)).toBe(0)
+  })
+
+  it('vlastní prahy kampaně přebijí výchozí', () => {
+    expect(starsForScore(2500, 5, [0.5, 0.7, 0.9])).toBe(1)   // 2500/3500/4500
+    expect(starsForScore(2499, 5, [0.5, 0.7, 0.9])).toBe(0)
+  })
+})
+
+describe('remainingDailyExpeditions', () => {
   const today = new Date().toISOString().slice(0, 10)
 
-  it('premium má neomezeně', () => {
-    expect(effectiveEnergy(0, today, true)).toBe(Infinity)
+  it('premium = neomezeně', () => {
+    expect(remainingDailyExpeditions(0, today, true)).toBe(Infinity)
   })
 
-  it('bez záznamu resetu = plný denní příděl', () => {
-    expect(effectiveEnergy(2, null, false)).toBe(DAILY_ENERGY)
+  it('nový den = plný příděl', () => {
+    expect(remainingDailyExpeditions(0, '2020-01-01', false)).toBe(DAILY_EXPEDITIONS)
+    expect(remainingDailyExpeditions(0, null, false)).toBe(DAILY_EXPEDITIONS)
   })
 
-  it('starý reset (včerejšek) = obnovený příděl', () => {
-    expect(effectiveEnergy(0, '2020-01-01', false)).toBe(DAILY_ENERGY)
+  it('dnešek = zbytek, nikdy záporně', () => {
+    expect(remainingDailyExpeditions(3, today, false)).toBe(3)
+    expect(remainingDailyExpeditions(-1, today, false)).toBe(0)
   })
 
-  it('dnešní reset = zbývající energie', () => {
-    expect(effectiveEnergy(2, today, false)).toBe(2)
-    expect(effectiveEnergy(0, today, false)).toBe(0)
-  })
-})
-
-describe('isCategoryUnlocked', () => {
-  it('první kategorie (0★) je otevřená hned', () => {
-    expect(isCategoryUnlocked(cat({ unlock_stars: 0 }), 0, false)).toBe(true)
-  })
-
-  it('zamčená, když nemá dost globálních hvězd', () => {
-    expect(isCategoryUnlocked(cat({ unlock_stars: 8 }), 7, false)).toBe(false)
-    expect(isCategoryUnlocked(cat({ unlock_stars: 8 }), 8, false)).toBe(true)
-  })
-
-  it('premium kategorie vyžaduje premium účet', () => {
-    expect(isCategoryUnlocked(cat({ is_premium: true }), 100, false)).toBe(false)
-    expect(isCategoryUnlocked(cat({ is_premium: true }), 100, true)).toBe(true)
-  })
-
-  it('premium NEobchází hvězdný požadavek', () => {
-    expect(isCategoryUnlocked(cat({ is_premium: true, unlock_stars: 10 }), 3, true)).toBe(false)
+  it('konfigurovatelný počet výprav', () => {
+    expect(remainingDailyExpeditions(0, null, false, 10)).toBe(10)
   })
 })
 
-describe('isCampaignUnlocked (současné sekvenční chování)', () => {
-  const list = [camp('a'), camp('b'), camp('c')]
-
-  it('první kampaň je vždy odemčená', () => {
-    expect(isCampaignUnlocked(list, 0, {})).toBe(true)
+describe('odemykání kategorií (globální ★)', () => {
+  it('první kategorie 0★ otevřená hned i pro Free', () => {
+    expect(categoryAccess(cat({ required_global_stars: 0 }), 0, free).isUnlocked).toBe(true)
   })
 
-  it('další je zamčená bez dokončení předchozí', () => {
-    expect(isCampaignUnlocked(list, 1, {})).toBe(false)
+  it('málo hvězd → zamčeno + kolik chybí', () => {
+    const r = categoryAccess(cat({ required_global_stars: 8 }), 3, free)
+    expect(r.isUnlocked).toBe(false)
+    expect(r.lockReason).toBe('stars')
+    expect(r.missingStars).toBe(5)
   })
 
-  it('předchozí na 0★ neodemyká', () => {
-    expect(isCampaignUnlocked(list, 1, { a: prog('a', 0) })).toBe(false)
+  it('Premium kategorie je pro Free VIDITELNÁ, ale zamčená', () => {
+    const r = categoryAccess(cat({ is_premium: true }), 0, free)
+    expect(r.isVisible).toBe(true)
+    expect(r.isUnlocked).toBe(false)
+    expect(r.lockReason).toBe('premium')
   })
 
-  it('předchozí na ≥1★ odemyká', () => {
-    expect(isCampaignUnlocked(list, 1, { a: prog('a', 1) })).toBe(true)
+  it('Premium NEobchází hvězdy', () => {
+    const r = categoryAccess(cat({ required_global_stars: 15, is_premium: true }), 4, premium)
+    expect(r.isUnlocked).toBe(false)
+    expect(r.lockReason).toBe('stars')
   })
 })
 
-describe('categoryStars', () => {
-  it('sčítá nejlepší hvězdy a počítá maximum', () => {
+describe('odemykání kampaní (★ v kategorii, NE sekvenčně)', () => {
+  it('kampaň s 0★ je otevřená', () => {
+    expect(campaignAccess(camp('a', { required_category_stars: 0 }), 0, free).isUnlocked).toBe(true)
+  })
+
+  it('odemyká se hvězdami, ne dokončením předchozí', () => {
+    const c = camp('d', { required_category_stars: 6 })
+    expect(campaignAccess(c, 5, free).isUnlocked).toBe(false)
+    expect(campaignAccess(c, 6, free).isUnlocked).toBe(true)
+  })
+
+  it('hvězdy lze nasbírat i přeskakováním — stačí jejich počet', () => {
+    // hráč má 9★ z jiných kampaní kategorie → poslední kampaň je otevřená
+    expect(campaignAccess(camp('e', { required_category_stars: 9 }), 9, free).isUnlocked).toBe(true)
+  })
+
+  it('Premium kategorie zpremiovává i svoje kampaně', () => {
+    const r = campaignAccess(camp('a'), 0, free, cat({ is_premium: true }))
+    expect(r.isUnlocked).toBe(false)
+    expect(r.lockReason).toBe('premium')
+  })
+
+  it('Premium účet + Premium kampaň + dost ★ = hraje', () => {
+    const r = campaignAccess(camp('a', { is_premium: true, required_category_stars: 3 }), 3, premium)
+    expect(r.isUnlocked).toBe(true)
+  })
+})
+
+describe('součty hvězd', () => {
+  it('kategorie: součet nejlepších + maximum', () => {
     const list = [camp('a'), camp('b'), camp('c')]
-    const p = { a: prog('a', 3), b: prog('b', 1) }
-    expect(categoryStars(list, p)).toEqual({ earned: 4, max: 9 })
+    expect(categoryStars(list, { a: prog('a', 3), b: prog('b', 1) })).toEqual({ earned: 4, max: 9 })
   })
 
-  it('prázdná kategorie = 0/0', () => {
+  it('globální: součet přes všechny kampaně', () => {
+    expect(globalStars({ a: prog('a', 3), b: prog('b', 2), c: prog('c', 0) })).toBe(5)
+  })
+
+  it('prázdný postup = 0', () => {
+    expect(globalStars({})).toBe(0)
     expect(categoryStars([], {})).toEqual({ earned: 0, max: 0 })
+  })
+})
+
+describe('viditelnost kategorie', () => {
+  it('publikovaná s publikovanou kampaní = vidět', () => {
+    expect(isCategoryVisible(cat(), [camp('a')])).toBe(true)
+  })
+
+  it('publikovaná BEZ obsahu = skrytá (ne zamčená)', () => {
+    expect(isCategoryVisible(cat(), [])).toBe(false)
+    expect(isCategoryVisible(cat(), [camp('a', { status: 'draft' })])).toBe(false)
+  })
+
+  it('koncept/archiv = skrytá', () => {
+    expect(isCategoryVisible(cat({ status: 'draft' }), [camp('a')])).toBe(false)
+    expect(isCategoryVisible(cat({ status: 'archived' }), [camp('a')])).toBe(false)
+  })
+})
+
+describe('přidání nové kampaně nesmí ublížit postupu', () => {
+  it('hvězdy zůstávají, maximum kategorie povyroste', () => {
+    const before = [camp('a'), camp('b')]
+    const p = { a: prog('a', 3), b: prog('b', 2) }
+    expect(categoryStars(before, p)).toEqual({ earned: 5, max: 6 })
+    const after = [...before, camp('c')]           // admin přidal kampaň
+    expect(categoryStars(after, p)).toEqual({ earned: 5, max: 9 })
+    expect(globalStars(p)).toBe(5)                  // získané ★ beze změny
   })
 })
