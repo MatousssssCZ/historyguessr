@@ -1035,6 +1035,61 @@ export async function deleteCampaignReward(id: string) {
 }
 
 
+// ─── Kontinent (odvození z GPS) ───────────────────────────
+
+export interface ContinentBatchResult {
+  total: number
+  updated: number
+  confident: number
+  uncertain: { id: string; title: string; lat: number; lng: number; guess: string | null }[]
+}
+
+/**
+ * Dávkově dopočítá kontinent všem událostem z jejich GPS (offline).
+ * Ruční hodnoty (continent_source='manual') NEPŘEPISUJE.
+ * Nejisté případy (hranice, oceán) nechá null a vrátí je k ruční kontrole.
+ */
+export async function recomputeContinents(): Promise<ContinentBatchResult> {
+  const { continentOf } = await import('./continent')
+  const { data } = await supabase
+    .from('events')
+    .select('id, title, lat, lng, continent, continent_source')
+  const rows = (data ?? []) as { id: string; title: string; lat: number; lng: number; continent: string | null; continent_source: string }[]
+
+  const res: ContinentBatchResult = { total: rows.length, updated: 0, confident: 0, uncertain: [] }
+  const nowIso = new Date().toISOString()
+
+  for (const r of rows) {
+    if (r.continent_source === 'manual') continue  // ruční nepřepisuj
+    const { continent, confident } = continentOf(r.lat, r.lng)
+    if (confident && continent) {
+      if (r.continent !== continent) {
+        await supabase.from('events').update({
+          continent, continent_source: 'auto', continent_computed_at: nowIso,
+        }).eq('id', r.id)
+        res.updated++
+      }
+      res.confident++
+    } else {
+      // nech null (nezobrazuj nespolehlivý údaj) + nabídni k ruční kontrole
+      if (r.continent !== null) {
+        await supabase.from('events').update({ continent: null, continent_computed_at: nowIso }).eq('id', r.id)
+      }
+      res.uncertain.push({ id: r.id, title: r.title, lat: r.lat, lng: r.lng, guess: continent })
+    }
+  }
+  return res
+}
+
+/** Admin: ruční nastavení kontinentu (má přednost před auto-výpočtem). */
+export async function setEventContinent(eventId: string, continent: string | null) {
+  return supabase.from('events').update({
+    continent,
+    continent_source: continent ? 'manual' : 'auto',
+    continent_computed_at: new Date().toISOString(),
+  }).eq('id', eventId)
+}
+
 // ─── Single Player scénáře ────────────────────────────────
 
 /** Vlastní scénáře (RLS pustí jen moje). */
