@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
-import { getRandomEvents, createGameSession, finishGameSession, addScoreToProfile, addXp, recordEventScore, recordCategoryHit, submitCampaignRound, completeCampaignAttempt, track, type EventFilters } from '@/lib/supabase'
-import { XP_BONUS_GAME } from '@/lib/leveling'
+import { getRandomEvents, createGameSession, submitGameSession, recordEventScore, recordCategoryHit, submitCampaignRound, completeCampaignAttempt, track, type EventFilters, type SoloGuess } from '@/lib/supabase'
 import { saveResume, clearResume, loadResume } from '@/lib/resume'
 
 const DEFAULT_ROUNDS = 5
@@ -136,8 +135,9 @@ export function useGame(userId: string | undefined) {
     const yearFrom = event.year_from ?? event.year
     const yearTo = event.year_to ?? event.year
 
-    // Kampaň: klient posílá JEN tip, skóre počítá a ukládá server (idempotentně).
-    // Ostatní režimy zatím počítají lokálně (viz plán — sjednotí se v další etapě).
+    // Kampaň: kolo se odesílá na server hned (idempotentně) a skóre je jeho.
+    // Solo: lokální výpočet slouží jen pro plynulé UI — autoritativní přepočet
+    // všech kol dělá submit_game_session při dokončení (migrace 033).
     let distKm: number
     let ydiff: number
     let scores: { location_score: number; year_score: number; round_score: number }
@@ -196,11 +196,20 @@ export function useGame(userId: string | undefined) {
     }
 
     if (isLast && sessionId && userId) {
-      await finishGameSession(sessionId, newRounds, newTotal)
-      await addScoreToProfile(userId, newTotal)
-      // XP: body + bonus za dohranou hru
-      await addXp(userId, newTotal + XP_BONUS_GAME)
-      track('game_completed', { total_score: newTotal, rounds: state.totalRounds, campaign_id: state.campaignId }, userId)
+      // Dokončení hry — VŽDY přes server. Klient posílá jen tipy, server
+      // přepočítá kola, uloží skóre a přizná XP (klient add_xp volat nesmí).
+      try {
+        const guesses: SoloGuess[] = newRounds.map(r => ({
+          event_id: r.event_id, lat: r.guess_lat, lng: r.guess_lng, year: r.guess_year,
+        }))
+        const res = await submitGameSession(sessionId, guesses)
+        // Autoritativní součet ze serveru (lokální je jen pro plynulé UI)
+        setState(prev => ({ ...prev, totalScore: res.totalScore }))
+        track('game_completed', { total_score: res.totalScore, rounds: state.totalRounds, campaign_id: state.campaignId }, userId)
+      } catch (e) {
+        console.error('[Game] dokončení hry selhalo:', e)
+      }
+
       // Kampaň — dokončení je idempotentní; ★ spočítá server ze svých uložených kol
       if (state.campaignId && state.attemptId) {
         try {

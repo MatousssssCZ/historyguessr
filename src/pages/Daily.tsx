@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
-  saveDailyResult, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track, localDateISO,
+  submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
 import { panoramaHfov } from '@/lib/panorama'
@@ -61,10 +61,6 @@ export default function DailyChallengePage() {
   // Vždy ukazuje na AKTUÁLNÍ doSubmit (časovač jinak volá zastaralou closure s prázdným tipem)
   const doSubmitRef = useRef<(fl?: number | null, fln?: number | null, fy?: number) => void>(() => {})
 
-  // Klíč pro uložení času startu dnešní výzvy — čas běží od započetí, refresh
-  // ho neresetuje (spočítá se ze zbývajícího wall-clock času).
-  const dailyStartKey = user ? `hg_daily_start_${user.id}_${localDateISO(new Date())}` : null
-
   useEffect(() => {
     if (!user) return
     load()
@@ -97,15 +93,10 @@ export default function DailyChallengePage() {
       return
     }
 
-    // Rozehraná dnešní výzva (start uložen, ještě neodeslaná) → pokračuj,
-    // čas běží dál z původního startu; refresh ho neresetuje.
-    if (dailyStartKey) {
-      const stored = localStorage.getItem(dailyStartKey)
-      if (stored && !Number.isNaN(Number(stored))) {
-        beginPlaying(Number(stored))
-        return
-      }
-    }
+    // Rozehraná dnešní výzva → pokračuj. Čas startu drží SERVER (read-only dotaz,
+    // ať se čas nespustí dřív, než hráč klikne Start), takže refresh ho neresetuje.
+    const startedAt = await getDailyStart(user!.id).catch(() => null)
+    if (startedAt) { beginPlaying(new Date(startedAt).getTime()); return }
 
     // Preload panoramy na pozadí během warning screenu
     if (ev.panorama_url && ev.panorama_url !== 'pending') {
@@ -142,16 +133,17 @@ export default function DailyChallengePage() {
     }, 500)
   }
 
-  // Spuštění hry po potvrzení (tlačítko Start)
-  function startGame() {
-    let start = Date.now()
-    if (dailyStartKey) {
-      const existing = localStorage.getItem(dailyStartKey)
-      if (existing && !Number.isNaN(Number(existing))) start = Number(existing)
-      else localStorage.setItem(dailyStartKey, String(start))
-    }
+  // Spuštění hry po potvrzení (tlačítko Start).
+  // Čas startu drží SERVER — opakované volání ho neresetuje.
+  async function startGame() {
     track('daily_challenge_started', {}, user?.id)
-    beginPlaying(start)
+    try {
+      const { secondsLeft } = await startDailyChallenge()
+      beginPlaying(Date.now() - (TIMER_SECONDS - secondsLeft) * 1000)
+    } catch (e) {
+      console.error('[Daily] start selhal:', e)
+      beginPlaying(Date.now())
+    }
   }
 
   // Cleanup timeru při unmount
@@ -163,19 +155,27 @@ export default function DailyChallengePage() {
     if (!event || !user || hasSubmittedRef.current) return
     hasSubmittedRef.current = true
     if (timerRef.current) clearInterval(timerRef.current)
-    if (dailyStartKey) { try { localStorage.removeItem(dailyStartKey) } catch { /* ignore */ } }
     setSubmitting(true)
 
     const lat = forceLat !== undefined ? forceLat : guessLat
     const lng = forceLng !== undefined ? forceLng : guessLng
     const year = forceYear !== undefined ? forceYear : guessYear
 
-    const yf = event.year_from ?? event.year; const yt = event.year_to ?? event.year
-    const dist = lat != null && lng != null ? haversineKm(lat, lng, event.lat, event.lng) : 20000
-    const yrDiff_ = yearDiff(year, yf, yt)
-    const { location_score: locSc, year_score: yrSc, round_score: total } = roundScore(dist, year, yf, yt, event.location_radius_km ?? 0)
+    // Klient posílá JEN tip — skóre i XP násobič počítá server ze svého
+    // času startu (migrace 033), takže je nejde ovlivnit konzolí ani refreshem.
+    let locSc = 0, yrSc = 0, total = 0, dist = 20000, yrDiff_ = 0
+    try {
+      const r = await submitDailyResult(lat, lng, year)
+      locSc = r.locationScore; yrSc = r.yearScore; total = r.roundScore
+      dist = r.distanceKm; yrDiff_ = r.yearDiff
+    } catch (e) {
+      console.error('[Daily] odeslání selhalo:', e)
+      hasSubmittedRef.current = false
+      setSubmitting(false)
+      return
+    }
 
-    // XP násobič z zbylého času: čas/10, jen když zbývá ≥ 10 s (jinak 1×)
+    // xpMult je jen pro zobrazení ve vyhodnocení; skutečné XP přiznal server
     const remain = timeLeftRef.current
     const xpMult = remain >= 10 ? remain / 10 : 1
 
@@ -186,7 +186,6 @@ export default function DailyChallengePage() {
 
     recordEventScore(event.id, locSc, yrSc)
     recordCategoryHit(event.id, total)
-    await saveDailyResult(user.id, total, lat ?? 0, lng ?? 0, year, xpMult)
     const [lb, scores] = await Promise.all([
       getDailyFriendsLeaderboard(user.id, profile?.username ?? null),
       getDailyAllScores(),

@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
-import { XP_BONUS_DAILY } from './leveling'
 import { FREE_ENTITLEMENTS, isPremiumUser, type Entitlements } from './entitlements'
 import { isCategoryVisible, globalStars, DAILY_EXPEDITIONS } from './campaignLogic'
 
@@ -277,17 +276,25 @@ export async function createGameSession(userId: string) {
     .single()
 }
 
-export async function finishGameSession(sessionId: string, rounds: RoundResult[], totalScore: number) {
-  return supabase
-    .from('game_sessions')
-    .update({
-      finished_at: new Date().toISOString(),
-      rounds: rounds as unknown[],
-      total_score: totalScore,
-    })
-    .eq('id', sessionId)
-    .select()
-    .single()
+export interface SoloGuess { event_id: string; lat: number | null; lng: number | null; year: number }
+
+/**
+ * Dokončí solo hru — klient posílá JEN tipy, server přepočítá všechna kola,
+ * uloží je a přizná XP i skóre profilu. Idempotentní.
+ */
+export async function submitGameSession(sessionId: string, guesses: SoloGuess[]): Promise<{
+  totalScore: number; xpAwarded: number; rounds: RoundResult[]
+}> {
+  const { data, error } = await supabase.rpc('submit_game_session', {
+    p_session_id: sessionId, p_guesses: guesses,
+  })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    totalScore: row?.total_score ?? 0,
+    xpAwarded: row?.xp_awarded ?? 0,
+    rounds: (row?.rounds ?? []) as RoundResult[],
+  }
 }
 
 export interface SessionRow { rounds: RoundResult[]; total_score: number; finished_at: string }
@@ -313,12 +320,6 @@ export async function getUserDailyResults(userId: string): Promise<{ score: numb
   return (data ?? []) as { score: number; date: string }[]
 }
 
-export async function addScoreToProfile(userId: string, score: number) {
-  return supabase.rpc('increment_user_score', {
-    p_user_id: userId,
-    p_score: score,
-  })
-}
 
 /** Pořadí hráče ve světovém žebříčku dle XP (přes RPC — RLS profilů obchází server). */
 export async function getWorldRank(): Promise<{ rank: number; total: number }> {
@@ -328,10 +329,6 @@ export async function getWorldRank(): Promise<{ rank: number; total: number }> {
 }
 
 /** Přičte XP hráči (atomicky přes RPC; tiše ignoruje chybu) */
-export async function addXp(userId: string, amount: number) {
-  if (!userId || amount <= 0) return
-  await supabase.rpc('add_xp', { p_user_id: userId, p_amount: Math.round(amount) })
-}
 
 /** Zaznamená zahrané skóre kola k události (pro statistiky obtížnosti) */
 export async function recordEventScore(eventId: string, locationScore: number, yearScore: number) {
@@ -632,28 +629,54 @@ export async function getTodayDailyResult(userId: string): Promise<DailyResult |
 }
 
 /** Uloží výsledek hráče pro dnešní den */
-export async function saveDailyResult(
-  userId: string,
-  score: number,
-  guessLat: number,
-  guessLng: number,
-  guessYear: number,
-  xpMultiplier = 1,
-): Promise<{ error: Error | null }> {
-  const today = localDateISO()
-  const { error } = await supabase.from('daily_results').insert({
-    user_id: userId,
-    date: today,
-    score,
-    guess_lat: guessLat,
-    guess_lng: guessLng,
-    guess_year: guessYear,
+/** Read-only: kdy hráč dnešní výzvu zahájil (null = ještě nezačal). NESPOUŠTÍ čas. */
+export async function getDailyStart(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('daily_starts')
+    .select('started_at')
+    .eq('user_id', userId)
+    .eq('date', localDateISO())
+    .maybeSingle()
+  return (data as { started_at?: string } | null)?.started_at ?? null
+}
+
+/** Zahájí (nebo obnoví) dnešní výzvu — čas startu drží SERVER (migrace 033). */
+export async function startDailyChallenge(): Promise<{ startedAt: string | null; secondsLeft: number }> {
+  const { data, error } = await supabase.rpc('start_daily_challenge', { p_date: localDateISO() })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return { startedAt: (row?.started_at as string | null) ?? null, secondsLeft: row?.seconds_left ?? 0 }
+}
+
+export interface DailySubmitResult {
+  locationScore: number
+  yearScore: number
+  roundScore: number
+  distanceKm: number
+  yearDiff: number
+  xpAwarded: number
+}
+
+/**
+ * Odešle denní výzvu — klient posílá JEN tip, skóre i XP počítá server.
+ * Idempotentní: opakované odeslání vrátí uložený výsledek bez další XP.
+ */
+export async function submitDailyResult(
+  guessLat: number | null, guessLng: number | null, guessYear: number,
+): Promise<DailySubmitResult> {
+  const { data, error } = await supabase.rpc('submit_daily_result', {
+    p_date: localDateISO(), p_guess_lat: guessLat, p_guess_lng: guessLng, p_guess_year: guessYear,
   })
-  if (error) return { error: error as Error }
-  // XP: (skóre + bonus) × násobič za rychlost
-  await addXp(userId, Math.round((score + XP_BONUS_DAILY) * xpMultiplier))
-  track('daily_challenge_completed', { score }, userId)
-  return { error: null }
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    locationScore: row?.location_score ?? 0,
+    yearScore: row?.year_score ?? 0,
+    roundScore: row?.round_score ?? 0,
+    distanceKm: row?.distance_km ?? 0,
+    yearDiff: row?.year_diff ?? 0,
+    xpAwarded: row?.xp_awarded ?? 0,
+  }
 }
 
 /** Top 10 hráčů pro dnešní den */

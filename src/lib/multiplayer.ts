@@ -1,4 +1,4 @@
-import { supabase, addXp } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 
 // ── Typy ─────────────────────────────────────────────────
@@ -331,44 +331,20 @@ export async function submitAnswer(
     location_score: number; year_score: number; round_score: number
   },
 ): Promise<{ error: Error | null }> {
-  // Server-authoritativní cesta: pošli jen TIP, skóre spočítá a uloží DB
-  // (idempotentně, bez možnosti podvádět). Migrace 014.
-  const { error: rpcError } = await supabase.rpc('submit_multiplayer_answer', {
+  // Klient posílá JEN tip — skóre, celkový součet i XP řeší server
+  // (idempotentně, bez možnosti podvádět). Migrace 031/033.
+  //
+  // Dřívější „fallback" zapisoval klientem spočítané skóre přímo do tabulky,
+  // čímž obcházel serverovou autoritu — proto je pryč. Když RPC selže,
+  // odpověď se neuloží (raději chyba než neověřená data).
+  const { error } = await supabase.rpc('submit_multiplayer_answer', {
     p_room_id: roomId,
     p_round_number: roundNumber,
     p_guess_lat: answer.guess_lat,
     p_guess_lng: answer.guess_lng,
     p_guess_year: answer.guess_year,
   })
-
-  if (!rpcError) {
-    await addXp(userId, answer.round_score)
-    return { error: null }
-  }
-
-  // ── Fallback (RPC 014 ještě nenasazená) ──────────────────
-  // Stará cesta: upsert odpovědi + increment skóre přes RPC / read-modify-write
-  const { error } = await supabase.from('multiplayer_answers').upsert({
-    room_id: roomId, round_number: roundNumber, user_id: userId, ...answer,
-  })
-  if (error) return { error: error as Error }
-
-  const { error: incErr } = await supabase.rpc('increment_multiplayer_score', {
-    p_room_id: roomId, p_user_id: userId, p_score: answer.round_score,
-  })
-  if (incErr) {
-    const { data: player } = await supabase
-      .from('multiplayer_players')
-      .select('total_score')
-      .eq('room_id', roomId).eq('user_id', userId)
-      .maybeSingle()
-    await supabase.from('multiplayer_players')
-      .update({ total_score: (player?.total_score ?? 0) + answer.round_score })
-      .eq('room_id', roomId).eq('user_id', userId)
-  }
-
-  await addXp(userId, answer.round_score)
-  return { error: null }
+  return { error: (error as Error) ?? null }
 }
 
 // Počet vlastních kol se skóre ≥950 v tomto zápase po kategoriích (pro vyhodnocení)
