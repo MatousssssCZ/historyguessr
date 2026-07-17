@@ -1,8 +1,16 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { eventTitle } from '@/lib/eventLocale'
-import { useNavigate } from 'react-router-dom'
-import { getCandidateEvents, type CandidateEvent } from '@/lib/supabase'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
+import {
+  getCandidateEvents, getMyEntitlements, getMyPresets, createPreset, updatePreset,
+  deletePreset, setPresetShared, getMyMistakeEventIds, getMyPlayedEventIds, getSharedPreset,
+  type CandidateEvent,
+} from '@/lib/supabase'
+import { singlePlayerCapabilities, FREE_ENTITLEMENTS, type Entitlements } from '@/lib/entitlements'
+import { singlePlayerAnalytics, monetizationAnalytics } from '@/lib/analytics'
+import type { SinglePlayerPreset, PresetRules } from '@/lib/presets'
 import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
 import type { GameOptions } from '@/hooks/useGame'
@@ -37,6 +45,46 @@ export default function PreGameLobbyPage() {
   const [expanded, setExpanded] = useState(false)
   const [sortBy, setSortBy] = useState<SortBy>('year')
 
+  // ── Free / Premium (autorita je server; tohle řídí jen UI) ──
+  const { user } = useAuth()
+  const [ent, setEnt] = useState<Entitlements>(FREE_ENTITLEMENTS)
+  useEffect(() => { getMyEntitlements().then(setEnt).catch(() => {}) }, [user?.id])
+  const caps = singlePlayerCapabilities(ent)
+
+  // ── Premium filtry ──
+  const [onlyUnplayed, setOnlyUnplayed] = useState(false)
+  const [onlyMistakes, setOnlyMistakes] = useState(false)
+  const [smartIds, setSmartIds] = useState<{ played: string[]; mistakes: string[] }>({ played: [], mistakes: [] })
+  useEffect(() => {
+    if (!caps.canUseSmartFilters) return
+    Promise.all([getMyPlayedEventIds(), getMyMistakeEventIds()])
+      .then(([played, mistakes]) => setSmartIds({ played, mistakes }))
+      .catch(() => {})
+  }, [caps.canUseSmartFilters])
+
+  // ── Scénáře ──
+  const [presets, setPresets] = useState<SinglePlayerPreset[]>([])
+  const [presetMsg, setPresetMsg] = useState<string | null>(null)
+  const reloadPresets = useCallback(() => {
+    if (!caps.canSavePresets) return
+    getMyPresets().then(setPresets).catch(() => {})
+  }, [caps.canSavePresets])
+  useEffect(() => { reloadPresets() }, [reloadPresets])
+
+  // Sdílený scénář z odkazu (?preset=slug) — načte se komukoli, i Free.
+  // Přes ref, ať efekt nevolá zastaralou closure applyRules.
+  const applyRulesRef = useRef<(r: PresetRules) => void>(() => {})
+  const [searchParams] = useSearchParams()
+  const sharedSlug = searchParams.get('preset')
+  useEffect(() => {
+    if (!sharedSlug) return
+    getSharedPreset(sharedSlug).then(p => {
+      if (!p) { setPresetMsg('Sdílený scénář nebyl nalezen nebo už není sdílený.'); return }
+      applyRulesRef.current(p.rules)
+      setPresetMsg(`Načten sdílený scénář „${p.name}"${p.owner_name ? ` od ${p.owner_name}` : ''}.`)
+    }).catch(() => setPresetMsg('Sdílený scénář se nepodařilo načíst.'))
+  }, [sharedSlug])
+
   // Načti kandidáty při změně filtrů
   useEffect(() => {
     let alive = true
@@ -60,35 +108,93 @@ export default function PreGameLobbyPage() {
     return () => { alive = false }
   }, [categories, yearFrom, yearTo])
 
+  // Premium chytré filtry zúží kandidáty (Free je nemá → prázdné množiny)
+  const filteredCandidates = useMemo(() => {
+    let arr = candidates
+    if (onlyUnplayed && caps.canUseSmartFilters) {
+      const played = new Set(smartIds.played)
+      arr = arr.filter(e => !played.has(e.id))
+    }
+    if (onlyMistakes && caps.canUseSmartFilters) {
+      const bad = new Set(smartIds.mistakes)
+      arr = arr.filter(e => bad.has(e.id))
+    }
+    return arr
+  }, [candidates, onlyUnplayed, onlyMistakes, smartIds, caps.canUseSmartFilters])
+
   const sortedCandidates = useMemo(() => {
-    const arr = [...candidates]
+    const arr = [...filteredCandidates]
     if (sortBy === 'year') arr.sort((a, b) => a.year - b.year)
     else arr.sort((a, b) => a.title.localeCompare(b.title, 'cs'))
     return arr
-  }, [candidates, sortBy])
+  }, [filteredCandidates, sortBy])
 
-  const availableCount = candidates.length - excluded.size
+  const activeIds = useMemo(() => new Set(filteredCandidates.map(e => e.id)), [filteredCandidates])
+  const excludedActive = [...excluded].filter(id => activeIds.has(id))
+  const availableCount = filteredCandidates.length - excludedActive.length
   const enough = availableCount >= rounds
 
   function toggleCategory(id: string) {
     setCategories(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
   }
+  const excludeLimit = caps.excludeLimit  // null = neomezeně (Premium)
+  const excludeFull = excludeLimit !== null && excluded.size >= excludeLimit
+
   function toggleExclude(id: string) {
     setExcluded(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
+      if (next.has(id)) { next.delete(id); return next }
+      // Free má strop; Premium neomezeně (funkce se NEodebírá, jen rozšiřuje)
+      if (excludeLimit !== null && next.size >= excludeLimit) {
+        monetizationAnalytics.premiumFeatureAttempt('unlimitedExclude', user?.id)
+        singlePlayerAnalytics.premiumFilterAttempt('unlimitedExclude', user?.id)
+        setPresetMsg(`Zdarma můžeš vyloučit ${excludeLimit} událostí. S Premium neomezeně.`)
+        return prev
+      }
+      next.add(id)
       return next
     })
   }
 
-  function start() {
-    if (!enough) return
-    const options: GameOptions = {
+  /** Aktuální nastavení jako pravidla scénáře. */
+  function currentRules(): PresetRules {
+    return {
       rounds,
       categories,
       yearFrom: Math.min(yearFrom, yearTo),
       yearTo: Math.max(yearFrom, yearTo),
       excludeIds: [...excluded],
+      onlyUnplayed, onlyMistakes,
+    }
+  }
+
+  applyRulesRef.current = applyRules
+  function applyRules(r: PresetRules) {
+    setRounds(r.rounds)
+    setCategories(r.categories)
+    setYearFrom(r.yearFrom); setYearTo(r.yearTo)
+    setExcluded(new Set(r.excludeIds))
+    setOnlyUnplayed(!!r.onlyUnplayed && caps.canUseSmartFilters)
+    setOnlyMistakes(!!r.onlyMistakes && caps.canUseSmartFilters)
+  }
+
+  function start() {
+    if (!enough) return
+    if (categories.length) singlePlayerAnalytics.filterUsed('categories', categories, user?.id)
+    if (excluded.size) singlePlayerAnalytics.filterUsed('excludeEvents', excluded.size, user?.id)
+    if (onlyUnplayed) singlePlayerAnalytics.filterUsed('onlyUnplayed', true, user?.id)
+    if (onlyMistakes) singlePlayerAnalytics.filterUsed('onlyMistakes', true, user?.id)
+
+    // Chytré filtry se do hry promítnou jako vyloučení (getRandomEvents umí excludeIds)
+    const outOfScope = onlyUnplayed || onlyMistakes
+      ? candidates.filter(e => !activeIds.has(e.id)).map(e => e.id)
+      : []
+    const options: GameOptions = {
+      rounds,
+      categories,
+      yearFrom: Math.min(yearFrom, yearTo),
+      yearTo: Math.max(yearFrom, yearTo),
+      excludeIds: [...new Set([...excluded, ...outOfScope])],
     }
     navigate('/game', { state: options })
   }
@@ -149,6 +255,82 @@ export default function PreGameLobbyPage() {
         {/* Rozsah let */}
         <Section label={t('pregame.yearRange')}>
           <YearRange from={yearFrom} to={yearTo} onFrom={setYearFrom} onTo={setYearTo}/>
+        </Section>
+
+        {/* Chytré filtry — Premium */}
+        <Section label="Chytré filtry" hint={caps.canUseSmartFilters ? undefined : 'Premium'}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <SmartFilterChip
+              label="🆕 Jen nehrané" on={onlyUnplayed} enabled={caps.canUseSmartFilters}
+              count={caps.canUseSmartFilters ? undefined : undefined}
+              onClick={() => {
+                if (!caps.canUseSmartFilters) {
+                  singlePlayerAnalytics.premiumFilterAttempt('onlyUnplayed', user?.id)
+                  monetizationAnalytics.upsellShown('premium_single_player_feature', user?.id)
+                  setPresetMsg('Filtr „jen nehrané" je součástí Premium.')
+                  return
+                }
+                setOnlyUnplayed(v => !v)
+              }}/>
+            <SmartFilterChip
+              label="🎯 Jen dříve chybné" on={onlyMistakes} enabled={caps.canUseSmartFilters}
+              onClick={() => {
+                if (!caps.canUseSmartFilters) {
+                  singlePlayerAnalytics.premiumFilterAttempt('onlyMistakes', user?.id)
+                  monetizationAnalytics.upsellShown('premium_single_player_feature', user?.id)
+                  setPresetMsg('Filtr „jen dříve chybné" je součástí Premium.')
+                  return
+                }
+                setOnlyMistakes(v => !v)
+              }}/>
+          </div>
+        </Section>
+
+        {/* Scénáře — Premium */}
+        <Section label="Scénáře" hint={caps.canSavePresets ? undefined : 'Premium'}>
+          <PresetBar
+            presets={presets} canUse={caps.canSavePresets} canShare={caps.canSharePresets}
+            userId={user?.id}
+            onLoad={(r) => { applyRules(r); setPresetMsg('Scénář načten.') }}
+            onSave={async (name) => {
+              if (!user) return
+              const { data } = await createPreset(user.id, name, currentRules())
+              if (data) singlePlayerAnalytics.presetCreated((data as { id: string }).id, user.id)
+              setPresetMsg('Scénář uložen.'); reloadPresets()
+            }}
+            onOverwrite={async (p) => {
+              await updatePreset(p.id, { rules: currentRules() })
+              setPresetMsg('Scénář přepsán aktuálním nastavením.'); reloadPresets()
+            }}
+            onDuplicate={async (p) => {
+              if (!user) return
+              await createPreset(user.id, `${p.name} (kopie)`, p.rules)
+              setPresetMsg('Scénář duplikován.'); reloadPresets()
+            }}
+            onDelete={async (p) => {
+              if (!confirm(`Smazat scénář „${p.name}"?`)) return
+              await deletePreset(p.id); setPresetMsg('Scénář smazán.'); reloadPresets()
+            }}
+            onShare={async (p) => {
+              try {
+                const slug = await setPresetShared(p.id, !p.is_shared)
+                if (slug) {
+                  const url = `${window.location.origin}/play?preset=${slug}`
+                  await navigator.clipboard?.writeText(url).catch(() => {})
+                  singlePlayerAnalytics.presetShared(p.id, user?.id)
+                  setPresetMsg('Odkaz zkopírován do schránky.')
+                } else setPresetMsg('Sdílení vypnuto.')
+                reloadPresets()
+              } catch { setPresetMsg('Sdílení se nepodařilo.') }
+            }}
+            onPremium={() => {
+              monetizationAnalytics.upsellShown('premium_single_player_feature', user?.id)
+              setPresetMsg('Ukládání scénářů je součástí Premium.')
+            }}
+          />
+          {presetMsg && (
+            <div style={{ fontSize: 12.5, color: 'var(--accent-deep)', marginTop: 8 }}>{presetMsg}</div>
+          )}
         </Section>
 
         {/* Počítadlo */}
@@ -214,13 +396,18 @@ export default function PreGameLobbyPage() {
                           {formatYear(ev.year)}{ev.category ? ` · ${t('cat.' + ev.category)}` : ''}
                         </div>
                       </div>
-                      <button onClick={() => toggleExclude(ev.id)} aria-label={out ? t('pregame.restore') : t('pregame.exclude')} style={{
-                        width: 30, height: 30, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-                        border: `1px solid ${out ? 'var(--ink)' : 'var(--line-strong)'}`,
-                        background: out ? 'var(--ink)' : 'transparent',
-                        color: out ? 'var(--paper-50)' : 'var(--ink-3)',
-                      }}>{out ? '↺' : '×'}</button>
+                      <button onClick={() => toggleExclude(ev.id)}
+                        aria-label={out ? t('pregame.restore') : t('pregame.exclude')}
+                        title={!out && excludeFull ? `Zdarma lze vyloučit ${excludeLimit} událostí — s Premium neomezeně` : undefined}
+                        style={{
+                          width: 30, height: 30, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                          border: `1px solid ${out ? 'var(--ink)' : 'var(--line-strong)'}`,
+                          background: out ? 'var(--ink)' : 'transparent',
+                          color: out ? 'var(--paper-50)' : 'var(--ink-3)',
+                          // Strop u Free naznač vizuálně, ne až po kliknutí
+                          opacity: !out && excludeFull ? 0.4 : 1,
+                        }}>{out ? '↺' : '×'}</button>
                     </div>
                   )
                 })}
@@ -246,6 +433,110 @@ export default function PreGameLobbyPage() {
     </div>
   )
 }
+
+// ─── Chytrý filtr (Premium) ───────────────────────────────
+function SmartFilterChip({ label, on, enabled, onClick }: {
+  label: string; on: boolean; enabled: boolean; count?: number; onClick: () => void
+}) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999,
+      fontSize: 13, cursor: 'pointer',
+      border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
+      background: on ? 'var(--accent)' : 'transparent',
+      color: on ? '#fff' : 'var(--ink-2)',
+      opacity: enabled ? 1 : 0.55,
+    }}>
+      {label}
+      {!enabled && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9 }}>♛</span>}
+    </button>
+  )
+}
+
+// ─── Scénáře (Premium) ────────────────────────────────────
+function PresetBar({ presets, canUse, canShare, onLoad, onSave, onOverwrite, onDuplicate, onDelete, onShare, onPremium }: {
+  presets: SinglePlayerPreset[]
+  canUse: boolean
+  canShare: boolean
+  userId?: string
+  onLoad: (r: PresetRules) => void
+  onSave: (name: string) => Promise<void>
+  onOverwrite: (p: SinglePlayerPreset) => Promise<void>
+  onDuplicate: (p: SinglePlayerPreset) => Promise<void>
+  onDelete: (p: SinglePlayerPreset) => Promise<void>
+  onShare: (p: SinglePlayerPreset) => Promise<void>
+  onPremium: () => void
+}) {
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  if (!canUse) {
+    return (
+      <button onClick={onPremium} style={{
+        width: '100%', textAlign: 'left', cursor: 'pointer', padding: '12px 14px', borderRadius: 12,
+        background: 'var(--paper-100)', border: '1px dashed var(--line-strong)',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 18 }}>💾</span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)' }}>Ulož si nastavení jako scénář</span>
+          <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>Rychlé opakované spuštění · Premium</span>
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)' }}>♛ PREMIUM</span>
+      </button>
+    )
+  }
+
+  const run = (fn: () => Promise<void>) => async () => { setBusy(true); await fn(); setBusy(false) }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Uložení aktuálního nastavení */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input className="input" placeholder="Název scénáře…" value={name} maxLength={60}
+          onChange={e => setName(e.target.value)} style={{ flex: 1 }}/>
+        <button className="btn btn-accent" style={{ fontSize: 13, flexShrink: 0 }}
+          disabled={busy || !name.trim()}
+          onClick={run(async () => { await onSave(name.trim()); setName('') })}>Uložit</button>
+      </div>
+
+      {presets.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>Zatím žádné scénáře.</div>
+      )}
+
+      {presets.map(p => (
+        <div key={p.id} style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 11,
+          background: 'var(--surface)', border: '1px solid var(--line)',
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {p.name}{p.is_shared && <span style={{ fontSize: 10, color: 'var(--accent-deep)', marginLeft: 6 }}>· sdílený</span>}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', marginTop: 1 }}>
+              {p.rules.rounds} kol
+              {p.rules.categories.length > 0 && ` · ${p.rules.categories.length} kat.`}
+              {p.rules.excludeIds.length > 0 && ` · −${p.rules.excludeIds.length}`}
+              {p.rules.onlyUnplayed && ' · nehrané'}
+              {p.rules.onlyMistakes && ' · chybné'}
+            </div>
+          </div>
+          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={() => onLoad(p.rules)} title="Načíst">▸</button>
+          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onOverwrite(p))} title="Přepsat aktuálním nastavením">⟳</button>
+          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onDuplicate(p))} title="Duplikovat">⧉</button>
+          {canShare && (
+            <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onShare(p))} title={p.is_shared ? 'Zrušit sdílení' : 'Sdílet odkazem'}>
+              {p.is_shared ? '🔗' : '↗'}
+            </button>
+          )}
+          <button className="btn btn-ghost" style={{ ...miniBtn, color: '#c0392b' }} disabled={busy} onClick={run(() => onDelete(p))} title="Smazat">✕</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const miniBtn: React.CSSProperties = { fontSize: 12, padding: '6px 8px', minWidth: 0, flexShrink: 0 }
 
 function Section({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (

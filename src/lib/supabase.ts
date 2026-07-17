@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress, CampaignReward, EarnedReward } from '@/types/database'
 import { FREE_ENTITLEMENTS, isPremiumUser, type Entitlements } from './entitlements'
 import { isCategoryVisible, globalStars, DAILY_EXPEDITIONS } from './campaignLogic'
+import { normalizeRules, type PresetRules, type SinglePlayerPreset, type SharedPreset } from './presets'
 
 export interface DailyResult {
   id: string
@@ -1033,6 +1034,59 @@ export async function deleteCampaignReward(id: string) {
   return supabase.from('campaign_rewards').delete().eq('id', id)
 }
 
+
+// ─── Single Player scénáře ────────────────────────────────
+
+/** Vlastní scénáře (RLS pustí jen moje). */
+export async function getMyPresets(): Promise<SinglePlayerPreset[]> {
+  const { data } = await supabase
+    .from('single_player_presets').select('*').order('updated_at', { ascending: false })
+  return (data ?? []).map(p => ({ ...(p as SinglePlayerPreset), rules: normalizeRules((p as { rules: unknown }).rules) }))
+}
+
+export async function createPreset(userId: string, name: string, rules: PresetRules) {
+  return supabase.from('single_player_presets')
+    .insert({ user_id: userId, name, rules }).select().single()
+}
+
+export async function updatePreset(id: string, patch: { name?: string; rules?: PresetRules }) {
+  return supabase.from('single_player_presets')
+    .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
+}
+
+export async function deletePreset(id: string) {
+  return supabase.from('single_player_presets').delete().eq('id', id)
+}
+
+/** Zapne/vypne sdílení; vrátí slug (nebo null při vypnutí). */
+export async function setPresetShared(presetId: string, shared: boolean): Promise<string | null> {
+  const { data, error } = await supabase.rpc('set_preset_shared', { p_preset_id: presetId, p_shared: shared })
+  if (error) throw error
+  return (data as string) ?? null
+}
+
+/** Sdílený scénář podle slugu (jde jen adresně, ne výpisem). */
+export async function getSharedPreset(slug: string): Promise<SharedPreset | null> {
+  const { data, error } = await supabase.rpc('get_shared_preset', { p_slug: slug })
+  if (error) return null
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) return null
+  return { id: row.id, name: row.name, rules: normalizeRules(row.rules), owner_name: row.owner_name ?? null }
+}
+
+/** Premium filtr: události, které jsem dříve určil špatně. */
+export async function getMyMistakeEventIds(maxScore = 500): Promise<string[]> {
+  const { data, error } = await supabase.rpc('my_mistake_event_ids', { p_max_score: maxScore })
+  if (error) return []
+  return (data ?? []) as string[]
+}
+
+/** Premium filtr: události, které jsem už v dohraných hrách viděl. */
+export async function getMyPlayedEventIds(): Promise<string[]> {
+  const { data, error } = await supabase.rpc('my_played_event_ids')
+  if (error) return []
+  return (data ?? []) as string[]
+}
 
 // ─── Utils ────────────────────────────────────────────────
 
