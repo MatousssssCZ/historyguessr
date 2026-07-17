@@ -5,6 +5,7 @@ import { getRandomEvents, createGameSession, submitGameSession, recordEventScore
 import { campaignAnalytics } from '@/lib/analytics'
 import type { CampaignReward } from '@/types/database'
 import { saveResume, clearResume, loadResume } from '@/lib/resume'
+import { encodePanoramaUrl } from '@/lib/panorama'
 
 const DEFAULT_ROUNDS = 5
 
@@ -128,7 +129,7 @@ export function useGame(userId: string | undefined) {
     const nextEvent = events[currentRound + 1]
     if (!nextEvent?.panorama_url || nextEvent.panorama_url === 'pending') return
     // fetch uloží do browser cache — Pannellum pak načte okamžitě
-    fetch(nextEvent.panorama_url, { method: 'GET', cache: 'force-cache' }).catch(() => {})
+    fetch(encodePanoramaUrl(nextEvent.panorama_url), { method: 'GET', cache: 'force-cache' }).catch(() => {})
   }, [])
 
   const submitRound = useCallback(async () => {

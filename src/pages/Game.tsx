@@ -11,7 +11,7 @@ import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supa
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
-import { panoramaHfov } from '@/lib/panorama'
+import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
 import type { Event, RoundResult, CampaignReward, RewardRarity } from '@/types/database'
@@ -224,7 +224,7 @@ export function PanoramaViewer({ url, preview }: { url: string; preview?: string
     try {
       const viewer = pannellum.viewer(containerRef.current, {
         type: 'equirectangular',
-        panorama: url,
+        panorama: encodePanoramaUrl(url),
         autoLoad: true,
         showControls: false,
         mouseZoom: true,
@@ -232,7 +232,7 @@ export function PanoramaViewer({ url, preview }: { url: string; preview?: string
         maxHfov: panoramaHfov(),
         pitch: 0,
         yaw: 0,
-        ...(preview ? { preview } : {}),
+        ...(preview ? { preview: encodePanoramaUrl(preview) } : {}),
       })
 
       ;(viewer as unknown as { on: (e: string, cb: () => void) => void })

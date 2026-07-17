@@ -9,7 +9,7 @@ import {
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
-import { panoramaHfov } from '@/lib/panorama'
+import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
 import GameEvaluation from '@/components/GameEvaluation'
@@ -102,7 +102,7 @@ export default function DailyChallengePage() {
     if (ev.panorama_url && ev.panorama_url !== 'pending') {
       const link = document.createElement('link')
       link.rel = 'preload'; link.as = 'image'
-      link.href = ev.panorama_url; link.crossOrigin = 'anonymous'
+      link.href = encodePanoramaUrl(ev.panorama_url); link.crossOrigin = 'anonymous'
       link.onload = () => setPanoramaReady(true)
       document.head.appendChild(link)
       setTimeout(() => setPanoramaReady(true), 5000) // fallback
@@ -414,7 +414,7 @@ function PanoramaViewer({ url }: { url: string }) {
     if (!ref.current || !url || url === 'pending') return
     let v: { destroy: () => void } | null = null
     try {
-      v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: url, autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov() })
+      v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: encodePanoramaUrl(url), autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov() })
     } catch { /* pannellum selhal — viewer zůstane prázdný */ }
     return () => { v?.destroy() }
   }, [url])

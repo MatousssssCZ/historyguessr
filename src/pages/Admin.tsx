@@ -5,6 +5,7 @@ import CompassLoader from '@/components/CompassLoader'
 import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, getEventFileSizes, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
+import { encodePanoramaUrl } from '@/lib/panorama'
 import { generateEventDraft, generatePanorama, generateIllustration } from '@/lib/ai'
 import type { Event } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
@@ -1130,10 +1131,10 @@ function PanoramaPreviewModal({ url, onClose }: { url: string; onClose: () => vo
   const containerRef = useRef<HTMLDivElement>(null)
   // blob: URL + Pannellum (crossOrigin) v Safari hází „could not be accessed".
   // Převedeme blob na data URL (CORS-čistý); https/data URL necháme být.
-  const [resolved, setResolved] = useState<string | null>(url.startsWith('blob:') ? null : url)
+  const [resolved, setResolved] = useState<string | null>(url.startsWith('blob:') ? null : encodePanoramaUrl(url))
 
   useEffect(() => {
-    if (!url.startsWith('blob:')) { setResolved(url); return }
+    if (!url.startsWith('blob:')) { setResolved(encodePanoramaUrl(url)); return }
     let cancelled = false
     fetch(url).then(r => r.blob()).then(b => {
       const fr = new FileReader()
