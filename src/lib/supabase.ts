@@ -792,7 +792,21 @@ export async function deleteCampaign(id: string) {
   return supabase.from('campaigns').delete().eq('id', id)
 }
 
-/** Události kampaně (position 1..5). */
+/** Důvody, proč kampaň nelze publikovat (server, migrace 034). Prázdné = OK. */
+export async function getCampaignPublishErrors(campaignId: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc('campaign_publish_errors', { p_campaign_id: campaignId })
+  if (error) return []
+  return (data ?? []) as string[]
+}
+
+/** Duplikuje kampaň jako koncept (včetně událostí). Vrátí ID nové kampaně. */
+export async function duplicateCampaign(campaignId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('admin_duplicate_campaign', { p_campaign_id: campaignId })
+  if (error) throw error
+  return (data as string) ?? null
+}
+
+/** Události kampaně (position 1..N). */
 export async function getCampaignEvents(campaignId: string): Promise<CampaignEvent[]> {
   const { data } = await supabase.from('campaign_events').select('*').eq('campaign_id', campaignId).order('position')
   return (data ?? []) as CampaignEvent[]

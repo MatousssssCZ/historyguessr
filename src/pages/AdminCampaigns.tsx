@@ -6,7 +6,7 @@ import {
   getAdminEvents,
   getAdminCampaignCategories, createCampaignCategory, updateCampaignCategory, deleteCampaignCategory,
   getAdminCampaigns, createCampaign, updateCampaign, deleteCampaign,
-  getCampaignEvents, setCampaignEvents,
+  getCampaignEvents, setCampaignEvents, getCampaignPublishErrors, duplicateCampaign,
 } from '@/lib/supabase'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
@@ -42,7 +42,7 @@ export default function AdminCampaignsPage() {
         getAdminEvents().then(r => (r.data ?? []) as Event[]),
       ])
       setCategories(cats)
-      setEvents(evRes.filter(e => e.published))
+      setEvents(evRes)
       setLoadingData(false)
     }
     load()
@@ -73,6 +73,7 @@ export default function AdminCampaignsPage() {
         {view.mode === 'category' && (
           <CategoryDetail
             category={categories.find(c => c.id === view.categoryId)!}
+            allCategories={categories}
             events={events}
             onBack={() => setView({ mode: 'list' })}
             onReloadCategories={reloadCategories}
@@ -173,6 +174,9 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
     title_en: category?.title_en ?? '',
     title_de: category?.title_de ?? '',
     description: category?.description ?? '',
+    description_en: category?.description_en ?? '',
+    description_de: category?.description_de ?? '',
+    hero_image_url: category?.hero_image_url ?? '',
     icon: category?.icon ?? '',
     color: category?.color ?? '#BE6240',
     required_global_stars: String(category?.required_global_stars ?? defaultUnlock ?? 0),
@@ -191,6 +195,9 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
       title_en: f.title_en.trim() || null,
       title_de: f.title_de.trim() || null,
       description: f.description.trim() || null,
+      description_en: f.description_en.trim() || null,
+      description_de: f.description_de.trim() || null,
+      hero_image_url: f.hero_image_url.trim() || null,
       icon: f.icon.trim() || null,
       color: f.color || null,
       required_global_stars: parseInt(f.required_global_stars) || 0,
@@ -213,7 +220,12 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
           <Field label="Název (EN)"><input className="input" value={f.title_en} onChange={e => set('title_en', e.target.value)}/></Field>
           <Field label="Název (DE)"><input className="input" value={f.title_de} onChange={e => set('title_de', e.target.value)}/></Field>
         </div>
-        <Field label="Popis"><textarea className="input" rows={2} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <Field label="Popis (CZ — fallback)"><textarea className="input" rows={2} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Field label="Popis (EN)"><textarea className="input" rows={2} value={f.description_en} onChange={e => set('description_en', e.target.value)}/></Field>
+          <Field label="Popis (DE)"><textarea className="input" rows={2} value={f.description_de} onChange={e => set('description_de', e.target.value)}/></Field>
+        </div>
+        <Field label="Hero obrázek (URL, volitelné)"><input className="input" value={f.hero_image_url} onChange={e => set('hero_image_url', e.target.value)} placeholder="https://…"/></Field>
         <div style={{ display: 'grid', gridTemplateColumns: '80px 100px 1fr', gap: 12 }}>
           <Field label="Ikona"><input className="input" value={f.icon} onChange={e => set('icon', e.target.value)} placeholder="👑"/></Field>
           <Field label="Barva"><input type="color" value={f.color} onChange={e => set('color', e.target.value)} style={{ width: '100%', height: 40, border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer' }}/></Field>
@@ -234,8 +246,9 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
 }
 
 // ═══════════════════ Detail kategorie (kampaně) ═══════════════════
-function CategoryDetail({ category, events, onBack, onReloadCategories }: {
+function CategoryDetail({ category, allCategories, events, onBack, onReloadCategories }: {
   category: CampaignCategory
+  allCategories: CampaignCategory[]
   events: Event[]
   onBack: () => void
   onReloadCategories: () => Promise<void>
@@ -274,6 +287,13 @@ function CategoryDetail({ category, events, onBack, onReloadCategories }: {
     setBusy(true); await deleteCampaign(c.id); await reload(); setBusy(false)
   }
 
+  async function duplicate(c: Campaign) {
+    setBusy(true)
+    try { await duplicateCampaign(c.id); await reload() }
+    catch (e) { alert('Duplikace selhala: ' + (e as Error).message) }
+    setBusy(false)
+  }
+
   return (
     <div>
       <button className="btn btn-ghost" style={{ fontSize: 13, marginBottom: 14 }} onClick={onBack}>← Kategorie</button>
@@ -310,6 +330,7 @@ function CategoryDetail({ category, events, onBack, onReloadCategories }: {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                   <button className="btn btn-ghost" style={iconBtn} disabled={busy || i === 0} onClick={() => move(c, -1)}>↑</button>
                   <button className="btn btn-ghost" style={iconBtn} disabled={busy || i === campaigns.length - 1} onClick={() => move(c, 1)}>↓</button>
+                  <button className="btn btn-ghost" style={iconBtn} disabled={busy} onClick={() => duplicate(c)} title="Duplikovat jako koncept">⧉</button>
                   <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => setEditing(c)}>Upravit</button>
                   <button className="btn btn-ghost" style={{ ...iconBtn, color: '#c0392b' }} disabled={busy} onClick={() => remove(c)}>✕</button>
                 </div>
@@ -322,6 +343,7 @@ function CategoryDetail({ category, events, onBack, onReloadCategories }: {
       {editing && (
         <CampaignForm
           category={category}
+          allCategories={allCategories}
           campaign={editing === 'new' ? null : editing}
           defaultSeq={editing === 'new' ? ((campaigns.length ? campaigns[campaigns.length - 1].seq : 0) + 1) : undefined}
           events={events}
@@ -334,8 +356,9 @@ function CategoryDetail({ category, events, onBack, onReloadCategories }: {
 }
 
 // ═══════════════════ Formulář kampaně + picker 5 událostí ═══════════════════
-function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved }: {
+function CampaignForm({ category, allCategories, campaign, defaultSeq, events, onClose, onSaved }: {
   category: CampaignCategory
+  allCategories: CampaignCategory[]
   campaign: Campaign | null
   defaultSeq?: number
   events: Event[]
@@ -347,6 +370,10 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
     title_en: campaign?.title_en ?? '',
     title_de: campaign?.title_de ?? '',
     description: campaign?.description ?? '',
+    description_en: campaign?.description_en ?? '',
+    description_de: campaign?.description_de ?? '',
+    visual_url: campaign?.visual_url ?? '',
+    category_id: campaign?.category_id ?? category.id,
     required_category_stars: String(campaign?.required_category_stars ?? 0),
     rounds_count: String(campaign?.rounds_count ?? 5),
     is_premium: campaign?.is_premium ?? false,
@@ -357,8 +384,15 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
   const [pickSlot, setPickSlot] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [pubErrors, setPubErrors] = useState<string[]>([])
   const set = (k: keyof typeof f, v: any) => setF(s => ({ ...s, [k]: v }))
   const eventById = new Map(events.map(e => [e.id, e]))
+
+  // Server řekne, proč kampaň nejde publikovat (trigger to stejně vynutí)
+  useEffect(() => {
+    if (!campaign) { setPubErrors([]); return }
+    getCampaignPublishErrors(campaign.id).then(setPubErrors).catch(() => setPubErrors([]))
+  }, [campaign])
 
   useEffect(() => {
     if (!campaign) return
@@ -379,11 +413,14 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
     }
     setSaving(true); setErr(null)
     const patch: Partial<Campaign> = {
-      category_id: category.id,
+      category_id: f.category_id,
       title: f.title.trim(),
       title_en: f.title_en.trim() || null,
       title_de: f.title_de.trim() || null,
       description: f.description.trim() || null,
+      description_en: f.description_en.trim() || null,
+      description_de: f.description_de.trim() || null,
+      visual_url: f.visual_url.trim() || null,
       required_category_stars: parseInt(f.required_category_stars) || 0,
       rounds_count: roundsCount,
       is_premium: f.is_premium,
@@ -392,10 +429,10 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
     let campaignId = campaign?.id
     if (campaign) {
       const { error } = await updateCampaign(campaign.id, patch)
-      if (error) { setSaving(false); setErr(error.message); return }
+      if (error) { setSaving(false); setErr(prettyDbError(error.message)); return }
     } else {
       const { data, error } = await createCampaign({ ...patch, seq: defaultSeq ?? 0 })
-      if (error || !data) { setSaving(false); setErr(error?.message ?? 'Nepodařilo se vytvořit.'); return }
+      if (error || !data) { setSaving(false); setErr(prettyDbError(error?.message ?? 'Nepodařilo se vytvořit.')); return }
       campaignId = (data as Campaign).id
     }
     // ulož 5-tici (komprimuje na vyplněné v pořadí slotů)
@@ -403,6 +440,8 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
     const { error: evErr } = await setCampaignEvents(campaignId!, ordered)
     setSaving(false)
     if (evErr) { setErr('Kampaň uložena, ale události se nepodařilo uložit: ' + evErr.message); return }
+    // Po uložení událostí přepočítej validaci (server mohl kampaň shodit do konceptu)
+    if (campaignId) getCampaignPublishErrors(campaignId).then(setPubErrors).catch(() => {})
     await onSaved()
   }
 
@@ -414,7 +453,19 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
           <Field label="Název (EN)"><input className="input" value={f.title_en} onChange={e => set('title_en', e.target.value)}/></Field>
           <Field label="Název (DE)"><input className="input" value={f.title_de} onChange={e => set('title_de', e.target.value)}/></Field>
         </div>
-        <Field label="Popis"><textarea className="input" rows={2} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <Field label="Popis (CZ — fallback)"><textarea className="input" rows={2} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Field label="Popis (EN)"><textarea className="input" rows={2} value={f.description_en} onChange={e => set('description_en', e.target.value)}/></Field>
+          <Field label="Popis (DE)"><textarea className="input" rows={2} value={f.description_de} onChange={e => set('description_de', e.target.value)}/></Field>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Field label="Kategorie">
+            <select className="input" value={f.category_id} onChange={e => set('category_id', e.target.value)}>
+              {allCategories.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+            </select>
+          </Field>
+          <Field label="Vizuál (URL, volitelné)"><input className="input" value={f.visual_url} onChange={e => set('visual_url', e.target.value)} placeholder="https://…"/></Field>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Odemknout za ★ (v této kategorii)"><input className="input" type="number" min={0} value={f.required_category_stars} onChange={e => set('required_category_stars', e.target.value)}/></Field>
           <Field label="Počet kol"><input className="input" type="number" min={1} max={20} value={f.rounds_count} onChange={e => set('rounds_count', e.target.value)}/></Field>
@@ -449,6 +500,16 @@ function CampaignForm({ category, campaign, defaultSeq, events, onClose, onSaved
           </div>
         </div>
 
+        {pubErrors.length > 0 && (
+          <div style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.3)', borderRadius: 10, padding: '10px 12px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent-deep)', marginBottom: 5 }}>
+              Kampaň zatím nelze publikovat:
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--ink-2)' }}>
+              {pubErrors.map(e => <li key={e}>{e}</li>)}
+            </ul>
+          </div>
+        )}
         {err && <div className="alert alert-error">⚠ {err}</div>}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4, gap: 12 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
@@ -482,30 +543,84 @@ function EventPicker({ events, usedIds, onPick, onClose }: {
   onClose: () => void
 }) {
   const [search, setSearch] = useState('')
+  const [cat, setCat] = useState('')
+  const [yFrom, setYFrom] = useState('')
+  const [yTo, setYTo] = useState('')
+  const [pub, setPub] = useState<'published' | 'all'>('published')  // publikovatelné napřed
+
+  const cats = Array.from(new Set(events.map(e => e.category).filter(Boolean))) as string[]
   const q = search.toLowerCase()
-  const filtered = events.filter(e =>
-    e.title.toLowerCase().includes(q) || e.category?.toLowerCase().includes(q))
+  const lo = yFrom.trim() ? parseInt(yFrom) : null
+  const hi = yTo.trim() ? parseInt(yTo) : null
+
+  const filtered = events.filter(e => {
+    if (pub === 'published' && !e.published) return false
+    if (q && !(e.title.toLowerCase().includes(q) || e.category?.toLowerCase().includes(q))) return false
+    if (cat && e.category !== cat) return false
+    if (lo !== null && !Number.isNaN(lo) && e.year < lo) return false
+    if (hi !== null && !Number.isNaN(hi) && e.year > hi) return false
+    return true
+  })
+
+  /** Co brání použití události v publikované kampani (viz validace 034). */
+  function issuesOf(e: Event): string[] {
+    const out: string[] = []
+    if (!e.published) out.push('nepublikovaná')
+    if (!e.panorama_url || e.panorama_url === 'pending') out.push('bez panoramatu')
+    if (e.lat == null || e.lng == null || (e.lat === 0 && e.lng === 0)) out.push('bez GPS')
+    return out
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(42,31,23,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 520, boxShadow: 'var(--shadow-xl)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '80vh' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 580, boxShadow: 'var(--shadow-xl)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '84vh' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)' }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: 0 }}>Vybrat událost</h3>
+          <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '3px 0 0' }}>{filtered.length} z {events.length} událostí</p>
         </div>
-        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)' }}>
+
+        {/* Filtry: hledání, kategorie, období */}
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <input className="input" placeholder="Hledat událost…" value={search} onChange={e => setSearch(e.target.value)} autoFocus/>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 8 }}>
+            <select className="input" value={cat} onChange={e => setCat(e.target.value)}>
+              <option value="">Všechny kategorie</option>
+              {cats.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input className="input" type="number" placeholder="Rok od" value={yFrom} onChange={e => setYFrom(e.target.value)}/>
+            <input className="input" type="number" placeholder="Rok do" value={yTo} onChange={e => setYTo(e.target.value)}/>
+          </div>
+          <label style={{ ...checkLabel, fontSize: 12 }}>
+            <input type="checkbox" checked={pub === 'all'} onChange={e => setPub(e.target.checked ? 'all' : 'published')}/>
+            Zobrazit i nepublikované (nepůjde s nimi kampaň publikovat)
+          </label>
         </div>
+
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           {filtered.length === 0 && <p style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Nic nenalezeno</p>}
           {filtered.map(ev => {
             const used = usedIds.has(ev.id)
+            const issues = issuesOf(ev)
             return (
               <button key={ev.id} disabled={used} onClick={() => onPick(ev.id)}
                 style={{ width: '100%', padding: '10px 20px', border: 'none', background: 'transparent', textAlign: 'left', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}
                 onMouseEnter={e => { if (!used) (e.currentTarget as HTMLButtonElement).style.background = 'var(--paper-100)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{ev.title}{used && ' · již v kampani'}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{formatYear(ev.year)}{ev.category && ` · ${ev.category}`}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{ev.title}</span>
+                  {used && <span style={{ fontSize: 11, color: 'var(--accent-deep)' }}>· už v kampani</span>}
+                  {issues.length > 0 && (
+                    <span className="badge" style={{ background: 'rgba(192,57,43,0.1)', color: '#c0392b', fontSize: 10 }}>
+                      ⚠ {issues.join(', ')}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', marginTop: 3 }}>
+                  {formatYear(ev.year)}
+                  {ev.category && ` · ${ev.category}`}
+                  {ev.lat != null && ev.lng != null && ` · ${ev.lat.toFixed(2)}, ${ev.lng.toFixed(2)}`}
+                  {ev.panorama_url && ev.panorama_url !== 'pending' ? ' · 🖼' : ''}
+                </div>
               </button>
             )
           })}
@@ -552,6 +667,15 @@ function StatusSelect({ value, onChange }: { value: ContentStatus; onChange: (v:
       ))}
     </select>
   )
+}
+
+/** Přeloží serverové chyby (trigger/constraint) do lidské řeči. */
+function prettyDbError(msg: string): string {
+  if (msg.includes('campaign_not_publishable')) {
+    return 'Kampaň nelze publikovat: ' + msg.split('campaign_not_publishable:')[1]?.trim()
+  }
+  if (msg.includes('uq_campaign_event')) return 'Stejná událost je v kampani vícekrát.'
+  return msg
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
