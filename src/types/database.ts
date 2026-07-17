@@ -7,9 +7,6 @@ export interface Profile {
   games_played: number
   xp: number
   created_at: string
-  is_premium?: boolean
-  energy?: number
-  energy_reset_at?: string | null
 }
 
 // ── Kampaně ────────────────────────────────────────────────
@@ -79,6 +76,30 @@ export interface UserCampaignProgress {
   attempts_count: number
   first_completed_at: string | null
   last_played_at: string | null
+}
+
+export type RewardKind = 'artifact' | 'badge' | 'title'
+export type RewardRarity = 'common' | 'rare' | 'epic' | 'legendary'
+
+export interface CampaignReward {
+  id: string
+  campaign_id: string
+  kind: RewardKind
+  /** 0 = za první dokončení, jinak počet ★ nutných k získání */
+  required_stars: number
+  name: string
+  name_en: string | null
+  name_de: string | null
+  description: string | null
+  description_en: string | null
+  description_de: string | null
+  icon_url: string | null
+  rarity: RewardRarity
+  created_at?: string
+}
+
+export interface EarnedReward extends CampaignReward {
+  granted_at: string
 }
 
 export type AttemptStatus = 'created' | 'in_progress' | 'completed' | 'abandoned' | 'expired'

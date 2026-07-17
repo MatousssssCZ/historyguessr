@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress } from '@/types/database'
+import type { Event, EventInsert, EventUpdate, RoundResult, CampaignCategory, Campaign, CampaignEvent, UserCampaignProgress, CampaignReward, EarnedReward } from '@/types/database'
 import { FREE_ENTITLEMENTS, isPremiumUser, type Entitlements } from './entitlements'
 import { isCategoryVisible, globalStars, DAILY_EXPEDITIONS } from './campaignLogic'
 
@@ -990,9 +990,10 @@ export async function submitCampaignRound(
   }
 }
 
-/** Dokončí pokus — server sečte kola, spočítá ★ a uloží rekord. Idempotentní. */
+/** Dokončí pokus — server sečte kola, spočítá ★, uloží rekord a udělí odměny. Idempotentní. */
 export async function completeCampaignAttempt(attemptId: string): Promise<{
-  totalScore: number; stars: number; bestScore: number; bestStars: number; isBest: boolean
+  totalScore: number; stars: number; bestScore: number; bestStars: number
+  isBest: boolean; newRewards: CampaignReward[]
 }> {
   const { data, error } = await supabase.rpc('complete_campaign_attempt', { p_attempt_id: attemptId })
   if (error) throw error
@@ -1003,7 +1004,33 @@ export async function completeCampaignAttempt(attemptId: string): Promise<{
     bestScore: row?.best_score ?? 0,
     bestStars: row?.best_stars ?? 0,
     isBest: !!row?.is_best,
+    newRewards: (row?.new_rewards ?? []) as CampaignReward[],
   }
+}
+
+// ─── Odměny (artefakty) ───────────────────────────────────
+
+/** Odměny přihlášeného hráče (sbírka). */
+export async function getMyRewards(): Promise<EarnedReward[]> {
+  const { data, error } = await supabase.rpc('get_my_rewards')
+  if (error) return []
+  return (data ?? []) as EarnedReward[]
+}
+
+/** Odměny definované pro kampaň (admin i hráč — detail kampaně). */
+export async function getCampaignRewards(campaignId: string): Promise<CampaignReward[]> {
+  const { data } = await supabase
+    .from('campaign_rewards').select('*')
+    .eq('campaign_id', campaignId).order('required_stars')
+  return (data ?? []) as CampaignReward[]
+}
+
+export async function upsertCampaignReward(reward: Partial<CampaignReward>) {
+  return supabase.from('campaign_rewards').upsert(reward, { onConflict: 'campaign_id,required_stars' })
+}
+
+export async function deleteCampaignReward(id: string) {
+  return supabase.from('campaign_rewards').delete().eq('id', id)
 }
 
 

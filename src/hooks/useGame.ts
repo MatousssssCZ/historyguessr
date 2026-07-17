@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react'
 import type { Event, RoundResult } from '@/types/database'
 import { haversineKm, roundScore, yearDiff } from '@/lib/scoring'
 import { getRandomEvents, createGameSession, submitGameSession, recordEventScore, recordCategoryHit, submitCampaignRound, completeCampaignAttempt, track, type EventFilters, type SoloGuess } from '@/lib/supabase'
+import { campaignAnalytics } from '@/lib/analytics'
+import type { CampaignReward } from '@/types/database'
 import { saveResume, clearResume, loadResume } from '@/lib/resume'
 
 const DEFAULT_ROUNDS = 5
@@ -34,6 +36,7 @@ export interface GameState {
   campaignTitle: string | null
   attemptId: string | null
   campaignStars: number | null   // vyplní se po dohrání kampaně (0–3)
+  campaignRewards: CampaignReward[]  // nově získané artefakty
 }
 
 const INITIAL_STATE: GameState = {
@@ -53,6 +56,7 @@ const INITIAL_STATE: GameState = {
   campaignTitle: null,
   attemptId: null,
   campaignStars: null,
+  campaignRewards: [],
 }
 
 export function useGame(userId: string | undefined) {
@@ -214,11 +218,11 @@ export function useGame(userId: string | undefined) {
       if (state.campaignId && state.attemptId) {
         try {
           const res = await completeCampaignAttempt(state.attemptId)
-          setState(prev => ({ ...prev, campaignStars: res.stars, totalScore: res.totalScore }))
-          track('campaign_completed', {
-            campaign_id: state.campaignId, total_score: res.totalScore,
-            stars: res.stars, is_best: res.isBest,
-          }, userId)
+          setState(prev => ({
+            ...prev, campaignStars: res.stars, totalScore: res.totalScore,
+            campaignRewards: res.newRewards,
+          }))
+          campaignAnalytics.completed(state.campaignId, res.totalScore, res.stars, res.isBest, userId)
         } catch (e) { console.warn('[Campaign] dokončení selhalo:', e) }
       }
     }

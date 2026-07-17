@@ -9,6 +9,7 @@ import MobileNav from '@/components/MobileNav'
 import CompassLoader from '@/components/CompassLoader'
 import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
 import { categoryAccess, campaignAccess, categoryStars, formatExpeditions } from '@/lib/campaignLogic'
+import { campaignAnalytics, monetizationAnalytics } from '@/lib/analytics'
 import type { Campaign, CampaignCategory } from '@/types/database'
 
 const GOLD = '#f5ce8b'
@@ -43,6 +44,7 @@ export default function CampaignsPage() {
   }, [user])
 
   useEffect(() => { reload() }, [reload])
+  useEffect(() => { if (user && !categoryId) campaignAnalytics.viewed(user.id) }, [user, categoryId])
 
   if (loading || !bundle) {
     return <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)' }}><CompassLoader size={60} light/></div>
@@ -52,7 +54,7 @@ export default function CampaignsPage() {
   if (categoryId) {
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingBottom: isMobile ? 'calc(88px + var(--safe-bottom))' : 40 }}>
-        <CategoryView bundle={bundle} categoryId={categoryId} onBack={() => navigate('/campaigns')} onReload={reload}/>
+        <CategoryView bundle={bundle} categoryId={categoryId} userId={user?.id} onBack={() => navigate('/campaigns')} onReload={reload}/>
         {isMobile && <MobileNav active="campaigns"/>}
       </div>
     )
@@ -71,7 +73,10 @@ export default function CampaignsPage() {
         </div>
         <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 20px' }}>Odemykej kategorie sbíráním hvězd.</p>
 
-        <CategoriesGrid bundle={bundle} isMobile={isMobile} onOpen={(id) => navigate(`/campaigns/${id}`)}/>
+        <CategoriesGrid bundle={bundle} isMobile={isMobile} userId={user?.id} onOpen={(id) => {
+          campaignAnalytics.categoryOpened(id, user?.id)
+          navigate(`/campaigns/${id}`)
+        }}/>
       </div>
       {isMobile && <MobileNav active="campaigns"/>}
     </div>
@@ -103,8 +108,8 @@ function ExpeditionPill({ bundle }: { bundle: CampaignBundle }) {
 }
 
 // ═══════════════════ Mapa kategorií ═══════════════════
-function CategoriesGrid({ bundle, isMobile, onOpen }: {
-  bundle: CampaignBundle; isMobile: boolean; onOpen: (id: string) => void
+function CategoriesGrid({ bundle, isMobile, userId, onOpen }: {
+  bundle: CampaignBundle; isMobile: boolean; userId?: string; onOpen: (id: string) => void
 }) {
   if (bundle.categories.length === 0) return <ComingSoonCard full/>
   return (
@@ -114,15 +119,15 @@ function CategoriesGrid({ bundle, isMobile, onOpen }: {
       gap: 16,
     }}>
       {bundle.categories.map(cat => (
-        <CategoryCard key={cat.id} cat={cat} bundle={bundle} onOpen={onOpen}/>
+        <CategoryCard key={cat.id} cat={cat} bundle={bundle} userId={userId} onOpen={onOpen}/>
       ))}
       {!isMobile && <ComingSoonCard/>}
     </div>
   )
 }
 
-function CategoryCard({ cat, bundle, onOpen }: {
-  cat: CampaignCategory; bundle: CampaignBundle; onOpen: (id: string) => void
+function CategoryCard({ cat, bundle, userId, onOpen }: {
+  cat: CampaignCategory; bundle: CampaignBundle; userId?: string; onOpen: (id: string) => void
 }) {
   const camps = bundle.campaignsByCat[cat.id] ?? []
   const acc = categoryAccess(cat, bundle.totalStars, bundle.entitlements)
@@ -132,7 +137,14 @@ function CategoryCard({ cat, bundle, onOpen }: {
   const color = cat.color || '#BE6240'
 
   return (
-    <button disabled={locked} onClick={() => onOpen(cat.id)} style={{
+    <button onClick={() => {
+      if (locked) {
+        campaignAnalytics.lockedAttempt('category', cat.id, acc.lockReason ?? 'stars', acc.missingStars, userId)
+        if (acc.lockReason === 'premium') monetizationAnalytics.upsellShown('premium_category', userId)
+        return
+      }
+      onOpen(cat.id)
+    }} style={{
       position: 'relative', textAlign: 'left', padding: 0, overflow: 'hidden', cursor: locked ? 'not-allowed' : 'pointer',
       background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18,
       transition: 'transform 140ms, box-shadow 140ms',
@@ -206,8 +218,9 @@ function ComingSoonCard({ full }: { full?: boolean }) {
 }
 
 // ═══════════════════ Detail kategorie ═══════════════════
-function CategoryView({ bundle, categoryId, onBack, onReload }: {
-  bundle: CampaignBundle; categoryId: string; onBack: () => void; onReload: () => Promise<void>
+function CategoryView({ bundle, categoryId, userId, onBack, onReload }: {
+  bundle: CampaignBundle; categoryId: string; userId?: string
+  onBack: () => void; onReload: () => Promise<void>
 }) {
   const navigate = useNavigate()
   const [starting, setStarting] = useState<string | null>(null)
@@ -223,18 +236,25 @@ function CategoryView({ bundle, categoryId, onBack, onReload }: {
     setErr(null); setStarting(campaign.id)
     try {
       // Server ověří hvězdy, Premium i limit a teprve pak odečte výpravu.
+      campaignAnalytics.opened(campaign.id, userId)
       const { attemptId, eventIds } = await startCampaignAttempt(campaign.id)
       const events = await getEventsByIds(eventIds)
       if (events.length < campaign.rounds_count) {
         setErr('Události kampaně se nepodařilo načíst.'); setStarting(null); return
       }
+      campaignAnalytics.started(campaign.id, userId)
       navigate('/game', {
         state: { events, attemptId, campaignId: campaign.id, campaignTitle: campaign.title, rounds: events.length },
       })
     } catch (e: unknown) {
       setStarting(null)
       const kind = campaignErrorOf(e)
-      if (kind === 'no_energy') { setShowUpsell(true); return }
+      if (kind === 'no_energy') {
+        monetizationAnalytics.expeditionsExhausted(userId)
+        monetizationAnalytics.upsellShown('no_expeditions', userId)
+        setShowUpsell(true); return
+      }
+      if (kind === 'premium_required') monetizationAnalytics.upsellShown('premium_campaign', userId)
       setErr(
         kind === 'premium_required' ? 'Tahle kampaň je součástí Premium.'
         : kind === 'locked_global_stars' || kind === 'locked_category_stars' ? 'Na tuhle kampaň zatím nemáš dost hvězd.'
@@ -310,7 +330,7 @@ function CategoryView({ bundle, categoryId, onBack, onReload }: {
         </div>
       </div>
 
-      {showUpsell && <ExpeditionUpsell bundle={bundle} onClose={() => { setShowUpsell(false); onReload() }}/>}
+      {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
     </>
   )
 }
@@ -385,7 +405,7 @@ export function StarRow({ stars, size = 15 }: { stars: number; size?: number }) 
 }
 
 // ═══════════════════ Upsell — došly výpravy ═══════════════════
-function ExpeditionUpsell({ bundle, onClose }: { bundle: CampaignBundle; onClose: () => void }) {
+function ExpeditionUpsell({ bundle, userId, onClose }: { bundle: CampaignBundle; userId?: string; onClose: () => void }) {
   const { perDay, resetsAt } = bundle.expeditions
   const resetTxt = resetsAt
     ? new Date(resetsAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
@@ -422,7 +442,10 @@ function ExpeditionUpsell({ bundle, onClose }: { bundle: CampaignBundle; onClose
         </div>
 
         <button className="btn btn-accent" style={{ width: '100%', padding: 14, fontSize: 15, marginBottom: 10 }}
-          onClick={() => alert('Premium — připravujeme 🙏')}>Chci Premium</button>
+          onClick={() => {
+            monetizationAnalytics.upsellCtaClicked('no_expeditions', userId)
+            alert('Premium — připravujeme 🙏')
+          }}>Chci Premium</button>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 13.5, padding: 6 }}>
           Počkám do zítra
         </button>

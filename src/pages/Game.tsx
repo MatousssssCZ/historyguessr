@@ -14,7 +14,15 @@ import CompassLoader from '@/components/CompassLoader'
 import { panoramaHfov } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
-import type { Event, RoundResult } from '@/types/database'
+import type { Event, RoundResult, CampaignReward, RewardRarity } from '@/types/database'
+
+/** Podbarvení artefaktu podle vzácnosti. */
+const RARITY_BG: Record<RewardRarity, string> = {
+  common: 'rgba(246,240,230,0.12)',
+  rare: 'rgba(122,168,204,0.28)',
+  epic: 'rgba(168,122,204,0.28)',
+  legendary: 'rgba(245,206,139,0.32)',
+}
 
 declare const pannellum: {
   viewer: (container: string | HTMLElement, config: object) => { destroy: () => void }
@@ -69,6 +77,7 @@ export default function GamePage() {
       userId={user?.id}
       campaignStars={state.campaignStars}
       campaignTitle={state.campaignTitle}
+      campaignRewards={state.campaignRewards}
       onCampaigns={state.campaignId ? () => navigate('/campaigns') : undefined}
       onPlayAgain={state.campaignId ? retryCampaign : () => { resetGame(); startGame(options) }}
       onMenu={() => navigate('/menu')}
@@ -928,9 +937,10 @@ function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   )
 }
 
-function FinishedScreen({ totalScore, rounds, roundResults, events, userId, campaignStars, campaignTitle, onCampaigns, onPlayAgain, onMenu }: {
+function FinishedScreen({ totalScore, rounds, roundResults, events, userId, campaignStars, campaignTitle, campaignRewards, onCampaigns, onPlayAgain, onMenu }: {
   totalScore: number; rounds: number; roundResults: RoundResult[]; events: Event[]
   userId?: string; campaignStars?: number | null; campaignTitle?: string | null
+  campaignRewards?: CampaignReward[]
   onCampaigns?: () => void; onPlayAgain: () => void; onMenu: () => void
 }) {
   const { t } = useTranslation()
@@ -999,6 +1009,36 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
             }}>
               <span style={{ color: '#f5ce8b' }}>★</span>
               Ještě {toNext.toLocaleString(currentLocale())} b. do {stars + 1}. hvězdy
+            </div>
+          )}
+
+          {/* Nově získané artefakty */}
+          {campaignRewards && campaignRewards.length > 0 && (
+            <div style={{
+              background: 'rgba(245,206,139,0.09)', border: '1px solid rgba(245,206,139,0.28)',
+              borderRadius: 16, padding: 14, marginBottom: 20, textAlign: 'left',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: '#f5ce8b', marginBottom: 10,
+              }}>{campaignRewards.length === 1 ? 'Nový artefakt' : 'Nové artefakty'}</div>
+              {campaignRewards.map(r => (
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '5px 0' }}>
+                  <span style={{
+                    width: 38, height: 38, borderRadius: 11, flexShrink: 0, fontSize: 19,
+                    background: RARITY_BG[r.rarity] ?? 'rgba(246,240,230,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundImage: r.icon_url ? `url(${r.icon_url})` : undefined,
+                    backgroundSize: 'cover', backgroundPosition: 'center',
+                  }}>{r.icon_url ? '' : '🏺'}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: '#f6f0e6' }}>{r.name}</div>
+                    {r.description && (
+                      <div style={{ fontSize: 11.5, color: 'rgba(246,240,230,0.55)', marginTop: 1 }}>{r.description}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
