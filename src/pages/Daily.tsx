@@ -461,6 +461,36 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 }
 
 // ── Histogram ─────────────────────────────────────────────
+// Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
+function DistributionModal({ scores, myScore, onClose, t }: {
+  scores: number[]; myScore: number; onClose: () => void; t: (k: string) => string
+}) {
+  const isMobile = window.innerWidth < 768
+  const panel: React.CSSProperties = isMobile
+    ? { width: '100%', minHeight: '50vh', borderRadius: '20px 20px 0 0', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }
+    : { width: '100%', maxWidth: 560, borderRadius: 20, boxShadow: 'var(--shadow-xl)' }
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 24 }}
+    >
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper-50)', padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', ...panel }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
+          <button onClick={onClose} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.close')}</button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
+          <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
+          <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{myScore.toLocaleString(currentLocale())}</span>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <ScoreHistogram scores={scores} myScore={myScore} height={240}/>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; myScore: number; height?: number }) {
   const BINS = 20
   const bins = Array(BINS).fill(0)
@@ -552,9 +582,15 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     </div>
   )
 
+  // Na desktopu je žebříček ve pravém sloupci → tab jen na mobilu
+  const tabKeys: ('score' | 'leaderboard' | 'info')[] = isMobile
+    ? ['score', 'leaderboard', 'info']
+    : ['score', 'info']
+  const canShowDist = allScores.length > 1
+
   const resultTabs = (
     <div style={{ display: 'flex', gap: 6, padding: isMobile ? '10px 12px 2px' : '12px 20px 4px', flexShrink: 0 }}>
-      {(['score', 'leaderboard', 'info'] as const).map(k => {
+      {tabKeys.map(k => {
         const active = tab === k
         const label = k === 'score' ? `🏆 ${t('game.tabScore')}`
           : k === 'leaderboard' ? `🏅 ${t('daily.tabLeaderboard')}`
@@ -676,24 +712,40 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             </div>
             {resultTabs}
             {tabContent}
-            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {panoBtn}
-              <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
+            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto', display: 'flex', gap: 8 }}>
+              {hasPanorama && (
+                <button onClick={() => setShowPano(true)} className="btn btn-ghost" style={{ flex: 1 }}>🖼 {t('daily.panorama')}</button>
+              )}
+              {canShowDist && (
+                <button onClick={() => setHistModal(true)} className="btn btn-ghost" style={{ flex: 1 }}>📊 {t('daily.distribution')}</button>
+              )}
+              <button className="btn btn-accent" style={{ flex: 1 }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
           </div>
-          {/* Pravá — distribuce skóre (celý svět) */}
-          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px' }}>
-            {leaderboard.length > 1 ? (
-              <div>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 12px' }}>{t('daily.distribution')}</p>
-                <ScoreHistogram scores={allScores} myScore={result.totalScore}/>
+
+          {/* Pravá — sociální panel: žebříček přátel + distribuce skóre */}
+          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flexShrink: 0 }}>{leaderboardSection}</div>
+            <div style={{ marginTop: 'auto', borderTop: '1px solid var(--line)', padding: '18px 20px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
+                {canShowDist && (
+                  <button onClick={() => setHistModal(true)} title={t('daily.distribution')} style={{
+                    background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 8,
+                    padding: '4px 10px', fontSize: 11, cursor: 'pointer', color: 'var(--ink-2)',
+                  }}>⤢ Zvětšit</button>
+                )}
               </div>
-            ) : (
-              <p style={{ fontSize: 13, color: 'var(--ink-3)', textAlign: 'center', margin: 0 }}>{t('daily.distributionEmpty')}</p>
-            )}
+              {canShowDist ? (
+                <ScoreHistogram scores={allScores} myScore={result.totalScore} height={120}/>
+              ) : (
+                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: 0 }}>{t('daily.distributionEmpty')}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
+      {histModal && <DistributionModal scores={allScores} myScore={result.totalScore} onClose={() => setHistModal(false)} t={t}/>}
     </>)
   }
 
@@ -734,24 +786,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
       </div>
 
-      {/* Histogram modal (bottom sheet) */}
-      {histModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ width: '100%', minHeight: '50vh', background: 'var(--paper-50)', borderRadius: '20px 20px 0 0', padding: '20px 18px', paddingBottom: 'max(24px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 32px rgba(0,0,0,0.35)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
-              <button onClick={() => setHistModal(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.close')}</button>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
-              <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{result.totalScore.toLocaleString(currentLocale())}</span>
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <ScoreHistogram scores={allScores} myScore={result.totalScore} height={240}/>
-            </div>
-          </div>
-        </div>
-      )}
+      {histModal && <DistributionModal scores={allScores} myScore={result.totalScore} onClose={() => setHistModal(false)} t={t}/>}
     </div>
   </>)
 }
