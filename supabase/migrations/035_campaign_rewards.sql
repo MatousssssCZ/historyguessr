@@ -111,7 +111,14 @@ $$;
 -- ─────────────────────────────────────────────────────────
 -- 4) complete_campaign_attempt — nově uděluje i odměny
 --     (jinak shodné s migrací 031)
+--
+-- POZOR: přibývá návratový sloupec new_rewards → mění se návratový typ.
+-- `create or replace` to neumí ("cannot change return type of existing
+-- function"), takže funkci nejdřív zahodíme. Nic na ní nezávisí (volá ji
+-- jen klient přes RPC), takže je to bezpečné.
 -- ─────────────────────────────────────────────────────────
+drop function if exists public.complete_campaign_attempt(uuid);
+
 create or replace function public.complete_campaign_attempt(p_attempt_id uuid)
 returns table (total_score int, stars int, best_score int, best_stars int, is_best boolean, new_rewards jsonb)
 language plpgsql
