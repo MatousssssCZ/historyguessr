@@ -52,20 +52,9 @@ export default function MenuPage() {
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
 
-  // Onboarding jen JEDNOU po prvním spuštění (příznak vázaný na účet).
-  // Příznak nastavíme HNED při prvním zobrazení — takže i když hráč obrazovku
-  // opustí reloadem/navigací (bez „Přeskočit"), znovu se už sám neukáže.
-  // Ručně jde vždy otevřít přes „?" tlačítko.
-  const onboardKey = user ? `hg_onboarded_${user.id}` : null
-  useEffect(() => {
-    if (!onboardKey) return
-    try {
-      if (!localStorage.getItem(onboardKey)) {
-        localStorage.setItem(onboardKey, '1')
-        setShowHowTo(true)
-      }
-    } catch { /* ignore */ }
-  }, [onboardKey])
+  // „Jak hrát" se NEZOBRAZUJE automaticky — jen ručně přes „?" tlačítko
+  // v menu nebo řádek „Jak hrát?" v účtu. (Auto-zobrazení bylo per-zařízení,
+  // takže na novém počítači naskakovalo znovu.)
   const closeHowTo = () => setShowHowTo(false)
 
   // Rozehraná hra (pro „Pokračovat ve hře") — čti při každém mountu
