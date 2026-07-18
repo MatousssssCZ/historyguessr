@@ -473,7 +473,7 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
       setCompPano({ busy: true, msg: 'Komprimuji…' })
       const result = await compressPanorama(srcFile)
       if (result.compressedSize >= blob.size) { setCompPano({ busy: false, msg: `Bez úspory (${formatFileSize(blob.size)}) — necháno.` }); return }
-      const { url, error } = await uploadPanoramaWithCleanup(result.file, event.id, event.panorama_url, form.title)
+      const { url, error } = await uploadPanoramaWithCleanup(result.file, event.id, event.panorama_url, form.title, event.preview_url)
       if (error || !url) throw error ?? new Error('Upload selhal')
       // přegeneruj náhled z nově zkomprimované verze
       try {
@@ -685,7 +685,7 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
           // Při editaci použij bezpečné nahrazení (smaže starý soubor)
           const oldUrl = event?.panorama_url ?? null
           const { url, error } = event
-            ? await uploadPanoramaWithCleanup(fileToUpload, savedId, oldUrl, form.title)
+            ? await uploadPanoramaWithCleanup(fileToUpload, savedId, oldUrl, form.title, event.preview_url)
             : await uploadPanorama(fileToUpload, savedId, form.title)
           if (error) throw error
           if (!event) await updateEvent(savedId, { panorama_url: url! })

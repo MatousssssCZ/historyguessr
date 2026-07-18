@@ -7,6 +7,7 @@ import {
   getPlayers, startGame, subscribeToRoom, countMatchingEvents, getRoomPanoramas,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
+import { maintainMultiplayer } from '@/lib/supabase'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
 import YearRange from '@/components/YearRange'
 
@@ -63,6 +64,9 @@ export default function MultiplayerLobbyPage() {
     const code = searchParams.get('code')
     if (code) { setJoinCode(code); setScreen('join_code') }
   }, [])
+
+  // Úklid MP místností — nespoléhá na pg_cron (viz migrace 038). Throttlováno na 10 min.
+  useEffect(() => { maintainMultiplayer() }, [])
 
   // Počet odpovídajících událostí
   useEffect(() => {

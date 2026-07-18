@@ -547,11 +547,21 @@ export async function track(
  *   2. Update DB
  *   3. Smaž starý soubor (selhání nevadí — jen logujeme)
  */
+/** Ze Storage veřejné URL vytáhne cestu v bucketu `panorama` (nebo null). */
+function panoramaStoragePath(url: string | null | undefined): string | null {
+  if (!url || url === 'pending') return null
+  try {
+    const m = new URL(url).pathname.match(/\/storage\/v1\/object\/public\/panorama\/(.+)/)
+    return m?.[1] ? decodeURIComponent(m[1]) : null
+  } catch { return null }
+}
+
 export async function uploadPanoramaWithCleanup(
   file: File,
   eventId: string,
   oldPanoramaUrl: string | null,
   title?: string,
+  oldPreviewUrl?: string | null,
 ): Promise<{ url: string | null; error: Error | null }> {
   // 1. Upload nového souboru
   const { url, error: uploadError } = await uploadPanorama(file, eventId, title)
@@ -565,25 +575,24 @@ export async function uploadPanoramaWithCleanup(
     return { url: null, error: dbError as Error }
   }
 
-  // 3. Smaž starý soubor — selhání je OK
-  if (oldPanoramaUrl && oldPanoramaUrl !== 'pending' && oldPanoramaUrl !== url) {
+  // 3. Smaž starý panorama soubor + starý náhled — selhání je OK.
+  //    Náhled má jiný název než panorama, takže když se změní titul (slug),
+  //    zůstal by osiřelý. Mažeme obojí, když ukazují na jiný soubor než nový.
+  const newPath = panoramaStoragePath(url)
+  const toRemove = [oldPanoramaUrl, oldPreviewUrl]
+    .map(panoramaStoragePath)
+    .filter((p): p is string => !!p && p !== newPath)
+  if (toRemove.length > 0) {
     try {
-      // Extrahuj path ze Storage URL
-      const urlObj = new URL(oldPanoramaUrl)
-      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/panorama\/(.+)/)
-      if (pathMatch?.[1]) {
-        const { error: deleteError } = await supabase.storage
-          .from('panorama')
-          .remove([decodeURIComponent(pathMatch[1])])
-        if (deleteError) {
-          console.warn('[Storage] Smazání staré panoramy selhalo:', deleteError.message)
-          track('panorama_delete_failed', { event_id: eventId, old_url: oldPanoramaUrl, error: deleteError.message })
-        } else {
-          track('panorama_replaced', { event_id: eventId })
-        }
+      const { error: deleteError } = await supabase.storage.from('panorama').remove(toRemove)
+      if (deleteError) {
+        console.warn('[Storage] Smazání starých souborů selhalo:', deleteError.message)
+        track('panorama_delete_failed', { event_id: eventId, paths: toRemove, error: deleteError.message })
+      } else {
+        track('panorama_replaced', { event_id: eventId, removed: toRemove.length })
       }
     } catch (e) {
-      console.warn('[Storage] Chyba při mazání staré panoramy:', e)
+      console.warn('[Storage] Chyba při mazání starých souborů:', e)
     }
   }
 
@@ -1141,6 +1150,21 @@ export async function getMyPlayedEventIds(): Promise<string[]> {
   const { data, error } = await supabase.rpc('my_played_event_ids')
   if (error) return []
   return (data ?? []) as string[]
+}
+
+/**
+ * Úklid multiplayeru z klienta (throttlovaně) — protože pg_cron nemusí být
+ * zapnutý. Zavře neaktivní čekárny a smaže staré místnosti. Volá se při otevření
+ * MP lobby, ale nejvýš jednou za 10 minut na tomhle zařízení.
+ */
+export async function maintainMultiplayer(): Promise<void> {
+  try {
+    const KEY = 'hg_mp_maintain_at'
+    const last = Number(localStorage.getItem(KEY) || 0)
+    if (Date.now() - last < 10 * 60_000) return
+    localStorage.setItem(KEY, String(Date.now()))
+    await supabase.rpc('maintain_multiplayer')
+  } catch { /* úklid je best-effort */ }
 }
 
 // ─── Utils ────────────────────────────────────────────────
