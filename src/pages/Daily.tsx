@@ -50,6 +50,7 @@ export default function DailyChallengePage() {
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const hasSubmittedRef = useRef(false)
+  const preloadImgRef = useRef<HTMLImageElement | null>(null)
   const phaseRef = useRef(phase)
   phaseRef.current = phase
 
@@ -98,13 +99,19 @@ export default function DailyChallengePage() {
     const startedAt = await getDailyStart(user!.id).catch(() => null)
     if (startedAt) { beginPlaying(new Date(startedAt).getTime()); return }
 
-    // Preload panoramy na pozadí během warning screenu
+    // Preload panoramy na pozadí během warning screenu.
+    // Držený Image() (ne <link rel=preload>, který prohlížeč zahodí, když se
+    // zdroj nevyužije do pár sekund — a hráč na potvrzovací obrazovce čeká déle).
+    // crossOrigin='anonymous' se shoduje s tím, jak obrázek načítá Pannellum,
+    // takže se využije stejná cache položka a ve hře už se nestahuje znovu.
     if (ev.panorama_url && ev.panorama_url !== 'pending') {
-      const link = document.createElement('link')
-      link.rel = 'preload'; link.as = 'image'
-      link.href = encodePanoramaUrl(ev.panorama_url); link.crossOrigin = 'anonymous'
-      link.onload = () => setPanoramaReady(true)
-      document.head.appendChild(link)
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.decoding = 'async'
+      img.onload = () => setPanoramaReady(true)
+      img.onerror = () => setPanoramaReady(true) // ať Start nezůstane zablokovaný
+      img.src = encodePanoramaUrl(ev.panorama_url)
+      preloadImgRef.current = img // reference, ať ho GC nezahodí
       setTimeout(() => setPanoramaReady(true), 5000) // fallback
     }
 
