@@ -18,6 +18,7 @@ import type { Event } from '@/types/database'
 import type { DailyResult } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { invalidateMenuCache } from '@/pages/Menu'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -194,6 +195,8 @@ export default function DailyChallengePage() {
 
     recordEventScore(event.id, locSc, yrSc)
     recordCategoryHit(event.id, total)
+    // Zahoď cache menu, ať se streak a ✓ za dnešek projeví hned po návratu
+    invalidateMenuCache()
     const [lb, scores] = await Promise.all([
       getDailyFriendsLeaderboard(user.id, profile?.username ?? null),
       getDailyAllScores(),

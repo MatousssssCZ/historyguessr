@@ -33,6 +33,10 @@ interface MenuData {
 let menuCache: { key: string; ts: number; data: MenuData } | null = null
 const MENU_TTL = 60_000
 
+/** Zahodí cache menu — volat po akci, která mění dashboard (dohraná daily),
+ *  aby se streak / ✓ za dnešek projevily hned a ne až po vypršení TTL. */
+export function invalidateMenuCache() { menuCache = null }
+
 export default function MenuPage() {
   const { t } = useTranslation()
   const { user, profile, isAdmin } = useAuth()
