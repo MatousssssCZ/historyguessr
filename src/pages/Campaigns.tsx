@@ -63,9 +63,16 @@ export default function CampaignsPage() {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingBottom: isMobile ? 'calc(88px + var(--safe-bottom))' : 40, paddingTop: 'var(--safe-top)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '18px 18px 0' : '30px 40px' }}>
-        {/* Hlavička: název + ★ + výpravy */}
+        {/* Hlavička: zpět + název + ★ + výpravy */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 32 : 40, margin: 0, letterSpacing: '-0.02em', color: 'var(--ink)' }}>Kampaně</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+            <button onClick={() => navigate('/menu')} aria-label="Zpět do menu" style={{
+              width: 40, height: 40, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+              background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            }}>←</button>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 32 : 40, margin: 0, letterSpacing: '-0.02em', color: 'var(--ink)' }}>Kampaně</h1>
+          </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingTop: 4 }}>
             <StarPill stars={bundle.totalStars}/>
             <ExpeditionPill bundle={bundle}/>
