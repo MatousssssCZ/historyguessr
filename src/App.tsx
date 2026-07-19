@@ -27,6 +27,7 @@ const AdminReportsPage = lazy(() => import('@/pages/AdminReports'))
 const AdminBulkAIPage = lazy(() => import('@/pages/AdminBulkAI'))
 const AdminCampaignsPage = lazy(() => import('@/pages/AdminCampaigns'))
 const AdminContinentsPage = lazy(() => import('@/pages/AdminContinents'))
+const AdminPanoramaRepairPage = lazy(() => import('@/pages/AdminPanoramaRepair'))
 const MultiplayerLobbyPage = lazy(() => import('@/pages/MultiplayerLobby'))
 const MultiplayerGamePage = lazy(() => import('@/pages/MultiplayerGame'))
 
@@ -100,6 +101,7 @@ export default function App() {
               <Route path="/admin/bulk-ai" element={<RequireAdmin><AdminBulkAIPage/></RequireAdmin>}/>
               <Route path="/admin/campaigns" element={<RequireAdmin><AdminCampaignsPage/></RequireAdmin>}/>
               <Route path="/admin/continents" element={<RequireAdmin><AdminContinentsPage/></RequireAdmin>}/>
+              <Route path="/admin/panorama-repair" element={<RequireAdmin><AdminPanoramaRepairPage/></RequireAdmin>}/>
               <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
               <Route path="/multiplayer/lobby" element={<RequireAuth><MultiplayerLobbyPage/></RequireAuth>}/>
               <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>

@@ -11,6 +11,7 @@ const TILES = [
   { icon: '📅', title: 'Denní výzvy', sub: 'Kalendář „Tento den v historii"', to: '/admin/daily' },
   { icon: '📊', title: 'Reporting', sub: 'Statistiky a přehledy', to: '/admin/reports' },
   { icon: '🌍', title: 'Kontinenty z GPS', sub: 'Dávkové odvození + kontrola', to: '/admin/continents' },
+  { icon: '🖼', title: 'Oprava panoramat', sub: 'Srovnat odkazy se soubory (.png↔.webp)', to: '/admin/panorama-repair' },
 ]
 
 export default function AdminHubPage() {

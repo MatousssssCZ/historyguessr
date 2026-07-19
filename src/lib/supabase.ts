@@ -231,6 +231,69 @@ export async function getAdminEvents() {
     .order('created_at', { ascending: false })
 }
 
+// ─── Oprava odkazů na panoramata ──────────────────────────
+// Některé starší události mají panorama_url s příponou (.png/.jpg), ale reálný
+// soubor je .webp (komprese ho převedla) → 404. Tenhle nástroj srovná DB odkazy
+// se skutečnými soubory v úložišti a opraví jen ty rozbité.
+
+export interface PanoramaRepairResult {
+  total: number
+  fixed: number
+  problems: { id: string; title: string; note: string }[]
+}
+
+function storageFileName(url: string | null | undefined): string | null {
+  if (!url || url === 'pending') return null
+  try { return decodeURIComponent(new URL(url).pathname.split('/').pop() || '') || null }
+  catch { return null }
+}
+
+export async function repairPanoramaLinks(
+  onProgress?: (done: number, total: number) => void,
+): Promise<PanoramaRepairResult> {
+  const { data } = await getAdminEvents()
+  const events = (data ?? []) as Event[]
+  const res: PanoramaRepairResult = { total: events.length, fixed: 0, problems: [] }
+
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i]
+    onProgress?.(i + 1, events.length)
+
+    const { data: files } = await supabase.storage.from('panorama').list(ev.id)
+    const list = files ?? []
+    const patch: EventUpdate = {}
+
+    // Hlavní panorama: pokud DB odkaz míří na neexistující soubor, přesměruj na
+    // reálný (preferuj .webp — komprimovanou aktuální verzi).
+    const curName = storageFileName(ev.panorama_url)
+    const curExists = !!curName && list.some(f => f.name === curName)
+    if (!curExists && ev.panorama_url && ev.panorama_url !== 'pending') {
+      const cands = list.filter(f => /_pano\.(png|jpe?g|webp)$/i.test(f.name) && !/_preview/i.test(f.name))
+      const pick = cands.find(f => /\.webp$/i.test(f.name)) ?? cands[0]
+      if (pick) {
+        patch.panorama_url = supabase.storage.from('panorama').getPublicUrl(`${ev.id}/${pick.name}`).data.publicUrl
+      } else {
+        res.problems.push({ id: ev.id, title: ev.title, note: 'panorama soubor v úložišti nenalezen' })
+      }
+    }
+
+    // Náhled: stejná logika
+    const prevName = storageFileName(ev.preview_url)
+    const prevExists = !!prevName && list.some(f => f.name === prevName)
+    if (!prevExists) {
+      const pv = list.find(f => /_pano_preview\.webp$/i.test(f.name))
+      if (pv) patch.preview_url = supabase.storage.from('panorama').getPublicUrl(`${ev.id}/${pv.name}`).data.publicUrl
+    }
+
+    if (Object.keys(patch).length > 0) {
+      const { error } = await updateEvent(ev.id, patch)
+      if (error) res.problems.push({ id: ev.id, title: ev.title, note: 'zápis selhal: ' + error.message })
+      else res.fixed++
+    }
+  }
+  return res
+}
+
 export async function createEvent(event: EventInsert) {
   return supabase
     .from('events')
