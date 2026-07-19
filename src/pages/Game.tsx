@@ -14,6 +14,7 @@ import CompassLoader from '@/components/CompassLoader'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Event, RoundResult, CampaignReward, RewardRarity } from '@/types/database'
 
 /** Podbarvení artefaktu podle vzácnosti. */
@@ -124,7 +125,7 @@ export default function GamePage() {
             <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: '0 0 22px', lineHeight: 1.5 }}>{t('game.quitConfirmBody')}</p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={() => setConfirmQuit(false)} style={{ flex: 1, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 500, color: 'var(--ink)', cursor: 'pointer' }}>{t('game.quitCancel')}</button>
-              <button onClick={() => { resetGame(); navigate('/menu') }} style={{ flex: 1, background: '#c0392b', border: 'none', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 500, color: '#fff', cursor: 'pointer' }}>{t('game.quitConfirm')}</button>
+              <button onClick={() => { resetGame(); navigate('/menu') }} style={{ flex: 1, background: 'var(--danger)', border: 'none', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 500, color: '#fff', cursor: 'pointer' }}>{t('game.quitConfirm')}</button>
             </div>
           </div>
         </div>
@@ -368,7 +369,7 @@ export function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSub
   const { t } = useTranslation()
   const [mapExpanded, setMapExpanded] = useState(false)
   const [yearExpanded, setYearExpanded] = useState(false)
-  const isMobile = window.innerWidth <= 640
+  const isMobile = useIsMobile(641)
 
   const missingLocation = guessLat === null
   const missingYear = !canSubmit && !missingLocation
@@ -670,13 +671,7 @@ function RoundResult({ event, round, onNext, isLast }: {
   const { t } = useTranslation()
   // Hooky musí být volané bezpodmínečně a ve stejném pořadí — early return až za nimi.
   const [tab, setTab] = useState<'score' | 'info'>('score')
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
-
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth <= 640)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
+  const isMobile = useIsMobile(641)
 
   if (!round) return null
 

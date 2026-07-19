@@ -63,7 +63,7 @@ export default function FriendsPage() {
               fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: sending || !addName.trim() ? 0.6 : 1,
             }}>{t('friends.addBtn')}</button>
           </form>
-          {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: msg.ok ? 'var(--success-deep, #3f7a4d)' : '#c0392b' }}>{msg.text}</div>}
+          {msg && <div style={{ marginTop: 10, fontSize: 12.5, color: msg.ok ? 'var(--success-deep, #3f7a4d)' : 'var(--danger)' }}>{msg.text}</div>}
         </div>
 
         {loading ? (

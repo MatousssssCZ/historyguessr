@@ -17,6 +17,7 @@ import ControlDock from '@/components/GameControls'
 import type { Event } from '@/types/database'
 import type { DailyResult } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -211,7 +212,7 @@ export default function DailyChallengePage() {
 
   const canSubmit = guessLat !== null && guessYearSet
   const timerPct = (timeLeft / TIMER_SECONDS) * 100
-  const timerColor = timeLeft > 20 ? '#d97757' : '#c0392b'
+  const timerColor = timeLeft > 20 ? '#d97757' : 'var(--danger)'
 
   // ── Loading ─────────────────────────────────────────────
   if (phase === 'loading') {
@@ -472,7 +473,7 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 function DistributionModal({ scores, myScore, onClose, t }: {
   scores: number[]; myScore: number; onClose: () => void; t: (k: string) => string
 }) {
-  const isMobile = window.innerWidth < 768
+  const isMobile = useIsMobile()
   const panel: React.CSSProperties = isMobile
     ? { width: '100%', minHeight: '50vh', borderRadius: '20px 20px 0 0', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }
     : { width: '100%', maxWidth: 560, borderRadius: 20, boxShadow: 'var(--shadow-xl)' }
@@ -548,7 +549,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   const [histModal, setHistModal] = useState(false)
   const [showPano, setShowPano] = useState(false)
   const [tab, setTab] = useState<'score' | 'leaderboard' | 'info'>('score')
-  const isMobile = window.innerWidth < 768
+  const isMobile = useIsMobile()
   const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
   const locPct = Math.round(result.locScore / 5)
   const yrPct = Math.round(result.yrScore / 5)

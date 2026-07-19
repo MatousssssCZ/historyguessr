@@ -65,7 +65,7 @@ export default function AccountPage() {
             padding: '11px 13px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)', marginBottom: 16,
           }}/>
           {message && (
-            <div style={{ fontSize: 12.5, marginBottom: 12, color: message.type === 'error' ? '#c0392b' : 'var(--success-deep, #3f7a4d)' }}>{message.text}</div>
+            <div style={{ fontSize: 12.5, marginBottom: 12, color: message.type === 'error' ? 'var(--danger)' : 'var(--success-deep, #3f7a4d)' }}>{message.text}</div>
           )}
           <button type="submit" disabled={saving} style={{
             width: '100%', background: 'var(--ink)', color: 'var(--paper-50)', border: 'none', borderRadius: 13,

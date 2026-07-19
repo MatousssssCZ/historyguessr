@@ -142,7 +142,7 @@ function CategoryList({ categories, onOpen, onReload }: {
               <button className="btn btn-ghost" style={iconBtn} disabled={busy || i === categories.length - 1} onClick={() => move(cat, 1)} title="Dolů">↓</button>
               <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setEditing(cat)}>Upravit</button>
               <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => onOpen(cat.id)}>Kampaně →</button>
-              <button className="btn btn-ghost" style={{ ...iconBtn, color: '#c0392b' }} disabled={busy} onClick={() => remove(cat)} title="Smazat">✕</button>
+              <button className="btn btn-ghost" style={{ ...iconBtn, color: 'var(--danger)' }} disabled={busy} onClick={() => remove(cat)} title="Smazat">✕</button>
             </div>
           </div>
         ))}
@@ -332,7 +332,7 @@ function CategoryDetail({ category, allCategories, events, onBack, onReloadCateg
                   <button className="btn btn-ghost" style={iconBtn} disabled={busy || i === campaigns.length - 1} onClick={() => move(c, 1)}>↓</button>
                   <button className="btn btn-ghost" style={iconBtn} disabled={busy} onClick={() => duplicate(c)} title="Duplikovat jako koncept">⧉</button>
                   <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => setEditing(c)}>Upravit</button>
-                  <button className="btn btn-ghost" style={{ ...iconBtn, color: '#c0392b' }} disabled={busy} onClick={() => remove(c)}>✕</button>
+                  <button className="btn btn-ghost" style={{ ...iconBtn, color: 'var(--danger)' }} disabled={busy} onClick={() => remove(c)}>✕</button>
                 </div>
               </div>
             )
@@ -487,13 +487,13 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
                         <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{formatYear(ev.year)}{ev.category && ` · ${ev.category}`}</div>
                       </>
                     ) : eid ? (
-                      <span style={{ fontSize: 12.5, color: '#c0392b' }}>⚠ Událost není publikovaná / smazaná</span>
+                      <span style={{ fontSize: 12.5, color: 'var(--danger)' }}>⚠ Událost není publikovaná / smazaná</span>
                     ) : (
                       <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>— prázdné —</span>
                     )}
                   </div>
                   <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setPickSlot(i)}>{ev ? 'Změnit' : 'Vybrat'}</button>
-                  {eid && <button className="btn btn-ghost" style={{ ...iconBtn, color: '#c0392b' }} onClick={() => setSlots(s => s.map((x, k) => k === i ? null : x))}>✕</button>}
+                  {eid && <button className="btn btn-ghost" style={{ ...iconBtn, color: 'var(--danger)' }} onClick={() => setSlots(s => s.map((x, k) => k === i ? null : x))}>✕</button>}
                 </div>
               )
             })}
@@ -610,7 +610,7 @@ function EventPicker({ events, usedIds, onPick, onClose }: {
                   <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{ev.title}</span>
                   {used && <span style={{ fontSize: 11, color: 'var(--accent-deep)' }}>· už v kampani</span>}
                   {issues.length > 0 && (
-                    <span className="badge" style={{ background: 'rgba(192,57,43,0.1)', color: '#c0392b', fontSize: 10 }}>
+                    <span className="badge" style={{ background: 'rgba(192,57,43,0.1)', color: 'var(--danger)', fontSize: 10 }}>
                       ⚠ {issues.join(', ')}
                     </span>
                   )}

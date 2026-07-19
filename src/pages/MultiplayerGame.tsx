@@ -343,7 +343,7 @@ export default function MultiplayerGamePage() {
   const aliveCount = players.filter(p => !p.eliminated).length
   amEliminatedRef.current = amEliminated
   const canSubmit = guessLat !== null && guessYearSet
-  const timerColor = timeLeft > 15 ? '#d97757' : '#c0392b'
+  const timerColor = timeLeft > 15 ? '#d97757' : 'var(--danger)'
 
   // ── Countdown ─────────────────────────────────────────
   if (phase === 'countdown') {

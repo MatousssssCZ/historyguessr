@@ -6,6 +6,7 @@ import {
   FREE_EXPEDITIONS, type CampaignBundle,
 } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import CompassLoader from '@/components/CompassLoader'
 import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
 import { categoryAccess, campaignAccess, categoryStars, formatExpeditions } from '@/lib/campaignLogic'
@@ -21,13 +22,7 @@ export default function CampaignsPage() {
   const { categoryId } = useParams()
   const [bundle, setBundle] = useState<CampaignBundle | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : true))
-
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
+  const isMobile = useIsMobile()
 
   const reload = useCallback(async () => {
     if (!user) return
@@ -109,7 +104,7 @@ function ExpeditionPill({ bundle }: { bundle: CampaignBundle }) {
       display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 20,
       background: 'var(--surface)', border: `1px solid ${empty ? 'rgba(192,57,43,0.35)' : 'var(--line)'}`,
       fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
-      color: empty ? '#c0392b' : 'var(--ink)',
+      color: empty ? 'var(--danger)' : 'var(--ink)',
     }}><span style={{ color: 'var(--accent)' }}>⚡</span> {formatExpeditions(remaining, perDay)}</span>
   )
 }

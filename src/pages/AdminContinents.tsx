@@ -55,7 +55,7 @@ export default function AdminContinentsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
               <Stat label="Celkem" value={result.total}/>
               <Stat label="Spolehlivě" value={result.confident} accent="#5c9468"/>
-              <Stat label="Nejisté" value={result.uncertain.length} accent="#c0392b"/>
+              <Stat label="Nejisté" value={result.uncertain.length} accent="var(--danger)"/>
               <Stat label="Změněno" value={result.updated}/>
             </div>
             <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 16px', marginBottom: 18 }}>
@@ -63,7 +63,7 @@ export default function AdminContinentsPage() {
                 <span>Spolehlivost odvození</span><span style={{ fontFamily: 'var(--font-mono)' }}>{pct} %</span>
               </div>
               <div style={{ height: 8, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#5c9468' : pct >= 70 ? '#d89a54' : '#c0392b', borderRadius: 999 }}/>
+                <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#5c9468' : pct >= 70 ? '#d89a54' : 'var(--danger)', borderRadius: 999 }}/>
               </div>
               <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '8px 0 0' }}>
                 {pct >= 90 ? '✓ Dost vysoká — filtr kontinentu lze zapnout.'

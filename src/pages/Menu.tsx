@@ -508,7 +508,7 @@ function ProgressCard({ lvl, world, delta }: { lvl: LevelInfo; world: { rank: nu
                 alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: 2,
                 fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 999,
                 background: up ? 'rgba(92,148,104,0.16)' : 'rgba(192,57,43,0.14)',
-                color: up ? 'var(--success-deep, #3f7a4d)' : '#c0392b',
+                color: up ? 'var(--success-deep, #3f7a4d)' : 'var(--danger)',
               }}>{up ? '▲' : '▼'} {Math.abs(delta).toLocaleString(loc)}</span>
             )}
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { getFriendRequests, signOut } from '@/lib/supabase'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
@@ -11,12 +12,7 @@ type Tab = 'home' | 'campaigns' | 'badges' | 'profile'
 /** Sdílená mobilní spodní lišta (Domů · Kampaně · [Play] · Odznaky · Profil).
  *  Na desktopu se nevykresluje. Play otevře bottom-sheet launcher. */
 export default function MobileNav({ active }: { active?: Tab }) {
-  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false))
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
+  const isMobile = useIsMobile()
 
   const { t } = useTranslation()
   const { isAdmin } = useAuth()

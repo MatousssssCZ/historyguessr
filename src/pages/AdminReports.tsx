@@ -151,7 +151,7 @@ function Grid({ children }: { children: React.ReactNode }) {
 function Kpi({ label, value, sub, hl, warn }: { label: string; value?: number; sub?: string; hl?: boolean; warn?: boolean }) {
   return (
     <div style={{ background: 'var(--surface)', border: `1px solid ${warn ? 'rgba(192,57,43,0.3)' : 'var(--line)'}`, borderRadius: 14, padding: 16 }}>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, letterSpacing: '-0.02em', color: warn ? '#c0392b' : hl ? 'var(--accent)' : 'var(--ink)', lineHeight: 1 }}>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, letterSpacing: '-0.02em', color: warn ? 'var(--danger)' : hl ? 'var(--accent)' : 'var(--ink)', lineHeight: 1 }}>
         {value != null ? value.toLocaleString('cs-CZ') : '—'}<small style={{ fontSize: 13, color: 'var(--ink-3)' }}>{sub}</small>
       </div>
       <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6 }}>{label}</div>

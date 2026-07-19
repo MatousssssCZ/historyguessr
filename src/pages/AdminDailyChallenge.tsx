@@ -164,7 +164,7 @@ export default function AdminDailyChallengePage() {
                   style={{
                     width: '100%', padding: '10px 20px', border: 'none',
                     background: 'transparent', textAlign: 'left',
-                    fontSize: 13, color: '#c0392b', cursor: 'pointer',
+                    fontSize: 13, color: 'var(--danger)', cursor: 'pointer',
                     borderBottom: '1px solid var(--line)',
                   }}
                 >

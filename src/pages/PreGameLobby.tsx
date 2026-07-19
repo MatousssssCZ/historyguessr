@@ -13,6 +13,7 @@ import { singlePlayerAnalytics, monetizationAnalytics } from '@/lib/analytics'
 import type { SinglePlayerPreset, PresetRules } from '@/lib/presets'
 import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { GameOptions } from '@/hooks/useGame'
 
 const CATEGORIES = [
@@ -46,12 +47,7 @@ export default function PreGameLobbyPage() {
   const [sortBy, setSortBy] = useState<SortBy>('year')
 
   // Desktop dostává vlastní, přehlednější dvousloupcový layout
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 900)
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 900)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+  const isMobile = useIsMobile()
 
   // ── Free / Premium (autorita je server; tohle řídí jen UI) ──
   const { user } = useAuth()
@@ -323,7 +319,7 @@ export default function PreGameLobbyPage() {
       display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12,
       padding: '11px 14px', borderRadius: 11,
       background: enough ? 'var(--success-soft)' : 'rgba(192,57,43,0.08)',
-      color: enough ? 'var(--success-deep)' : '#c0392b',
+      color: enough ? 'var(--success-deep)' : 'var(--danger)',
     }}>
       {loading ? '…' : enough
         ? <><span>✓</span> {t('pregame.inGame', { count: availableCount })}{excluded.size > 0 && <span style={{ color: 'var(--ink-3)' }}> · {t('pregame.excluded', { n: excluded.size })}</span>}</>
@@ -669,7 +665,7 @@ function PresetBar({ presets, canUse, canShare, onLoad, onSave, onOverwrite, onD
               {p.is_shared ? '🔗' : '↗'}
             </button>
           )}
-          <button className="btn btn-ghost" style={{ ...miniBtn, color: '#c0392b' }} disabled={busy} onClick={run(() => onDelete(p))} title="Smazat">✕</button>
+          <button className="btn btn-ghost" style={{ ...miniBtn, color: 'var(--danger)' }} disabled={busy} onClick={run(() => onDelete(p))} title="Smazat">✕</button>
         </div>
       ))}
     </div>

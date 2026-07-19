@@ -344,7 +344,7 @@ function DailyYearCalendar({ played }: { played: Set<string> }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     border: isToday ? '1.5px solid var(--ink)' : '1px solid var(--line)',
                     background: isPlayed ? 'var(--success, #5c9468)' : (isFuture ? 'var(--surface)' : 'rgba(192,57,43,0.10)'),
-                    color: isPlayed ? '#fff' : (isFuture ? 'transparent' : '#c0392b'),
+                    color: isPlayed ? '#fff' : (isFuture ? 'transparent' : 'var(--danger)'),
                   }}>{isPlayed ? '✓' : (isFuture ? '' : '✕')}</span>
                 )
               })}

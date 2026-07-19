@@ -10,6 +10,7 @@ import { preloadImage } from '@/lib/preload'
 import { maintainMultiplayer } from '@/lib/supabase'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
 import YearRange from '@/components/YearRange'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const DEFAULT_SETTINGS: RoomSettings = {
   rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025, mode: 'classic',
@@ -42,15 +43,8 @@ export default function MultiplayerLobbyPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [matchingEvents, setMatchingEvents] = useState<number | null>(null)
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const isMobile = useIsMobile()
   const unsubRef = useRef<(() => void) | null>(null)
-
-  // Reaguj na změnu velikosti / otočení obrazovky
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
   // Když přecházíme do hry, NESMÍME hráče odhlásit z místnosti (unmount lobby)
   const enteringGameRef = useRef(false)
 
@@ -259,7 +253,7 @@ export default function MultiplayerLobbyPage() {
           </div>
           <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', margin: '0 0 18px' }}>{t('lobby.codePlaceholder')}</p>
 
-          {error && <p style={{ fontSize: 13, color: '#c0392b', marginBottom: 12 }}>⚠ {error}</p>}
+          {error && <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 12 }}>⚠ {error}</p>}
 
           <button disabled={joinCode.length !== 5 || loading} onClick={handleJoin} style={{
             width: '100%', padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
@@ -382,7 +376,7 @@ export default function MultiplayerLobbyPage() {
           onTo={v => handleSettingChange('year_to', v)}
         />
         {matchingEvents !== null && (
-          <p style={{ fontSize: 12, color: matchingEvents >= minEvents ? 'var(--ink-3)' : '#c0392b', margin: '8px 0 0', fontFamily: 'var(--font-mono)' }}>
+          <p style={{ fontSize: 12, color: matchingEvents >= minEvents ? 'var(--ink-3)' : 'var(--danger)', margin: '8px 0 0', fontFamily: 'var(--font-mono)' }}>
             {matchingEvents >= minEvents ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
             {matchingEvents < minEvents && t('lobby.minRounds', { min: minEvents })}
           </p>

@@ -456,7 +456,7 @@ export default function AdminImportPage() {
               ].map(s => (
                 <div key={s.label} className="card" style={{ padding: '16px 20px' }}>
                   <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>{s.label}</div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, letterSpacing: '-0.02em', color: s.label === 'Chyby' && s.value > 0 ? '#c0392b' : 'var(--ink)' }}>{s.value}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, letterSpacing: '-0.02em', color: s.label === 'Chyby' && s.value > 0 ? 'var(--danger)' : 'var(--ink)' }}>{s.value}</div>
                 </div>
               ))}
             </div>
@@ -521,7 +521,7 @@ export default function AdminImportPage() {
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           {row.errors.length > 0
-                            ? <span style={{ fontSize: 11, color: '#c0392b', background: 'rgba(192,57,43,0.08)', padding: '2px 8px', borderRadius: 999 }} title={row.errors.join(', ')}>✗ {row.errors[0]}</span>
+                            ? <span style={{ fontSize: 11, color: 'var(--danger)', background: 'rgba(192,57,43,0.08)', padding: '2px 8px', borderRadius: 999 }} title={row.errors.join(', ')}>✗ {row.errors[0]}</span>
                             : <span style={{ fontSize: 11, color: '#1d6b3a', background: 'rgba(39,174,96,0.1)', padding: '2px 8px', borderRadius: 999 }}>✓ OK</span>
                           }
                         </td>

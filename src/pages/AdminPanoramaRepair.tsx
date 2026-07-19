@@ -57,7 +57,7 @@ export default function AdminPanoramaRepairPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 18 }}>
               <Stat label="Zkontrolováno" value={result.total}/>
               <Stat label="Opraveno" value={result.fixed} accent="#5c9468"/>
-              <Stat label="K řešení" value={result.problems.length} accent={result.problems.length ? '#c0392b' : undefined}/>
+              <Stat label="K řešení" value={result.problems.length} accent={result.problems.length ? 'var(--danger)' : undefined}/>
             </div>
             {result.fixed > 0 && (
               <p style={{ fontSize: 13, color: '#3f7a4d', marginBottom: 14 }}>✓ Opraveno {result.fixed} odkazů — panoramata by se teď měla načíst.</p>
@@ -69,7 +69,7 @@ export default function AdminPanoramaRepairPage() {
                   {result.problems.map(p => (
                     <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 14px' }}>
                       <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)' }}>{p.title}</div>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: '#c0392b', marginTop: 2 }}>{p.note}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--danger)', marginTop: 2 }}>{p.note}</div>
                     </div>
                   ))}
                 </div>
