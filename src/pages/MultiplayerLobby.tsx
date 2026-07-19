@@ -301,65 +301,80 @@ export default function MultiplayerLobbyPage() {
     </div>
   )
 
+  // Segmentovaný přepínač (počet kol, časový limit) — sladěný s „Klasickou hrou"
+  const Segmented = <T extends number>({ value, options, onChange }: {
+    value: T; options: readonly { v: T; label: string }[]; onChange: (v: T) => void
+  }) => (
+    <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 4, gap: 4 }}>
+      {options.map(o => {
+        const on = value === o.v
+        return (
+          <button key={o.v} onClick={() => onChange(o.v)} style={{
+            flex: 1, border: 'none', padding: '9px 0', borderRadius: 9, cursor: 'pointer',
+            fontFamily: 'var(--font-serif)', fontSize: 15,
+            background: on ? 'var(--paper-50)' : 'transparent',
+            color: on ? 'var(--ink)' : 'var(--ink-2)', fontWeight: on ? 500 : 400,
+            boxShadow: on ? '0 1px 4px rgba(42,31,23,0.08)' : 'none',
+          }}>{o.label}</button>
+        )
+      })}
+    </div>
+  )
+
   const SettingsPanel = () => {
     const isBR = settings.mode === 'battle_royale'
     return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Režim hry */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      {/* Herní režim — výrazný výběr karet */}
       <div>
-        <label className="label">{t('lobby.modeLabel')}</label>
-        <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 4, gap: 4 }}>
-          {([['classic', t('lobby.modeClassic')], ['battle_royale', t('lobby.modeBR')]] as const).map(([m, lbl]) => {
-            const on = (settings.mode ?? 'classic') === m
-            return (
-              <button key={m} onClick={() => handleSettingChange('mode', m)} style={{
-                flex: 1, border: 'none', padding: '9px 0', borderRadius: 7, cursor: 'pointer',
-                fontSize: 13, fontWeight: on ? 600 : 400,
-                background: on ? 'var(--accent)' : 'transparent', color: on ? '#fff' : 'var(--ink-2)',
-              }}>{lbl}</button>
-            )
-          })}
+        <MpLabel>{t('lobby.modeLabel')}</MpLabel>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <ModeCard
+            icon="🏛" title={t('lobby.modeClassic')} desc={t('lobby.modeClassicDesc')}
+            on={!isBR} onClick={() => handleSettingChange('mode', 'classic')}/>
+          <ModeCard
+            icon="⚔" title={t('lobby.modeBR')} desc={t('lobby.brHint')}
+            on={isBR} onClick={() => handleSettingChange('mode', 'battle_royale')}/>
         </div>
-        {isBR && <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '6px 2px 0' }}>{t('lobby.brHint')}</p>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isBR ? '1fr' : '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isBR ? '1fr' : '1fr 1fr', gap: 18 }}>
         {!isBR && (
         <div>
-          <label className="label">{t('pregame.rounds')}</label>
-          <select className="input" style={{ padding: '8px 12px' }} value={settings.rounds} onChange={e => handleSettingChange('rounds', Number(e.target.value))}>
-            <option value={3}>{t('lobby.rounds3')}</option>
-            <option value={5}>{t('lobby.rounds5')}</option>
-            <option value={10}>{t('lobby.rounds10')}</option>
-          </select>
+          <MpLabel>{t('pregame.rounds')}</MpLabel>
+          <Segmented value={settings.rounds}
+            options={[{ v: 3, label: '3' }, { v: 5, label: '5' }, { v: 10, label: '10' }]}
+            onChange={v => handleSettingChange('rounds', v)}/>
         </div>
         )}
         <div>
-          <label className="label">{t('lobby.timeLabel')}</label>
-          <select className="input" style={{ padding: '8px 12px' }} value={settings.time_limit} onChange={e => handleSettingChange('time_limit', Number(e.target.value))}>
-            <option value={30}>{t('lobby.sec30')}</option>
-            <option value={60}>{t('lobby.sec60')}</option>
-            <option value={90}>{t('lobby.sec90')}</option>
-            <option value={120}>{t('lobby.sec120')}</option>
-          </select>
+          <MpLabel>{t('lobby.timeLabel')}</MpLabel>
+          <Segmented value={settings.time_limit}
+            options={[{ v: 30, label: '30s' }, { v: 60, label: '60s' }, { v: 90, label: '90s' }, { v: 120, label: '120s' }]}
+            onChange={v => handleSettingChange('time_limit', v)}/>
         </div>
       </div>
+
       <div>
-        <label className="label">{t('lobby.categoriesLabel')}</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <MpLabel>{t('lobby.categoriesLabel')}</MpLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {CATEGORIES.map(cat => {
-            const active = settings.categories.includes(cat.id)
+            const on = settings.categories.includes(cat.id)
             return (
-              <button key={cat.id} onClick={() => toggleCategory(cat.id)}
-                style={{ padding: '6px 12px', borderRadius: 999, fontSize: 12, cursor: 'pointer', border: active ? '1px solid rgba(217,119,87,0.4)' : '0.5px solid var(--line-strong)', background: active ? 'rgba(217,119,87,0.1)' : 'var(--paper-100)', color: active ? 'var(--accent-deep)' : 'var(--ink-3)', transition: 'all 150ms' }}>
-                {t('cat.' + cat.id)}
-              </button>
+              <button key={cat.id} onClick={() => toggleCategory(cat.id)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999,
+                fontSize: 13, cursor: 'pointer',
+                border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
+                background: on ? 'var(--accent)' : 'transparent',
+                color: on ? '#fff' : 'var(--ink-2)',
+              }}>{t('cat.' + cat.id)}</button>
             )
           })}
         </div>
       </div>
+
       <div>
-        <label className="label">{t('lobby.yearSpread')}</label>
+        <MpLabel>{t('lobby.yearSpread')}</MpLabel>
         <YearRange
           from={settings.year_from}
           to={settings.year_to}
@@ -367,7 +382,7 @@ export default function MultiplayerLobbyPage() {
           onTo={v => handleSettingChange('year_to', v)}
         />
         {matchingEvents !== null && (
-          <p style={{ fontSize: 12, color: matchingEvents >= minEvents ? 'var(--ink-3)' : '#c0392b', margin: '6px 0 0', fontFamily: 'var(--font-mono)' }}>
+          <p style={{ fontSize: 12, color: matchingEvents >= minEvents ? 'var(--ink-3)' : '#c0392b', margin: '8px 0 0', fontFamily: 'var(--font-mono)' }}>
             {matchingEvents >= minEvents ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
             {matchingEvents < minEvents && t('lobby.minRounds', { min: minEvents })}
           </p>
@@ -389,55 +404,58 @@ export default function MultiplayerLobbyPage() {
     </div>
   )
 
-  // ── Desktop — split layout ────────────────────────────
+  // ── Desktop — kartový layout (sladěno s „Klasickou hrou") ──
   if (!isMobile) {
     return (
-      <div style={{ height: '100dvh', display: 'grid', gridTemplateColumns: '420px 1fr', background: 'var(--paper-200)', overflow: 'hidden' }}>
-
-        {/* Levá — kód + hráči */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', background: 'var(--surface)', overflow: 'hidden' }}>
-          {/* Kód místnosti */}
-          <div style={{ padding: '32px 36px 26px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: '0 0 10px' }}>{t('lobby.roomCode')}</p>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--ink)', lineHeight: 1, marginBottom: 14 }}>
-                {room?.code}
-              </div>
-              <button
-                onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                {t('lobby.copy')}
-              </button>
-            </div>
+      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 32px 0' }}>
+          {/* Hlavička */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
             <MpBack onClick={handleLeave} label={t('lobby.leave')}/>
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-deep)', marginBottom: 3 }}>{t('menu.multiplayer')}</div>
+              <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--ink)', letterSpacing: '-0.015em', margin: 0, lineHeight: 1 }}>{t('lobby.customize')}</h1>
+            </div>
           </div>
 
-          {/* Hráči */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 12px 10px' }}>
-              Hráči {players.length} / 12
-            </p>
-            <PlayerList/>
-          </div>
-        </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.55fr) minmax(340px,1fr)', gap: 24, alignItems: 'start' }}>
+            {/* Levý sloupec — nastavení */}
+            <div>
+              <MpCard>
+                {isHost ? SettingsPanel() : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 16 }}>
+                    <span className="spinner"/>
+                    <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</p>
+                  </div>
+                )}
+                {error && <div className="alert alert-error" style={{ marginTop: 16 }}>{error}</div>}
+              </MpCard>
+            </div>
 
-        {/* Pravá — nastavení + start */}
-        <div style={{ background: 'var(--paper-200)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '40px 48px' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '0 0 4px' }}>{t('lobby.gameSettings')}</p>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, margin: '0 0 32px', letterSpacing: '-0.01em' }}>{t('lobby.customize')}</h2>
-            {isHost ? SettingsPanel() : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 16 }}>
-                <span className="spinner"/>
-                <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</p>
-              </div>
-            )}
-            {error && <div className="alert alert-error" style={{ marginTop: 16 }}>{error}</div>}
-          </div>
-          <div style={{ padding: '24px 48px', borderTop: '1px solid var(--line)' }}>
-            <StartButton/>
+            {/* Pravý sloupec — kód + hráči + start (sticky) */}
+            <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Kód místnosti */}
+              <MpCard>
+                <MpLabel>{t('lobby.roomCode')}</MpLabel>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 44, fontWeight: 700, letterSpacing: '0.18em', color: 'var(--ink)', lineHeight: 1, marginBottom: 14 }}>
+                  {room?.code}
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  {t('lobby.copy')}
+                </button>
+              </MpCard>
+
+              {/* Hráči */}
+              <MpCard>
+                <MpLabel>Hráči · {players.length} / 12</MpLabel>
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}><PlayerList/></div>
+              </MpCard>
+
+              <StartButton/>
+            </div>
           </div>
         </div>
       </div>
@@ -484,5 +502,40 @@ function MpBack({ onClick, label }: { onClick: () => void; label: string }) {
       background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
     }}>←</button>
+  )
+}
+
+// ── Sladěno s „Klasickou hrou" ────────────────────────────
+function MpCard({ children, padding = 20 }: { children: React.ReactNode; padding?: number }) {
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding, overflow: 'hidden' }}>
+      {children}
+    </div>
+  )
+}
+
+function MpLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 10 }}>
+      {children}
+    </div>
+  )
+}
+
+function ModeCard({ icon, title, desc, on, onClick }: { icon: string; title: string; desc: string; on: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      textAlign: 'left', cursor: 'pointer', padding: '14px 15px', borderRadius: 14,
+      border: `1.5px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
+      background: on ? 'rgba(217,119,87,0.08)' : 'var(--surface)',
+      display: 'flex', flexDirection: 'column', gap: 6, transition: 'border-color 150ms, background 150ms',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 18 }}>{icon}</span>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', fontWeight: 500 }}>{title}</span>
+        {on && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: 15 }}>✓</span>}
+      </div>
+      <span style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.45 }}>{desc}</span>
+    </button>
   )
 }
