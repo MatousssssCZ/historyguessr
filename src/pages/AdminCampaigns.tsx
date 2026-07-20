@@ -412,6 +412,12 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
       setErr(`Pro publikování musí mít kampaň přesně ${roundsCount} událostí (má ${filled.length}).`); return
     }
     setSaving(true); setErr(null)
+    // Publikaci necháme na KONEC. setCampaignEvents nejdřív smaže staré události,
+    // což spustí trigger demote_broken_campaign a publikovanou kampaň shodí zpět
+    // na koncept (0 aktivních událostí). Proto: ulož jako koncept → ulož události
+    // → teprve pak publikuj (to trigger enforce_campaign_publishable ověří nad
+    // už uloženými událostmi).
+    const wantPublish = f.status === 'published'
     const patch: Partial<Campaign> = {
       category_id: f.category_id,
       title: f.title.trim(),
@@ -424,7 +430,7 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
       required_category_stars: parseInt(f.required_category_stars) || 0,
       rounds_count: roundsCount,
       is_premium: f.is_premium,
-      status: f.status,
+      status: wantPublish ? 'draft' : f.status,
     }
     let campaignId = campaign?.id
     if (campaign) {
@@ -438,9 +444,15 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
     // ulož 5-tici (komprimuje na vyplněné v pořadí slotů)
     const ordered = slots.filter(Boolean) as string[]
     const { error: evErr } = await setCampaignEvents(campaignId!, ordered)
+    if (evErr) { setSaving(false); setErr('Kampaň uložena, ale události se nepodařilo uložit: ' + evErr.message); return }
+
+    // Teď (události uložené) můžeme publikovat — server ověří validitu.
+    if (wantPublish && campaignId) {
+      const { error } = await updateCampaign(campaignId, { status: 'published' })
+      if (error) { setSaving(false); setErr(prettyDbError(error.message)); getCampaignPublishErrors(campaignId).then(setPubErrors).catch(() => {}); return }
+    }
     setSaving(false)
-    if (evErr) { setErr('Kampaň uložena, ale události se nepodařilo uložit: ' + evErr.message); return }
-    // Po uložení událostí přepočítej validaci (server mohl kampaň shodit do konceptu)
+    // Po uložení přepočítej validaci (pro zobrazení případných zbývajících chyb)
     if (campaignId) getCampaignPublishErrors(campaignId).then(setPubErrors).catch(() => {})
     await onSaved()
   }
