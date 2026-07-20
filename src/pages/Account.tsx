@@ -6,6 +6,7 @@ import { updateProfile, signOut } from '@/lib/supabase'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
 import MobileNav from '@/components/MobileNav'
+import DesktopSidebar from '@/components/DesktopSidebar'
 import HowToPlay from '@/components/HowToPlay'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
@@ -39,7 +40,9 @@ export default function AccountPage() {
   async function handleSignOut() { await signOut(); navigate('/auth') }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
+      <DesktopSidebar/>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>
@@ -107,6 +110,7 @@ export default function AccountPage() {
             padding: 11, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
           }}>{t('account.signOut')}</button>
         </div>
+      </div>
       </div>
       <MobileNav active="profile"/>
       {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)}/>}

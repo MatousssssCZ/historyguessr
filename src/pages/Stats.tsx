@@ -7,6 +7,7 @@ import { getUserSessions, getUserDailyResults, getCategoryHits, localDateISO, ty
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
 import MobileNav from '@/components/MobileNav'
+import DesktopSidebar from '@/components/DesktopSidebar'
 import type { RoundResult } from '@/types/database'
 
 const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
@@ -98,7 +99,9 @@ export default function StatsPage() {
   const n = (v: number) => v.toLocaleString(currentLocale())
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
+      <DesktopSidebar/>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
       {/* Hlavička (Pergamen) */}
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 18px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 16px' }}>
@@ -178,6 +181,7 @@ export default function StatsPage() {
             </Section>
           </>
         )}
+      </div>
       </div>
       <MobileNav active="badges"/>
     </div>

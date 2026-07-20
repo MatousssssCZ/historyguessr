@@ -4,6 +4,7 @@ import { getRandomEvents } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import { GuessMap } from '@/components/GameMap'
 import { PanoramaViewer, YearPicker } from '@/pages/Game'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
@@ -30,6 +31,48 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
   ]
   const step = steps[i]
   const last = i === steps.length - 1
+  const isMobile = useIsMobile()
+
+  const dots = (
+    <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+      {steps.map((_, k) => (
+        <span key={k} style={{ width: k === i ? 20 : 5, height: 5, borderRadius: 5, background: k === i ? 'var(--accent)' : 'var(--line-strong)', transition: 'width 200ms' }}/>
+      ))}
+    </div>
+  )
+  const nextBtn = (
+    <button onClick={() => last ? onClose() : setI(i + 1)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 14, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 12px 26px -8px rgba(217,119,87,0.5)' }}>
+      {last ? t('menu.htStart') : t('menu.htNext')} →
+    </button>
+  )
+  const skipBtn = !last && (
+    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink-3)' }}>{t('menu.htSkip')}</button>
+  )
+
+  // ── Desktop: dvousloupcová karta (velká ukázka + text) ──
+  if (!isMobile) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(20,15,10,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <div style={{ width: 'min(980px, 94vw)', height: 'min(640px, 88vh)', background: 'var(--surface)', borderRadius: 26, overflow: 'hidden', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--line)', display: 'grid', gridTemplateColumns: '1.3fr 0.9fr' }}>
+          {/* Ukázka */}
+          <div style={{ position: 'relative', display: 'flex', background: 'var(--paper-200)' }}>{step.art}</div>
+          {/* Text + navigace */}
+          <div style={{ display: 'flex', flexDirection: 'column', padding: '26px 34px' }}>
+            <div style={{ height: 30, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>{skipBtn}</div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 20, boxShadow: '0 12px 24px -8px rgba(217,119,87,0.5)' }}>{step.icon}</div>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.15, margin: '0 0 12px', letterSpacing: '-0.01em' }}>{t(step.titleKey)}</h2>
+              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{t(step.descKey)}</p>
+            </div>
+            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {dots}
+              {nextBtn}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--paper-200)', display: 'flex', flexDirection: 'column', paddingTop: 'var(--safe-top)', paddingBottom: 'max(20px, var(--safe-bottom))' }}>

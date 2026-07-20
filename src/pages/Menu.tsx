@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import MobileNav from '@/components/MobileNav'
+import DesktopSidebar from '@/components/DesktopSidebar'
 import HowToPlay from '@/components/HowToPlay'
 
 type DailyState = 'loading' | 'new' | 'done'
@@ -39,7 +40,7 @@ export function invalidateMenuCache() { menuCache = null }
 
 export default function MenuPage() {
   const { t } = useTranslation()
-  const { user, profile, isAdmin } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
 
@@ -194,7 +195,6 @@ export default function MenuPage() {
   const hour = new Date().getHours()
   const greet = t(hour < 11 ? 'menu.greetMorning' : hour < 18 ? 'menu.greetAfternoon' : 'menu.greetEvening')
   const dateStr = new Date().toLocaleDateString(currentLocale(), { weekday: 'short', day: 'numeric', month: 'long' }).toUpperCase()
-  const monogram = name.trim().charAt(0).toUpperCase() || '?'
 
   const goQuick = () => navigate('/game', { state: { rounds: 1 } })
   const goClassic = () => navigate('/play')
@@ -208,7 +208,7 @@ export default function MenuPage() {
   if (!isMobile) {
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex' }}>
-        <Sidebar navigate={navigate} isAdmin={isAdmin} name={name} monogram={monogram} lvl={lvl} streak={dailyStreak}/>
+        <DesktopSidebar streak={dailyStreak}/>
         <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
           <div style={{ maxWidth: 980, margin: '0 auto', padding: '30px 40px 48px' }}>
             {/* Header */}
@@ -397,25 +397,6 @@ function HelpButton({ onClick }: { onClick: () => void }) {
 }
 
 // ─── Avatar s odznakem série ──────────────────────────────
-function Avatar({ monogram, streak, size }: { monogram: string; streak: number; size: number }) {
-  return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
-      <div style={{
-        width: size, height: size, borderRadius: '50%',
-        background: 'linear-gradient(150deg,#e8dfd0,#cdbfa9)', border: '1px solid var(--line-strong)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#4a4033', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: size * 0.34,
-      }}>{monogram}</div>
-      {streak > 0 && (
-        <div style={{
-          position: 'absolute', bottom: -6, right: -8, background: 'var(--accent)', color: '#fff',
-          fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 10, padding: '2px 6px', borderRadius: 20,
-          display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap',
-        }}>🔥{streak}</div>
-      )}
-    </div>
-  )
-}
 
 // ✓/✕ za posledních 7 dní (jen ode dne registrace)
 function DailyMarks({ days }: { days: boolean[] }) {
@@ -539,48 +520,6 @@ function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; ti
       <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{title}</div>
       <div style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 3 }}>{sub}</div>
     </button>
-  )
-}
-
-// ─── Rychlé odkazy (desktop pravý sloupec) ────────────────
-// ─── Desktop sidebar ──────────────────────────────────────
-function Sidebar({ navigate, isAdmin, name, monogram, lvl, streak }: {
-  navigate: ReturnType<typeof useNavigate>; isAdmin: boolean; name: string; monogram: string; lvl: LevelInfo; streak: number
-}) {
-  const { t } = useTranslation()
-  const nav: { icon: string; label: string; to: string; active?: boolean }[] = [
-    { icon: '🏠', label: t('menu.navHome'), to: '/menu', active: true },
-    { icon: '🏛', label: t('menu.campaigns'), to: '/campaigns' },
-    { icon: '🏅', label: t('menu.navBadges'), to: '/stats' },
-    { icon: '👥', label: t('menu.friendsTitle'), to: '/friends' },
-    { icon: '👤', label: t('menu.navProfile'), to: '/account' },
-  ]
-  if (isAdmin) nav.push({ icon: '⚙️', label: t('menu.admin'), to: '/admin' })
-  return (
-    <div style={{ width: 234, flexShrink: 0, background: 'var(--surface)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', padding: '22px 16px', minHeight: '100dvh' }}>
-      <div style={{ padding: '0 6px', marginBottom: 26 }}><Wordmark/></div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {nav.map(n => (
-          <button key={n.to} onClick={() => navigate(n.to)} style={{
-            display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
-            padding: '10px 12px', borderRadius: 11,
-            background: n.active ? 'var(--paper-100)' : 'transparent',
-            border: `1px solid ${n.active ? 'var(--line)' : 'transparent'}`,
-            color: n.active ? 'var(--ink)' : 'var(--ink-2)',
-            fontFamily: 'var(--font-sans)', fontWeight: n.active ? 700 : 500, fontSize: 13.5,
-          }}>
-            <span style={{ fontSize: 18 }}>{n.icon}</span>{n.label}
-          </button>
-        ))}
-      </div>
-      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 11, padding: 10, borderRadius: 13, background: 'var(--paper-100)', border: '1px solid var(--line)' }}>
-        <Avatar monogram={monogram} streak={0} size={36}/>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 1 }}>LVL {lvl.level} · {t('menu.streakDays', { n: streak })}</div>
-        </div>
-      </div>
-    </div>
   )
 }
 

@@ -7,6 +7,7 @@ import {
 } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import MobileNav from '@/components/MobileNav'
+import DesktopSidebar from '@/components/DesktopSidebar'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }
 const rowCard: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '12px 13px', display: 'flex', alignItems: 'center', gap: 12 }
@@ -42,7 +43,9 @@ export default function FriendsPage() {
   async function unfriend(id: string) { if (!confirm(t('friends.removeConfirm'))) return; await removeFriend(id); load() }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
+      <DesktopSidebar/>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 20px' }}>
@@ -108,6 +111,7 @@ export default function FriendsPage() {
             )}
           </>
         )}
+      </div>
       </div>
       <MobileNav/>
     </div>

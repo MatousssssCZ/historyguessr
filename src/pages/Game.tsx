@@ -144,8 +144,8 @@ export default function GamePage() {
         {/* Název — výrazný overlay vlevo nahoře, pluje nad mapou i panelem roku */}
         {state.phase === 'playing' && (
           <div style={{
-            position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 62px)', left: 16, zIndex: 45,
-            maxWidth: 'min(400px, 58vw)', pointerEvents: 'none',
+            position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 62px)', left: 16, right: 16, zIndex: 45,
+            maxWidth: 'min(620px, 82vw)', pointerEvents: 'none',
           }}>
             <div style={{
               background: 'rgba(13,9,6,0.6)',
@@ -163,6 +163,7 @@ export default function GamePage() {
                 fontSize: 'clamp(15px, 2.2vw, 22px)',
                 color: 'var(--on-dark)',
                 letterSpacing: '-0.01em', lineHeight: 1.2,
+                overflowWrap: 'anywhere',
               }}>
                 {eventTitle(currentEvent)}
               </div>
