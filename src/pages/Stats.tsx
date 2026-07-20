@@ -3,12 +3,20 @@ import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getUserSessions, getUserDailyResults, getCategoryHits, localDateISO, type SessionRow } from '@/lib/supabase'
+import { getUserSessions, getUserDailyResults, getCategoryHits, getMyRewards, localDateISO, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
-import type { RoundResult } from '@/types/database'
+import type { RoundResult, EarnedReward, RewardRarity } from '@/types/database'
+
+// Barvy vzácnosti relikvií (funkční i v tmavém režimu — poloprůhledné podklady)
+const RARITY: Record<RewardRarity, { border: string; bg: string; label: string }> = {
+  common:    { border: 'var(--line-strong)', bg: 'var(--paper-200)',        label: 'Běžná' },
+  rare:      { border: '#5b7fa6',            bg: 'rgba(91,127,166,0.14)',   label: 'Vzácná' },
+  epic:      { border: '#8a6bb0',            bg: 'rgba(138,107,176,0.16)',  label: 'Epická' },
+  legendary: { border: '#c79a3e',            bg: 'rgba(199,154,62,0.18)',   label: 'Legendární' },
+}
 
 const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
 
@@ -80,16 +88,19 @@ export default function StatsPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
   const [dailyDates, setDailyDates] = useState<Set<string>>(new Set())
+  const [rewards, setRewards] = useState<EarnedReward[]>([])
+  const [achTab, setAchTab] = useState<'titles' | 'relics'>('titles')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user?.id) return
     let alive = true
-    Promise.all([getUserSessions(user.id), getUserDailyResults(user.id), getCategoryHits(user.id)]).then(([sessions, daily, hits]) => {
+    Promise.all([getUserSessions(user.id), getUserDailyResults(user.id), getCategoryHits(user.id), getMyRewards().catch(() => [])]).then(([sessions, daily, hits, rw]) => {
       if (!alive) return
       setStats(computeStats(sessions, daily, profile?.games_played ?? 0, profile?.total_score ?? 0))
       setCatHits(hits)
       setDailyDates(new Set(daily.map(d => d.date)))
+      setRewards(rw as EarnedReward[])
       setLoading(false)
     }).catch(() => { if (alive) setLoading(false) })
     return () => { alive = false }
@@ -171,14 +182,38 @@ export default function StatsPage() {
               <TrendChart scores={stats.gameScores} trendPct={stats.trendPct}/>
             </Section>
 
-            <Section label={t('stats.achievements')}>
-              <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {ACHIEVEMENTS.map(cat => (
-                  <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>
-                ))}
+            <div style={{ marginTop: 22 }}>
+              {/* Hlavička sekce s přepínačem Tituly / Relikvie */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('stats.achievements')}</span>
+                <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 3, gap: 3 }}>
+                  {([['titles', t('stats.tabTitles')], ['relics', `${t('stats.tabRelics')}${rewards.length ? ` · ${rewards.length}` : ''}`]] as const).map(([tab, lbl]) => {
+                    const on = achTab === tab
+                    return (
+                      <button key={tab} onClick={() => setAchTab(tab)} style={{
+                        border: 'none', padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5,
+                        fontFamily: 'var(--font-sans)', fontWeight: on ? 600 : 500,
+                        background: on ? 'var(--surface)' : 'transparent', color: on ? 'var(--ink)' : 'var(--ink-3)',
+                        boxShadow: on ? '0 1px 3px rgba(42,31,23,0.1)' : 'none',
+                      }}>{lbl}</button>
+                    )
+                  })}
+                </div>
               </div>
-            </Section>
+
+              {achTab === 'titles' ? (
+                <>
+                  <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {ACHIEVEMENTS.map(cat => (
+                      <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <RelicGallery rewards={rewards}/>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -241,6 +276,45 @@ function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number
         </div>
       )}
     </div>
+  )
+}
+
+function RelicGallery({ rewards }: { rewards: EarnedReward[] }) {
+  const { t } = useTranslation()
+  if (rewards.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '34px 20px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16 }}>
+        <div style={{ fontSize: 30, opacity: 0.5, marginBottom: 8 }}>⚱️</div>
+        <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: 0, lineHeight: 1.5 }}>{t('stats.relicsEmpty')}</p>
+      </div>
+    )
+  }
+  return (
+    <>
+      <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 12px', lineHeight: 1.5 }}>{t('stats.relicsHint')}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+        {rewards.map(r => {
+          const rar = RARITY[r.rarity] ?? RARITY.common
+          return (
+            <div key={r.id} title={r.description ?? undefined} style={{
+              background: 'var(--surface)', border: `1.5px solid ${rar.border}`, borderRadius: 14,
+              padding: '16px 14px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+            }}>
+              <div style={{
+                width: 58, height: 58, borderRadius: '50%', background: rar.bg, border: `1px solid ${rar.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, overflow: 'hidden',
+              }}>
+                {r.icon_url ? <img src={r.icon_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : '⚱️'}
+              </div>
+              <div style={{ minWidth: 0, width: '100%' }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--ink)', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: rar.border, marginTop: 3 }}>{rar.label}</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
