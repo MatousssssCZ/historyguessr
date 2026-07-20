@@ -5,9 +5,14 @@ import L from 'leaflet'
 // Leaflet tile URL a attributace
 // {r} + detectRetina → na HiDPI displejích načte ostré @2x dlaždice
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-// Prostá URL bez {r} — pro mini náhled na dlaždici (minimální konfigurace)
-const TILE_URL_PLAIN = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+
+// Fyzická mapa (Esri World Physical): barevná hypsometrie souše (hory/nížiny)
+// i reliéf oceánského dna a příkopy. Nativně jen do zoom 8 → výš se přiblíží
+// (overzoom) přes maxNativeZoom; přesnost umístění to nemění, jen ostrost dlaždic.
+const PHYS_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}'
+const PHYS_ATTR = 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; US National Park Service'
+const PHYS_MAX_NATIVE = 8
 
 // Custom ikony (SVG inline — bez externích PNG souborů)
 const makeIcon = (fill: string, stroke: string) => L.divIcon({
@@ -87,10 +92,11 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         ...(compact ? {} : { worldCopyJump: true, maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 }),
       })
 
-      L.tileLayer(compact ? TILE_URL_PLAIN : TILE_URL, {
-        attribution: TILE_ATTR,
-        maxZoom: 19,
-        ...(compact ? {} : { noWrap: true, detectRetina: true }),
+      L.tileLayer(PHYS_URL, {
+        attribution: PHYS_ATTR,
+        maxNativeZoom: PHYS_MAX_NATIVE,
+        maxZoom: 18,
+        ...(compact ? {} : { noWrap: true }),
       }).addTo(map)
 
       // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
