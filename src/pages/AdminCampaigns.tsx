@@ -7,7 +7,9 @@ import {
   getAdminCampaignCategories, createCampaignCategory, updateCampaignCategory, deleteCampaignCategory,
   getAdminCampaigns, createCampaign, updateCampaign, deleteCampaign,
   getCampaignEvents, setCampaignEvents, getCampaignPublishErrors, duplicateCampaign,
+  uploadCategoryImage,
 } from '@/lib/supabase'
+import { compressIllustration } from '@/lib/imageCompression'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
 // Předvyplněný práh ★ pro novou kategorii dle pořadí: round(0.7·(k−1)·k)
@@ -185,6 +187,8 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [imgFile, setImgFile] = useState<File | null>(null)
+  const [imgPreview, setImgPreview] = useState<string | null>(null)
   const set = (k: keyof typeof f, v: any) => setF(s => ({ ...s, [k]: v }))
 
   async function save() {
@@ -204,11 +208,26 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
       is_premium: f.is_premium,
       status: f.status,
     }
-    const res = category
-      ? await updateCampaignCategory(category.id, patch)
-      : await createCampaignCategory({ ...patch, seq: defaultSeq ?? 0 })
+    let catId = category?.id
+    if (category) {
+      const { error } = await updateCampaignCategory(category.id, patch)
+      if (error) { setSaving(false); setErr(error.message); return }
+    } else {
+      const { data, error } = await createCampaignCategory({ ...patch, seq: defaultSeq ?? 0 })
+      if (error || !data) { setSaving(false); setErr(error?.message ?? 'Nepodařilo se vytvořit.'); return }
+      catId = (data as CampaignCategory).id
+    }
+    // Nahraný obrázek → zkomprimuj a ulož (potřebuje id kategorie)
+    if (imgFile && catId) {
+      try {
+        const compressed = await compressIllustration(imgFile)
+        const { url, error } = await uploadCategoryImage(compressed, catId)
+        if (error || !url) throw error ?? new Error('upload selhal')
+        const { error: upErr } = await updateCampaignCategory(catId, { hero_image_url: url })
+        if (upErr) throw upErr
+      } catch (e) { setSaving(false); setErr('Obrázek se nepodařilo uložit: ' + (e as Error).message); return }
+    }
     setSaving(false)
-    if (res.error) { setErr(res.error.message); return }
     await onSaved()
   }
 
@@ -225,7 +244,24 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
           <Field label="Popis (EN)"><textarea className="input" rows={2} value={f.description_en} onChange={e => set('description_en', e.target.value)}/></Field>
           <Field label="Popis (DE)"><textarea className="input" rows={2} value={f.description_de} onChange={e => set('description_de', e.target.value)}/></Field>
         </div>
-        <Field label="Hero obrázek (URL, volitelné)"><input className="input" value={f.hero_image_url} onChange={e => set('hero_image_url', e.target.value)} placeholder="https://…"/></Field>
+        <Field label="Obrázek kategorie">
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            {(imgPreview || f.hero_image_url) && (
+              <img src={imgPreview || f.hero_image_url} alt="" style={{ width: 104, height: 66, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }}/>
+            )}
+            <label className="btn btn-ghost" style={{ cursor: 'pointer' }}>
+              {(imgPreview || f.hero_image_url) ? 'Změnit…' : 'Nahrát obrázek…'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)) }
+              }}/>
+            </label>
+            {(imgPreview || f.hero_image_url) && (
+              <button type="button" className="btn btn-ghost" onClick={() => { setImgFile(null); setImgPreview(null); set('hero_image_url', '') }}>Odebrat</button>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 5 }}>Zkomprimuje se při uložení (max ~1600 px, WebP).</div>
+        </Field>
         <div style={{ display: 'grid', gridTemplateColumns: '80px 100px 1fr', gap: 12 }}>
           <Field label="Ikona"><input className="input" value={f.icon} onChange={e => set('icon', e.target.value)} placeholder="👑"/></Field>
           <Field label="Barva"><input type="color" value={f.color} onChange={e => set('color', e.target.value)} style={{ width: '100%', height: 40, border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer' }}/></Field>

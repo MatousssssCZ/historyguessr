@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getCampaignBundle, startCampaignAttempt, getEventsByIds, campaignErrorOf,
-  transformedImageUrl, FREE_EXPEDITIONS, type CampaignBundle,
+  FREE_EXPEDITIONS, type CampaignBundle,
 } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
@@ -34,7 +34,6 @@ export default function CampaignsPage() {
       setBundle({
         categories: [], campaignsByCat: {}, progress: {}, totalStars: 0,
         expeditions: FREE_EXPEDITIONS, isPremium: false, entitlements: FREE_ENTITLEMENTS,
-        categoryImages: {},
       })
     }
     setLoading(false)
@@ -142,9 +141,8 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
   const pct = cs.max > 0 ? Math.round((cs.earned / cs.max) * 100) : 0
   const locked = !acc.isUnlocked
   const color = cat.color || '#BE6240'
-  // Obrázek kategorie = ilustrační obrázek z události v kampaních této kategorie
-  const catImg = (bundle.categoryImages[cat.id] ?? [])[0]
-  const headerImg = catImg ? transformedImageUrl(catImg, { width: 560, quality: 60 }) : null
+  // Obrázek kategorie nahraný v administraci (u zamčených jen zešediví, zámek zůstává)
+  const headerImg = cat.hero_image_url || null
 
   return (
     <button onClick={() => {
@@ -169,7 +167,7 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         filter: locked ? 'grayscale(0.7)' : 'none', overflow: 'hidden',
       }}>
-        {headerImg && !locked && (
+        {headerImg && (
           <>
             <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${headerImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
             <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}dd)` }}/>
@@ -292,10 +290,7 @@ function CategoryView({ bundle, categoryId, userId, onBack, onReload }: {
 
   const color = cat.color || '#BE6240'
   const roundsHint = camps.length > 0 ? camps[0].rounds_count : 5
-  const heroImg = (() => {
-    const u = (bundle.categoryImages[categoryId] ?? [])[0]
-    return u ? transformedImageUrl(u, { width: 1200, quality: 60 }) : null
-  })()
+  const heroImg = cat.hero_image_url || null
 
   return (
     <>

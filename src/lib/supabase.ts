@@ -961,42 +961,29 @@ export interface CampaignBundle {
   expeditions: Expeditions
   isPremium: boolean
   entitlements: Entitlements
-  // Ilustrační obrázky událostí patřících do kampaní dané kategorie (klíč = category_id)
-  categoryImages: Record<string, string[]>
 }
 
-/** Ilustrační obrázky událostí pro každou kampaňovou kategorii.
- *  Vazba: campaign_categories → campaigns → campaign_events → events.event_image_url. */
-export async function getCampaignCategoryImages(): Promise<Record<string, string[]>> {
-  const { data } = await supabase
-    .from('campaign_events')
-    .select('campaigns!inner(category_id,status), events!inner(event_image_url,published)')
-    .eq('is_active', true)
-    .eq('campaigns.status', 'published')
-    .eq('events.published', true)
-    .not('events.event_image_url', 'is', null)
-  const out: Record<string, string[]> = {}
-  // PostgREST vrací u to-one embedu objekt (typy ho ale hlásí jako pole) → cast přes unknown.
-  type Row = { campaigns: { category_id: string } | null; events: { event_image_url: string | null } | null }
-  for (const row of (data ?? []) as unknown as Row[]) {
-    const catId = row.campaigns?.category_id
-    const url = row.events?.event_image_url
-    if (!catId || !url) continue
-    ;(out[catId] ??= [])
-    if (!out[catId].includes(url)) out[catId].push(url)
-  }
-  return out
+/** Nahraje (zkomprimovaný) obrázek kategorie do bucketu `events` a vrátí veřejnou URL.
+ *  Komprese se dělá u volajícího (compressIllustration). Upsert přepíše starý soubor. */
+export async function uploadCategoryImage(file: File, categoryId: string): Promise<{ url: string | null; error: Error | null }> {
+  const path = `categories/${categoryId}/hero.webp`
+  const { error } = await supabase.storage
+    .from('events')
+    .upload(path, file, { upsert: true, contentType: file.type || 'image/webp' })
+  if (error) return { url: null, error: error as Error }
+  const { data } = supabase.storage.from('events').getPublicUrl(path)
+  // Cache-buster, ať se po přepsání ukáže nový obrázek
+  return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }
 }
 
 /** Načte vše pro hráčskou obrazovku kampaní (jen publikované + vlastní progress + výpravy). */
 export async function getCampaignBundle(userId: string): Promise<CampaignBundle> {
-  const [catsRes, campsRes, progRes, exp, ent, categoryImages] = await Promise.all([
+  const [catsRes, campsRes, progRes, exp, ent] = await Promise.all([
     supabase.from('campaign_categories').select('*').eq('status', 'published').order('seq'),
     supabase.from('campaigns').select('*').eq('status', 'published').order('seq'),
     supabase.from('user_campaign_progress').select('*').eq('user_id', userId),
     getMyExpeditions(),
     getMyEntitlements(),
-    getCampaignCategoryImages().catch(() => ({} as Record<string, string[]>)),
   ])
   const allCats = (catsRes.data ?? []) as CampaignCategory[]
   const campaigns = (campsRes.data ?? []) as Campaign[]
@@ -1014,7 +1001,6 @@ export async function getCampaignBundle(userId: string): Promise<CampaignBundle>
     // Premium z entitlementů (respektuje expiraci)
     isPremium: isPremiumUser(ent),
     entitlements: ent,
-    categoryImages,
   }
 }
 
