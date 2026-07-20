@@ -332,10 +332,10 @@ export default function DailyChallengePage() {
         </div>
 
         {/* Plovoucí skleněný HUD */}
-        <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 12px)', left: 0, right: 0, zIndex: 25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '0 14px', pointerEvents: 'none' }}>
-          <div style={{ pointerEvents: 'auto', minWidth: 0, maxWidth: '58%', borderRadius: 16, padding: '6px 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
+        <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 12px)', left: 0, right: 0, zIndex: 25, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, padding: '0 14px', pointerEvents: 'none' }}>
+          <div style={{ pointerEvents: 'auto', minWidth: 0, maxWidth: '64%', borderRadius: 16, padding: '7px 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', color: 'var(--accent-deep)', textTransform: 'uppercase' }}>{t('menu.dailyMobile')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: '#26211C', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{eventTitle(event)}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: '#26211C', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{eventTitle(event)}</div>
           </div>
           <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: timerColor, transition: 'color 500ms' }}>
             ⏱ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
