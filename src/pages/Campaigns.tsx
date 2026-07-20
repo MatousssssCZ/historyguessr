@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getCampaignBundle, startCampaignAttempt, getEventsByIds, campaignErrorOf,
-  FREE_EXPEDITIONS, type CampaignBundle,
+  transformedImageUrl, FREE_EXPEDITIONS, type CampaignBundle,
 } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
@@ -34,6 +34,7 @@ export default function CampaignsPage() {
       setBundle({
         categories: [], campaignsByCat: {}, progress: {}, totalStars: 0,
         expeditions: FREE_EXPEDITIONS, isPremium: false, entitlements: FREE_ENTITLEMENTS,
+        categoryImages: {},
       })
     }
     setLoading(false)
@@ -141,6 +142,9 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
   const pct = cs.max > 0 ? Math.round((cs.earned / cs.max) * 100) : 0
   const locked = !acc.isUnlocked
   const color = cat.color || '#BE6240'
+  // Obrázek kategorie = ilustrační obrázek z události v kampaních této kategorie
+  const catImg = (bundle.categoryImages[cat.id] ?? [])[0]
+  const headerImg = catImg ? transformedImageUrl(catImg, { width: 560, quality: 60 }) : null
 
   return (
     <button onClick={() => {
@@ -158,14 +162,20 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
       onMouseEnter={e => { if (!locked) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px -14px rgba(42,31,23,0.3)' } }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
 
-      {/* Barevná hlavička s ikonou a odznaky */}
+      {/* Hlavička: ilustrační fotka z události kategorie + barevný scrim, ikona a odznaky */}
       <div style={{
         position: 'relative', height: 104, padding: 14,
         background: locked ? 'var(--paper-300)' : `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        filter: locked ? 'grayscale(0.7)' : 'none',
+        filter: locked ? 'grayscale(0.7)' : 'none', overflow: 'hidden',
       }}>
-        <span style={{ fontSize: 30, opacity: locked ? 0.45 : 1 }}>{cat.icon || '📁'}</span>
+        {headerImg && !locked && (
+          <>
+            <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${headerImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+            <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}dd)` }}/>
+          </>
+        )}
+        <span style={{ position: 'relative', fontSize: 30, opacity: locked ? 0.45 : 1, textShadow: headerImg ? '0 1px 6px rgba(0,0,0,0.4)' : 'none' }}>{cat.icon || '📁'}</span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
           {cat.is_premium && (
             <span style={{
@@ -282,15 +292,26 @@ function CategoryView({ bundle, categoryId, userId, onBack, onReload }: {
 
   const color = cat.color || '#BE6240'
   const roundsHint = camps.length > 0 ? camps[0].rounds_count : 5
+  const heroImg = (() => {
+    const u = (bundle.categoryImages[categoryId] ?? [])[0]
+    return u ? transformedImageUrl(u, { width: 1200, quality: 60 }) : null
+  })()
 
   return (
     <>
-      {/* Barevná hlavička */}
+      {/* Barevná hlavička s ilustrační fotkou kategorie */}
       <div style={{
+        position: 'relative', overflow: 'hidden',
         background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
         padding: 'calc(var(--safe-top) + 14px) 18px 20px',
       }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+        {heroImg && (
+          <>
+            <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+            <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}e6)` }}/>
+          </>
+        )}
+        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto' }}>
           <button onClick={onBack} aria-label="Zpět" style={{
             width: 38, height: 38, borderRadius: '50%', cursor: 'pointer', marginBottom: 16,
             background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)',
