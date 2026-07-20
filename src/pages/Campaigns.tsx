@@ -269,11 +269,14 @@ function CategoryView({ bundle, categoryId, userId, onBack, onReload }: {
         setShowUpsell(true); return
       }
       if (kind === 'premium_required') monetizationAnalytics.upsellShown('premium_campaign', userId)
+      const raw = (e as { message?: string })?.message ?? ''
+      console.error('[Campaigns] start selhal:', e)
       setErr(
         kind === 'premium_required' ? 'Tahle kampaň je součástí Premium.'
         : kind === 'locked_global_stars' || kind === 'locked_category_stars' ? 'Na tuhle kampaň zatím nemáš dost hvězd.'
         : kind === 'campaign_incomplete' ? 'Kampaň zatím nemá kompletní obsah.'
-        : 'Kampaň se nepodařilo spustit.',
+        // U neznámé chyby ukaž i syrovou hlášku ze serveru — ať jde poznat příčina
+        : `Kampaň se nepodařilo spustit.${raw ? ` (${raw})` : ''}`,
       )
     }
   }
