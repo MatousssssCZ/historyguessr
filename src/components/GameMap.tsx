@@ -13,6 +13,10 @@ const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">Open
 const PHYS_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}'
 const PHYS_ATTR = 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; US National Park Service'
 const PHYS_MAX_NATIVE = 8
+// Průhledná vrstva navrch: hranice států + názvy zemí a měst (kombinace
+// politické a fyzické mapy). Nativně do ~zoom 13.
+const PHYS_LABELS_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+const PHYS_LABELS_MAX_NATIVE = 13
 
 // Custom ikony (SVG inline — bez externích PNG souborů)
 const makeIcon = (fill: string, stroke: string) => L.divIcon({
@@ -98,6 +102,15 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         maxZoom: 18,
         ...(compact ? {} : { noWrap: true }),
       }).addTo(map)
+
+      // Popisky (hranice + názvy zemí a měst) navrch — na mini náhledu vynecháno
+      if (!compact) {
+        L.tileLayer(PHYS_LABELS_URL, {
+          maxNativeZoom: PHYS_LABELS_MAX_NATIVE,
+          maxZoom: 18,
+          noWrap: true,
+        }).addTo(map)
+      }
 
       // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
       // atribuci dat (OpenStreetMap, CARTO)
