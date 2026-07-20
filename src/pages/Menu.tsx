@@ -415,9 +415,9 @@ function DailyMarks({ days }: { days: DayMark[] }) {
             <div title={title} style={{
               width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 10, lineHeight: 1,
-              background: d.played ? 'var(--accent)' : todayOpen ? 'var(--paper-300)' : 'transparent',
-              color: d.played ? '#fff' : 'var(--ink-3)',
-              border: d.played ? 'none' : `1px solid ${todayOpen ? 'var(--line-strong)' : 'var(--line)'}`,
+              background: d.played ? 'var(--success)' : todayOpen ? 'var(--paper-300)' : 'var(--danger-soft)',
+              color: d.played ? '#fff' : todayOpen ? 'var(--ink-3)' : 'var(--danger)',
+              border: d.played ? 'none' : `1px solid ${todayOpen ? 'var(--line-strong)' : 'var(--danger)'}`,
             }}>{d.played ? '✓' : todayOpen ? '–' : '✕'}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, marginTop: 3, color: d.isToday ? 'var(--accent-deep)' : 'var(--ink-3)' }}>{d.label}</div>
           </div>
