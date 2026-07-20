@@ -9,6 +9,12 @@ const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/
 const TILE_URL_PLAIN = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
 
+// Topografická mapa (Esri World Topographic): jedna soudržná vrstva s reliéfem
+// (hory), moři, hranicemi států a názvy zemí i měst — kombinace politické a
+// geografické mapy. Bez API klíče. Ostré do ~zoom 19.
+const TOPO_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
+const TOPO_ATTR = 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, HERE, Garmin, USGS, NGA'
+
 // Custom ikony (SVG inline — bez externích PNG souborů)
 const makeIcon = (fill: string, stroke: string) => L.divIcon({
   className: '',
@@ -87,10 +93,12 @@ export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps
         ...(compact ? {} : { worldCopyJump: true, maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 }),
       })
 
-      L.tileLayer(compact ? TILE_URL_PLAIN : TILE_URL, {
-        attribution: TILE_ATTR,
-        maxZoom: 19,
-        ...(compact ? {} : { noWrap: true, detectRetina: true }),
+      // Mini náhled na dlaždici: prostá Voyager (drobné, popisky by rušily).
+      // Hlavní guess mapa: Esri topografická (politická + geografická).
+      L.tileLayer(compact ? TILE_URL_PLAIN : TOPO_URL, {
+        attribution: compact ? TILE_ATTR : TOPO_ATTR,
+        maxZoom: compact ? 19 : 18,
+        ...(compact ? {} : { noWrap: true }),
       }).addTo(map)
 
       // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
