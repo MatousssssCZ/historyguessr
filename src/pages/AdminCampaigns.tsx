@@ -189,7 +189,16 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
   const [err, setErr] = useState<string | null>(null)
   const [imgFile, setImgFile] = useState<File | null>(null)
   const [imgPreview, setImgPreview] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
   const set = (k: keyof typeof f, v: any) => setF(s => ({ ...s, [k]: v }))
+
+  function pickFile(file: File | undefined | null) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setErr('Soubor musí být obrázek.'); return }
+    setErr(null)
+    setImgFile(file)
+    setImgPreview(URL.createObjectURL(file))
+  }
 
   async function save() {
     if (!f.title.trim()) { setErr('Vyplň název.'); return }
@@ -245,22 +254,32 @@ function CategoryForm({ category, defaultSeq, defaultUnlock, onClose, onSaved }:
           <Field label="Popis (DE)"><textarea className="input" rows={2} value={f.description_de} onChange={e => set('description_de', e.target.value)}/></Field>
         </div>
         <Field label="Obrázek kategorie">
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {(imgPreview || f.hero_image_url) && (
-              <img src={imgPreview || f.hero_image_url} alt="" style={{ width: 104, height: 66, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }}/>
-            )}
-            <label className="btn btn-ghost" style={{ cursor: 'pointer' }}>
-              {(imgPreview || f.hero_image_url) ? 'Změnit…' : 'Nahrát obrázek…'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
-                const file = e.target.files?.[0]
-                if (file) { setImgFile(file); setImgPreview(URL.createObjectURL(file)) }
-              }}/>
-            </label>
-            {(imgPreview || f.hero_image_url) && (
-              <button type="button" className="btn btn-ghost" onClick={() => { setImgFile(null); setImgPreview(null); set('hero_image_url', '') }}>Odebrat</button>
-            )}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 5 }}>Zkomprimuje se při uložení (max ~1600 px, WebP).</div>
+          <label
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files?.[0]) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer',
+              border: `1.5px dashed ${dragOver ? 'var(--accent)' : 'var(--line-strong)'}`,
+              background: dragOver ? 'rgba(217,119,87,0.08)' : 'var(--paper-100)',
+              borderRadius: 12, padding: 12, transition: 'border-color 120ms, background 120ms',
+            }}>
+            <input type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={e => pickFile(e.target.files?.[0])}/>
+            {(imgPreview || f.hero_image_url)
+              ? <img src={imgPreview || f.hero_image_url} alt="" style={{ width: 120, height: 76, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)', flexShrink: 0 }}/>
+              : <div style={{ width: 120, height: 76, borderRadius: 8, flexShrink: 0, background: 'var(--paper-300)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, color: 'var(--ink-3)' }}>🖼</div>}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 500 }}>
+                {dragOver ? 'Pusť obrázek sem' : imgFile ? 'Obrázek připraven — ulož změny' : 'Přetáhni obrázek sem nebo klikni pro výběr'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>Zkomprimuje se při uložení (max ~1600 px, WebP).</div>
+            </div>
+          </label>
+          {(imgPreview || f.hero_image_url) && (
+            <button type="button" className="btn btn-ghost" style={{ marginTop: 8 }}
+              onClick={() => { setImgFile(null); setImgPreview(null); set('hero_image_url', '') }}>Odebrat obrázek</button>
+          )}
         </Field>
         <div style={{ display: 'grid', gridTemplateColumns: '80px 100px 1fr', gap: 12 }}>
           <Field label="Ikona"><input className="input" value={f.icon} onChange={e => set('icon', e.target.value)} placeholder="👑"/></Field>
