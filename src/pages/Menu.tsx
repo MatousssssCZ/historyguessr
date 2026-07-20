@@ -406,14 +406,14 @@ function HelpButton({ onClick }: { onClick: () => void }) {
 // ✓/✕ za posledních 7 dní (jen ode dne registrace)
 function DailyMarks({ days }: { days: DayMark[] }) {
   return (
-    <div style={{ display: 'flex', gap: 7, marginTop: 5 }}>
+    <div style={{ display: 'flex', gap: 5, marginTop: 5, flexShrink: 0 }}>
       {days.map((d, i) => {
         const todayOpen = d.isToday && !d.played  // dnešek ještě neodehraný → šedý kruh s pomlčkou
         const title = d.played ? 'Odehráno' : d.isToday ? 'Dnešní výzva tě čeká' : 'Vynecháno'
         return (
-          <div key={i} style={{ textAlign: 'center' }}>
+          <div key={i} style={{ textAlign: 'center', flexShrink: 0 }}>
             <div title={title} style={{
-              width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 19, height: 19, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 10, lineHeight: 1,
               background: d.played ? 'var(--success)' : todayOpen ? 'var(--paper-300)' : 'var(--danger-soft)',
               color: d.played ? '#fff' : todayOpen ? 'var(--ink-3)' : 'var(--danger)',
@@ -471,7 +471,7 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
         </div>
         {done
           ? <span style={{ background: 'rgba(92,148,104,0.18)', color: 'var(--success-deep, #3f7a4d)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: '11px 16px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>{t('menu.results')} →</span>
-          : <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: '11px 16px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>{t('menu.playChallenge')} →</span>}
+          : <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: tall ? '11px 16px' : '11px 14px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap' }}>{tall ? t('menu.playChallenge') : t('menu.playShort')} →</span>}
       </div>
     </button>
   )
