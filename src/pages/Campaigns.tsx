@@ -49,8 +49,11 @@ export default function CampaignsPage() {
   // Detail kategorie má vlastní barevnou hlavičku (bez horní lišty)
   if (categoryId) {
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingBottom: isMobile ? 'calc(88px + var(--safe-bottom))' : 40 }}>
-        <CategoryView bundle={bundle} categoryId={categoryId} userId={user?.id} onBack={() => navigate('/campaigns')} onReload={reload}/>
+      <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
+        <DesktopSidebar/>
+        <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'calc(88px + var(--safe-bottom))' : 40 }}>
+          <CategoryView bundle={bundle} categoryId={categoryId} isMobile={isMobile} userId={user?.id} onBack={() => navigate('/campaigns')} onReload={reload}/>
+        </div>
         {isMobile && <MobileNav active="campaigns"/>}
       </div>
     )
@@ -138,7 +141,6 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
   const camps = bundle.campaignsByCat[cat.id] ?? []
   const acc = categoryAccess(cat, bundle.totalStars, bundle.entitlements)
   const cs = categoryStars(camps, bundle.progress)
-  const pct = cs.max > 0 ? Math.round((cs.earned / cs.max) * 100) : 0
   const locked = !acc.isUnlocked
   const color = cat.color || '#BE6240'
   // Obrázek kategorie nahraný v administraci (u zamčených jen zešediví, zámek zůstává)
@@ -209,9 +211,6 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
             ? (acc.lockReason === 'premium' ? 'Součást Premium' : `Chybí ${acc.missingStars}★ k odemčení`)
             : `${camps.length} ${plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}${cat.description ? ` · ${cat.description}` : ''}`}
         </div>
-        <div style={{ height: 6, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden', marginTop: 12 }}>
-          <div style={{ height: '100%', width: `${pct}%`, borderRadius: 999, background: 'linear-gradient(90deg,#BE6240,#d89a54)' }}/>
-        </div>
       </div>
     </button>
   )
@@ -232,8 +231,8 @@ function ComingSoonCard({ full }: { full?: boolean }) {
 }
 
 // ═══════════════════ Detail kategorie ═══════════════════
-function CategoryView({ bundle, categoryId, userId, onBack, onReload }: {
-  bundle: CampaignBundle; categoryId: string; userId?: string
+function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }: {
+  bundle: CampaignBundle; categoryId: string; isMobile: boolean; userId?: string
   onBack: () => void; onReload: () => Promise<void>
 }) {
   const navigate = useNavigate()
@@ -295,74 +294,117 @@ function CategoryView({ bundle, categoryId, userId, onBack, onReload }: {
   const roundsHint = camps.length > 0 ? camps[0].rounds_count : 5
   const heroImg = cat.hero_image_url || null
 
+  const backBtn = (
+    <button onClick={onBack} aria-label="Zpět" style={{
+      width: 44, height: 44, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
+      background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)',
+      border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 18,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>←</button>
+  )
+
+  const heroTitle = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <span style={{
+        width: 60, height: 60, borderRadius: 15, flexShrink: 0, fontSize: 28,
+        background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>{cat.icon || '📁'}</span>
+      <div style={{ minWidth: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 28 : 34, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05 }}>{cat.title}</h1>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'rgba(255,255,255,0.92)', marginTop: 5 }}>
+          <span style={{ color: GOLD }}>★</span> {cs.earned} / {cs.max} <span style={{ color: GOLD }}>★</span>
+          {camps.length > 0 && <span style={{ color: 'rgba(255,255,255,0.7)' }}> · {camps.length} {plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}</span>}
+        </div>
+      </div>
+    </div>
+  )
+
+  const heroBg = (
+    <>
+      {heroImg && (
+        <>
+          <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+          <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}e6)` }}/>
+        </>
+      )}
+    </>
+  )
+
+  const desc = (cat.description || camps.length > 0) && (
+    <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: isMobile ? '0 0 18px' : '0 0 22px' }}>
+      {cat.description}
+      {camps.length > 0 && ` ${camps.length} ${plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}, ${roundsHint} událostí v každé.`}
+    </p>
+  )
+
+  const rows = (
+    <>
+      {err && <div className="alert alert-error" style={{ marginBottom: 14 }}>⚠ {err}</div>}
+      {camps.length === 0 && <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>Zatím žádné kampaně.</p>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 12 }}>
+        {camps.map((c, i) => (
+          <CampaignRow
+            key={c.id} campaign={c} index={i} cat={cat} bundle={bundle} isMobile={isMobile}
+            categoryStarsEarned={cs.earned} busy={starting === c.id} onPlay={play}
+          />
+        ))}
+      </div>
+    </>
+  )
+
+  // ── Desktop: hero jako zaoblená karta v širokém sloupci ──
+  if (!isMobile) {
+    return (
+      <>
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 40px 8px' }}>
+          <div style={{
+            position: 'relative', overflow: 'hidden', borderRadius: 20,
+            background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
+            padding: '22px 28px 26px',
+          }}>
+            {heroBg}
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {backBtn}
+              {heroTitle}
+            </div>
+          </div>
+        </div>
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '20px 40px 8px' }}>
+          {desc}
+          {rows}
+        </div>
+        {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
+      </>
+    )
+  }
+
+  // ── Mobil: full-bleed hlavička ──
   return (
     <>
-      {/* Barevná hlavička s ilustrační fotkou kategorie */}
       <div style={{
         position: 'relative', overflow: 'hidden',
         background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
         padding: 'calc(var(--safe-top) + 14px) 18px 20px',
       }}>
-        {heroImg && (
-          <>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}e6)` }}/>
-          </>
-        )}
-        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto' }}>
-          <button onClick={onBack} aria-label="Zpět" style={{
-            width: 38, height: 38, borderRadius: '50%', cursor: 'pointer', marginBottom: 16,
-            background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 16,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>←</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{
-              width: 54, height: 54, borderRadius: 14, flexShrink: 0, fontSize: 26,
-              background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{cat.icon || '📁'}</span>
-            <div>
-              <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: '#fff', margin: 0, letterSpacing: '-0.01em' }}>{cat.title}</h1>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'rgba(255,255,255,0.9)', marginTop: 3 }}>
-                <span style={{ color: GOLD }}>★</span> {cs.earned} / {cs.max} <span style={{ color: GOLD }}>★</span>
-              </div>
-            </div>
-          </div>
+        {heroBg}
+        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {backBtn}
+          {heroTitle}
         </div>
       </div>
-
       <div style={{ maxWidth: 760, margin: '0 auto', padding: 18 }}>
-        {(cat.description || camps.length > 0) && (
-          <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: '0 0 18px' }}>
-            {cat.description}
-            {camps.length > 0 && (
-              <><br/>{camps.length} {plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}, {roundsHint} událostí v každé.</>
-            )}
-          </p>
-        )}
-
-        {err && <div className="alert alert-error" style={{ marginBottom: 14 }}>⚠ {err}</div>}
-        {camps.length === 0 && <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>Zatím žádné kampaně.</p>}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {camps.map((c, i) => (
-            <CampaignRow
-              key={c.id} campaign={c} index={i} cat={cat} bundle={bundle}
-              categoryStarsEarned={cs.earned} busy={starting === c.id} onPlay={play}
-            />
-          ))}
-        </div>
+        {desc}
+        {rows}
       </div>
-
       {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
     </>
   )
 }
 
-function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, onPlay }: {
+function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, onPlay, isMobile }: {
   campaign: Campaign; index: number; cat: CampaignCategory; bundle: CampaignBundle
-  categoryStarsEarned: number; busy: boolean; onPlay: (c: Campaign) => void
+  categoryStarsEarned: number; busy: boolean; onPlay: (c: Campaign) => void; isMobile?: boolean
 }) {
   // Odemyká se POČTEM ★ v kategorii — ne dokončením předchozí kampaně
   const acc = campaignAccess(campaign, categoryStarsEarned, bundle.entitlements, cat)
@@ -377,7 +419,7 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
     <div style={{
       background: locked ? 'var(--paper-200)' : isNext ? 'rgba(217,119,87,0.07)' : 'var(--surface)',
       border: `1px solid ${isNext ? 'var(--accent)' : 'var(--line)'}`,
-      borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
+      borderRadius: 16, padding: isMobile ? '14px 16px' : '18px 22px', display: 'flex', alignItems: 'center', gap: 14,
     }}>
       <div style={{
         width: 30, flexShrink: 0, textAlign: 'center',
