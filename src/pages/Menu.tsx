@@ -15,6 +15,9 @@ import HowToPlay from '@/components/HowToPlay'
 
 type DailyState = 'loading' | 'new' | 'done'
 
+// Jeden den v týdenním pruhu série (varianta A: den v týdnu + dnešek)
+type DayMark = { played: boolean; label: string; isToday: boolean }
+
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
 // Krátkodobá in-memory cache dat menu — drží se mezi překliky v rámci session
@@ -25,7 +28,7 @@ interface MenuData {
   dailyResult: DailyResult | null
   dailyState: DailyState
   dailyStreak: number
-  dailyWeek: boolean[]
+  dailyWeek: DayMark[]
   friendReqs: number
   world: { rank: number; total: number } | null
   rankDelta: number
@@ -47,7 +50,7 @@ export default function MenuPage() {
   const [dailyState, setDailyState] = useState<DailyState>('loading')
   const [, setDailyResult] = useState<DailyResult | null>(null)
   const [dailyStreak, setDailyStreak] = useState(0)
-  const [dailyWeek, setDailyWeek] = useState<boolean[]>([])
+  const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
@@ -132,13 +135,15 @@ export default function MenuPage() {
       if (!played.has(localDateISO(d))) d.setDate(d.getDate() - 1)
       while (played.has(localDateISO(d))) { streak++; d.setDate(d.getDate() - 1) }
       const regIso = profile?.created_at ? localDateISO(new Date(profile.created_at)) : null
-      const week: boolean[] = []
+      const week: DayMark[] = []
       const now = new Date()
+      const todayIso = localDateISO(now)
       for (let i = 6; i >= 0; i--) {
         const dd = new Date(now); dd.setDate(now.getDate() - i)
         const iso = localDateISO(dd)
         if (regIso && iso < regIso) continue
-        week.push(played.has(iso))
+        const label = dd.toLocaleDateString('cs-CZ', { weekday: 'short' }).replace('.', '')
+        week.push({ played: played.has(iso), label, isToday: iso === todayIso })
       }
 
       // Týdenní posun v pořadí (baseline v localStorage; roluje se po 7 dnech)
@@ -399,25 +404,32 @@ function HelpButton({ onClick }: { onClick: () => void }) {
 // ─── Avatar s odznakem série ──────────────────────────────
 
 // ✓/✕ za posledních 7 dní (jen ode dne registrace)
-function DailyMarks({ days }: { days: boolean[] }) {
+function DailyMarks({ days }: { days: DayMark[] }) {
   return (
-    <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-      {days.map((p, i) => (
-        <span key={i} title={p ? 'Odehráno' : 'Vynecháno'} style={{
-          width: 15, height: 15, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, lineHeight: 1,
-          background: p ? 'var(--success, #5c9468)' : 'var(--paper-300)',
-          color: p ? '#fff' : 'var(--ink-3)',
-          border: p ? 'none' : '1px solid var(--line)',
-        }}>{p ? '✓' : '✕'}</span>
-      ))}
+    <div style={{ display: 'flex', gap: 7, marginTop: 5 }}>
+      {days.map((d, i) => {
+        const todayOpen = d.isToday && !d.played  // dnešek ještě neodehraný → šedý kruh s pomlčkou
+        const title = d.played ? 'Odehráno' : d.isToday ? 'Dnešní výzva tě čeká' : 'Vynecháno'
+        return (
+          <div key={i} style={{ textAlign: 'center' }}>
+            <div title={title} style={{
+              width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, lineHeight: 1,
+              background: d.played ? 'var(--accent)' : todayOpen ? 'var(--paper-300)' : 'transparent',
+              color: d.played ? '#fff' : 'var(--ink-3)',
+              border: d.played ? 'none' : `1px solid ${todayOpen ? 'var(--line-strong)' : 'var(--line)'}`,
+            }}>{d.played ? '✓' : todayOpen ? '–' : '✕'}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, marginTop: 3, color: d.isToday ? 'var(--accent-deep)' : 'var(--ink-3)' }}>{d.label}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 // ─── Hero denní výzvy ─────────────────────────────────────
 function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall }: {
-  heroImgs: string[]; dailyState: DailyState; countdown: string; streak: number; week: boolean[]; onPlay: () => void; tall?: boolean
+  heroImgs: string[]; dailyState: DailyState; countdown: string; streak: number; week: DayMark[]; onPlay: () => void; tall?: boolean
 }) {
   const { t } = useTranslation()
   const done = dailyState === 'done'
