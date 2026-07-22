@@ -10,6 +10,7 @@ import DesktopSidebar from '@/components/DesktopSidebar'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
 import { isStandalone } from '@/lib/pwaInstall'
+import { DownloadIcon } from '@/components/BrowserIcons'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
 const fieldLabel: React.CSSProperties = { fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: 'var(--ink-2)', margin: '0 0 6px' }
@@ -105,7 +106,7 @@ export default function AccountPage() {
         {/* Přidat na plochu — skryté, když už aplikace běží nainstalovaná */}
         {!isStandalone() && (
           <button onClick={() => setShowInstall(true)} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
-            <span style={{ fontSize: 22 }}>📱</span>
+            <span style={{ display: 'flex', color: 'var(--accent)' }}><DownloadIcon size={22}/></span>
             <span style={{ flex: 1 }}>
               <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('common.instTile')}</span>
               <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('common.instTileSub')}</span>

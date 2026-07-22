@@ -14,6 +14,7 @@ import DesktopSidebar from '@/components/DesktopSidebar'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
 import { isStandalone, isInstallTileHidden } from '@/lib/pwaInstall'
+import { DownloadIcon } from '@/components/BrowserIcons'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -222,8 +223,8 @@ export default function MenuPage() {
     }}>
       <span style={{
         width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: ACCENT_GRAD,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#fff',
-      }}>⬇</span>
+        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+      }}><DownloadIcon size={21} color="#fff"/></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('common.instTile')}</div>
         <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('common.instTileSub')}</div>
