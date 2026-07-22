@@ -6,10 +6,10 @@ type P = { size?: number }
 export function SafariIcon({ size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
-      <circle cx="24" cy="24" r="22" fill="#1AA5F8"/>
-      <circle cx="24" cy="24" r="18" fill="none" stroke="#fff" strokeWidth="2"/>
-      <path d="M24 24 L35 13 L29 25 Z" fill="#F5453B"/>
-      <path d="M24 24 L13 35 L19 23 Z" fill="#fff"/>
+      <circle cx="24" cy="24" r="22" fill="#3FA9F5"/>
+      {/* Střelka = jeden kosočtverec: červená půlka k SV, bílá k JZ (spojené) */}
+      <path d="M37 11 L27.4 27.4 L20.6 20.6 Z" fill="#DC2A22"/>
+      <path d="M11 37 L27.4 27.4 L20.6 20.6 Z" fill="#fff"/>
     </svg>
   )
 }
@@ -17,10 +17,10 @@ export function SafariIcon({ size = 24 }: P) {
 export function ChromeIcon({ size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
-      {/* tři barevné výseče po 120° */}
+      {/* červená nahoře, žlutá vpravo dole, zelená vlevo dole */}
       <path d="M24 24 L4.95 13 A22 22 0 0 1 43.05 13 Z" fill="#EA4335"/>
-      <path d="M24 24 L43.05 13 A22 22 0 0 1 24 46 Z" fill="#34A853"/>
-      <path d="M24 24 L24 46 A22 22 0 0 1 4.95 13 Z" fill="#FBBC05"/>
+      <path d="M24 24 L43.05 13 A22 22 0 0 1 24 46 Z" fill="#FBBC05"/>
+      <path d="M24 24 L24 46 A22 22 0 0 1 4.95 13 Z" fill="#34A853"/>
       <circle cx="24" cy="24" r="11" fill="#fff"/>
       <circle cx="24" cy="24" r="9" fill="#4285F4"/>
     </svg>
@@ -30,15 +30,20 @@ export function ChromeIcon({ size = 24 }: P) {
 export function FirefoxIcon({ size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      {/* aktuální logo Firefoxu — ohnivá liška (žlutá → oranžová → fialová) */}
       <defs>
-        <linearGradient id="ffg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFB03A"/>
-          <stop offset="45%" stopColor="#F5793A"/>
-          <stop offset="100%" stopColor="#C5307C"/>
-        </linearGradient>
+        <radialGradient id="ff-g" cx="62%" cy="28%" r="78%">
+          <stop offset="0%" stopColor="#FFD24A"/>
+          <stop offset="38%" stopColor="#F58220"/>
+          <stop offset="72%" stopColor="#E7442E"/>
+          <stop offset="100%" stopColor="#9A2C8E"/>
+        </radialGradient>
       </defs>
-      <circle cx="24" cy="24" r="22" fill="url(#ffg)"/>
-      <path d="M24 8c6 2 9 6 9 11 0 6-4 10-9 10s-9-4-9-9c0-3 1-5 3-7-1 4 1 7 4 7 3 0 5-2 5-5 0-3-2-5-3-7z" fill="#fff" opacity="0.92"/>
+      <circle cx="24" cy="24" r="22" fill="url(#ff-g)"/>
+      <path
+        d="M24 7c7 4 10 9 10 14.5C34 29 29.4 34 24 34s-10-4.6-10-11c0-3.6 1.4-6.6 3.8-8.9-1.1 4.6 1.2 8.2 4.4 8.2 3 0 5-2.1 5-5.1 0-3.4-2.3-6.3-3.2-10.2z"
+        fill="#fff" opacity="0.9"
+      />
     </svg>
   )
 }
