@@ -15,12 +15,10 @@
       ]
     },
     {
-      "//": "Hashované assety jsou content-addressed → lze cachovat natrvalo",
       "source": "/assets/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
-      "//": "HTML nikdy necachovat — odkazuje na aktuální hash bundlu",
       "source": "/index.html",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     }
