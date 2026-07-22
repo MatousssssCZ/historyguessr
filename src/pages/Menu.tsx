@@ -12,6 +12,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher'
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
 import HowToPlay from '@/components/HowToPlay'
+import InstallGuide from '@/components/InstallGuide'
+import { isStandalone, isInstallTileHidden } from '@/lib/pwaInstall'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -59,6 +61,8 @@ export default function MenuPage() {
   const [resume, setResume] = useState<ResumeState | null>(null)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
+  const [showInstall, setShowInstall] = useState(false)
+  const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
 
   // „Jak hrát" se NEZOBRAZUJE automaticky — jen ručně přes „?" tlačítko
   // v menu nebo řádek „Jak hrát?" v účtu. (Auto-zobrazení bylo per-zařízení,
@@ -209,6 +213,25 @@ export default function MenuPage() {
 
   const dailyProps = { heroImgs, dailyState, countdown, streak: dailyStreak, week: dailyWeek, onPlay: goDaily }
 
+  // Poslední dlaždice: „Přidat na plochu". Zmizí, když už app běží nainstalovaná
+  // nebo si ji hráč odklikl v průvodci.
+  const installTile = (!isStandalone() && !installTileHidden) ? (
+    <button onClick={() => setShowInstall(true)} style={{
+      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+      background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
+    }}>
+      <span style={{
+        width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: ACCENT_GRAD,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#fff',
+      }}>⬇</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('common.instTile')}</div>
+        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('common.instTileSub')}</div>
+      </div>
+      <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
+    </button>
+  ) : null
+
   // ═══════════════════ DESKTOP ═══════════════════
   if (!isMobile) {
     return (
@@ -244,9 +267,12 @@ export default function MenuPage() {
               <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
               <NearestBadges catHits={catHits} navigate={navigate}/>
             </div>
+
+            {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
           </div>
         </div>
         {showHowTo && <HowToPlay onClose={closeHowTo}/>}
+        {showInstall && <InstallGuide showHideOption onClose={() => { setShowInstall(false); setInstallTileHidden(isInstallTileHidden()) }}/>}
       </div>
     )
   }
@@ -292,11 +318,15 @@ export default function MenuPage() {
           {friendReqs > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 7px', borderRadius: 999 }}>{friendReqs}</span>}
           <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
         </button>
+
+        {/* Poslední dlaždice — přidání na plochu */}
+        {installTile && <><div style={{ height: 12 }}/>{installTile}</>}
       </div>
 
       {/* Sdílená spodní lišta */}
       <MobileNav active="home"/>
       {showHowTo && <HowToPlay onClose={closeHowTo}/>}
+      {showInstall && <InstallGuide showHideOption onClose={() => { setShowInstall(false); setInstallTileHidden(isInstallTileHidden()) }}/>}
     </div>
   )
 }

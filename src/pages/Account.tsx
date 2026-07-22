@@ -107,8 +107,8 @@ export default function AccountPage() {
           <button onClick={() => setShowInstall(true)} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
             <span style={{ fontSize: 22 }}>📱</span>
             <span style={{ flex: 1 }}>
-              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('common.instRow')}</span>
-              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('common.instRowSub')}</span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('common.instTile')}</span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('common.instTileSub')}</span>
             </span>
             <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
           </button>

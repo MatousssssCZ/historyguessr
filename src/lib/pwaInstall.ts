@@ -71,6 +71,35 @@ export function isStandalone(): boolean {
   return window.matchMedia?.('(display-mode: standalone)').matches === true || iosStandalone
 }
 
+/** Který návod ukázat. Odpovídá volbám v ručním výběru prohlížeče. */
+export type GuideKey = 'ios' | 'android' | 'chrome' | 'firefox' | 'opera'
+
+/** Předvolený návod podle rozpoznaného prostředí. */
+export function defaultGuide(p: InstallPlatform = detectPlatform()): GuideKey {
+  switch (p) {
+    case 'ios-safari':
+    case 'ios-other': return 'ios'
+    case 'android-chromium':
+    case 'android-other': return 'android'
+    case 'desktop-safari': return 'ios'  // macOS Safari má stejný postup přes Sdílet
+    default: return 'chrome'
+  }
+}
+
+// ── Skrytí dlaždice na domovské obrazovce ────────────────
+const HIDE_KEY = 'hg_hide_install_tile'
+
+export function isInstallTileHidden(): boolean {
+  try { return localStorage.getItem(HIDE_KEY) === '1' } catch { return false }
+}
+
+export function setInstallTileHidden(hidden: boolean) {
+  try {
+    if (hidden) localStorage.setItem(HIDE_KEY, '1')
+    else localStorage.removeItem(HIDE_KEY)
+  } catch { /* ignore */ }
+}
+
 export function detectPlatform(): InstallPlatform {
   if (typeof navigator === 'undefined') return 'unsupported'
   if (isStandalone()) return 'installed'
