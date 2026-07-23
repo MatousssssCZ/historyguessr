@@ -36,7 +36,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
     return (
       <button onClick={onClick} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: on ? 'var(--accent)' : 'var(--ink-3)', padding: 0 }}>
         <NavIcon name={icon} active={!!on}/>
-        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 600, fontSize: 9 }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 600, fontSize: 10.5 }}>{label}</span>
         {!!badge && badge > 0 && <span style={{ position: 'absolute', top: -4, right: -8, background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 999 }}>{badge}</span>}
       </button>
     )
@@ -47,7 +47,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
       <div style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, height: 'calc(66px + var(--safe-bottom))',
         paddingBottom: 'var(--safe-bottom)', background: 'var(--surface-blur, rgba(251,247,240,0.9))', backdropFilter: 'blur(16px)',
-        borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '3px 28px 0', zIndex: 50,
+        borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '7px 28px 0', zIndex: 50,
       }}>
         <div style={{ display: 'flex', gap: 38 }}>
           {item('home', t('menu.navHome'), () => navigate('/menu'), 'home')}
@@ -77,7 +77,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
 }
 
 function NavIcon({ name, active }: { name: 'home' | 'compass' | 'medal' | 'user'; active?: boolean }) {
-  const s = { width: 23, height: 23, fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const s = { width: 26, height: 26, fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   if (name === 'home') return (
     <svg viewBox="0 0 24 24" style={{ ...s, fill: active ? 'currentColor' : 'none' }}>
       <path d="M3.5 11.5 L12 4 L20.5 11.5 V19.5 a1 1 0 0 1-1 1 H4.5 a1 1 0 0 1-1-1 Z"/>
