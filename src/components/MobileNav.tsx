@@ -47,9 +47,9 @@ export default function MobileNav({ active }: { active?: Tab }) {
       <div style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, height: 'calc(66px + var(--safe-bottom))',
         paddingBottom: 'var(--safe-bottom)', background: 'var(--surface-blur, rgba(251,247,240,0.9))', backdropFilter: 'blur(16px)',
-        borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', zIndex: 50,
+        borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '3px 28px 0', zIndex: 50,
       }}>
-        <div style={{ display: 'flex', gap: 38, transform: 'translateY(-8px)' }}>
+        <div style={{ display: 'flex', gap: 38 }}>
           {item('home', t('menu.navHome'), () => navigate('/menu'), 'home')}
           {item('compass', t('menu.campaigns'), () => navigate('/campaigns'), 'campaigns')}
         </div>
@@ -62,7 +62,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
             <path d="M9.2 7 L17.2 12 L9.2 17 Z" fill="#fff" stroke="#fff" strokeWidth="3.4" strokeLinejoin="round" strokeLinecap="round"/>
           </svg>
         </button>
-        <div style={{ display: 'flex', gap: 38, transform: 'translateY(-8px)' }}>
+        <div style={{ display: 'flex', gap: 38 }}>
           {item('medal', t('menu.navBadges'), () => navigate('/stats'), 'badges')}
           {item('user', t('menu.navProfile'), () => navigate('/account'), 'profile', friendReqs)}
         </div>
