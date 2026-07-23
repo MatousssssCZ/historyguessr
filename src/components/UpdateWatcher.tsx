@@ -42,7 +42,7 @@ export default function UpdateWatcher() {
 
   return (
     <div style={{
-      position: 'fixed', left: 12, right: 12, zIndex: 400,
+      position: 'fixed', left: 12, right: 12, zIndex: 1100,  // nad Leaflet ovládáním (1000)
       bottom: 'calc(12px + var(--safe-bottom))',
       display: 'flex', alignItems: 'center', gap: 12,
       background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 14,

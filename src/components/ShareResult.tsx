@@ -69,7 +69,8 @@ export default function ShareResult({ data, shareText, onClose }: ShareResultPro
 
   return (
     <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(20,15,10,0.62)', backdropFilter: 'blur(5px)',
+      // z-index nad Leafletem (ovládací prvky mapy mají 1000), jinak prosvítají skrz
+      position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(20,15,10,0.62)', backdropFilter: 'blur(5px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
