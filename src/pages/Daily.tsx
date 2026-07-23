@@ -20,6 +20,7 @@ import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { invalidateMenuCache } from '@/pages/Menu'
 import ShareResult from '@/components/ShareResult'
+import EventStory from '@/components/EventStory'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -50,6 +51,8 @@ export default function DailyChallengePage() {
   const [mapExpanded, setMapExpanded] = useState(false)
   const [yearExpanded, setYearExpanded] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // Příběh události po odeslání tipu (u již dříve odehrané výzvy se neukazuje)
+  const [showStory, setShowStory] = useState(false)
 
   // Timer
   const [elapsed, setElapsed] = useState(0)
@@ -203,6 +206,7 @@ export default function DailyChallengePage() {
     setLeaderboard(lb)
     setAllScores(scores)
     setSubmitting(false)
+    setShowStory(true)
     setPhase('result')
   }, [event, user, guessLat, guessLng, guessYear, profile?.username])
 
@@ -250,6 +254,8 @@ export default function DailyChallengePage() {
   // ── Výsledky (already_played nebo po odeslání) ──────────
   if ((phase === 'result' || phase === 'already_played') && event && result) {
     return (
+      <>
+      {showStory && <EventStory event={event} onNext={() => setShowStory(false)}/>}
       <DailyResultScreen
         event={event}
         result={result}
@@ -262,6 +268,7 @@ export default function DailyChallengePage() {
         alreadyPlayed={phase === 'already_played'}
         onMenu={() => navigate('/menu')}
       />
+      </>
     )
   }
 

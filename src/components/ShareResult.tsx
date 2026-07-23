@@ -79,7 +79,7 @@ export default function ShareResult({ data, shareText, onClose }: ShareResultPro
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, color: 'var(--ink)' }}>{t('daily.shareTitle')}</h3>
-          <button onClick={onClose} aria-label={t('common.close', 'Zavřít')} style={{
+          <button onClick={onClose} aria-label={t('common.close')} style={{
             width: 30, height: 30, borderRadius: '50%', background: 'var(--paper-200)', border: 'none',
             cursor: 'pointer', color: 'var(--ink-3)', fontSize: 13,
           }}>✕</button>

@@ -10,6 +10,7 @@ import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
+import EventStory from '@/components/EventStory'
 import CompassLoader from '@/components/CompassLoader'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
@@ -40,6 +41,13 @@ export default function GamePage() {
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
   const [confirmQuit, setConfirmQuit] = useState(false)
+  // Po odeslání tipu se nejdřív ukáže příběh události, teprve pak skóre
+  // (držíme číslo kola, ať se modál objeví jednou za kolo).
+  const [storyRound, setStoryRound] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (state.phase === 'round_result') setStoryRound(state.currentRound)
+  }, [state.phase, state.currentRound])
 
   useEffect(() => {
     if (state.phase !== 'idle') return
@@ -184,6 +192,11 @@ export default function GamePage() {
           />
         )}
       </div>
+
+      {/* Příběh události — překryje výsledek, dokud hráč nedá „Dále“ */}
+      {state.phase === 'round_result' && currentEvent && storyRound === state.currentRound && (
+        <EventStory event={currentEvent} onNext={() => setStoryRound(null)}/>
+      )}
 
       {/* RoundResult — jako sibling HUDu, pokrývá celou obrazovku */}
       {state.phase === 'round_result' && lastRound && (

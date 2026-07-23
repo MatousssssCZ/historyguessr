@@ -245,6 +245,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [starting, setStarting] = useState<string | null>(null)
+  const [intro, setIntro] = useState<Campaign | null>(null)  // popis kampaně před spuštěním
   const [showUpsell, setShowUpsell] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
@@ -354,7 +355,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
         {camps.map((c, i) => (
           <CampaignRow
             key={c.id} campaign={c} index={i} cat={cat} bundle={bundle} isMobile={isMobile}
-            categoryStarsEarned={cs.earned} busy={starting === c.id} onPlay={play}
+            categoryStarsEarned={cs.earned} busy={starting === c.id} onPlay={setIntro}
           />
         ))}
       </div>
@@ -382,7 +383,11 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
           {desc}
           {rows}
         </div>
-        {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
+        {intro && (
+        <CampaignIntro campaign={intro} cat={cat} bundle={bundle} busy={starting === intro.id}
+          onStart={() => { const c = intro; setIntro(null); play(c) }} onClose={() => setIntro(null)}/>
+      )}
+      {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
       </>
     )
   }
@@ -405,6 +410,10 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
         {desc}
         {rows}
       </div>
+      {intro && (
+        <CampaignIntro campaign={intro} cat={cat} bundle={bundle} busy={starting === intro.id}
+          onStart={() => { const c = intro; setIntro(null); play(c) }} onClose={() => setIntro(null)}/>
+      )}
       {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
     </>
   )
@@ -467,6 +476,96 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
         </button>
       )}
     </div>
+  )
+}
+
+function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
+  campaign: Campaign; cat: CampaignCategory; bundle: CampaignBundle
+  busy: boolean; onStart: () => void; onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const color = cat.color || '#BE6240'
+  const prog = bundle.progress[campaign.id]
+  const played = !!prog?.completed_runs
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(38,33,28,0.58)', backdropFilter: 'blur(5px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 440,
+        maxHeight: '90dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)',
+        animation: 'scaleIn 240ms var(--ease-spring) both',
+      }}>
+        {/* Vizuál kampaně (nebo barevný podklad kategorie) */}
+        <div style={{
+          position: 'relative', height: 150, flexShrink: 0,
+          background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
+        }}>
+          {campaign.visual_url && (
+            <>
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${campaign.visual_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+              <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}bb, ${shade(color, -18)}dd)` }}/>
+            </>
+          )}
+          <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+            <span style={{ fontSize: 26 }}>{cat.icon || '🏛'}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' }}>{cat.title}</span>
+          </div>
+          {campaign.is_premium && (
+            <span style={{
+              position: 'absolute', top: 14, right: 14, background: GOLD, color: '#5a4527',
+              fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, padding: '4px 9px', borderRadius: 20,
+            }}>♛ PREMIUM</span>
+          )}
+        </div>
+
+        <div style={{ padding: '18px 22px 0', overflowY: 'auto' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, lineHeight: 1.15, letterSpacing: '-0.01em', color: 'var(--ink)', margin: '0 0 8px' }}>
+            {campaign.title}
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+            <Chip>{t('camp.roundsCount', { n: campaign.rounds_count })}</Chip>
+            {played && prog && (
+              <Chip>{t('camp.bestResult')}: {prog.best_score.toLocaleString(currentLocale())} b.</Chip>
+            )}
+          </div>
+          {played && <div style={{ marginBottom: 14 }}><StarRow stars={prog?.best_stars ?? 0} size={18}/></div>}
+
+          {campaign.description && (
+            <>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 7px' }}>
+                {t('camp.intro')}
+              </p>
+              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>{campaign.description}</p>
+            </>
+          )}
+        </div>
+
+        <div style={{ padding: '4px 22px 20px', flexShrink: 0 }}>
+          <button onClick={onStart} disabled={busy} style={{
+            width: '100%', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 14,
+            padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15,
+            cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.7 : 1,
+            boxShadow: '0 12px 26px -8px rgba(217,119,87,0.5)',
+          }}>{busy ? '…' : `${played ? t('camp.replay') : t('camp.start')} →`}</button>
+          <button onClick={onClose} style={{
+            width: '100%', marginTop: 8, background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--ink-3)', fontSize: 14, padding: 8, fontFamily: 'var(--font-sans)',
+          }}>{t('common.close')}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-2)',
+      background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 999, padding: '5px 11px',
+    }}>{children}</span>
   )
 }
 
