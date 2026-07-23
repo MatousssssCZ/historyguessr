@@ -24,7 +24,9 @@ declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
 }
 
-const TIMER_SECONDS = 60
+// Denní výzva nemá časový limit. Minuta je jen okno pro XP bonus —
+// server násobí XP podle uplynulého času (viz submit_daily_result, migrace 033).
+const BONUS_WINDOW = 60
 
 type Phase = 'loading' | 'no_challenge' | 'already_played' | 'warning' | 'playing' | 'result'
 
@@ -49,7 +51,7 @@ export default function DailyChallengePage() {
   const [submitting, setSubmitting] = useState(false)
 
   // Timer
-  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS)
+  const [elapsed, setElapsed] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const hasSubmittedRef = useRef(false)
   const preloadImgRef = useRef<HTMLImageElement | null>(null)
@@ -60,7 +62,7 @@ export default function DailyChallengePage() {
   const [result, setResult] = useState<{
     distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number
   } | null>(null)
-  const timeLeftRef = useRef(TIMER_SECONDS)
+  const elapsedRef = useRef(0)
   // Vždy ukazuje na AKTUÁLNÍ doSubmit (časovač jinak volá zastaralou closure s prázdným tipem)
   const doSubmitRef = useRef<(fl?: number | null, fln?: number | null, fy?: number) => void>(() => {})
 
@@ -125,20 +127,16 @@ export default function DailyChallengePage() {
   function beginPlaying(startMs: number) {
     hasSubmittedRef.current = false
     if (timerRef.current) clearInterval(timerRef.current)
-    const compute = () => Math.max(0, TIMER_SECONDS - Math.floor((Date.now() - startMs) / 1000))
-    const rem = compute()
-    setTimeLeft(rem); timeLeftRef.current = rem
+    const compute = () => Math.max(0, Math.floor((Date.now() - startMs) / 1000))
+    const e = compute()
+    setElapsed(e); elapsedRef.current = e
     setPhase('playing')
 
+    // Stopky běží dál i po minutě — hráč nepřijde o body, jen o XP bonus.
     timerRef.current = setInterval(() => {
-      const r = compute()
-      timeLeftRef.current = r
-      setTimeLeft(r)
-      if (r <= 0) {
-        clearInterval(timerRef.current!)
-        // Auto-submit při vypršení — přes ref, ať se použije aktuální tip
-        if (!hasSubmittedRef.current) doSubmitRef.current()
-      }
+      const v = compute()
+      elapsedRef.current = v
+      setElapsed(v)
     }, 500)
   }
 
@@ -148,7 +146,7 @@ export default function DailyChallengePage() {
     track('daily_challenge_started', {}, user?.id)
     try {
       const { secondsLeft } = await startDailyChallenge()
-      beginPlaying(Date.now() - (TIMER_SECONDS - secondsLeft) * 1000)
+      beginPlaying(Date.now() - (BONUS_WINDOW - secondsLeft) * 1000)
     } catch (e) {
       console.error('[Daily] start selhal:', e)
       beginPlaying(Date.now())
@@ -185,7 +183,7 @@ export default function DailyChallengePage() {
     }
 
     // xpMult je jen pro zobrazení ve vyhodnocení; skutečné XP přiznal server
-    const remain = timeLeftRef.current
+    const remain = Math.max(0, BONUS_WINDOW - elapsedRef.current)
     const xpMult = remain >= 10 ? remain / 10 : 1
 
     if (lat != null) setGuessLat(lat)
@@ -214,8 +212,12 @@ export default function DailyChallengePage() {
   }
 
   const canSubmit = guessLat !== null && guessYearSet
-  const timerPct = (timeLeft / TIMER_SECONDS) * 100
-  const timerColor = timeLeft > 20 ? '#d97757' : 'var(--danger)'
+  // Bonusové okno: pruh i barva se týkají jen XP násobiče, ne konce hry
+  const bonusLeft = Math.max(0, BONUS_WINDOW - elapsed)
+  const liveMult = bonusLeft >= 10 ? bonusLeft / 10 : 1
+  const timerPct = (bonusLeft / BONUS_WINDOW) * 100
+  const timerColor = bonusLeft > 20 ? '#d97757' : bonusLeft > 0 ? 'var(--danger)' : 'var(--ink-3)'
+  const clock = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
 
   // ── Loading ─────────────────────────────────────────────
   if (phase === 'loading') {
@@ -338,7 +340,16 @@ export default function DailyChallengePage() {
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: '#26211C', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{eventTitle(event)}</div>
           </div>
           <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: timerColor, transition: 'color 500ms' }}>
-            ⏱ {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+            ⏱ {clock}
+            {/* Bonusové okno — ukazuje, jaký násobič XP hráč právě má */}
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.02em',
+              padding: '2px 7px', borderRadius: 999, marginLeft: 2,
+              background: bonusLeft > 0 ? 'rgba(217,119,87,0.16)' : 'rgba(42,31,23,0.08)',
+              color: bonusLeft > 0 ? 'var(--accent-deep)' : '#8C8175',
+            }}>
+              {bonusLeft > 0 ? t('daily.bonusMult', { m: liveMult.toFixed(1) }) : t('daily.bonusOver')}
+            </span>
           </div>
         </div>
 
@@ -363,7 +374,7 @@ export default function DailyChallengePage() {
               {/* Timer v rozbalené mapě */}
               <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(13,9,6,0.7)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '6px 12px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>
-                  {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                  {clock}
                 </span>
               </div>
             </div>
@@ -389,7 +400,7 @@ export default function DailyChallengePage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: timerColor, fontWeight: 600 }}>
-                    {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                    {clock}
                   </div>
                   <button onClick={() => setYearExpanded(false)} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.collapse')}</button>
                 </div>

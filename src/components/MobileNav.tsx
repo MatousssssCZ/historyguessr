@@ -49,7 +49,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
         paddingBottom: 'var(--safe-bottom)', background: 'var(--surface-blur, rgba(251,247,240,0.9))', backdropFilter: 'blur(16px)',
         borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', zIndex: 50,
       }}>
-        <div style={{ display: 'flex', gap: 38 }}>
+        <div style={{ display: 'flex', gap: 38, transform: 'translateY(-8px)' }}>
           {item('home', t('menu.navHome'), () => navigate('/menu'), 'home')}
           {item('compass', t('menu.campaigns'), () => navigate('/campaigns'), 'campaigns')}
         </div>
@@ -58,9 +58,11 @@ export default function MobileNav({ active }: { active?: Tab }) {
           width: 56, height: 56, borderRadius: '50%', background: ACCENT_GRAD, border: 'none', cursor: 'pointer',
           boxShadow: '0 14px 30px -6px rgba(217,119,87,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <svg width="35" height="35" viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5 L18.5 12 L8 18.5 Z"/></svg>
+          <svg width="35" height="35" viewBox="0 0 24 24">
+            <path d="M9.2 7 L17.2 12 L9.2 17 Z" fill="#fff" stroke="#fff" strokeWidth="3.4" strokeLinejoin="round" strokeLinecap="round"/>
+          </svg>
         </button>
-        <div style={{ display: 'flex', gap: 38 }}>
+        <div style={{ display: 'flex', gap: 38, transform: 'translateY(-8px)' }}>
           {item('medal', t('menu.navBadges'), () => navigate('/stats'), 'badges')}
           {item('user', t('menu.navProfile'), () => navigate('/account'), 'profile', friendReqs)}
         </div>
