@@ -175,7 +175,7 @@ export default function StatsPage() {
             </Section>
 
             <Section label={t('stats.dailyCalendar')}>
-              <DailyYearCalendar played={dailyDates}/>
+              <DailyYearCalendar played={dailyDates} since={profile?.created_at ? localDateISO(new Date(profile.created_at)) : null}/>
             </Section>
 
             <Section label={t('stats.trend')}>
@@ -403,7 +403,8 @@ function calMonths(): string[] {
   return Array.from({ length: 12 }, (_, m) =>
     new Date(2000, m, 1).toLocaleDateString(loc, { month: 'short' }).replace('.', ''))
 }
-function DailyYearCalendar({ played }: { played: Set<string> }) {
+function DailyYearCalendar({ played, since }: { played: Set<string>; since: string | null }) {
+  const { t } = useTranslation()
   const year = new Date().getFullYear()
   const todayIso = localDateISO()
   return (
@@ -418,16 +419,20 @@ function DailyYearCalendar({ played }: { played: Set<string> }) {
                 const day = di + 1
                 const iso = `${year}-${String(mi + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 const isPlayed = played.has(iso)
-                const isFuture = iso > todayIso
+                // Budoucnost i dny před registrací = hráč neměl šanci hrát → neutrální
+                const isUnavailable = iso > todayIso || (since !== null && iso < since)
                 const isToday = iso === todayIso
                 return (
                   <span key={day} title={`${day}. ${mi + 1}.`} style={{
                     width: 13, height: 13, borderRadius: 3, fontSize: 8, lineHeight: 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     border: isToday ? '1.5px solid var(--ink)' : '1px solid var(--line)',
-                    background: isPlayed ? 'var(--success, #5c9468)' : (isFuture ? 'var(--surface)' : 'rgba(192,57,43,0.10)'),
-                    color: isPlayed ? '#fff' : (isFuture ? 'transparent' : 'var(--danger)'),
-                  }}>{isPlayed ? '✓' : (isFuture ? '' : '✕')}</span>
+                    background: isPlayed ? 'var(--success)'
+                      : isUnavailable ? 'var(--surface)'
+                      : isToday ? 'var(--paper-300)'   // dnešek ještě stihnout jde → neutrální
+                      : 'var(--danger-soft)',
+                    color: isPlayed ? '#fff' : (isUnavailable ? 'transparent' : isToday ? 'var(--ink-3)' : 'var(--danger)'),
+                  }}>{isPlayed ? '✓' : (isUnavailable ? '' : isToday ? '–' : '✕')}</span>
                 )
               })}
             </div>
@@ -435,8 +440,8 @@ function DailyYearCalendar({ played }: { played: Set<string> }) {
         )
       })}
       <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--ink-3)' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--success, #5c9468)' }}/>Odehráno</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(192,57,43,0.10)', border: '1px solid var(--line)' }}/>Vynecháno</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--success)' }}/>{t('menu.markPlayed')}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--danger-soft)', border: '1px solid var(--line)' }}/>{t('menu.markMissed')}</span>
       </div>
     </div>
   )
