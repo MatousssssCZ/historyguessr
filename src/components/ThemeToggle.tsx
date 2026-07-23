@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getTheme, toggleTheme } from '@/lib/theme'
 
 /**
@@ -7,6 +8,7 @@ import { getTheme, toggleTheme } from '@/lib/theme'
  * variant="light" → adaptivní (používá tokeny, sám se přizpůsobí tématu)
  */
 export default function ThemeToggle({ variant = 'light' }: { variant?: 'dark' | 'light' }) {
+  const { t } = useTranslation()
   const [theme, setThemeState] = useState(getTheme())
   const isDark = theme === 'dark'
 
@@ -24,8 +26,8 @@ export default function ThemeToggle({ variant = 'light' }: { variant?: 'dark' | 
   return (
     <button
       onClick={() => setThemeState(toggleTheme())}
-      aria-label={isDark ? 'Přepnout na světlý režim' : 'Přepnout na tmavý režim'}
-      title={isDark ? 'Světlý režim' : 'Tmavý režim'}
+      aria-label={isDark ? t('common.toLight') : t('common.toDark')}
+      title={isDark ? t('common.themeLight') : t('common.themeDark')}
       style={{
         ...style,
         width: 34, height: 34, borderRadius: 8, cursor: 'pointer',

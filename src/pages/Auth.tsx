@@ -172,7 +172,7 @@ export default function AuthPage() {
                 <div>
                   <label className="label">{t('auth.confirmPassword')}</label>
                   <input className={`input${confirmPassword && password !== confirmPassword ? ' input-error' : ''}`} type={showPassword ? 'text' : 'password'} placeholder={t('auth.repeatPassword')} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required autoComplete="new-password"/>
-                  {confirmPassword && password !== confirmPassword && <p className="field-error">Hesla se neshodují</p>}
+                  {confirmPassword && password !== confirmPassword && <p className="field-error">{t('common.pwMismatch')}</p>}
                 </div>
               )}
               {error && <div className="alert alert-error">⚠ {error}</div>}
@@ -401,7 +401,7 @@ export default function AuthPage() {
                   required autoComplete="new-password"
                 />
                 {confirmPassword && password !== confirmPassword && (
-                  <p className="field-error">Hesla se neshodují</p>
+                  <p className="field-error">{t('common.pwMismatch')}</p>
                 )}
               </div>
             )}

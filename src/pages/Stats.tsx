@@ -11,11 +11,11 @@ import DesktopSidebar from '@/components/DesktopSidebar'
 import type { RoundResult, EarnedReward, RewardRarity } from '@/types/database'
 
 // Barvy vzácnosti relikvií (funkční i v tmavém režimu — poloprůhledné podklady)
-const RARITY: Record<RewardRarity, { border: string; bg: string; label: string }> = {
-  common:    { border: 'var(--line-strong)', bg: 'var(--paper-200)',        label: 'Běžná' },
-  rare:      { border: '#5b7fa6',            bg: 'rgba(91,127,166,0.14)',   label: 'Vzácná' },
-  epic:      { border: '#8a6bb0',            bg: 'rgba(138,107,176,0.16)',  label: 'Epická' },
-  legendary: { border: '#c79a3e',            bg: 'rgba(199,154,62,0.18)',   label: 'Legendární' },
+const RARITY: Record<RewardRarity, { border: string; bg: string; key: string }> = {
+  common:    { border: 'var(--line-strong)', bg: 'var(--paper-200)',        key: 'rarCommon' },
+  rare:      { border: '#5b7fa6',            bg: 'rgba(91,127,166,0.14)',   key: 'rarRare' },
+  epic:      { border: '#8a6bb0',            bg: 'rgba(138,107,176,0.16)',  key: 'rarEpic' },
+  legendary: { border: '#c79a3e',            bg: 'rgba(199,154,62,0.18)',   key: 'rarLegendary' },
 }
 
 const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
@@ -308,7 +308,7 @@ function RelicGallery({ rewards }: { rewards: EarnedReward[] }) {
               </div>
               <div style={{ minWidth: 0, width: '100%' }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--ink)', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: rar.border, marginTop: 3 }}>{rar.label}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: rar.border, marginTop: 3 }}>{t('stats.' + rar.key)}</div>
               </div>
             </div>
           )
@@ -398,13 +398,17 @@ function TrendChart({ scores, trendPct }: { scores: number[]; trendPct: number }
 }
 
 // Roční kalendář denní výzvy: ✓ odehráno, ✕ vynecháno (minulost), prázdné = budoucnost
-const CAL_MONTHS = ['Led', 'Úno', 'Bře', 'Dub', 'Kvě', 'Čvn', 'Čvc', 'Srp', 'Zář', 'Říj', 'Lis', 'Pro']
+function calMonths(): string[] {
+  const loc = currentLocale()
+  return Array.from({ length: 12 }, (_, m) =>
+    new Date(2000, m, 1).toLocaleDateString(loc, { month: 'short' }).replace('.', ''))
+}
 function DailyYearCalendar({ played }: { played: Set<string> }) {
   const year = new Date().getFullYear()
   const todayIso = localDateISO()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      {CAL_MONTHS.map((mn, mi) => {
+      {calMonths().map((mn, mi) => {
         const dim = new Date(year, mi + 1, 0).getDate()
         return (
           <div key={mi} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>

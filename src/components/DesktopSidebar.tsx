@@ -24,7 +24,7 @@ export default function DesktopSidebar({ streak }: { streak?: number }) {
 
   if (isMobile) return null
 
-  const name = profile?.username ?? 'Hráči'
+  const name = profile?.username ?? t('common.defaultPlayer')
   const monogram = name.trim().charAt(0).toUpperCase() || '?'
   const lvl = levelFromXp(profile?.xp ?? 0)
 

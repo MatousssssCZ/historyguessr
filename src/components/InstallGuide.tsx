@@ -147,7 +147,7 @@ export default function InstallGuide({ onClose, showHideOption }: {
         {step === 'pick' && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-              <BackBtn onClick={() => setStep('intro')}/>
+              <BackBtn onClick={() => setStep('intro')} backLabel={t('common.back')}/>
               <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0, color: 'var(--ink)' }}>{t('common.instPick')}</h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -172,7 +172,7 @@ export default function InstallGuide({ onClose, showHideOption }: {
         {step === 'steps' && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-              <BackBtn onClick={() => setStep('intro')}/>
+              <BackBtn onClick={() => setStep('intro')} backLabel={t('common.back')}/>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                 <GuideIcon guide={guide} size={20}/>
                 <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 18.5, margin: 0, color: 'var(--ink)', lineHeight: 1.2 }}>
@@ -222,9 +222,9 @@ export default function InstallGuide({ onClose, showHideOption }: {
   )
 }
 
-function BackBtn({ onClick }: { onClick: () => void }) {
+function BackBtn({ onClick, backLabel }: { onClick: () => void; backLabel: string }) {
   return (
-    <button onClick={onClick} aria-label="Zpět" style={{
+    <button onClick={onClick} aria-label={backLabel} style={{
       width: 34, height: 34, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
       background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,

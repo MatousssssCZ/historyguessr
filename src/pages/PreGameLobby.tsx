@@ -17,14 +17,14 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import type { GameOptions } from '@/hooks/useGame'
 
 const CATEGORIES = [
-  { id: 'war', label: '⚔ Války' },
-  { id: 'moments', label: '📜 Historické okamžiky' },
-  { id: 'places', label: '🧭 Objevy míst' },
-  { id: 'inventions', label: '💡 Vynálezy' },
-  { id: 'art', label: '🎨 Umění' },
-  { id: 'sports', label: '🏅 Sportovní okamžiky' },
-  { id: 'mysteries', label: '🔮 Záhady a legendy' },
-  { id: 'disasters', label: '🌋 Katastrofy' },
+  { id: 'war' },
+  { id: 'moments' },
+  { id: 'places' },
+  { id: 'inventions' },
+  { id: 'art' },
+  { id: 'sports' },
+  { id: 'mysteries' },
+  { id: 'disasters' },
 ]
 
 const ROUND_OPTIONS = [3, 5, 10]
@@ -84,10 +84,10 @@ export default function PreGameLobbyPage() {
   useEffect(() => {
     if (!sharedSlug) return
     getSharedPreset(sharedSlug).then(p => {
-      if (!p) { setPresetMsg('Sdílený scénář nebyl nalezen nebo už není sdílený.'); return }
+      if (!p) { setPresetMsg(t('pregame.sharedNotFound')); return }
       applyRulesRef.current(p.rules)
-      setPresetMsg(`Načten sdílený scénář „${p.name}"${p.owner_name ? ` od ${p.owner_name}` : ''}.`)
-    }).catch(() => setPresetMsg('Sdílený scénář se nepodařilo načíst.'))
+      setPresetMsg(t('pregame.sharedLoaded', { name: p.name, by: p.owner_name ? t('pregame.sharedBy', { name: p.owner_name }) : '' }))
+    }).catch(() => setPresetMsg(t('pregame.sharedLoadFailed')))
   }, [sharedSlug])
 
   // Načti kandidáty při změně filtrů
@@ -153,7 +153,7 @@ export default function PreGameLobbyPage() {
       if (excludeLimit !== null && next.size >= excludeLimit) {
         monetizationAnalytics.premiumFeatureAttempt('unlimitedExclude', user?.id)
         singlePlayerAnalytics.premiumFilterAttempt('unlimitedExclude', user?.id)
-        setPresetMsg(`Zdarma můžeš vyloučit ${excludeLimit} událostí. S Premium neomezeně.`)
+        setPresetMsg(t('pregame.excludeLimit', { n: excludeLimit }))
         return prev
       }
       next.add(id)
@@ -242,23 +242,23 @@ export default function PreGameLobbyPage() {
   const smartCtl = (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
       <SmartFilterChip
-        label="🆕 Jen nehrané" on={onlyUnplayed} enabled={caps.canUseSmartFilters}
+        label={t('pregame.onlyUnplayed')} on={onlyUnplayed} enabled={caps.canUseSmartFilters}
         onClick={() => {
           if (!caps.canUseSmartFilters) {
             singlePlayerAnalytics.premiumFilterAttempt('onlyUnplayed', user?.id)
             monetizationAnalytics.upsellShown('premium_single_player_feature', user?.id)
-            setPresetMsg('Filtr „jen nehrané" je součástí Premium.')
+            setPresetMsg(t('pregame.lockUnplayed'))
             return
           }
           setOnlyUnplayed(v => !v)
         }}/>
       <SmartFilterChip
-        label="🎯 Jen dříve chybné" on={onlyMistakes} enabled={caps.canUseSmartFilters}
+        label={t('pregame.onlyMistakes')} on={onlyMistakes} enabled={caps.canUseSmartFilters}
         onClick={() => {
           if (!caps.canUseSmartFilters) {
             singlePlayerAnalytics.premiumFilterAttempt('onlyMistakes', user?.id)
             monetizationAnalytics.upsellShown('premium_single_player_feature', user?.id)
-            setPresetMsg('Filtr „jen dříve chybné" je součástí Premium.')
+            setPresetMsg(t('pregame.lockMistakes'))
             return
           }
           setOnlyMistakes(v => !v)
@@ -271,25 +271,25 @@ export default function PreGameLobbyPage() {
       <PresetBar
         presets={presets} canUse={caps.canSavePresets} canShare={caps.canSharePresets}
         userId={user?.id}
-        onLoad={(r) => { applyRules(r); setPresetMsg('Scénář načten.') }}
+        onLoad={(r) => { applyRules(r); setPresetMsg(t('pregame.presetLoaded')) }}
         onSave={async (name) => {
           if (!user) return
           const { data } = await createPreset(user.id, name, currentRules())
           if (data) singlePlayerAnalytics.presetCreated((data as { id: string }).id, user.id)
-          setPresetMsg('Scénář uložen.'); reloadPresets()
+          setPresetMsg(t('pregame.presetSaved')); reloadPresets()
         }}
         onOverwrite={async (p) => {
           await updatePreset(p.id, { rules: currentRules() })
-          setPresetMsg('Scénář přepsán aktuálním nastavením.'); reloadPresets()
+          setPresetMsg(t('pregame.presetOverwritten')); reloadPresets()
         }}
         onDuplicate={async (p) => {
           if (!user) return
           await createPreset(user.id, `${p.name} (kopie)`, p.rules)
-          setPresetMsg('Scénář duplikován.'); reloadPresets()
+          setPresetMsg(t('pregame.presetDuplicated')); reloadPresets()
         }}
         onDelete={async (p) => {
-          if (!confirm(`Smazat scénář „${p.name}"?`)) return
-          await deletePreset(p.id); setPresetMsg('Scénář smazán.'); reloadPresets()
+          if (!confirm(t('pregame.presetDeleteConfirm', { name: p.name }))) return
+          await deletePreset(p.id); setPresetMsg(t('pregame.presetDeleted')); reloadPresets()
         }}
         onShare={async (p) => {
           try {
@@ -298,14 +298,14 @@ export default function PreGameLobbyPage() {
               const url = `${window.location.origin}/play?preset=${slug}`
               await navigator.clipboard?.writeText(url).catch(() => {})
               singlePlayerAnalytics.presetShared(p.id, user?.id)
-              setPresetMsg('Odkaz zkopírován do schránky.')
-            } else setPresetMsg('Sdílení vypnuto.')
+              setPresetMsg(t('pregame.linkCopied'))
+            } else setPresetMsg(t('pregame.sharingOff'))
             reloadPresets()
-          } catch { setPresetMsg('Sdílení se nepodařilo.') }
+          } catch { setPresetMsg(t('pregame.shareFailed')) }
         }}
         onPremium={() => {
           monetizationAnalytics.upsellShown('premium_single_player_feature', user?.id)
-          setPresetMsg('Ukládání scénářů je součástí Premium.')
+          setPresetMsg(t('pregame.presetsPremium'))
         }}
       />
       {presetMsg && (
@@ -359,7 +359,7 @@ export default function PreGameLobbyPage() {
               </div>
               <button onClick={() => toggleExclude(ev.id)}
                 aria-label={out ? t('pregame.restore') : t('pregame.exclude')}
-                title={!out && excludeFull ? `Zdarma lze vyloučit ${excludeLimit} událostí — s Premium neomezeně` : undefined}
+                title={!out && excludeFull ? t('pregame.excludeLimitTitle', { n: excludeLimit }) : undefined}
                 style={{
                   width: 30, height: 30, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
@@ -491,26 +491,26 @@ export default function PreGameLobbyPage() {
                   borderBottom: '1px solid var(--line)',
                 }}>
                   <span style={{ fontSize: 15 }}>♛</span>
-                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)' }}>Pokročilé nástroje</span>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)' }}>{t('pregame.advTools')}</span>
                   <span style={{
                     marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
                     textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999,
                     background: isPremium ? 'var(--accent)' : 'var(--paper-300)',
                     color: isPremium ? '#fff' : 'var(--ink-3)',
-                  }}>{isPremium ? 'Aktivní' : 'Premium'}</span>
+                  }}>{isPremium ? t('pregame.active') : 'Premium'}</span>
                 </div>
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
                   {!isPremium && (
                     <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                      Chytré filtry a ukládání scénářů jsou součástí Premium. Vyzkoušet je můžeš i teď — zobrazíme, co odemkneš.
+                      {t('pregame.advToolsDesc')}
                     </div>
                   )}
                   <div>
-                    <CardLabel>Chytré filtry</CardLabel>
+                    <CardLabel>{t('pregame.smartFilters')}</CardLabel>
                     {smartCtl}
                   </div>
                   <div>
-                    <CardLabel>Scénáře</CardLabel>
+                    <CardLabel>{t('pregame.presets')}</CardLabel>
                     {presetsCtl}
                   </div>
                 </div>
@@ -539,8 +539,8 @@ export default function PreGameLobbyPage() {
         <Section label={t('pregame.rounds')}>{roundsCtl}</Section>
         <Section label={t('pregame.categories')} hint={t('pregame.noFilter')}>{categoriesCtl}</Section>
         <Section label={t('pregame.yearRange')}>{yearCtl}</Section>
-        <Section label="Chytré filtry" hint={caps.canUseSmartFilters ? undefined : 'Premium'}>{smartCtl}</Section>
-        <Section label="Scénáře" hint={caps.canSavePresets ? undefined : 'Premium'}>{presetsCtl}</Section>
+        <Section label={t('pregame.smartFilters')} hint={caps.canUseSmartFilters ? undefined : 'Premium'}>{smartCtl}</Section>
+        <Section label={t('pregame.presets')} hint={caps.canSavePresets ? undefined : 'Premium'}>{presetsCtl}</Section>
         <div style={{ marginBottom: 18 }}>{counterCtl}</div>
         {tuneCardMobile}
       </div>
@@ -603,6 +603,7 @@ function PresetBar({ presets, canUse, canShare, onLoad, onSave, onOverwrite, onD
   onShare: (p: SinglePlayerPreset) => Promise<void>
   onPremium: () => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -615,8 +616,8 @@ function PresetBar({ presets, canUse, canShare, onLoad, onSave, onOverwrite, onD
       }}>
         <span style={{ fontSize: 18 }}>💾</span>
         <span style={{ flex: 1 }}>
-          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)' }}>Ulož si nastavení jako scénář</span>
-          <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>Rychlé opakované spuštění · Premium</span>
+          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)' }}>{t('pregame.presetsCta')}</span>
+          <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{t('pregame.presetsCtaSub')}</span>
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-deep)' }}>♛ PREMIUM</span>
       </button>
@@ -629,15 +630,15 @@ function PresetBar({ presets, canUse, canShare, onLoad, onSave, onOverwrite, onD
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Uložení aktuálního nastavení */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <input className="input" placeholder="Název scénáře…" value={name} maxLength={60}
+        <input className="input" placeholder={t('pregame.presetNamePh')} value={name} maxLength={60}
           onChange={e => setName(e.target.value)} style={{ flex: 1 }}/>
         <button className="btn btn-accent" style={{ fontSize: 13, flexShrink: 0 }}
           disabled={busy || !name.trim()}
-          onClick={run(async () => { await onSave(name.trim()); setName('') })}>Uložit</button>
+          onClick={run(async () => { await onSave(name.trim()); setName('') })}>{t('pregame.presetSave')}</button>
       </div>
 
       {presets.length === 0 && (
-        <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>Zatím žádné scénáře.</div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{t('pregame.presetNone')}</div>
       )}
 
       {presets.map(p => (
@@ -647,25 +648,25 @@ function PresetBar({ presets, canUse, canShare, onLoad, onSave, onOverwrite, onD
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {p.name}{p.is_shared && <span style={{ fontSize: 10, color: 'var(--accent-deep)', marginLeft: 6 }}>· sdílený</span>}
+              {p.name}{p.is_shared && <span style={{ fontSize: 10, color: 'var(--accent-deep)', marginLeft: 6 }}>{t('pregame.presetShared')}</span>}
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', marginTop: 1 }}>
-              {p.rules.rounds} kol
-              {p.rules.categories.length > 0 && ` · ${p.rules.categories.length} kat.`}
+              {t('pregame.presetRounds', { n: p.rules.rounds })}
+              {p.rules.categories.length > 0 && t('pregame.presetCats', { n: p.rules.categories.length })}
               {p.rules.excludeIds.length > 0 && ` · −${p.rules.excludeIds.length}`}
-              {p.rules.onlyUnplayed && ' · nehrané'}
-              {p.rules.onlyMistakes && ' · chybné'}
+              {p.rules.onlyUnplayed && t('pregame.sfxUnplayed')}
+              {p.rules.onlyMistakes && t('pregame.sfxMistakes')}
             </div>
           </div>
-          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={() => onLoad(p.rules)} title="Načíst">▸</button>
-          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onOverwrite(p))} title="Přepsat aktuálním nastavením">⟳</button>
-          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onDuplicate(p))} title="Duplikovat">⧉</button>
+          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={() => onLoad(p.rules)} title={t('pregame.presetLoad')}>▸</button>
+          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onOverwrite(p))} title={t('pregame.presetOverwrite')}>⟳</button>
+          <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onDuplicate(p))} title={t('pregame.presetDuplicate')}>⧉</button>
           {canShare && (
-            <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onShare(p))} title={p.is_shared ? 'Zrušit sdílení' : 'Sdílet odkazem'}>
+            <button className="btn btn-ghost" style={miniBtn} disabled={busy} onClick={run(() => onShare(p))} title={p.is_shared ? t('pregame.unshare') : t('pregame.shareLink')}>
               {p.is_shared ? '🔗' : '↗'}
             </button>
           )}
-          <button className="btn btn-ghost" style={{ ...miniBtn, color: 'var(--danger)' }} disabled={busy} onClick={run(() => onDelete(p))} title="Smazat">✕</button>
+          <button className="btn btn-ghost" style={{ ...miniBtn, color: 'var(--danger)' }} disabled={busy} onClick={run(() => onDelete(p))} title={t('pregame.presetDelete')}>✕</button>
         </div>
       ))}
     </div>

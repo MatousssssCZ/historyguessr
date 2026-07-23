@@ -110,13 +110,14 @@ export default function HowToPlay({ onClose }: { onClose: () => void }) {
 
 // ── Ilustrace (krok 1–3 reálně vyzkoušitelné, krok 4 náhled) ──
 function PanoramaArt({ event }: { event: Event | null }) {
+  const { t } = useTranslation()
   return (
     <div style={{ flex: 1, position: 'relative', background: '#2a2015' }}>
       {event
         ? <PanoramaViewer url={event.panorama_url} preview={event.preview_url}/>
         : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="spinner" style={{ width: 24, height: 24 }}/></div>
       }
-      <div style={{ position: 'absolute', left: 16, bottom: 16, background: 'rgba(20,17,14,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 20, padding: '8px 13px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11, pointerEvents: 'none' }}>✥ Táhni prstem po obraze</div>
+      <div style={{ position: 'absolute', left: 16, bottom: 16, background: 'rgba(20,17,14,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 20, padding: '8px 13px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11, pointerEvents: 'none' }}>{t('game.htDrag')}</div>
     </div>
   )
 }
@@ -128,10 +129,11 @@ function MapArt({ lat, lng, onGuess }: { lat: number | null; lng: number | null;
   )
 }
 function YearArt({ year, onChange }: { year: number; onChange: (y: number) => void }) {
+  const { t } = useTranslation()
   return (
     <div style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 20 }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', marginBottom: 10, textTransform: 'uppercase' }}>Tvůj tip na rok</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', marginBottom: 10, textTransform: 'uppercase' }}>{t('game.yourYearGuess')}</div>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 48, color: 'var(--accent)' }}>{year < 0 ? `${-year} př. n. l.` : year}</div>
       </div>
       <div style={{ width: '100%', maxWidth: 280 }}>
@@ -141,11 +143,12 @@ function YearArt({ year, onChange }: { year: number; onChange: (y: number) => vo
   )
 }
 function ScoreArt() {
+  const { t } = useTranslation()
   return (
     <div style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}><span style={{ fontFamily: 'var(--font-serif)', fontSize: 52, color: 'var(--ink)' }}>873</span><span style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--ink-3)' }}>/ 1000</span></div>
       <div style={{ display: 'flex', gap: 9 }}>
-        {[['429 km', 'Místo'], ['2 roky', 'Rok']].map(([v, l]) => (
+        {[['429 km', t('common.place')], ['2 roky', t('common.year')]].map(([v, l]) => (
           <div key={l} style={{ background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 12, padding: '9px 13px', textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)' }}>{v}</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--ink-3)', marginTop: 2, textTransform: 'uppercase' }}>{l}</div>

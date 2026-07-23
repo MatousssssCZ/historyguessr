@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { currentLocale } from '@/i18n'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -18,6 +20,7 @@ const GOLD = '#f5ce8b'
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
 export default function CampaignsPage() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const { categoryId } = useParams()
@@ -67,19 +70,19 @@ export default function CampaignsPage() {
         {/* Hlavička: zpět + název + ★ + výpravy */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-            {isMobile && <button onClick={() => navigate('/menu')} aria-label="Zpět do menu" style={{
+            {isMobile && <button onClick={() => navigate('/menu')} aria-label={t('camp.backToMenu')} style={{
               width: 40, height: 40, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
               background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>←</button>}
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 32 : 40, margin: 0, letterSpacing: '-0.02em', color: 'var(--ink)' }}>Kampaně</h1>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 32 : 40, margin: 0, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{t('camp.title')}</h1>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingTop: 4 }}>
             <StarPill stars={bundle.totalStars}/>
             <ExpeditionPill bundle={bundle}/>
           </div>
         </div>
-        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 20px' }}>Odemykej kategorie sbíráním hvězd.</p>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 20px' }}>{t('camp.sub')}</p>
 
         <CategoriesGrid bundle={bundle} isMobile={isMobile} userId={user?.id} onOpen={(id) => {
           campaignAnalytics.categoryOpened(id, user?.id)
@@ -94,8 +97,9 @@ export default function CampaignsPage() {
 
 // ─── Pilulky v hlavičce ───────────────────────────────────
 function StarPill({ stars }: { stars: number }) {
+  const { t } = useTranslation()
   return (
-    <span title="Celkem nasbíraných hvězd" style={{
+    <span title={t('camp.starsTotal')} style={{
       display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 20,
       background: 'var(--surface)', border: '1px solid var(--line)',
       fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink)',
@@ -104,10 +108,11 @@ function StarPill({ stars }: { stars: number }) {
 }
 
 function ExpeditionPill({ bundle }: { bundle: CampaignBundle }) {
+  const { t } = useTranslation()
   const { remaining, perDay } = bundle.expeditions
   const empty = remaining === 0
   return (
-    <span title="Zbývající výpravy dnes" style={{
+    <span title={t('camp.expeditionsLeft')} style={{
       display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 20,
       background: 'var(--surface)', border: `1px solid ${empty ? 'rgba(192,57,43,0.35)' : 'var(--line)'}`,
       fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
@@ -138,6 +143,7 @@ function CategoriesGrid({ bundle, isMobile, userId, onOpen }: {
 function CategoryCard({ cat, bundle, userId, onOpen }: {
   cat: CampaignCategory; bundle: CampaignBundle; userId?: string; onOpen: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const camps = bundle.campaignsByCat[cat.id] ?? []
   const acc = categoryAccess(cat, bundle.totalStars, bundle.entitlements)
   const cs = categoryStars(camps, bundle.progress)
@@ -208,8 +214,8 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{cat.title}</div>
         <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {locked
-            ? (acc.lockReason === 'premium' ? 'Součást Premium' : `Chybí ${acc.missingStars}★ k odemčení`)
-            : `${camps.length} ${plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}${cat.description ? ` · ${cat.description}` : ''}`}
+            ? (acc.lockReason === 'premium' ? t('camp.premiumPart') : t('camp.missingStars', { n: acc.missingStars }))
+            : `${t('camp.count', { count: camps.length })}${cat.description ? ` · ${cat.description}` : ''}`}
         </div>
       </div>
     </button>
@@ -217,6 +223,7 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
 }
 
 function ComingSoonCard({ full }: { full?: boolean }) {
+  const { t } = useTranslation()
   return (
     <div style={{
       border: '1.5px dashed var(--line-strong)', borderRadius: 18, minHeight: full ? 220 : 180,
@@ -225,7 +232,7 @@ function ComingSoonCard({ full }: { full?: boolean }) {
       gridColumn: full ? '1 / -1' : undefined,
     }}>
       <span style={{ fontSize: 26, opacity: 0.5 }}>⧗</span>
-      <span style={{ fontSize: 13.5, lineHeight: 1.4 }}>Další kategorie<br/>se připravují</span>
+      <span style={{ fontSize: 13.5, lineHeight: 1.4, whiteSpace: 'pre-line' }}>{t('camp.comingSoon')}</span>
     </div>
   )
 }
@@ -235,6 +242,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
   bundle: CampaignBundle; categoryId: string; isMobile: boolean; userId?: string
   onBack: () => void; onReload: () => Promise<void>
 }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [starting, setStarting] = useState<string | null>(null)
   const [showUpsell, setShowUpsell] = useState(false)
@@ -253,7 +261,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
       const { attemptId, eventIds } = await startCampaignAttempt(campaign.id)
       const events = await getEventsByIds(eventIds)
       if (events.length < campaign.rounds_count) {
-        setErr('Události kampaně se nepodařilo načíst.'); setStarting(null); return
+        setErr(t('camp.eventsLoadFailed')); setStarting(null); return
       }
       campaignAnalytics.started(campaign.id, userId)
       navigate('/game', {
@@ -271,11 +279,11 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
       const raw = (e as { message?: string })?.message ?? ''
       console.error('[Campaigns] start selhal:', e)
       setErr(
-        kind === 'premium_required' ? 'Tahle kampaň je součástí Premium.'
-        : kind === 'locked_global_stars' || kind === 'locked_category_stars' ? 'Na tuhle kampaň zatím nemáš dost hvězd.'
-        : kind === 'campaign_incomplete' ? 'Kampaň zatím nemá kompletní obsah.'
+        kind === 'premium_required' ? t('camp.premiumCampaign')
+        : kind === 'locked_global_stars' || kind === 'locked_category_stars' ? t('camp.notEnoughStars')
+        : kind === 'campaign_incomplete' ? t('camp.incomplete')
         // U neznámé chyby ukaž i syrovou hlášku ze serveru — ať jde poznat příčina
-        : `Kampaň se nepodařilo spustit.${raw ? ` (${raw})` : ''}`,
+        : `${t('camp.startFailed')}${raw ? ` (${raw})` : ''}`,
       )
     }
   }
@@ -284,8 +292,8 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
         <div style={{ fontSize: 34, marginBottom: 10 }}>🔒</div>
-        <p>Tahle kategorie ještě není odemčená.</p>
-        <button className="btn btn-ghost" onClick={onBack}>← Zpět na kampaně</button>
+        <p>{t('camp.lockedCat')}</p>
+        <button className="btn btn-ghost" onClick={onBack}>{t('camp.backToCampaigns')}</button>
       </div>
     )
   }
@@ -295,7 +303,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
   const heroImg = cat.hero_image_url || null
 
   const backBtn = (
-    <button onClick={onBack} aria-label="Zpět" style={{
+    <button onClick={onBack} aria-label={t('camp.back')} style={{
       width: 44, height: 44, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
       background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)',
       border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 18,
@@ -314,7 +322,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 28 : 34, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05 }}>{cat.title}</h1>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'rgba(255,255,255,0.92)', marginTop: 5 }}>
           <span style={{ color: GOLD }}>★</span> {cs.earned} / {cs.max} <span style={{ color: GOLD }}>★</span>
-          {camps.length > 0 && <span style={{ color: 'rgba(255,255,255,0.7)' }}> · {camps.length} {plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}</span>}
+          {camps.length > 0 && <span style={{ color: 'rgba(255,255,255,0.7)' }}> · {t('camp.count', { count: camps.length })}</span>}
         </div>
       </div>
     </div>
@@ -334,14 +342,14 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
   const desc = (cat.description || camps.length > 0) && (
     <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: isMobile ? '0 0 18px' : '0 0 22px' }}>
       {cat.description}
-      {camps.length > 0 && ` ${camps.length} ${plural(camps.length, 'kampaň', 'kampaně', 'kampaní')}, ${roundsHint} událostí v každé.`}
+      {camps.length > 0 && ` ${t('camp.count', { count: camps.length })}, ${t('camp.eventsEach', { rounds: roundsHint })}`}
     </p>
   )
 
   const rows = (
     <>
       {err && <div className="alert alert-error" style={{ marginBottom: 14 }}>⚠ {err}</div>}
-      {camps.length === 0 && <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>Zatím žádné kampaně.</p>}
+      {camps.length === 0 && <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('camp.noCampaigns')}</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 12 }}>
         {camps.map((c, i) => (
           <CampaignRow
@@ -406,6 +414,7 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
   campaign: Campaign; index: number; cat: CampaignCategory; bundle: CampaignBundle
   categoryStarsEarned: number; busy: boolean; onPlay: (c: Campaign) => void; isMobile?: boolean
 }) {
+  const { t } = useTranslation()
   // Odemyká se POČTEM ★ v kategorii — ne dokončením předchozí kampaně
   const acc = campaignAccess(campaign, categoryStarsEarned, bundle.entitlements, cat)
   const prog = bundle.progress[campaign.id]
@@ -434,7 +443,7 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
 
         {locked ? (
           <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
-            {acc.lockReason === 'premium' ? 'Součást Premium' : `Chybí ${acc.missingStars}★ v této kategorii`}
+            {acc.lockReason === 'premium' ? t('camp.premiumPart') : t('camp.missingStarsCat', { n: acc.missingStars })}
           </div>
         ) : played ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
@@ -445,7 +454,7 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
           </div>
         ) : (
           <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
-            {campaign.rounds_count} událostí · zatím nehráno
+            {t('camp.notPlayed', { n: campaign.rounds_count })}
           </div>
         )}
       </div>
@@ -454,7 +463,7 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
         <button className={isNext ? 'btn btn-accent' : 'btn btn-ghost'}
           style={{ fontSize: 13, flexShrink: 0, minWidth: 92 }}
           disabled={busy} onClick={() => onPlay(campaign)}>
-          {busy ? '…' : played ? 'Zopakovat' : 'Hrát'}
+          {busy ? '…' : played ? t('camp.replay') : t('camp.play')}
         </button>
       )}
     </div>
@@ -473,14 +482,15 @@ export function StarRow({ stars, size = 15 }: { stars: number; size?: number }) 
 
 // ═══════════════════ Upsell — došly výpravy ═══════════════════
 function ExpeditionUpsell({ bundle, userId, onClose }: { bundle: CampaignBundle; userId?: string; onClose: () => void }) {
+  const { t } = useTranslation()
   const { perDay, resetsAt } = bundle.expeditions
   const resetTxt = resetsAt
-    ? new Date(resetsAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })
-    : 'o půlnoci'
+    ? new Date(resetsAt).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' })
+    : t('camp.upsellMidnight')
   const benefits = [
-    'Neomezené výpravy do kampaní',
-    'Žádné čekání na obnovení',
-    'Přístup k Premium kategoriím',
+    t('camp.upsellB1'),
+    t('camp.upsellB2'),
+    t('camp.upsellB3'),
   ]
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(38,33,28,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
@@ -490,13 +500,13 @@ function ExpeditionUpsell({ bundle, userId, onClose }: { bundle: CampaignBundle;
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
           boxShadow: '0 14px 28px -10px rgba(217,119,87,0.55)',
         }}>⚡</div>
-        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, margin: '0 0 8px', color: 'var(--ink)' }}>Došly ti výpravy</h3>
+        <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, margin: '0 0 8px', color: 'var(--ink)' }}>{t('camp.upsellTitle')}</h3>
         <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55, margin: '0 0 20px' }}>
-          Využil jsi všech {perDay} denních výprav.<br/>Nové dostaneš zítra ({resetTxt}).
+          {t('camp.upsellBody', { n: perDay })}<br/>{t('camp.upsellNext', { time: resetTxt })}
         </p>
 
         <div style={{ background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 16, padding: 16, marginBottom: 20, textAlign: 'left' }}>
-          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', marginBottom: 10 }}>S Premium získáš</div>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', marginBottom: 10 }}>{t('camp.upsellWith')}</div>
           {benefits.map(b => (
             <div key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13.5, color: 'var(--ink-2)', padding: '5px 0' }}>
               <span style={{
@@ -511,10 +521,10 @@ function ExpeditionUpsell({ bundle, userId, onClose }: { bundle: CampaignBundle;
         <button className="btn btn-accent" style={{ width: '100%', padding: 14, fontSize: 15, marginBottom: 10 }}
           onClick={() => {
             monetizationAnalytics.upsellCtaClicked('no_expeditions', userId)
-            alert('Premium — připravujeme 🙏')
-          }}>Chci Premium</button>
+            alert(t('camp.premiumSoon'))
+          }}>{t('camp.upsellCta')}</button>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 13.5, padding: 6 }}>
-          Počkám do zítra
+          {t('camp.upsellLater')}
         </button>
       </div>
     </div>
@@ -532,9 +542,3 @@ function shade(hex: string, pct: number): string {
   return `rgb(${r},${g},${b})`
 }
 
-/** České skloňování počtu (1 / 2–4 / 5+). */
-function plural(n: number, one: string, few: string, many: string): string {
-  if (n === 1) return one
-  if (n >= 2 && n <= 4) return few
-  return many
-}

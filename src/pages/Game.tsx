@@ -321,6 +321,7 @@ export function PanoramaViewer({ url, preview }: { url: string; preview?: string
 
 // ── Fullscreen button ────────────────────────────────────
 function FullscreenButton() {
+  const { t } = useTranslation()
   const [isFs, setIsFs] = useState(false)
 
   async function toggle() {
@@ -352,7 +353,7 @@ function FullscreenButton() {
         fontSize: 16, lineHeight: 1, zIndex: 5,
         transition: 'background 160ms',
       }}
-      title={isFs ? 'Ukončit fullscreen' : 'Fullscreen'}
+      title={isFs ? t('game.exitFullscreen') : t('game.fullscreen')}
     >
       {isFs ? '⛶' : '⛶'}
     </button>
@@ -971,7 +972,7 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
           <p style={{
             fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
             color: '#f5ce8b', margin: '0 0 20px',
-          }}>Kampaň dokončena</p>
+          }}>{t('common.campaignDone')}</p>
 
           {/* Hvězdy */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 18 }}>
@@ -1017,7 +1018,7 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
               <div style={{
                 fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em',
                 textTransform: 'uppercase', color: '#f5ce8b', marginBottom: 10,
-              }}>{campaignRewards.length === 1 ? 'Nový artefakt' : 'Nové artefakty'}</div>
+              }}>{campaignRewards.length === 1 ? t('game.newArtifact') : t('game.newArtifacts')}</div>
               {campaignRewards.map(r => (
                 <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '5px 0' }}>
                   <span style={{
@@ -1044,7 +1045,7 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
           <button onClick={onPlayAgain} style={{
             background: 'none', border: 'none', cursor: 'pointer', marginTop: 14, padding: 6,
             color: 'rgba(246,240,230,0.5)', fontSize: 13.5,
-          }}>Zkusit znovu na lepší skóre</button>
+          }}>{t('common.retryBetter')}</button>
         </div>
       </div>
     )

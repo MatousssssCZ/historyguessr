@@ -147,7 +147,7 @@ export default function MenuPage() {
         const dd = new Date(now); dd.setDate(now.getDate() - i)
         const iso = localDateISO(dd)
         if (regIso && iso < regIso) continue
-        const label = dd.toLocaleDateString('cs-CZ', { weekday: 'short' }).replace('.', '')
+        const label = dd.toLocaleDateString(currentLocale(), { weekday: 'short' }).replace('.', '')
         week.push({ played: played.has(iso), label, isToday: iso === todayIso })
       }
 
@@ -198,7 +198,7 @@ export default function MenuPage() {
     return () => clearInterval(id)
   }, [dailyState])
 
-  const name = profile?.username ?? 'Hráči'
+  const name = profile?.username ?? t('common.defaultPlayer')
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
 
@@ -423,8 +423,9 @@ function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>;
 
 // „?" tlačítko → onboarding
 function HelpButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
   return (
-    <button onClick={onClick} aria-label="Jak hrát?" style={{
+    <button onClick={onClick} aria-label={t('menu.htHow')} style={{
       width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
       background: 'var(--surface)', border: '1px solid var(--line-strong)', color: 'var(--ink-2)',
       fontFamily: 'var(--font-serif)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -436,11 +437,12 @@ function HelpButton({ onClick }: { onClick: () => void }) {
 
 // ✓/✕ za posledních 7 dní (jen ode dne registrace)
 function DailyMarks({ days }: { days: DayMark[] }) {
+  const { t } = useTranslation()
   return (
     <div style={{ display: 'flex', gap: 5, marginTop: 5, flexShrink: 0 }}>
       {days.map((d, i) => {
         const todayOpen = d.isToday && !d.played  // dnešek ještě neodehraný → šedý kruh s pomlčkou
-        const title = d.played ? 'Odehráno' : d.isToday ? 'Dnešní výzva tě čeká' : 'Vynecháno'
+        const title = d.played ? t('menu.markPlayed') : d.isToday ? t('menu.markToday') : t('menu.markMissed')
         return (
           <div key={i} style={{ textAlign: 'center', flexShrink: 0 }}>
             <div title={title} style={{
