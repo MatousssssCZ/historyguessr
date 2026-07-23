@@ -54,7 +54,7 @@ export default function CampaignsPage() {
     return (
       <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
         <DesktopSidebar/>
-        <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'calc(88px + var(--safe-bottom))' : 40 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'var(--nav-space)' : 40 }}>
           <CategoryView bundle={bundle} categoryId={categoryId} isMobile={isMobile} userId={user?.id} onBack={() => navigate('/campaigns')} onReload={reload}/>
         </div>
         {isMobile && <MobileNav active="campaigns"/>}
@@ -65,7 +65,7 @@ export default function CampaignsPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
       <DesktopSidebar/>
-      <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'calc(88px + var(--safe-bottom))' : 40, paddingTop: 'var(--safe-top)' }}>
+      <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'var(--nav-space)' : 40, paddingTop: 'var(--safe-top)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '18px 18px 0' : '30px 40px' }}>
         {/* Hlavička: zpět + název + ★ + výpravy */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>

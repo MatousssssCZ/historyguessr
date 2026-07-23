@@ -49,6 +49,10 @@
   --shadow-lg: 0 16px 48px rgba(42,31,23,0.16);
   --shadow-xl: 0 32px 80px rgba(42,31,23,0.22);
 
+  /* Odsazení obsahu nad mobilní spodní lištou (66px) — s pohodlnou mezerou,
+     aby poslední dlaždice nekončila těsně u lišty. */
+  --nav-space: calc(128px + env(safe-area-inset-bottom, 0px));
+
   --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left:   env(safe-area-inset-left, 0px);

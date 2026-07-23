@@ -291,7 +291,7 @@ export default function MenuPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '10px 18px 100px' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: '10px 18px 0', paddingBottom: 'var(--nav-space)' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>

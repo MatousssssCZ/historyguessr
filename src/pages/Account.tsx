@@ -46,7 +46,7 @@ export default function AccountPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
       <DesktopSidebar/>
-      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'calc(88px + var(--safe-bottom))' }}>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'var(--nav-space)' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>

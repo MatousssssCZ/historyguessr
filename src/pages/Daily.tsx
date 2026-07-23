@@ -8,7 +8,7 @@ import {
   getDailyChallenge, getTodayDailyResult,
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
-import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
+import { haversineKm, roundScore, yearDiff, formatYear, formatDistance } from '@/lib/scoring'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
@@ -19,6 +19,7 @@ import type { DailyResult } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { invalidateMenuCache } from '@/pages/Menu'
+import ShareResult from '@/components/ShareResult'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -560,6 +561,30 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; onMenu: () => void
 }) {
   const { t } = useTranslation()
+  const [showShare, setShowShare] = useState(false)
+
+  // Podklady pro sdílecí kartu (bez názvu události — ať to nespoiluje ostatní)
+  const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
+  const betterThan = allScores.length >= 5
+    ? Math.round((allScores.filter(v => v < result.totalScore).length / allScores.length) * 100)
+    : null
+  const dateLabel = new Date().toLocaleDateString(currentLocale(), { day: 'numeric', month: 'long' })
+  const shareData = {
+    dateLabel,
+    score: result.totalScore,
+    maxScore: 1000,
+    locScore: result.locScore,
+    yearScore: result.yrScore,
+    distanceLabel: formatDistance(result.distKm),
+    yearLabel,
+    betterThan,
+  }
+  const shareText = [
+    `HistoryGuessr · ${t('menu.dailyMobile')} · ${dateLabel}`,
+    `★ ${result.totalScore} / 1000`,
+    `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`,
+    'historyguessr.vercel.app',
+  ].join('\n')
   const [histModal, setHistModal] = useState(false)
   const [showPano, setShowPano] = useState(false)
   const [tab, setTab] = useState<'score' | 'leaderboard' | 'info'>('score')
@@ -741,6 +766,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               {canShowDist && (
                 <button onClick={() => setHistModal(true)} className="btn btn-ghost" style={{ flex: 1 }}>📊 {t('daily.distribution')}</button>
               )}
+              <button onClick={() => setShowShare(true)} className="btn btn-ghost" style={{ flex: 1 }}>↗ {t('daily.shareBtn')}</button>
               <button className="btn btn-accent" style={{ flex: 1 }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
           </div>
@@ -768,6 +794,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         </div>
       </div>
       {histModal && <DistributionModal scores={allScores} myScore={result.totalScore} onClose={() => setHistModal(false)} t={t}/>}
+      {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     </>)
   }
 
@@ -805,10 +832,12 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             📊 {t('daily.distribution')}
           </button>
         )}
+        <button onClick={() => setShowShare(true)} className="btn btn-accent" style={{ width: '100%' }}>↗ {t('daily.share')}</button>
         <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
       </div>
 
       {histModal && <DistributionModal scores={allScores} myScore={result.totalScore} onClose={() => setHistModal(false)} t={t}/>}
+      {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     </div>
   </>)
 }
