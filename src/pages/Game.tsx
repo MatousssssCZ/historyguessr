@@ -10,7 +10,6 @@ import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
-import EventStory from '@/components/EventStory'
 import CompassLoader from '@/components/CompassLoader'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
@@ -41,13 +40,6 @@ export default function GamePage() {
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
   const [confirmQuit, setConfirmQuit] = useState(false)
-  // Po odeslání tipu se nejdřív ukáže příběh události, teprve pak skóre
-  // (držíme číslo kola, ať se modál objeví jednou za kolo).
-  const [storyRound, setStoryRound] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (state.phase === 'round_result') setStoryRound(state.currentRound)
-  }, [state.phase, state.currentRound])
 
   useEffect(() => {
     if (state.phase !== 'idle') return
@@ -192,11 +184,6 @@ export default function GamePage() {
           />
         )}
       </div>
-
-      {/* Příběh události — překryje výsledek, dokud hráč nedá „Dále“ */}
-      {state.phase === 'round_result' && currentEvent && storyRound === state.currentRound && (
-        <EventStory event={currentEvent} onNext={() => setStoryRound(null)}/>
-      )}
 
       {/* RoundResult — jako sibling HUDu, pokrývá celou obrazovku */}
       {state.phase === 'round_result' && lastRound && (
@@ -685,7 +672,6 @@ function RoundResult({ event, round, onNext, isLast }: {
 }) {
   const { t } = useTranslation()
   // Hooky musí být volané bezpodmínečně a ve stejném pořadí — early return až za nimi.
-  const [tab, setTab] = useState<'score' | 'info'>('score')
   const isMobile = useIsMobile(641)
 
   if (!round) return null
@@ -734,49 +720,35 @@ function RoundResult({ event, round, onNext, isLast }: {
             </div>
           </div>
 
-          {/* Tab přepínač */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-            {([['score', '🏆', t('game.tabScore')], ['info', '📖', t('game.tabInfo')]] as const).map(([key, icon, label]) => (
-              <button key={key} onClick={() => setTab(key)}
-                style={{ position: 'relative', padding: '9px 0', border: 'none', borderBottom: tab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: tab === key ? 600 : 400, color: tab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                <span style={{ fontSize: 13 }}>{icon}</span>{label}
-                {key === 'info' && tab !== 'info' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)' }}/>}
-              </button>
-            ))}
-          </div>
+          {/* Jeden plynulý sloupec: mapa → skóre → příběh.
+              Dřív byl příběh schovaný v tabu „info" a skoro nikdo ho neotevřel;
+              zvědavost na něj vzniká až po odhalení skóre. */}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <div style={{ height: 230, position: 'relative', flexShrink: 0 }}>
+              <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+            </div>
 
-          {/* Obsah — bez scrollu, pevné výšky */}
-          {tab === 'score' && (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-              {/* Mapa — roztažená přes dostupný prostor */}
-              <div style={{ flex: 1, minHeight: 180, overflow: 'hidden', position: 'relative' }}>
-                <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <ScoreCard label={t('game.location')} score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
+                <ScoreCard label={t('game.year')} score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
               </div>
-              {/* Skóre karty */}
-              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  <ScoreCard label={t('game.location')} score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
-                  <ScoreCard label={t('game.year')} score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
+              <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.correctYear')}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
                 </div>
-                <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.correctYear')}</div>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.yourGuess')}</div>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(round.guess_year)}</div>
-                  </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.yourGuess')}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(round.guess_year)}</div>
                 </div>
               </div>
             </div>
-          )}
 
-          {tab === 'info' && (
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <div style={{ borderTop: '0.5px solid var(--line)', marginTop: 4 }}>
               <InfoContent event={event}/>
             </div>
-          )}
+          </div>
 
           {/* Tlačítko dole */}
           <div style={{ padding: `10px 14px`, paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)', flexShrink: 0 }}>
@@ -859,7 +831,7 @@ export function InfoContent({ event }: { event: Event }) {
         )}
         {event.category && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
-            {event.category}
+            {t('cat.' + event.category)}
           </span>
         )}
         <div style={{ borderTop: '1px solid var(--line)', marginTop: 4 }}>
