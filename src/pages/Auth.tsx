@@ -147,7 +147,7 @@ export default function AuthPage() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
                 <label className="label">{t('auth.email')}</label>
-                <input className="input" type="email" placeholder="jan@example.cz" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email"/>
+                <input className="input" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email"/>
               </div>
               <div>
                 <label className="label">{t('auth.password')}</label>
@@ -333,7 +333,7 @@ export default function AuthPage() {
               <label className="label">{t('auth.email')}</label>
               <input
                 className="input"
-                type="email" placeholder="jan@example.cz"
+                type="email" placeholder="name@example.com"
                 value={email} onChange={e => setEmail(e.target.value)}
                 required autoComplete="email"
               />

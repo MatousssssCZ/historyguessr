@@ -138,7 +138,7 @@ export const resources = {
     pregame: {
       backToMenu: 'Zpět do menu', mode: 'Klasický mód · sólo', title: 'Nastav si hru',
       rounds: 'Počet kol', categories: 'Kategorie', noFilter: 'nic = bez filtru', yearRange: 'Rozsah let',
-      from: 'Od', to: 'Do', bc: 'př.n.l.', ad: 'n.l.',
+      from: 'Od', to: 'Do', yearFromLabel: 'Rok od', yearToLabel: 'Rok do', bc: 'př.n.l.', ad: 'n.l.',
       inGame_one: '{{count}} událost ve hře', inGame_few: '{{count}} události ve hře', inGame_many: '{{count}} události ve hře', inGame_other: '{{count}} událostí ve hře',
       excluded: '{{n}} vyloučeno', notEnough: 'Jen {{n}} událostí — potřebuješ aspoň {{min}}',
       tune: 'Vyladit konkrétní události', away: '{{n}} pryč', tuneHint: 'Klepni na × u událostí, které v této hře nechceš.',
@@ -365,7 +365,7 @@ export const resources = {
     pregame: {
       backToMenu: 'Back to menu', mode: 'Classic mode · solo', title: 'Set up your game',
       rounds: 'Rounds', categories: 'Categories', noFilter: 'none = no filter', yearRange: 'Year range',
-      from: 'From', to: 'To', bc: 'BC', ad: 'AD',
+      from: 'From', to: 'To', yearFromLabel: 'Year from', yearToLabel: 'Year to', bc: 'BC', ad: 'AD',
       inGame_one: '{{count}} event in the game', inGame_other: '{{count}} events in the game',
       excluded: '{{n}} excluded', notEnough: 'Only {{n}} events — you need at least {{min}}',
       tune: 'Fine-tune specific events', away: '{{n}} off', tuneHint: 'Tap × on events you do not want in this game.',
@@ -592,7 +592,7 @@ export const resources = {
     pregame: {
       backToMenu: 'Zurück zum Menü', mode: 'Klassischer Modus · Solo', title: 'Spiel einrichten',
       rounds: 'Runden', categories: 'Kategorien', noFilter: 'keine = kein Filter', yearRange: 'Jahresbereich',
-      from: 'Von', to: 'Bis', bc: 'v. Chr.', ad: 'n. Chr.',
+      from: 'Von', to: 'Bis', yearFromLabel: 'Jahr von', yearToLabel: 'Jahr bis', bc: 'v. Chr.', ad: 'n. Chr.',
       inGame_one: '{{count}} Ereignis im Spiel', inGame_other: '{{count}} Ereignisse im Spiel',
       excluded: '{{n}} ausgeschlossen', notEnough: 'Nur {{n}} Ereignisse — du brauchst mindestens {{min}}',
       tune: 'Bestimmte Ereignisse anpassen', away: '{{n}} entfernt', tuneHint: 'Tippe auf × bei Ereignissen, die du nicht möchtest.',

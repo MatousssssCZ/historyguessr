@@ -27,8 +27,8 @@ export default function YearRange({ from, to, onFrom, onTo }: {
         <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'var(--paper-300)', borderRadius: 99 }}/>
         {/* vybraný rozsah */}
         <div style={{ position: 'absolute', top: '50%', height: 6, transform: 'translateY(-50%)', left: `${leftPct}%`, right: `${100 - rightPct}%`, background: 'linear-gradient(90deg, #5b7fa6, var(--accent))', borderRadius: 99 }}/>
-        <input type="range" min={YEAR_MIN} max={YEAR_MAX} value={from} onChange={e => handleFrom(Number(e.target.value))} aria-label="Rok od"/>
-        <input type="range" min={YEAR_MIN} max={YEAR_MAX} value={to} onChange={e => handleTo(Number(e.target.value))} aria-label="Rok do"/>
+        <input type="range" min={YEAR_MIN} max={YEAR_MAX} value={from} onChange={e => handleFrom(Number(e.target.value))} aria-label={t('pregame.yearFromLabel')}/>
+        <input type="range" min={YEAR_MIN} max={YEAR_MAX} value={to} onChange={e => handleTo(Number(e.target.value))} aria-label={t('pregame.yearToLabel')}/>
       </div>
       {/* Číselná pole */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
