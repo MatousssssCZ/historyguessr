@@ -2,9 +2,20 @@ import i18n from '@/i18n'
 import { currentLocale } from '@/i18n'
 const MAX_SCORE = 500
 
-// Ladicí konstanty exponenciálního poklesu (vyšší = mírnější)
-const DIST_DECAY_KM = 1500   // poloha: skóre = MAX · e^(−km / 1500)
-const YEAR_DECAY = 240       // rok:    skóre = MAX · e^(−roky / 240)
+// Rok: exponenciální pokles (vyšší = mírnější)
+const YEAR_DECAY = 240       // rok: skóre = MAX · e^(−roky / 240)
+
+// Poloha: 3 lineární zóny místo jedné exponenciály.
+//   0–250 km    500 → 450  (skoro trefa — pořád hodně bodů)
+//   250–3000 km 450 → 200  (mírný pokles)
+//   3000–5000 km 200 → 0    (velký pokles)
+//   > 5000 km   0           (jiný kontinent = nula)
+// MUSÍ sedět s SQL funkcí score_event_guess (migrace 043).
+const DIST_ZONES = [
+  { from: 0,    to: 250,  scoreFrom: 500, scoreTo: 450 },
+  { from: 250,  to: 3000, scoreFrom: 450, scoreTo: 200 },
+  { from: 3000, to: 5000, scoreFrom: 200, scoreTo: 0 },
+] as const
 
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
@@ -18,8 +29,13 @@ function toRad(deg: number) { return (deg * Math.PI) / 180 }
 
 export function locationScore(distKm: number, radiusKm = 0): number {
   const over = Math.max(0, distKm - radiusKm)
-  // Exponenciální pokles — přesnost se vyplácí, velké omyly se propadnou
-  return Math.round(MAX_SCORE * Math.exp(-over / DIST_DECAY_KM))
+  for (const z of DIST_ZONES) {
+    if (over <= z.to) {
+      const t = (over - z.from) / (z.to - z.from)  // 0..1 v rámci zóny
+      return Math.round(z.scoreFrom + t * (z.scoreTo - z.scoreFrom))
+    }
+  }
+  return 0  // za poslední zónou (jiný kontinent)
 }
 
 export function yearScore(guessYear: number, yearFrom: number, yearTo: number): number {

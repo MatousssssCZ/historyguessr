@@ -40,6 +40,14 @@ describe('locationScore', () => {
     expect(locationScore(1500)).toBeLessThan(locationScore(500))
     expect(locationScore(20000)).toBeGreaterThanOrEqual(0)
   })
+
+  it('tři zóny — hraniční body (musí sedět s migrací 043)', () => {
+    expect(locationScore(250)).toBe(450)    // konec 1. zóny
+    expect(locationScore(3000)).toBe(200)   // konec 2. zóny
+    expect(locationScore(4000)).toBe(100)   // uvnitř 3. zóny
+    expect(locationScore(5000)).toBe(0)     // konec 3. zóny
+    expect(locationScore(6000)).toBe(0)     // za poslední zónou
+  })
 })
 
 describe('yearScore', () => {
