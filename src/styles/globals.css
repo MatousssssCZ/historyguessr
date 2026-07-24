@@ -146,6 +146,29 @@ body {
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Skeleton „shimmer" — zamaskuje čekání na data/obrázky, než dorazí. */
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-200);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  animation: shimmer 1.4s infinite;
+}
+[data-theme="dark"] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(245,241,232,0.10), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
 /* Načítání panoramatu — pulzující prstenec + dýchající text */
 @keyframes pulseRing {
   0%   { transform: scale(0.7); opacity: 0.9; }

@@ -265,7 +265,7 @@ export default function MenuPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
-              <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
+              <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'}/>
               <NearestBadges catHits={catHits} navigate={navigate}/>
             </div>
 
@@ -303,7 +303,7 @@ export default function MenuPage() {
         <DailyHero {...dailyProps}/>
         <div style={{ height: 12 }}/>
         {resume && <><ResumeBar resume={resume} onResume={goResume}/><div style={{ height: 12 }}/></>}
-        <ProgressCard lvl={lvl} world={world} delta={rankDelta}/>
+        <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'}/>
         <div style={{ height: 12 }}/>
         <NearestBadges catHits={catHits} navigate={navigate}/>
         <div style={{ height: 12 }}/>
@@ -474,6 +474,8 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
       boxShadow: '0 8px 24px -14px rgba(60,45,30,0.3)',
     }}>
       <div style={{ position: 'relative', height: h, background: 'linear-gradient(180deg,#CBBAA0 0%,#7A6650 66%,#40331f 100%)' }}>
+        {/* Dokud nedorazí obrázky, jemný shimmer místo prázdného gradientu */}
+        {heroImgs.length === 0 && <div className="skeleton" style={{ position: 'absolute', inset: 0, background: 'transparent', borderRadius: 0 }}/>}
         {heroImgs.length > 0 && <HeroSlideshow urls={heroImgs} scrimDark/>}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(130% 100% at 40% 12%, transparent 26%, rgba(0,0,0,0.72))' }}/>
         {/* label */}
@@ -511,7 +513,7 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
 }
 
 // ─── Progres karta (Level + XP + světový žebříček) ────────
-function ProgressCard({ lvl, world, delta }: { lvl: LevelInfo; world: { rank: number; total: number } | null; delta: number }) {
+function ProgressCard({ lvl, world, delta, loading }: { lvl: LevelInfo; world: { rank: number; total: number } | null; delta: number; loading?: boolean }) {
   const { t } = useTranslation()
   const loc = currentLocale()
   const up = delta > 0, down = delta < 0
@@ -529,10 +531,12 @@ function ProgressCard({ lvl, world, delta }: { lvl: LevelInfo; world: { rank: nu
         <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌍</div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('menu.worldRank')}</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>
-              {world ? `#${world.rank.toLocaleString(loc)}` : '—'}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minHeight: 32 }}>
+            {world
+              ? <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>#{world.rank.toLocaleString(loc)}</span>
+              : loading
+                ? <span className="skeleton" style={{ display: 'inline-block', width: 74, height: 26, marginTop: 4 }}/>
+                : <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>—</span>}
             {world && (up || down) && (
               <span title={t('menu.rankPeriod')} style={{
                 alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: 2,
@@ -571,6 +575,17 @@ function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; ti
 // ─── Slideshow ilustračních obrázků (Ken Burns + prolínání) ──
 function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean }) {
   const [idx, setIdx] = useState(0)
+  // Než se první obrázek dekóduje, drží se shimmer podklad; pak celý slideshow
+  // plynule najede (žádné „bliknutí" přes gradient).
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (!urls[0]) return
+    const img = new Image()
+    img.decoding = 'async'
+    img.onload = () => setReady(true)
+    img.onerror = () => setReady(true)
+    img.src = urls[0]
+  }, [urls])
   useEffect(() => {
     if (urls.length < 2) return
     const t = setInterval(() => setIdx(i => (i + 1) % urls.length), 5000)
@@ -580,7 +595,7 @@ function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean
     ? 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.5) 100%)'
     : 'linear-gradient(180deg, rgba(250,247,240,0.1) 0%, rgba(250,247,240,0.45) 100%)'
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: ready ? 1 : 0, transition: 'opacity 600ms ease' }}>
       {urls.map((u, i) => (
         <div key={u + i} style={{ position: 'absolute', inset: 0, opacity: i === idx ? 1 : 0, transition: 'opacity 1100ms ease-in-out' }}>
           <div style={{
