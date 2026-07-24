@@ -219,7 +219,6 @@ export default function DailyChallengePage() {
   const canSubmit = guessLat !== null && guessYearSet
   // Bonusové okno: pruh i barva se týkají jen XP násobiče, ne konce hry
   const bonusLeft = Math.max(0, BONUS_WINDOW - elapsed)
-  const liveMult = bonusLeft >= 10 ? bonusLeft / 10 : 1
   const timerPct = (bonusLeft / BONUS_WINDOW) * 100
   const timerColor = bonusLeft > 20 ? '#d97757' : bonusLeft > 0 ? 'var(--danger)' : 'var(--ink-3)'
   const clock = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
@@ -298,8 +297,7 @@ export default function DailyChallengePage() {
 
           {/* Pravidla */}
           <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 20px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <RuleRow icon="⏱" text={t('daily.rule1')}/>
-            <RuleRow icon="⚠" text={t('daily.rule2')}/>
+            <RuleRow icon="⏱" text={t('daily.rule2')}/>
             <RuleRow icon="🏆" text={t('daily.rule3')}/>
           </div>
 
@@ -349,15 +347,6 @@ export default function DailyChallengePage() {
           </div>
           <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: timerColor, transition: 'color 500ms' }}>
             ⏱ {clock}
-            {/* Bonusové okno — ukazuje, jaký násobič XP hráč právě má */}
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.02em',
-              padding: '2px 7px', borderRadius: 999, marginLeft: 2,
-              background: bonusLeft > 0 ? 'rgba(217,119,87,0.16)' : 'rgba(42,31,23,0.08)',
-              color: bonusLeft > 0 ? 'var(--accent-deep)' : '#8C8175',
-            }}>
-              {bonusLeft > 0 ? t('daily.bonusMult', { m: liveMult.toFixed(1) }) : t('daily.bonusOver')}
-            </span>
           </div>
         </div>
 
