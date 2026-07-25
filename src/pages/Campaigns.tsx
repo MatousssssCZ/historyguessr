@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { localizedTitle, localizedDescription } from '@/lib/eventLocale'
 import { currentLocale } from '@/i18n'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -211,11 +212,11 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
 
       {/* Tělo */}
       <div style={{ padding: '14px 16px 16px', opacity: locked ? 0.6 : 1 }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{cat.title}</div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{localizedTitle(cat)}</div>
         <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {locked
             ? (acc.lockReason === 'premium' ? t('camp.premiumPart') : t('camp.missingStars', { n: acc.missingStars }))
-            : `${t('camp.count', { count: camps.length })}${cat.description ? ` · ${cat.description}` : ''}`}
+            : `${t('camp.count', { count: camps.length })}${localizedDescription(cat) ? ` · ${localizedDescription(cat)}` : ''}`}
         </div>
       </div>
     </button>
@@ -266,7 +267,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
       }
       campaignAnalytics.started(campaign.id, userId)
       navigate('/game', {
-        state: { events, attemptId, campaignId: campaign.id, campaignTitle: campaign.title, rounds: events.length },
+        state: { events, attemptId, campaignId: campaign.id, campaignTitle: localizedTitle(campaign), rounds: events.length },
       })
     } catch (e: unknown) {
       setStarting(null)
@@ -320,7 +321,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>{cat.icon || '📁'}</span>
       <div style={{ minWidth: 0 }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 28 : 34, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05 }}>{cat.title}</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 28 : 34, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05 }}>{localizedTitle(cat)}</h1>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'rgba(255,255,255,0.92)', marginTop: 5 }}>
           <span style={{ color: GOLD }}>★</span> {cs.earned} / {cs.max} <span style={{ color: GOLD }}>★</span>
           {camps.length > 0 && <span style={{ color: 'rgba(255,255,255,0.7)' }}> · {t('camp.count', { count: camps.length })}</span>}
@@ -340,9 +341,9 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
     </>
   )
 
-  const desc = (cat.description || camps.length > 0) && (
+  const desc = (localizedDescription(cat) || camps.length > 0) && (
     <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: isMobile ? '0 0 18px' : '0 0 22px' }}>
-      {cat.description}
+      {localizedDescription(cat)}
       {camps.length > 0 && ` ${t('camp.count', { count: camps.length })}, ${t('camp.eventsEach', { rounds: roundsHint })}`}
     </p>
   )
@@ -448,7 +449,7 @@ function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, 
         <div style={{
           fontFamily: 'var(--font-serif)', fontSize: 16.5, letterSpacing: '-0.01em',
           color: locked ? 'var(--ink-3)' : 'var(--ink)',
-        }}>{campaign.title}</div>
+        }}>{localizedTitle(campaign)}</div>
 
         {locked ? (
           <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
@@ -511,7 +512,7 @@ function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
           )}
           <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, display: 'flex', alignItems: 'flex-end', gap: 10 }}>
             <span style={{ fontSize: 26 }}>{cat.icon || '🏛'}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' }}>{cat.title}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)' }}>{localizedTitle(cat)}</span>
           </div>
           {campaign.is_premium && (
             <span style={{
@@ -523,7 +524,7 @@ function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
 
         <div style={{ padding: '18px 22px 0', overflowY: 'auto' }}>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, lineHeight: 1.15, letterSpacing: '-0.01em', color: 'var(--ink)', margin: '0 0 8px' }}>
-            {campaign.title}
+            {localizedTitle(campaign)}
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
             <Chip>{t('camp.roundsCount', { n: campaign.rounds_count })}</Chip>
@@ -533,12 +534,12 @@ function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
           </div>
           {played && <div style={{ marginBottom: 14 }}><StarRow stars={prog?.best_stars ?? 0} size={18}/></div>}
 
-          {campaign.description && (
+          {localizedDescription(campaign) && (
             <>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 7px' }}>
                 {t('camp.intro')}
               </p>
-              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>{campaign.description}</p>
+              <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>{localizedDescription(campaign)}</p>
             </>
           )}
         </div>

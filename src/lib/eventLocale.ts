@@ -38,3 +38,22 @@ export function rewardDescription(r: RewardLike): string {
   if (lng === 'de') return r.description_de?.trim() || r.description || ''
   return r.description || ''
 }
+
+// Obecná lokalizace pro cokoli s title/description + _en/_de (kampaně, kategorie).
+// Event má vlastní eventTitle/eventDescription (description je u něj non-null).
+type TitleLike = { title: string; title_en?: string | null; title_de?: string | null }
+type DescLike = { description?: string | null; description_en?: string | null; description_de?: string | null }
+
+export function localizedTitle(o: TitleLike): string {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  if (lng === 'en') return o.title_en?.trim() || o.title
+  if (lng === 'de') return o.title_de?.trim() || o.title
+  return o.title
+}
+
+export function localizedDescription(o: DescLike): string {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  if (lng === 'en') return o.description_en?.trim() || o.description || ''
+  if (lng === 'de') return o.description_de?.trim() || o.description || ''
+  return o.description || ''
+}
