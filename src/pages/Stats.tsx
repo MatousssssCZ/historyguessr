@@ -7,6 +7,7 @@ import { getUserSessions, getUserDailyResults, getCategoryHits, getMyRewards, lo
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
 import MobileNav from '@/components/MobileNav'
+import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import DesktopSidebar from '@/components/DesktopSidebar'
 import type { RoundResult, EarnedReward, RewardRarity } from '@/types/database'
 
@@ -239,8 +240,8 @@ function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number
             {current ? current.icon : cat.icon}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: current ? 'var(--ink)' : 'var(--ink-2)', letterSpacing: '-0.01em' }}>{current ? current.name : cat.label}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{cat.label} · {hits}× ≥950</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: current ? 'var(--ink)' : 'var(--ink-2)', letterSpacing: '-0.01em' }}>{current ? t('ach.' + cat.id + '.c' + current.count, current.name) : t('ach.' + cat.id + '.label', cat.label)}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t('ach.' + cat.id + '.label', cat.label)} · {hits}× ≥950</div>
           </div>
           {next
             ? <div style={{ textAlign: 'right', flexShrink: 0 }}><div style={{ fontSize: 16, lineHeight: 1, opacity: 0.5 }}>{next.icon}</div><div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2 }}>{hits}/{next.count}</div></div>
@@ -250,7 +251,7 @@ function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number
         <div style={{ height: 4, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
           <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
         </div>
-        {next && <div style={{ fontSize: 11, color: 'var(--accent-deep)', marginTop: 6 }}>{t('stats.achToNext', { n: next.count - hits, name: next.name })}</div>}
+        {next && <div style={{ fontSize: 11, color: 'var(--accent-deep)', marginTop: 6 }}>{t('stats.achToNext', { n: next.count - hits, name: t('ach.' + cat.id + '.c' + next.count, next.name) })}</div>}
       </button>
 
       {open && (
@@ -262,7 +263,7 @@ function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number
               <div key={tier.count} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, background: isNext ? 'rgba(217,119,87,0.08)' : 'transparent' }}>
                 <div style={{ fontSize: 18, width: 28, textAlign: 'center', filter: done || isNext ? 'none' : 'grayscale(1)', opacity: done || isNext ? 1 : 0.4 }}>{tier.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: done ? 500 : 400, color: done ? 'var(--ink)' : 'var(--ink-2)' }}>{tier.name}</div>
+                  <div style={{ fontSize: 13, fontWeight: done ? 500 : 400, color: done ? 'var(--ink)' : 'var(--ink-2)' }}>{t('ach.' + cat.id + '.c' + tier.count, tier.name)}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{tier.count}× ≥950</div>
                 </div>
                 {done
@@ -296,7 +297,7 @@ function RelicGallery({ rewards }: { rewards: EarnedReward[] }) {
         {rewards.map(r => {
           const rar = RARITY[r.rarity] ?? RARITY.common
           return (
-            <div key={r.id} title={r.description ?? undefined} style={{
+            <div key={r.id} title={rewardDescription(r) || undefined} style={{
               background: 'var(--surface)', border: `1.5px solid ${rar.border}`, borderRadius: 14,
               padding: '16px 14px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
             }}>
@@ -307,7 +308,7 @@ function RelicGallery({ rewards }: { rewards: EarnedReward[] }) {
                 {r.icon_url ? <img src={r.icon_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : '⚱️'}
               </div>
               <div style={{ minWidth: 0, width: '100%' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--ink)', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--ink)', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rewardName(r)}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: rar.border, marginTop: 3 }}>{t('stats.' + rar.key)}</div>
               </div>
             </div>

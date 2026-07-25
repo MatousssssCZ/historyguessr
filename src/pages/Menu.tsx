@@ -406,7 +406,7 @@ function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>;
               }}>{it.next.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.next.name}</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('ach.' + it.cat.id + '.c' + it.next.count, it.next.name)}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', flexShrink: 0 }}>· {it.hits}/{it.next.count}</span>
                 </div>
                 <div style={{ height: 5, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
+import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -1014,9 +1015,9 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
                     backgroundSize: 'cover', backgroundPosition: 'center',
                   }}>{r.icon_url ? '' : '🏺'}</span>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: '#f6f0e6' }}>{r.name}</div>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: '#f6f0e6' }}>{rewardName(r)}</div>
                     {r.description && (
-                      <div style={{ fontSize: 11.5, color: 'rgba(246,240,230,0.55)', marginTop: 1 }}>{r.description}</div>
+                      <div style={{ fontSize: 11.5, color: 'rgba(246,240,230,0.55)', marginTop: 1 }}>{rewardDescription(r)}</div>
                     )}
                   </div>
                 </div>

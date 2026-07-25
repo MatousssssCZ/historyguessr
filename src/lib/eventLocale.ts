@@ -20,3 +20,21 @@ export function eventDescription(ev: EventLike): string {
   if (lng === 'de') return ev.description_de?.trim() || ev.description
   return ev.description
 }
+
+// Lokalizovaný název/popis odměny z kampaně (relikvie). Stejný princip: CZ fallback.
+type RewardLike = { name: string; name_en?: string | null; name_de?: string | null
+  description?: string | null; description_en?: string | null; description_de?: string | null }
+
+export function rewardName(r: RewardLike): string {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  if (lng === 'en') return r.name_en?.trim() || r.name
+  if (lng === 'de') return r.name_de?.trim() || r.name
+  return r.name
+}
+
+export function rewardDescription(r: RewardLike): string {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  if (lng === 'en') return r.description_en?.trim() || r.description || ''
+  if (lng === 'de') return r.description_de?.trim() || r.description || ''
+  return r.description || ''
+}
