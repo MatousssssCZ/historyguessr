@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /$
+Allow: /auth
+Disallow: /admin
+Disallow: /game
+Disallow: /daily
+Disallow: /multiplayer
+Disallow: /account
+Disallow: /stats
+Disallow: /reset-password
+
+Sitemap: https://historyguessr.vercel.app/sitemap.xml
