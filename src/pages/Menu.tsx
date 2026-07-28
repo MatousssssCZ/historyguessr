@@ -467,6 +467,9 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
   const { t } = useTranslation()
   const done = dailyState === 'done'
   const h = tall ? 196 : 130
+  const now = new Date()
+  const weekday = now.toLocaleDateString(currentLocale(), { weekday: 'short' }).replace('.', '').toUpperCase()
+  const dayNum = now.getDate()
   return (
     <button onClick={onPlay} style={{
       display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', padding: 0,
@@ -478,10 +481,16 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
         {heroImgs.length === 0 && <div className="skeleton" style={{ position: 'absolute', inset: 0, background: 'transparent', borderRadius: 0 }}/>}
         {heroImgs.length > 0 && <HeroSlideshow urls={heroImgs} scrimDark/>}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(130% 100% at 40% 12%, transparent 26%, rgba(0,0,0,0.72))' }}/>
-        {/* label */}
-        <div style={{ position: 'absolute', top: 13, left: 15, display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.1em', color: '#fff' }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f5ce8b', boxShadow: '0 0 10px #f5ce8b', animation: 'glow 2s infinite' }}/>
-          {t('menu.dailyLabel').toUpperCase()}
+        {/* kalendářní lístek s dnešním datem — jasně signalizuje „denní výzva" */}
+        <div style={{ position: 'absolute', top: 13, left: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 44, background: 'var(--paper-50)', borderRadius: 9, overflow: 'hidden', textAlign: 'center', boxShadow: '0 3px 10px rgba(0,0,0,0.35)', flexShrink: 0 }}>
+            <div style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', padding: '2px 0' }}>{weekday}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.1, padding: '1px 0 3px' }}>{dayNum}</div>
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.13em', color: '#fff', fontWeight: 600 }}>{t('menu.dailyLabel').toUpperCase()}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.72)', marginTop: 2 }}>{t('menu.dailyEveryDay')}</div>
+          </div>
         </div>
         {/* jen NOVÁ pro neodehrané; odpočet je v patičce (žádný duplicitní horní) */}
         {!done && (
