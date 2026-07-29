@@ -30,16 +30,6 @@ export default function PrivacyPage() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
 
         <div className="card" style={{ padding: '24px 32px', marginBottom: 20 }}>
-          <div style={{
-            background: 'rgba(217,119,87,0.08)',
-            border: '1px solid rgba(217,119,87,0.2)',
-            borderRadius: 8, padding: '12px 16px', marginBottom: 28,
-          }}>
-            <p style={{ fontSize: 13, color: 'var(--accent-deep)', margin: 0 }}>
-              {t('legal.placeholder')}
-            </p>
-          </div>
-
           <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 32 }}>
             {t('legal.lastUpdated')}: {new Date().toLocaleDateString(currentLocale())}
           </p>
@@ -84,7 +74,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title={t('legal.privacy.s8t')} last>
-            <p>{t('legal.privacy.s8b1')}<strong>[email]</strong></p>
+            <p>{t('legal.privacy.s8b1')}<strong>bahnik.matous2@gmail.com</strong></p>
           </Section>
         </div>
       </div>
