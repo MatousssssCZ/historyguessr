@@ -13,7 +13,14 @@
 -- Spusť v Supabase SQL editoru. Idempotentní. Navazuje na 040.
 
 -- ── 1) Zapni rozšíření (no-op, když už je) ────────────────
-create extension if not exists pg_cron;
+-- Lokálně (Docker) není pg_cron přednahraný → create extension by spadl.
+-- Proto v bloku s odchycením chyby: na prod se zapne, lokálně jen warning.
+do $$
+begin
+  create extension if not exists pg_cron;
+exception when others then
+  raise warning 'pg_cron nelze zapnout zde (nejspíš lokální prostředí): %', sqlerrm;
+end $$;
 
 -- ── 2) Naplánuj úklid každých 15 minut ────────────────────
 do $$
