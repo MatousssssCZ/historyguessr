@@ -5,6 +5,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import UsernameSetup from '@/components/UsernameSetup'
 import CompassLoader from '@/components/CompassLoader'
 import UpdateWatcher from '@/components/UpdateWatcher'
+import EnvBadge from '@/components/EnvBadge'
 import AuthPage from '@/pages/Auth'
 import TryGamePage from '@/pages/TryGame'
 import MenuPage from '@/pages/Menu'
@@ -80,6 +81,7 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <UpdateWatcher/>
+          <EnvBadge/>
           <Suspense fallback={<FullScreenSpinner/>}>
             <Routes>
               <Route path="/" element={<RootRedirect/>}/>

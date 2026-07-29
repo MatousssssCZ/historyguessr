@@ -299,6 +299,39 @@ git add -A && git commit -m "..." && git push  # deploy (Vercel auto-deploy)
 
 ---
 
+## Prostředí (2: Produkce + Test/Dev)
+
+**Path A — lokální Supabase v Dockeru pro vývoj/test, cloud jen jako produkce.**
+Nulové náklady (žádný 2. cloud projekt = žádných €20/měs).
+
+| | Produkce | Test / Dev |
+|---|---|---|
+| Frontend | Vercel (branch `main`) | `npm run dev` lokálně |
+| Supabase | cloud `wgiijdnoiiuxxucacyio` | lokální (`supabase start`, Docker) |
+| URL | historyguessr.vercel.app | http://127.0.0.1:54321 |
+| ENV | Vercel → Production scope | `.env.local` (viz `.env.example`) |
+| Odznak | (žádný) | `LOCAL` v rohu appky (`EnvBadge`) |
+
+### Lokální stack
+```bash
+supabase start       # nebo: npm run db:start  → spustí Postgres+Auth+Storage v Dockeru
+npm run db:status    # vypíše lokální URL + anon key (do .env.local)
+npm run db:reset     # znovu postaví lokální DB ze supabase/migrations
+```
+`.env.local` pro lokál ukazuje na `http://127.0.0.1:54321` (viz `.env.example`).
+Produkční klíče žijí JEN ve Vercelu, ne v repu.
+
+### Workflow migrací (DŮLEŽITÉ)
+1. Napiš migraci: `npm run db:new nazev` → `supabase/migrations/NNN_nazev.sql`
+2. Otestuj **lokálně**: `npm run db:reset` (aplikuje vše na čistou lokální DB) → ověř v `npm run dev`
+3. Teprve když projde, aplikuj na **produkci** — ručně přes Supabase SQL editor
+   (migrace píšeme idempotentní). Nikdy nepouštěj neověřenou migraci rovnou na prod.
+
+> Baseline lokálního schématu se dělá z produkce přes `supabase db pull`
+> (zachytí i ruční ALTERy `title_en/de`, `description_en/de` mimo migrační soubory).
+
+---
+
 ## Pravidla pro Claude Code
 
 1. **Nikdy neměň** `scoring.ts` bez explicitního požadavku — bodování je záměrné
