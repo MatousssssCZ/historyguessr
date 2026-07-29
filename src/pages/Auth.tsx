@@ -181,10 +181,15 @@ export default function AuthPage() {
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
             </form>
-            <button onClick={() => navigate('/try')} style={{ width: '100%', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'transparent', border: '1.5px solid var(--line-strong)', borderRadius: 12, padding: 13, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
+            </div>
+            <button onClick={() => navigate('/try')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 12, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--accent-deep)', cursor: 'pointer' }}>
               <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
             </button>
-            <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 9 }}>{t('menu.trialFree')}</div>
+            <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 9 }}>{t('menu.trialFree')}</div>
             <DisclaimerBox text={t('auth.disclaimer')}/>
           </div>
         </div>
@@ -430,10 +435,15 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <button onClick={() => navigate('/try')} style={{ width: '100%', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'transparent', border: '1.5px solid var(--line-strong)', borderRadius: 13, padding: 12, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0 14px' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
+          </div>
+          <button onClick={() => navigate('/try')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 13, padding: 14, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: 'var(--accent-deep)', cursor: 'pointer' }}>
             <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
           </button>
-          <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-3)', marginTop: 8 }}>{t('menu.trialFree')}</div>
+          <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 8 }}>{t('menu.trialFree')}</div>
 
           <DisclaimerBox text={t('auth.disclaimer')}/>
 

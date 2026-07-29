@@ -200,7 +200,7 @@ export const resources = {
     },
     auth: {
       login: 'Přihlásit se', register: 'Registrovat',
-      welcomeBack: 'Vítej zpět', createAccount: 'Vytvoř si účet',
+      welcomeBack: 'Vítej zpět', createAccount: 'Vytvoř si účet', or: 'nebo',
       loginSub: 'Přihlaš se a pokračuj ve hře.', registerSub: 'Zaregistruj se a začni hádat historii.',
       email: 'E-mail', password: 'Heslo', confirmPassword: 'Potvrdit heslo',
       strongPassword: 'Silné heslo…', repeatPassword: 'Zopakuj heslo',
@@ -442,7 +442,7 @@ export const resources = {
     },
     auth: {
       login: 'Log in', register: 'Sign up',
-      welcomeBack: 'Welcome back', createAccount: 'Create your account',
+      welcomeBack: 'Welcome back', createAccount: 'Create your account', or: 'or',
       loginSub: 'Log in and keep playing.', registerSub: 'Sign up and start guessing history.',
       email: 'E-mail', password: 'Password', confirmPassword: 'Confirm password',
       strongPassword: 'Strong password…', repeatPassword: 'Repeat password',
@@ -684,7 +684,7 @@ export const resources = {
     },
     auth: {
       login: 'Anmelden', register: 'Registrieren',
-      welcomeBack: 'Willkommen zurück', createAccount: 'Konto erstellen',
+      welcomeBack: 'Willkommen zurück', createAccount: 'Konto erstellen', or: 'oder',
       loginSub: 'Melde dich an und spiele weiter.', registerSub: 'Registriere dich und rate Geschichte.',
       email: 'E-Mail', password: 'Passwort', confirmPassword: 'Passwort bestätigen',
       strongPassword: 'Starkes Passwort…', repeatPassword: 'Passwort wiederholen',
