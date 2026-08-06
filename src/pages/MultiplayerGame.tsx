@@ -10,7 +10,7 @@ import {
   getRoundAnswers, advanceRound, getRoomPanoramas, getMyMatchHits,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
-import { panoramaHfov, PANORAMA_MAX_PITCH, encodePanoramaUrl } from '@/lib/panorama'
+import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import GameEvaluation from '@/components/GameEvaluation'
 import type { MultiplayerRoom, MultiplayerPlayer, MultiplayerRound, MultiplayerAnswer } from '@/lib/multiplayer'
 import { haversineKm, roundScore, yearDiff, formatYear } from '@/lib/scoring'
@@ -703,7 +703,6 @@ function PanoramaViewer({ url, preview }: { url: string; preview?: string | null
     try {
       v = pannellum.viewer(ref.current, {
         type: 'equirectangular', panorama: encodePanoramaUrl(url), autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov(),
-        minPitch: -PANORAMA_MAX_PITCH, maxPitch: PANORAMA_MAX_PITCH,
         ...(preview ? { preview } : {}),
       })
     } catch { /* pannellum selhal — viewer zůstane prázdný */ }

@@ -9,7 +9,7 @@ import {
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff, formatYear, formatDistance } from '@/lib/scoring'
-import { panoramaHfov, PANORAMA_MAX_PITCH, encodePanoramaUrl } from '@/lib/panorama'
+import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
 import BackButton from '@/components/BackButton'
 import GameEvaluation from '@/components/GameEvaluation'
@@ -433,7 +433,7 @@ function PanoramaViewer({ url }: { url: string }) {
     if (!ref.current || !url || url === 'pending') return
     let v: { destroy: () => void } | null = null
     try {
-      v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: encodePanoramaUrl(url), autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov(), minPitch: -PANORAMA_MAX_PITCH, maxPitch: PANORAMA_MAX_PITCH })
+      v = pannellum.viewer(ref.current, { type: 'equirectangular', panorama: encodePanoramaUrl(url), autoLoad: true, showControls: false, hfov: panoramaHfov(), maxHfov: panoramaHfov() })
     } catch { /* pannellum selhal — viewer zůstane prázdný */ }
     return () => { v?.destroy() }
   }, [url])

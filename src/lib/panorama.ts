@@ -6,11 +6,6 @@ export function panoramaHfov(): number {
   return 126
 }
 
-// Limit sklonu (pitch) nahoru/dolů. Zabraňuje pohledu do úplného zenitu/nadiru,
-// kde equirektangulární projekce nejvíc „natahuje" obraz (a AI panoramata tam
-// mají nejhorší kvalitu). ±70° nechá pohodlný rozhled, ale ořízne extrémy.
-export const PANORAMA_MAX_PITCH = 70
-
 /**
  * Bezpečně zenkóduje URL panoramatu. Některé starší soubory mají v názvu
  * mezery/speciální znaky (neenkódované) → Pannellum ani fetch je neotevřou.

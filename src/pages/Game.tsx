@@ -12,7 +12,7 @@ import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supa
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
-import { panoramaHfov, PANORAMA_MAX_PITCH, encodePanoramaUrl } from '@/lib/panorama'
+import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -233,8 +233,6 @@ export function PanoramaViewer({ url, preview }: { url: string; preview?: string
         mouseZoom: true,
         hfov: panoramaHfov(),
         maxHfov: panoramaHfov(),
-        minPitch: -PANORAMA_MAX_PITCH,
-        maxPitch: PANORAMA_MAX_PITCH,
         pitch: 0,
         yaw: 0,
         ...(preview ? { preview: encodePanoramaUrl(preview) } : {}),
