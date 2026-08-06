@@ -35,7 +35,11 @@ export default async function handler(req: any, res: any) {
   const sys = `Jsi pečlivý asistent pro historii a zeměpis. Z názvu události a roku vrať PŘESNÁ strukturovaná data jako JSON. ` +
     `Pokud si nějakým polem nejsi jistý, vrať null (nehádej souřadnice ani datum). ` +
     `Souřadnice = skutečné místo události. ` +
-    `Popisy piš populárně-naučným stylem (čtivě, poutavě, ale fakticky přesně), každý popis cca 80 slov, bez markdownu. ` +
+    `Popisy (description_cs/en/de) piš jako strhující vypravěč populárně-naučného kanálu ve stylu české „Životy slavných": ` +
+    `vtáhni čtenáře hned první větou, vykresli scénu, atmosféru a lidský rozměr okamžiku, dej vyprávění spád a napětí, ` +
+    `používej konkrétní smyslové detaily a živý jazyk — ALE VŽDY fakticky přesně, nic si nevymýšlej a nepřeháněj. ` +
+    `Každý popis je souvislý plynulý text cca 90–110 slov, bez markdownu, bez nadpisů a odrážek. ` +
+    `Stejný poutavý styl drž ve všech třech jazycích (čeština, angličtina, němčina), ne doslovný překlad, ale přirozené vyprávění v daném jazyce. ` +
     `event_date jen pro n. l. (formát YYYY-MM-DD); pokud je rok př. n. l. nebo datum neznámé, vrať null. ` +
     `year_from/year_to celá čísla (záporná = př. n. l.); u přesné události oba stejné, u nejisté/víceleté rozsah. ` +
     `category jedno z: ${CATEGORIES.join(', ')} nebo null.`
@@ -50,7 +54,7 @@ export default async function handler(req: any, res: any) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
       body: JSON.stringify({
         model: 'gpt-4o',
-        temperature: 0.2,
+        temperature: 0.55,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: sys },
@@ -108,7 +112,7 @@ export default async function handler(req: any, res: any) {
       try {
         const gq = encodeURIComponent(placeQuery)
         const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${gq}&format=json&limit=1&addressdetails=0`, {
-          headers: { 'User-Agent': 'HistoryGuessr/1.0 (admin event geocoding)' },
+          headers: { 'User-Agent': 'Historyguesser/1.0 (admin event geocoding)' },
         })
         if (nomRes.ok) {
           const hits = await nomRes.json()

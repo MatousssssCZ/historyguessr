@@ -850,15 +850,14 @@ function StarRating({ eventId }: { eventId: string }) {
   const [hover, setHover] = useState(0)
   const [sent, setSent] = useState(false)
 
-  async function handleRate(rating: number) {
-    if (sent) return
-    setSelected(rating)
+  async function handleConfirm() {
+    if (sent || selected === 0) return
     setSent(true)
-    await addEventRating(eventId, rating)
+    await addEventRating(eventId, selected)
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 0 4px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '14px 0 4px' }}>
       <div className="eyebrow" style={{ fontSize: 9 }}>{t('game.ratePanorama')}</div>
       {sent ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -870,26 +869,43 @@ function StarRating({ eventId }: { eventId: string }) {
           <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{t('game.thanks')}</span>
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 4 }}>
-          {[1,2,3,4,5].map(i => (
-            <button
-              key={i}
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(0)}
-              onClick={() => handleRate(i)}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 28, padding: '2px 4px',
-                color: i <= (hover || selected) ? '#d97757' : 'var(--paper-300)',
-                transition: 'color 100ms, transform 100ms',
-                transform: i <= hover ? 'scale(1.2)' : 'scale(1)',
-                lineHeight: 1,
-              }}
-            >
-              ★
-            </button>
-          ))}
-        </div>
+        <>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[1,2,3,4,5].map(i => (
+              <button
+                key={i}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(0)}
+                onClick={() => setSelected(i)}
+                aria-label={`${i}`}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 28, padding: '2px 4px',
+                  color: i <= (hover || selected) ? '#d97757' : 'var(--paper-300)',
+                  transition: 'color 100ms, transform 100ms',
+                  transform: i <= hover ? 'scale(1.2)' : 'scale(1)',
+                  lineHeight: 1,
+                }}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleConfirm}
+            disabled={selected === 0}
+            style={{
+              background: selected === 0 ? 'var(--paper-300)' : 'var(--accent)',
+              color: selected === 0 ? 'var(--ink-3)' : '#fff',
+              border: 'none', borderRadius: 10, padding: '8px 18px',
+              fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
+              cursor: selected === 0 ? 'default' : 'pointer',
+              transition: 'background 150ms, color 150ms',
+            }}
+          >
+            {t('game.rateConfirm')}
+          </button>
+        </>
       )}
     </div>
   )

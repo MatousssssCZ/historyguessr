@@ -490,7 +490,7 @@ function Wordmark({ color = 'var(--feature-fg)' }: { color?: string }) {
         <circle cx="16" cy="16" r="2.5" fill={color}/>
       </svg>
       <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', fontWeight: 500, color }}>
-        HistoryGuessr
+        Historyguesser
       </span>
     </div>
   )

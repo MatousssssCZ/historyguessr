@@ -19,7 +19,7 @@ export default function TermsPage() {
       }}>
         <BackButton onClick={() => navigate(-1)} label={t('legal.back')} />
         <div>
-          <div className="eyebrow" style={{ fontSize: 9 }}>HistoryGuessr</div>
+          <div className="eyebrow" style={{ fontSize: 9 }}>Historyguesser</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: 0, letterSpacing: '-0.01em' }}>
             {t('legal.terms.title')}
           </h1>

@@ -101,7 +101,7 @@ export async function renderDailyShareCard(d: ShareCardData): Promise<Blob> {
   c.fillStyle = 'rgba(245,241,232,0.62)'
   c.font = '600 30px "JetBrains Mono", ui-monospace, monospace'
   c.letterSpacing = '10px'
-  c.fillText('HISTORYGUESSR', W / 2, 268)
+  c.fillText('HISTORYGUESSER', W / 2, 268)
   c.letterSpacing = '0px'
 
   // Eyebrow + datum

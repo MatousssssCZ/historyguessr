@@ -576,7 +576,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     betterThan,
   }
   const shareText = [
-    `HistoryGuessr · ${t('menu.dailyMobile')} · ${dateLabel}`,
+    `Historyguesser · ${t('menu.dailyMobile')} · ${dateLabel}`,
     `★ ${result.totalScore} / 1000`,
     `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`,
     'historyguessr.vercel.app',
