@@ -755,15 +755,15 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             </div>
             {resultTabs}
             {tabContent}
-            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto', display: 'flex', gap: 8 }}>
+            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
               {hasPanorama && (
-                <button onClick={() => setShowPano(true)} className="btn btn-ghost" style={{ flex: 1 }}>🖼 {t('daily.panorama')}</button>
+                <button onClick={() => setShowPano(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>🖼 {t('daily.panorama')}</button>
               )}
               {canShowDist && (
-                <button onClick={() => setHistModal(true)} className="btn btn-ghost" style={{ flex: 1 }}>📊 {t('daily.distribution')}</button>
+                <button onClick={() => setHistModal(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>📊 {t('daily.distribution')}</button>
               )}
-              <button onClick={() => setShowShare(true)} className="btn btn-ghost" style={{ flex: 1 }}>↗ {t('daily.shareBtn')}</button>
-              <button className="btn btn-accent" style={{ flex: 1 }} onClick={onMenu}>{t('daily.menu')}</button>
+              <button onClick={() => setShowShare(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>↗ {t('daily.shareBtn')}</button>
+              <button className="btn btn-accent" style={{ minWidth: 0 }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
           </div>
 
