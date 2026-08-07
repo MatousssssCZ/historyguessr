@@ -68,7 +68,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               placeholder={t('feedback.crashPlaceholder', 'Co jsi dělal(a), když to spadlo? (nepovinné)')}
               style={{
                 width: '100%', boxSizing: 'border-box', background: 'var(--surface)', border: '1px solid var(--line-strong)',
-                borderRadius: 11, padding: '11px 13px', fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--ink)', marginBottom: 10, resize: 'vertical',
+                borderRadius: 11, padding: '11px 13px', fontFamily: 'var(--font-sans)', fontSize: 16, color: 'var(--ink)', marginBottom: 10, resize: 'vertical',
               }}
             />
             <button className="btn btn-accent" style={{ width: '100%' }} onClick={() => this.sendReport()}>

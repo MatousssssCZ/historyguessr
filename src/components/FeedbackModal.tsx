@@ -48,9 +48,9 @@ export default function FeedbackModal({ onClose, defaultKind = 'bug', context }:
                 }}>{t('feedback.kind.' + k)}</button>
               ))}
             </div>
-            <textarea value={msg} onChange={e => setMsg(e.target.value)} maxLength={2000} rows={5} placeholder={t('feedback.placeholder')} autoFocus style={{
+            <textarea value={msg} onChange={e => setMsg(e.target.value)} maxLength={2000} rows={5} placeholder={t('feedback.placeholder')} style={{
               width: '100%', boxSizing: 'border-box', background: 'var(--surface)', border: '1px solid var(--line-strong)', borderRadius: 11,
-              padding: '11px 13px', fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'var(--ink)', marginBottom: 14, resize: 'vertical',
+              padding: '11px 13px', fontFamily: 'var(--font-sans)', fontSize: 16, color: 'var(--ink)', marginBottom: 14, resize: 'vertical',
             }}/>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={onClose} style={{ flex: 1, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 11, padding: 12, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)', cursor: 'pointer' }}>{t('common.close')}</button>
