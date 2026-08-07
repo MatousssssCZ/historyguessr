@@ -14,6 +14,7 @@ import CampaignsPage from '@/pages/Campaigns'
 import PreGameLobbyPage from '@/pages/PreGameLobby'
 import AccountPage from '@/pages/Account'
 import PremiumPage from '@/pages/Premium'
+import RoadmapPage from '@/pages/Roadmap'
 import DailyChallengePage from '@/pages/Daily'
 import ResetPasswordPage from '@/pages/ResetPassword'
 import StatsPage from '@/pages/Stats'
@@ -30,6 +31,7 @@ const AdminReportsPage = lazy(() => import('@/pages/AdminReports'))
 const AdminBulkAIPage = lazy(() => import('@/pages/AdminBulkAI'))
 const AdminCampaignsPage = lazy(() => import('@/pages/AdminCampaigns'))
 const AdminContinentsPage = lazy(() => import('@/pages/AdminContinents'))
+const AdminRoadmapPage = lazy(() => import('@/pages/AdminRoadmap'))
 const AdminPanoramaRepairPage = lazy(() => import('@/pages/AdminPanoramaRepair'))
 const MultiplayerLobbyPage = lazy(() => import('@/pages/MultiplayerLobby'))
 const MultiplayerGamePage = lazy(() => import('@/pages/MultiplayerGame'))
@@ -97,6 +99,7 @@ export default function App() {
               <Route path="/campaigns/:categoryId" element={<RequireAuth><CampaignsPage/></RequireAuth>}/>
               <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
               <Route path="/premium" element={<RequireAuth><PremiumPage/></RequireAuth>}/>
+              <Route path="/roadmap" element={<RequireAuth><RoadmapPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
               <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>
               <Route path="/admin"   element={<RequireAdmin><AdminHubPage/></RequireAdmin>}/>
@@ -108,6 +111,7 @@ export default function App() {
               <Route path="/admin/campaigns" element={<RequireAdmin><AdminCampaignsPage/></RequireAdmin>}/>
               <Route path="/admin/continents" element={<RequireAdmin><AdminContinentsPage/></RequireAdmin>}/>
               <Route path="/admin/panorama-repair" element={<RequireAdmin><AdminPanoramaRepairPage/></RequireAdmin>}/>
+              <Route path="/admin/roadmap" element={<RequireAdmin><AdminRoadmapPage/></RequireAdmin>}/>
               <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
               <Route path="/multiplayer/lobby" element={<RequireAuth><MultiplayerLobbyPage/></RequireAuth>}/>
               <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>

@@ -272,7 +272,9 @@ export default function MenuPage() {
               <NearestBadges catHits={catHits} navigate={navigate}/>
             </div>
 
-            {!isPremium && <div style={{ marginTop: 16 }}><PremiumBanner onClick={() => navigate('/premium')}/></div>}
+            {isPremium
+              ? <div style={{ marginTop: 16 }}><RoadmapTile onClick={() => navigate('/roadmap')}/></div>
+              : <div style={{ marginTop: 16 }}><PremiumBanner onClick={() => navigate('/premium')}/></div>}
 
             {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
           </div>
@@ -325,7 +327,9 @@ export default function MenuPage() {
           <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
         </button>
 
-        {!isPremium && <><div style={{ height: 12 }}/><PremiumBanner onClick={() => navigate('/premium')}/></>}
+        {isPremium
+          ? <><div style={{ height: 12 }}/><RoadmapTile onClick={() => navigate('/roadmap')}/></>
+          : <><div style={{ height: 12 }}/><PremiumBanner onClick={() => navigate('/premium')}/></>}
 
         {/* Poslední dlaždice — přidání na plochu */}
         {installTile && <><div style={{ height: 12 }}/>{installTile}</>}
@@ -582,6 +586,24 @@ function PremiumBanner({ onClick }: { onClick: () => void }) {
         <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.premiumCtaSub')}</div>
       </div>
       <span style={{ fontSize: 18, opacity: 0.9 }}>›</span>
+    </button>
+  )
+}
+
+// ─── Dlaždice roadmapy (jen pro předplatitele) ────────────
+function RoadmapTile({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+      background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
+    }}>
+      <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🗳️</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('menu.roadmapTitle')}</div>
+        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.roadmapSub')}</div>
+      </div>
+      <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
     </button>
   )
 }

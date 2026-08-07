@@ -123,6 +123,11 @@ export const resources = {
         presets: { t: 'Uložené scénáře', d: 'Ulož a sdílej si vlastní herní nastavení.' },
         roadmap: { t: 'Podílej se na vývoji', d: 'Navrhuj nápady a spolurozhoduj, kam bude aplikace směřovat.' },
       } },
+    roadmap: {
+      title: 'Podílej se na vývoji', intro: 'Hlasuj pro vylepšení, která chceš vidět, a navrhuj vlastní nápady. Rozhodni, kam bude Historyguesser směřovat.',
+      premiumCta: 'Hlasování a návrhy jsou pro Premium — odemkni →', vote: 'Hlasovat', empty: 'Zatím tu nic není. Brzy přibydou návrhy!',
+      suggest: 'Navrhnout vylepšení', formTitle: 'Název nápadu', formDesc: 'Popis (nepovinné)', formSubmit: 'Odeslat návrh',
+      status: { idea: 'Nápad', planned: 'Plánováno', in_progress: 'Probíhá', done: 'Hotovo' } },
     setup: {
       title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.',
       placeholder: 'Tvoje přezdívka', confirm: 'Pokračovat', hint: 'Min. 3 znaky. Změnit ji můžeš později v účtu.',
@@ -252,7 +257,7 @@ export const resources = {
       dailyDone: 'Skóre {{score}} · vrať se zítra', badgeNew: 'Nová výzva', badgeDone: '✓ Hotovo',
       multiplayer: 'Více hráčů', multiplayerSub: 'Zahraj s přáteli', multiplayerSub2: 'Zahraj si s přáteli',
       accountTitle: 'Účet', accountSub: 'Profil & statistiky',
-      scoreTitle: 'Skóre', scoreSub: 'Statistiky a progres', friendsTitle: 'Přátelé', friendsSub: 'Najdi a přidej kamarády', premiumCtaTitle: 'Získej Premium', premiumCtaSub: 'Bez reklam, všechny kampaně a víc', scoreMobile: 'Skóre & progres', scoreMobileSub: 'Tvoje statistiky', nearestBadges: 'Nejbližší odznaky', seeAll: 'Vše', resumeTitle: 'Pokračovat ve hře', resumeRound: 'Kolo {{n}}/{{total}}', resumeWindow: 'vrátit se lze do 5 minut',
+      scoreTitle: 'Skóre', scoreSub: 'Statistiky a progres', friendsTitle: 'Přátelé', friendsSub: 'Najdi a přidej kamarády', premiumCtaTitle: 'Získej Premium', premiumCtaSub: 'Bez reklam, všechny kampaně a víc', roadmapTitle: 'Podílej se na vývoji', roadmapSub: 'Hlasuj a navrhuj, co přijde příště', scoreMobile: 'Skóre & progres', scoreMobileSub: 'Tvoje statistiky', nearestBadges: 'Nejbližší odznaky', seeAll: 'Vše', resumeTitle: 'Pokračovat ve hře', resumeRound: 'Kolo {{n}}/{{total}}', resumeWindow: 'vrátit se lze do 5 minut',
       admin: 'Admin', adminSub: 'Správa událostí',
       level: 'Level', quote: '„Kdo nezná historii, je odsouzen ji znovu prožívat."', quoteAuthor: '— George Santayana',
     },
@@ -381,6 +386,11 @@ export const resources = {
         presets: { t: 'Saved presets', d: 'Save and share your own game setups.' },
         roadmap: { t: 'Shape the development', d: 'Suggest ideas and help decide where the app goes next.' },
       } },
+    roadmap: {
+      title: 'Shape the development', intro: 'Vote for the improvements you want and suggest your own ideas. Help decide where Historyguesser goes next.',
+      premiumCta: 'Voting and suggestions are for Premium — unlock →', vote: 'Vote', empty: 'Nothing here yet. Suggestions coming soon!',
+      suggest: 'Suggest an improvement', formTitle: 'Idea title', formDesc: 'Description (optional)', formSubmit: 'Submit',
+      status: { idea: 'Idea', planned: 'Planned', in_progress: 'In progress', done: 'Done' } },
     setup: {
       title: 'Choose a nickname', sub: 'Other players will see you under this name.',
       placeholder: 'Your nickname', confirm: 'Continue', hint: 'Min. 3 characters. You can change it later in your account.',
@@ -510,7 +520,7 @@ export const resources = {
       dailyDone: 'Score {{score}} · come back tomorrow', badgeNew: 'New challenge', badgeDone: '✓ Done',
       multiplayer: 'Multiplayer', multiplayerSub: 'Play with friends', multiplayerSub2: 'Play with friends',
       accountTitle: 'Account', accountSub: 'Profile & stats',
-      scoreTitle: 'Score', scoreSub: 'Stats and progress', friendsTitle: 'Friends', friendsSub: 'Find and add friends', premiumCtaTitle: 'Get Premium', premiumCtaSub: 'No ads, all campaigns and more', scoreMobile: 'Score & progress', scoreMobileSub: 'Your stats', nearestBadges: 'Closest badges', seeAll: 'All', resumeTitle: 'Resume game', resumeRound: 'Round {{n}}/{{total}}', resumeWindow: 'return within 5 minutes',
+      scoreTitle: 'Score', scoreSub: 'Stats and progress', friendsTitle: 'Friends', friendsSub: 'Find and add friends', premiumCtaTitle: 'Get Premium', premiumCtaSub: 'No ads, all campaigns and more', roadmapTitle: 'Shape the development', roadmapSub: 'Vote and suggest what comes next', scoreMobile: 'Score & progress', scoreMobileSub: 'Your stats', nearestBadges: 'Closest badges', seeAll: 'All', resumeTitle: 'Resume game', resumeRound: 'Round {{n}}/{{total}}', resumeWindow: 'return within 5 minutes',
       admin: 'Admin', adminSub: 'Manage events',
       level: 'Level', quote: '"Those who cannot remember the past are condemned to repeat it."', quoteAuthor: '— George Santayana',
     },
@@ -639,6 +649,11 @@ export const resources = {
         presets: { t: 'Gespeicherte Vorlagen', d: 'Speichere und teile deine eigenen Spieleinstellungen.' },
         roadmap: { t: 'An der Entwicklung mitwirken', d: 'Bringe Ideen ein und entscheide mit, wohin die App geht.' },
       } },
+    roadmap: {
+      title: 'An der Entwicklung mitwirken', intro: 'Stimme für die Verbesserungen, die du sehen willst, und bringe eigene Ideen ein. Entscheide mit, wohin Historyguesser geht.',
+      premiumCta: 'Abstimmen und Vorschläge sind für Premium — freischalten →', vote: 'Abstimmen', empty: 'Noch nichts hier. Vorschläge kommen bald!',
+      suggest: 'Verbesserung vorschlagen', formTitle: 'Titel der Idee', formDesc: 'Beschreibung (optional)', formSubmit: 'Absenden',
+      status: { idea: 'Idee', planned: 'Geplant', in_progress: 'In Arbeit', done: 'Fertig' } },
     setup: {
       title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.',
       placeholder: 'Dein Spitzname', confirm: 'Weiter', hint: 'Min. 3 Zeichen. Du kannst ihn später im Konto ändern.',
@@ -768,7 +783,7 @@ export const resources = {
       dailyDone: 'Punkte {{score}} · komm morgen wieder', badgeNew: 'Neue Challenge', badgeDone: '✓ Erledigt',
       multiplayer: 'Mehrspieler', multiplayerSub: 'Mit Freunden spielen', multiplayerSub2: 'Mit Freunden spielen',
       accountTitle: 'Konto', accountSub: 'Profil & Statistiken',
-      scoreTitle: 'Punkte', scoreSub: 'Statistiken und Fortschritt', friendsTitle: 'Freunde', friendsSub: 'Finde und füge Freunde hinzu', premiumCtaTitle: 'Premium holen', premiumCtaSub: 'Keine Werbung, alle Kampagnen und mehr', scoreMobile: 'Punkte & Fortschritt', scoreMobileSub: 'Deine Statistiken', nearestBadges: 'Nächste Abzeichen', seeAll: 'Alle', resumeTitle: 'Spiel fortsetzen', resumeRound: 'Runde {{n}}/{{total}}', resumeWindow: 'Rückkehr binnen 5 Minuten möglich',
+      scoreTitle: 'Punkte', scoreSub: 'Statistiken und Fortschritt', friendsTitle: 'Freunde', friendsSub: 'Finde und füge Freunde hinzu', premiumCtaTitle: 'Premium holen', premiumCtaSub: 'Keine Werbung, alle Kampagnen und mehr', roadmapTitle: 'An der Entwicklung mitwirken', roadmapSub: 'Stimme ab und schlage vor, was als Nächstes kommt', scoreMobile: 'Punkte & Fortschritt', scoreMobileSub: 'Deine Statistiken', nearestBadges: 'Nächste Abzeichen', seeAll: 'Alle', resumeTitle: 'Spiel fortsetzen', resumeRound: 'Runde {{n}}/{{total}}', resumeWindow: 'Rückkehr binnen 5 Minuten möglich',
       admin: 'Admin', adminSub: 'Ereignisse verwalten',
       level: 'Level', quote: '„Wer sich nicht an die Vergangenheit erinnern kann, ist dazu verdammt, sie zu wiederholen."', quoteAuthor: '— George Santayana',
     },

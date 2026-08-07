@@ -12,6 +12,7 @@ const TILES = [
   { icon: '📊', title: 'Reporting', sub: 'Statistiky a přehledy', to: '/admin/reports' },
   { icon: '🌍', title: 'Kontinenty z GPS', sub: 'Dávkové odvození + kontrola', to: '/admin/continents' },
   { icon: '🖼', title: 'Oprava panoramat', sub: 'Srovnat odkazy se soubory (.png↔.webp)', to: '/admin/panorama-repair' },
+  { icon: '🗳️', title: 'Roadmap', sub: 'Vylepšení k hlasování pro předplatitele', to: '/admin/roadmap' },
 ]
 
 export default function AdminHubPage() {
