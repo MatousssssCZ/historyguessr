@@ -121,7 +121,7 @@ export const resources = {
         unlimitedExclude: { t: 'Neomezené vylučování', d: 'Vyřaď libovolně mnoho událostí (Free má limit).' },
         continent: { t: 'Filtr kontinentu', d: 'Zaměř se na konkrétní část světa.' },
         presets: { t: 'Uložené scénáře', d: 'Ulož a sdílej si vlastní herní nastavení.' },
-        roadmap: { t: 'Hlasování o novinkách', d: 'Rozhoduj, jaká vylepšení přijdou příště.' },
+        roadmap: { t: 'Podílej se na vývoji', d: 'Navrhuj nápady a spolurozhoduj, kam bude aplikace směřovat.' },
       } },
     setup: {
       title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.',
@@ -379,7 +379,7 @@ export const resources = {
         unlimitedExclude: { t: 'Unlimited exclusions', d: 'Exclude any number of events (Free has a limit).' },
         continent: { t: 'Continent filter', d: 'Focus on a specific part of the world.' },
         presets: { t: 'Saved presets', d: 'Save and share your own game setups.' },
-        roadmap: { t: 'Vote on what’s next', d: 'Help decide which improvements come next.' },
+        roadmap: { t: 'Shape the development', d: 'Suggest ideas and help decide where the app goes next.' },
       } },
     setup: {
       title: 'Choose a nickname', sub: 'Other players will see you under this name.',
@@ -637,7 +637,7 @@ export const resources = {
         unlimitedExclude: { t: 'Unbegrenztes Ausschließen', d: 'Schließe beliebig viele Ereignisse aus (Free hat ein Limit).' },
         continent: { t: 'Kontinent-Filter', d: 'Konzentriere dich auf einen bestimmten Teil der Welt.' },
         presets: { t: 'Gespeicherte Vorlagen', d: 'Speichere und teile deine eigenen Spieleinstellungen.' },
-        roadmap: { t: 'Über Neuheiten abstimmen', d: 'Entscheide mit, welche Verbesserungen als Nächstes kommen.' },
+        roadmap: { t: 'An der Entwicklung mitwirken', d: 'Bringe Ideen ein und entscheide mit, wohin die App geht.' },
       } },
     setup: {
       title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.',
