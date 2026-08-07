@@ -144,6 +144,12 @@ export const resources = {
       faqQ3: 'Jak se to hraje?', faqA3: 'Rozhlédneš se po 360° panoramatu, klepnutím na mapu určíš místo a posuvníkem odhadneš rok. Čím blíž skutečnému místu a roku, tím víc bodů.',
       faqQ4: 'Čím se liší od GeoGuessru?', faqA4: 'Kromě místa hádáš i rok, kdy se historická událost stala. Panoramata zachycují historické okamžiky a hra je vzdělávací.',
       faqQ5: 'V jakých jazycích to je?', faqA5: 'Historyguesser je dostupný v češtině, angličtině a němčině.' },
+    feedback: {
+      title: 'Nahlásit chybu', sub: 'Našel jsi chybu nebo máš nápad? Dej nám vědět — čteme každou zprávu.',
+      accountSub: 'Chyba, nápad nebo zpětná vazba', placeholder: 'Popiš, co se stalo nebo co bys zlepšil(a)…', send: 'Odeslat',
+      thanksTitle: 'Děkujeme za nahlášení!', thanksBody: 'Tvoji zpětnou vazbu jsme uložili a mrkneme na ni.',
+      reportProblem: 'Nahlásit problém', crashPlaceholder: 'Co jsi dělal(a), když to spadlo? (nepovinné)',
+      kind: { bug: '🐞 Chyba', idea: '💡 Nápad', other: '💬 Jiné' } },
     setup: {
       title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.',
       placeholder: 'Tvoje přezdívka', confirm: 'Pokračovat', hint: 'Min. 3 znaky. Změnit ji můžeš později v účtu.',
@@ -423,6 +429,12 @@ export const resources = {
       faqQ3: 'How do you play?', faqA3: 'Look around the 360° panorama, tap the map to place the location and use the slider to guess the year. The closer to the real place and year, the more points.',
       faqQ4: 'How is it different from GeoGuessr?', faqA4: 'Besides the location, you also guess the year the historical event happened. The panoramas capture historical moments and the game is educational.',
       faqQ5: 'What languages is it in?', faqA5: 'Historyguesser is available in Czech, English and German.' },
+    feedback: {
+      title: 'Report a bug', sub: 'Found a bug or have an idea? Let us know — we read every message.',
+      accountSub: 'Bug, idea or feedback', placeholder: 'Describe what happened or what you would improve…', send: 'Send',
+      thanksTitle: 'Thanks for the report!', thanksBody: 'We saved your feedback and will take a look.',
+      reportProblem: 'Report a problem', crashPlaceholder: 'What were you doing when it crashed? (optional)',
+      kind: { bug: '🐞 Bug', idea: '💡 Idea', other: '💬 Other' } },
     setup: {
       title: 'Choose a nickname', sub: 'Other players will see you under this name.',
       placeholder: 'Your nickname', confirm: 'Continue', hint: 'Min. 3 characters. You can change it later in your account.',
@@ -702,6 +714,12 @@ export const resources = {
       faqQ3: 'Wie spielt man?', faqA3: 'Schau dich im 360°-Panorama um, tippe auf die Karte für den Ort und stelle mit dem Regler das Jahr ein. Je näher am echten Ort und Jahr, desto mehr Punkte.',
       faqQ4: 'Wie unterscheidet es sich von GeoGuessr?', faqA4: 'Neben dem Ort errätst du auch das Jahr des historischen Ereignisses. Die Panoramen zeigen historische Momente und das Spiel ist lehrreich.',
       faqQ5: 'In welchen Sprachen gibt es das?', faqA5: 'Historyguesser ist auf Tschechisch, Englisch und Deutsch verfügbar.' },
+    feedback: {
+      title: 'Fehler melden', sub: 'Fehler gefunden oder eine Idee? Sag uns Bescheid — wir lesen jede Nachricht.',
+      accountSub: 'Fehler, Idee oder Feedback', placeholder: 'Beschreibe, was passiert ist oder was du verbessern würdest…', send: 'Senden',
+      thanksTitle: 'Danke für die Meldung!', thanksBody: 'Wir haben dein Feedback gespeichert und schauen es uns an.',
+      reportProblem: 'Problem melden', crashPlaceholder: 'Was hast du gemacht, als es abstürzte? (optional)',
+      kind: { bug: '🐞 Fehler', idea: '💡 Idee', other: '💬 Sonstiges' } },
     setup: {
       title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.',
       placeholder: 'Dein Spitzname', confirm: 'Weiter', hint: 'Min. 3 Zeichen. Du kannst ihn später im Konto ändern.',

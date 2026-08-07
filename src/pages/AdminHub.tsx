@@ -33,6 +33,7 @@ const GROUPS: Group[] = [
     label: 'Přehled a komunita',
     tiles: [
       { icon: '📊', title: 'Reporting', sub: 'Statistiky a přehledy', to: '/admin/reports' },
+      { icon: '🐞', title: 'Hlášení a zpětná vazba', sub: 'Bugy a nápady od hráčů', to: '/admin/feedback' },
       { icon: '🗳️', title: 'Roadmap', sub: 'Vylepšení k hlasování pro předplatitele', to: '/admin/roadmap' },
     ],
   },

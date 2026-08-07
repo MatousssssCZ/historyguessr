@@ -33,6 +33,7 @@ const AdminBulkAIPage = lazy(() => import('@/pages/AdminBulkAI'))
 const AdminCampaignsPage = lazy(() => import('@/pages/AdminCampaigns'))
 const AdminContinentsPage = lazy(() => import('@/pages/AdminContinents'))
 const AdminRoadmapPage = lazy(() => import('@/pages/AdminRoadmap'))
+const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedback'))
 const AdminPanoramaRepairPage = lazy(() => import('@/pages/AdminPanoramaRepair'))
 const MultiplayerLobbyPage = lazy(() => import('@/pages/MultiplayerLobby'))
 const MultiplayerGamePage = lazy(() => import('@/pages/MultiplayerGame'))
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="/admin/continents" element={<RequireAdmin><AdminContinentsPage/></RequireAdmin>}/>
               <Route path="/admin/panorama-repair" element={<RequireAdmin><AdminPanoramaRepairPage/></RequireAdmin>}/>
               <Route path="/admin/roadmap" element={<RequireAdmin><AdminRoadmapPage/></RequireAdmin>}/>
+              <Route path="/admin/feedback" element={<RequireAdmin><AdminFeedbackPage/></RequireAdmin>}/>
               <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
               <Route path="/multiplayer/lobby" element={<RequireAuth><MultiplayerLobbyPage/></RequireAuth>}/>
               <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>
