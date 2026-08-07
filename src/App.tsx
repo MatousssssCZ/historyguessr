@@ -13,6 +13,7 @@ import GamePage from '@/pages/Game'
 import CampaignsPage from '@/pages/Campaigns'
 import PreGameLobbyPage from '@/pages/PreGameLobby'
 import AccountPage from '@/pages/Account'
+import PremiumPage from '@/pages/Premium'
 import DailyChallengePage from '@/pages/Daily'
 import ResetPasswordPage from '@/pages/ResetPassword'
 import StatsPage from '@/pages/Stats'
@@ -95,6 +96,7 @@ export default function App() {
               <Route path="/campaigns" element={<RequireAuth><CampaignsPage/></RequireAuth>}/>
               <Route path="/campaigns/:categoryId" element={<RequireAuth><CampaignsPage/></RequireAuth>}/>
               <Route path="/account" element={<RequireAuth><AccountPage/></RequireAuth>}/>
+              <Route path="/premium" element={<RequireAuth><PremiumPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
               <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>
               <Route path="/admin"   element={<RequireAdmin><AdminHubPage/></RequireAdmin>}/>

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { updateProfile, signOut } from '@/lib/supabase'
+import { updateProfile, signOut, getMyEntitlements } from '@/lib/supabase'
+import { isPremiumUser, type Entitlements } from '@/lib/entitlements'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
 import MobileNav from '@/components/MobileNav'
@@ -25,6 +26,9 @@ export default function AccountPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showHowTo, setShowHowTo] = useState(false)
   const [showInstall, setShowInstall] = useState(false)
+  const [ent, setEnt] = useState<Entitlements | null>(null)
+  useEffect(() => { getMyEntitlements().then(setEnt).catch(() => {}) }, [])
+  const premium = isPremiumUser(ent)
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -83,6 +87,23 @@ export default function AccountPage() {
             {saving ? t('account.saving') : t('common.save')}
           </button>
         </form>
+
+        {/* Předplatné */}
+        <button onClick={() => navigate('/premium')} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer' }}>
+          <p style={eyebrow}>{t('account.subscription')}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+            <span style={{ fontSize: 22 }}>{premium ? '⭐' : '✦'}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>
+                {premium ? t('account.planPremium') : t('account.planFree')}
+              </span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: premium ? 'var(--ink-3)' : 'var(--accent)', marginTop: 2 }}>
+                {premium ? t('account.manageSub') : t('account.upgradeSub')}
+              </span>
+            </span>
+            <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
+          </div>
+        </button>
 
         {/* Vzhled */}
         <div style={cardStyle}>

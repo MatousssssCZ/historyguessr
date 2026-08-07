@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, type DailyResult } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, type DailyResult } from '@/lib/supabase'
+import { isPremiumUser } from '@/lib/entitlements'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import { loadResume, RESUME_TTL, type ResumeState } from '@/lib/resume'
@@ -64,6 +65,8 @@ export default function MenuPage() {
   const [showHowTo, setShowHowTo] = useState(false)
   const [showInstall, setShowInstall] = useState(false)
   const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
+  const [isPremium, setIsPremium] = useState(false)
+  useEffect(() => { getMyEntitlements().then(e => setIsPremium(isPremiumUser(e))).catch(() => {}) }, [])
 
   // „Jak hrát" se NEZOBRAZUJE automaticky — jen ručně přes „?" tlačítko
   // v menu nebo řádek „Jak hrát?" v účtu. (Auto-zobrazení bylo per-zařízení,
@@ -269,6 +272,8 @@ export default function MenuPage() {
               <NearestBadges catHits={catHits} navigate={navigate}/>
             </div>
 
+            {!isPremium && <div style={{ marginTop: 16 }}><PremiumBanner onClick={() => navigate('/premium')}/></div>}
+
             {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
           </div>
         </div>
@@ -319,6 +324,8 @@ export default function MenuPage() {
           {friendReqs > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 7px', borderRadius: 999 }}>{friendReqs}</span>}
           <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
         </button>
+
+        {!isPremium && <><div style={{ height: 12 }}/><PremiumBanner onClick={() => navigate('/premium')}/></>}
 
         {/* Poslední dlaždice — přidání na plochu */}
         {installTile && <><div style={{ height: 12 }}/>{installTile}</>}
@@ -558,6 +565,24 @@ function ProgressCard({ lvl, world, delta, loading }: { lvl: LevelInfo; world: {
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── CTA banner Premium (jen pro Free hráče) ──────────────
+function PremiumBanner({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+      background: ACCENT_GRAD, border: 'none', borderRadius: 18, padding: '14px 16px', color: '#fff',
+    }}>
+      <span style={{ fontSize: 22, flexShrink: 0 }}>⭐</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.premiumCtaTitle')}</div>
+        <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.premiumCtaSub')}</div>
+      </div>
+      <span style={{ fontSize: 18, opacity: 0.9 }}>›</span>
+    </button>
   )
 }
 
