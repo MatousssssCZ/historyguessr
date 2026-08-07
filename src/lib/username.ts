@@ -19,18 +19,28 @@ const RESERVED = new Set([
   'null', 'undefined', 'anonymous', 'anonym', 'guest', 'host', 'bot',
 ])
 
-// Blokované výrazy (substring v normalizovaném jméně). Záměrně jen jednoznačné
-// vulgarismy/urážky, ať nevznikají falešné shody. CZ + EN + DE.
-const PROFANITY = [
+// Jednoznačné vulgarismy/urážky — blokují se jako PODŘETĚZEC normalizovaného
+// jména (chytí i „xxfuckxx"). Jen slova, kde je riziko falešné shody nízké.
+// Pozn.: položky jsou ASCII (bez diakritiky) — normalizace vstupu diakritiku
+// odstraní, takže „piča" i „pica" se porovnávají jako „pica".
+const PROFANITY_STRONG = [
   // CZ
-  'kurva', 'kurwa', 'piča', 'pica', 'pic', 'čurák', 'curak', 'debil', 'kokot',
-  'mrdka', 'mrdat', 'hovno', 'prdel', 'sracka', 'zmrd', 'buzna', 'buzerant', 'cigan', 'cikan',
+  'kurva', 'kurwa', 'pica', 'curak', 'debil', 'kokot', 'kunda',
+  'mrdka', 'mrdat', 'jebat', 'vyjeb', 'projeb', 'hovno', 'sracka', 'zmrd', 'zkurv',
+  'buzna', 'buzerant', 'chcanky', 'hajzl',
   // EN
-  'fuck', 'shit', 'bitch', 'cunt', 'asshole', 'nigger', 'nigga', 'faggot', 'whore', 'slut', 'dick', 'pussy', 'rape',
+  'fuck', 'motherfuck', 'shit', 'bitch', 'cunt', 'asshole', 'nigger', 'nigga',
+  'faggot', 'whore', 'pussy', 'wanker', 'retard',
   // DE
-  'scheisse', 'arschloch', 'fotze', 'wichser', 'hurensohn', 'schlampe', 'nutte',
+  'scheisse', 'arschloch', 'fotze', 'wichser', 'hurensohn', 'schlampe', 'nutte', 'schwuchtel',
   // nenávist / extremismus
-  'hitler', 'nazi', 'heil', 'kkk',
+  'hitler', 'hakenkreuz',
+]
+
+// Kratší / kolizní výrazy — blokují se jen když je jimi CELÉ jméno (po
+// normalizaci), aby nezasáhly legitimní jména („Draper", „Ignazio", „Cigánek").
+const PROFANITY_EXACT = [
+  'prdel', 'prcat', 'rape', 'slut', 'dick', 'nazi', 'heil', 'kkk', 'cigan', 'cikan', 'cygan',
 ]
 
 // Mapa leetspeak → písmeno, ať projde i „f4ck", „sh1t", „@ss".
@@ -53,7 +63,9 @@ export function isReserved(raw: string): boolean {
 
 export function isProfane(raw: string): boolean {
   const n = normalizeForMatch(raw)
-  return PROFANITY.some(w => n.includes(w))
+  if (PROFANITY_STRONG.some(w => n.includes(w))) return true   // podřetězec
+  if (PROFANITY_EXACT.includes(n)) return true                 // jen celé jméno
+  return false
 }
 
 export function validateUsername(raw: string): { ok: boolean; value: string; error?: UsernameError } {

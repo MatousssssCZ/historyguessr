@@ -27,9 +27,21 @@ describe('validateUsername', () => {
     expect(validateUsername('Historyguesser').error).toBe('reserved')
   })
 
-  it('odmítne vulgarity (vč. prokládání a leetspeak)', () => {
+  it('odmítne vulgarity (vč. prokládání, leetspeak a diakritiky)', () => {
     expect(validateUsername('f.u.c.k').error).toBe('profane')
     expect(validateUsername('Sh1t').error).toBe('profane')
     expect(validateUsername('kurva').error).toBe('profane')
+    expect(validateUsername('Piča').error).toBe('profane')
+  })
+
+  it('neblokuje legitimní jména (žádné falešné shody)', () => {
+    expect(validateUsername('Ignazio').ok).toBe(true)   // obsahuje „nazi"
+    expect(validateUsername('Draper').ok).toBe(true)    // obsahuje „rape"
+    expect(validateUsername('Cigánek').ok).toBe(true)   // obsahuje „cigan"
+  })
+
+  it('krátká kolizní slova blokuje jen jako celé jméno', () => {
+    expect(validateUsername('rape').error).toBe('profane')
+    expect(validateUsername('Draperape').ok).toBe(true)
   })
 })
