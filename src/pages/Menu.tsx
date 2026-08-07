@@ -658,7 +658,7 @@ function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean
             // Bias na horní část snímku — obličeje bývají nahoře, ať nejsou useknuté
             position: 'absolute', inset: 0, backgroundImage: `url(${u})`, backgroundSize: 'cover', backgroundPosition: 'center 35%',
             animation: 'kenburns 13s ease-in-out infinite alternate', animationDelay: `${i * -3}s`,
-            transformOrigin: i % 2 === 0 ? 'center top' : 'center 40%', willChange: 'transform',
+            transformOrigin: 'center', willChange: 'transform',
           }}/>
         </div>
       ))}
