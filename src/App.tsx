@@ -15,6 +15,7 @@ import PreGameLobbyPage from '@/pages/PreGameLobby'
 import AccountPage from '@/pages/Account'
 import PremiumPage from '@/pages/Premium'
 import RoadmapPage from '@/pages/Roadmap'
+import LandingPage from '@/pages/Landing'
 import DailyChallengePage from '@/pages/Daily'
 import ResetPasswordPage from '@/pages/ResetPassword'
 import StatsPage from '@/pages/Stats'
@@ -57,11 +58,19 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// ── Root redirect ─────────────────────────────────────────
+// ── Root redirect (cíl e-mail potvrzení) ─────────────────
 function RootRedirect() {
   const { user, loading } = useAuth()
   if (loading) return <FullScreenSpinner/>
   return <Navigate to={user ? '/menu' : '/auth'} replace/>
+}
+
+// ── Domů: nepřihlášený → veřejná landing; přihlášený → menu ─
+function HomeRoute() {
+  const { user, loading } = useAuth()
+  if (loading) return <FullScreenSpinner/>
+  if (user) return <Navigate to="/menu" replace/>
+  return <LandingPage/>
 }
 
 // ── Full screen spinner ───────────────────────────────────
@@ -87,7 +96,7 @@ export default function App() {
           <EnvBadge/>
           <Suspense fallback={<FullScreenSpinner/>}>
             <Routes>
-              <Route path="/" element={<RootRedirect/>}/>
+              <Route path="/" element={<HomeRoute/>}/>
               <Route path="/auth" element={<AuthPage/>}/>
               <Route path="/try" element={<TryGamePage/>}/>
               <Route path="/auth/callback" element={<RootRedirect/>}/>

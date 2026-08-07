@@ -1,12 +1,37 @@
+# Historyguesser — https://historyguesser.net
+# Veřejné stránky se smí indexovat; herní/účtové routy ne.
+
 User-agent: *
 Allow: /$
 Allow: /auth
+Allow: /privacy
+Allow: /terms
 Disallow: /admin
 Disallow: /game
 Disallow: /daily
 Disallow: /multiplayer
 Disallow: /account
+Disallow: /premium
+Disallow: /roadmap
 Disallow: /stats
 Disallow: /reset-password
 
-Sitemap: https://historyguessr.vercel.app/sitemap.xml
+# AI crawlery jsou vítány na veřejném obsahu (výslovně, ať nejsou blokovány).
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://historyguesser.net/sitemap.xml

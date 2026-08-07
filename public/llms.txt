@@ -1,0 +1,18 @@
+# Historyguesser
+
+> Historyguesser je vzdělávací geolokační hra jako GeoGuessr, ale pro historii. Hráč vidí 360° panorama historického místa a hádá, kde na světě se událost odehrála a v jakém roce. Dostupné zdarma; volitelné Premium (99 Kč/měsíc). Jazyky: čeština, angličtina, němčina.
+
+## Co to je
+- **Kategorie:** vzdělávací hra, geolokační hádání (GeoGuessr-style), historie
+- **Jak se hraje:** rozhlédni se po 360° panoramatu → klepnutím na mapu urči místo → posuvníkem odhadni rok. Body za blízkost místa i roku.
+- **Režimy:** sólo hra, denní výzva „Tento den v historii", historické kampaně, multiplayer až 12 hráčů
+- **Odlišnost od GeoGuessru:** kromě místa se hádá i rok historické události; obsah je vzdělávací
+
+## Odkazy
+- Web: https://historyguesser.net/
+- Přihlášení / registrace: https://historyguesser.net/auth
+- Zásady ochrany údajů: https://historyguesser.net/privacy
+- Podmínky použití: https://historyguesser.net/terms
+
+## Provozovatel
+- Matouš Bahník, Liberec, Česká republika
