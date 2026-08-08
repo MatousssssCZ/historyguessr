@@ -130,7 +130,13 @@ export default function MultiplayerLobbyPage() {
     if (currentPlayers.length >= 12) { setError(t('lobby.errFull')); setLoading(false); return }
 
     const { error: err } = await joinRoom(foundRoom.id, user.id, username)
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      const m = err.message || ''
+      setError(m.includes('room_full') ? t('lobby.errFull')
+        : m.includes('room_not_open') ? t('lobby.errInProgress')
+        : t('lobby.errJoin'))
+      setLoading(false); return
+    }
 
     setRoom(foundRoom)
     const updatedPlayers = await getPlayers(foundRoom.id)
