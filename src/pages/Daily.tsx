@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
+  getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup,
 } from '@/lib/supabase'
 import { haversineKm, roundScore, yearDiff, formatYear, formatDistance } from '@/lib/scoring'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
@@ -53,6 +54,10 @@ export default function DailyChallengePage() {
   const [submitting, setSubmitting] = useState(false)
   // Příběh události po odeslání tipu (u již dříve odehrané výzvy se neukazuje)
   const [showStory, setShowStory] = useState(false)
+  // Make-up: doplnění zameškané výzvy. `makeup` = datum (ISO) doplňovaného dne.
+  const [makeup, setMakeup] = useState<string | null>(null)
+  const [makeupStatus, setMakeupStatus] = useState<{ balance: number; missed: string[] }>({ balance: 0, missed: [] })
+  const [showMakeup, setShowMakeup] = useState(false)
 
   // Timer
   const [elapsed, setElapsed] = useState(0)
@@ -77,6 +82,7 @@ export default function DailyChallengePage() {
 
   async function load() {
     setPhase('loading')
+    getDailyMakeupStatus().then(setMakeupStatus).catch(() => {})
     const [ev, existing, lb, scores] = await Promise.all([
       getDailyChallenge(),
       getTodayDailyResult(user!.id),
@@ -162,6 +168,19 @@ export default function DailyChallengePage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [])
 
+  // Spuštění doplnění zameškaného dne (bez časovače, bez XP bonusu).
+  async function startMakeup(dateISO: string) {
+    const ev = await getDailyChallengeForDate(dateISO)
+    if (!ev) return
+    if (timerRef.current) clearInterval(timerRef.current)
+    setMakeup(dateISO)
+    setEvent(ev)
+    setGuessLat(null); setGuessLng(null); setGuessYear(0); setGuessYearSet(false)
+    setResult(null); setShowMakeup(false)
+    hasSubmittedRef.current = false
+    setPhase('playing')
+  }
+
   const doSubmit = useCallback(async (forceLat?: number | null, forceLng?: number | null, forceYear?: number) => {
     if (!event || !user || hasSubmittedRef.current) return
     hasSubmittedRef.current = true
@@ -171,6 +190,24 @@ export default function DailyChallengePage() {
     const lat = forceLat !== undefined ? forceLat : guessLat
     const lng = forceLng !== undefined ? forceLng : guessLng
     const year = forceYear !== undefined ? forceYear : guessYear
+
+    // Doplnění zameškané výzvy — server ověří lístek, uloží s is_makeup, bez bonusu.
+    if (makeup) {
+      try {
+        const r = await submitDailyMakeup(makeup, lat, lng, year)
+        setResult({ distKm: r.distanceKm, locScore: r.locationScore, yrScore: r.yearScore, totalScore: r.roundScore, yrDiff: r.yearDiff, xpMult: 1 })
+      } catch (e) {
+        console.error('[Daily] doplnění selhalo:', e)
+        hasSubmittedRef.current = false
+        setSubmitting(false)
+        return
+      }
+      invalidateMenuCache()
+      setLeaderboard([]); setAllScores([])
+      getDailyMakeupStatus().then(setMakeupStatus).catch(() => {})
+      setSubmitting(false); setShowStory(true); setPhase('result')
+      return
+    }
 
     // Klient posílá JEN tip — skóre i XP násobič počítá server ze svého
     // času startu (migrace 033), takže je nejde ovlivnit konzolí ani refreshem.
@@ -208,7 +245,7 @@ export default function DailyChallengePage() {
     setSubmitting(false)
     setShowStory(true)
     setPhase('result')
-  }, [event, user, guessLat, guessLng, guessYear, profile?.username])
+  }, [event, user, guessLat, guessLng, guessYear, profile?.username, makeup])
 
   useEffect(() => { doSubmitRef.current = doSubmit }, [doSubmit])
 
@@ -265,8 +302,12 @@ export default function DailyChallengePage() {
         allScores={allScores}
         userId={user?.id}
         alreadyPlayed={phase === 'already_played'}
+        isMakeup={!!makeup}
+        makeupCount={makeupStatus.balance}
+        onMakeup={makeupStatus.missed.length > 0 ? () => setShowMakeup(true) : undefined}
         onMenu={() => navigate('/menu')}
       />
+      {showMakeup && <MakeupSheet status={makeupStatus} onPick={startMakeup} onClose={() => setShowMakeup(false)}/>}
       </>
     )
   }
@@ -324,7 +365,15 @@ export default function DailyChallengePage() {
               {t('daily.start')}
             </button>
           </div>
+
+          {/* Doplnění zameškaných výzev */}
+          {makeupStatus.balance > 0 && makeupStatus.missed.length > 0 && (
+            <button onClick={() => setShowMakeup(true)} style={{ marginTop: 14, width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12, padding: 12, color: 'rgba(245,241,232,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, cursor: 'pointer' }}>
+              🎟 {t('daily.makeupCta', { n: makeupStatus.balance })}
+            </button>
+          )}
         </div>
+        {showMakeup && <MakeupSheet status={makeupStatus} onPick={startMakeup} onClose={() => setShowMakeup(false)}/>}
       </div>
     )
   }
@@ -334,10 +383,12 @@ export default function DailyChallengePage() {
     return (
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0906', position: 'relative', overflow: 'hidden' }}>
 
-        {/* Tenký proužek času nahoře */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.18)', zIndex: 26 }}>
-          <div style={{ height: '100%', width: `${timerPct}%`, background: timerColor, transition: 'width 1s linear, background 500ms' }}/>
-        </div>
+        {/* Tenký proužek času nahoře (v make-upu se čas neměří) */}
+        {!makeup && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.18)', zIndex: 26 }}>
+            <div style={{ height: '100%', width: `${timerPct}%`, background: timerColor, transition: 'width 1s linear, background 500ms' }}/>
+          </div>
+        )}
 
         {/* Plovoucí skleněný HUD */}
         <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 12px)', left: 0, right: 0, zIndex: 25, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, padding: '0 14px', pointerEvents: 'none' }}>
@@ -345,8 +396,8 @@ export default function DailyChallengePage() {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', color: 'var(--accent-deep)', textTransform: 'uppercase' }}>{t('menu.dailyMobile')}</div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: '#26211C', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{eventTitle(event)}</div>
           </div>
-          <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: timerColor, transition: 'color 500ms' }}>
-            ⏱ {clock}
+          <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 6, height: 38, borderRadius: 20, padding: '0 14px', background: 'rgba(246,240,230,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)', fontSize: makeup ? 11 : 16, fontWeight: 600, letterSpacing: makeup ? '0.1em' : undefined, color: makeup ? 'var(--accent-deep)' : timerColor, transition: 'color 500ms' }}>
+            {makeup ? `🎟 ${t('daily.makeupBadge')}` : `⏱ ${clock}`}
           </div>
         </div>
 
@@ -414,6 +465,43 @@ export default function DailyChallengePage() {
   }
 
   return null
+}
+
+// ── Sheet: doplnění zameškaných výzev ────────────────────
+function MakeupSheet({ status, onPick, onClose }: {
+  status: { balance: number; missed: string[] }; onPick: (dateISO: string) => void; onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const loc = currentLocale()
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: 'var(--paper-50)', borderRadius: '20px 20px 0 0', padding: '20px 18px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))', boxShadow: '0 -8px 32px rgba(0,0,0,0.35)', maxHeight: '80dvh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 21 }}>{t('daily.makeupTitle')}</div>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-deep)', background: 'rgba(217,119,87,0.10)', border: '1px solid rgba(217,119,87,0.25)', borderRadius: 20, padding: '4px 11px' }}>🎟 {t('daily.makeupTokens', { n: status.balance })}</span>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 16px', lineHeight: 1.5 }}>{t('daily.makeupIntro')}</p>
+        {status.missed.length === 0 ? (
+          <p style={{ fontSize: 13.5, color: 'var(--ink-3)', textAlign: 'center', padding: '20px 0' }}>{t('daily.makeupNone')}</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {status.missed.map(d => (
+              <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '11px 14px' }}>
+                <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>
+                  {new Date(d + 'T00:00:00').toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'long' })}
+                </span>
+                <button onClick={() => onPick(d)} disabled={status.balance < 1}
+                  style={{ background: status.balance < 1 ? 'var(--paper-300)' : 'var(--accent)', color: status.balance < 1 ? 'var(--ink-3)' : '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: status.balance < 1 ? 'default' : 'pointer' }}>
+                  {t('daily.makeupPlay')}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={onClose} style={{ width: '100%', marginTop: 16, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 11, padding: 12, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)', cursor: 'pointer' }}>{t('common.close')}</button>
+      </div>
+    </div>
+  )
 }
 
 // ── Rule row ─────────────────────────────────────────────
@@ -551,10 +639,11 @@ function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; my
 }
 
 // ── Výsledková obrazovka ──────────────────────────────────
-function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, onMenu }: {
+function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
-  leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; onMenu: () => void
+  leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
+  makeupCount?: number; onMakeup?: () => void; onMenu: () => void
 }) {
   const { t } = useTranslation()
   const [showShare, setShowShare] = useState(false)
@@ -626,10 +715,11 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   )
 
   // Na desktopu je žebříček ve pravém sloupci → tab jen na mobilu
-  const tabKeys: ('score' | 'leaderboard' | 'info')[] = isMobile
-    ? ['score', 'leaderboard', 'info']
-    : ['score', 'info']
-  const canShowDist = allScores.length > 1
+  // V make-upu není žebříček (minulý den, ostatní hráli naživo).
+  const tabKeys: ('score' | 'leaderboard' | 'info')[] = isMakeup
+    ? ['score', 'info']
+    : isMobile ? ['score', 'leaderboard', 'info'] : ['score', 'info']
+  const canShowDist = !isMakeup && allScores.length > 1
 
   const resultTabs = (
     <div style={{ display: 'flex', gap: 6, padding: isMobile ? '10px 12px 2px' : '12px 20px 4px', flexShrink: 0 }}>
@@ -743,7 +833,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
           <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
             <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-                {alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
+                {isMakeup ? t('daily.makeupResult') : alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{eventTitle(event)}</div>
@@ -762,7 +852,8 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
               {canShowDist && (
                 <button onClick={() => setHistModal(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>📊 {t('daily.distribution')}</button>
               )}
-              <button onClick={() => setShowShare(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>↗ {t('daily.shareBtn')}</button>
+              {!isMakeup && <button onClick={() => setShowShare(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>↗ {t('daily.shareBtn')}</button>}
+              {!isMakeup && makeupCount > 0 && onMakeup && <button onClick={onMakeup} className="btn btn-ghost" style={{ minWidth: 0 }}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
               <button className="btn btn-accent" style={{ minWidth: 0 }} onClick={onMenu}>{t('daily.menu')}</button>
             </div>
           </div>
@@ -801,7 +892,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       {/* Header */}
       <div style={{ padding: '14px 16px 12px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-          {alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
+          {isMakeup ? t('daily.makeupResult') : alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
@@ -828,7 +919,8 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
             📊 {t('daily.distribution')}
           </button>
         )}
-        <button onClick={() => setShowShare(true)} className="btn btn-accent" style={{ width: '100%' }}>↗ {t('daily.share')}</button>
+        {!isMakeup && <button onClick={() => setShowShare(true)} className="btn btn-accent" style={{ width: '100%' }}>↗ {t('daily.share')}</button>}
+        {!isMakeup && makeupCount > 0 && onMakeup && <button onClick={onMakeup} className="btn btn-ghost" style={{ width: '100%' }}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
         <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
       </div>
 

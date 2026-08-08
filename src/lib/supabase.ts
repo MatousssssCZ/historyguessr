@@ -752,6 +752,48 @@ export async function submitDailyResult(
   }
 }
 
+// ─── Doplnění zameškané výzvy (make-up) ───────────────────
+
+/** Událost denní výzvy pro KONKRÉTNÍ datum (podle měsíce/dne). */
+export async function getDailyChallengeForDate(dateISO: string): Promise<Event | null> {
+  const d = new Date(dateISO + 'T00:00:00')
+  const { data } = await supabase
+    .from('daily_challenge_assignments')
+    .select('event_id, events(*)')
+    .eq('month', d.getMonth() + 1)
+    .eq('day', d.getDate())
+    .maybeSingle()
+  if (!data?.event_id || !data?.events) return null
+  return data.events as unknown as Event
+}
+
+/** Stav make-upu: kolik lístků + která data (ISO) lze doplnit. */
+export async function getDailyMakeupStatus(): Promise<{ balance: number; missed: string[] }> {
+  const { data, error } = await supabase.rpc('daily_makeup_status')
+  if (error) return { balance: 0, missed: [] }
+  const row = Array.isArray(data) ? data[0] : data
+  return { balance: Number(row?.balance ?? 0), missed: (row?.missed as string[] | null) ?? [] }
+}
+
+/** Odešle doplněnou (zameškanou) výzvu daného dne. Skóre počítá server. */
+export async function submitDailyMakeup(
+  dateISO: string, guessLat: number | null, guessLng: number | null, guessYear: number,
+): Promise<DailySubmitResult> {
+  const { data, error } = await supabase.rpc('submit_daily_makeup', {
+    p_date: dateISO, p_guess_lat: guessLat, p_guess_lng: guessLng, p_guess_year: guessYear,
+  })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    locationScore: row?.location_score ?? 0,
+    yearScore: row?.year_score ?? 0,
+    roundScore: row?.round_score ?? 0,
+    distanceKm: row?.distance_km ?? 0,
+    yearDiff: row?.year_diff ?? 0,
+    xpAwarded: row?.xp_awarded ?? 0,
+  }
+}
+
 /** Top 10 hráčů pro dnešní den */
 export async function getDailyLeaderboard(): Promise<DailyResult[]> {
   const today = localDateISO()
