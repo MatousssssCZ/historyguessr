@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getUserSessions, getUserDailyResults, getCategoryHits, getMyRewards, localDateISO, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
+import StreakLadder from '@/components/StreakLadder'
 import MobileNav from '@/components/MobileNav'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import DesktopSidebar from '@/components/DesktopSidebar'
@@ -23,6 +24,7 @@ const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
 
 interface Stats {
   games: number
+  roundsPlayed: number       // odehraná kola (solo + denní výzvy)
   totalScore: number
   avgScore: number
   bullseyes: number          // 100% přesné tipy
@@ -69,7 +71,9 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
   const totalScore = profileScore || gameScores.reduce((a, b) => a + b, 0)
 
   return {
-    games, totalScore,
+    games,
+    roundsPlayed: rounds.length + daily.length,   // solo kola + denní výzvy
+    totalScore,
     avgScore: games > 0 ? Math.round(totalScore / games) : 0,
     bullseyes,
     avgDistance: Math.round(avgDistance),
@@ -152,7 +156,7 @@ export default function StatsPage() {
             )}
             <Section label={t('stats.overview')}>
               <Grid>
-                <Card icon="🎮" value={n(stats.games)} k={t('stats.games')}/>
+                <Card icon="🎲" value={n(stats.roundsPlayed)} k={t('stats.rounds')}/>
                 <Card icon="🏆" value={n(stats.totalScore)} k={t('stats.totalScore')}/>
                 <Card icon="📊" value={n(stats.avgScore)} k={t('stats.avgScore')}/>
                 <Card icon="🎯" value={`${stats.bullseyes}×`} k={t('stats.bullseyes')} hl/>
@@ -205,6 +209,7 @@ export default function StatsPage() {
               {achTab === 'titles' ? (
                 <>
                   <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
+                  <div style={{ marginBottom: 12 }}><StreakLadder streak={stats.dailyStreak} tone="light"/></div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {ACHIEVEMENTS.map(cat => (
                       <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>
