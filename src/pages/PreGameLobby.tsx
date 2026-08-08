@@ -13,19 +13,9 @@ import { singlePlayerAnalytics, monetizationAnalytics } from '@/lib/analytics'
 import type { SinglePlayerPreset, PresetRules } from '@/lib/presets'
 import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
+import { Segmented, CategoryChips } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { GameOptions } from '@/hooks/useGame'
-
-const CATEGORIES = [
-  { id: 'war' },
-  { id: 'moments' },
-  { id: 'places' },
-  { id: 'inventions' },
-  { id: 'art' },
-  { id: 'sports' },
-  { id: 'mysteries' },
-  { id: 'disasters' },
-]
 
 const ROUND_OPTIONS = [3, 5, 10]
 
@@ -206,36 +196,10 @@ export default function PreGameLobbyPage() {
 
   // ── Sdílené ovládací fragmenty (mobil i desktop) ──────────
   const roundsCtl = (
-    <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 4, gap: 4 }}>
-      {ROUND_OPTIONS.map(r => (
-        <button key={r} onClick={() => setRounds(r)} style={{
-          flex: 1, border: 'none', padding: '9px 0', borderRadius: 9, cursor: 'pointer',
-          fontFamily: 'var(--font-serif)', fontSize: 15,
-          background: rounds === r ? 'var(--paper-50)' : 'transparent',
-          color: rounds === r ? 'var(--ink)' : 'var(--ink-2)',
-          fontWeight: rounds === r ? 500 : 400,
-          boxShadow: rounds === r ? '0 1px 4px rgba(42,31,23,0.08)' : 'none',
-        }}>{r}</button>
-      ))}
-    </div>
+    <Segmented value={rounds} options={ROUND_OPTIONS.map(r => ({ v: r, label: String(r) }))} onChange={setRounds}/>
   )
 
-  const categoriesCtl = (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-      {CATEGORIES.map(cat => {
-        const on = categories.includes(cat.id)
-        return (
-          <button key={cat.id} onClick={() => toggleCategory(cat.id)} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999,
-            fontSize: 13, cursor: 'pointer',
-            border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
-            background: on ? 'var(--accent)' : 'transparent',
-            color: on ? '#fff' : 'var(--ink-2)',
-          }}>{t('cat.' + cat.id)}</button>
-        )
-      })}
-    </div>
-  )
+  const categoriesCtl = <CategoryChips selected={categories} onToggle={toggleCategory}/>
 
   const yearCtl = <YearRange from={yearFrom} to={yearTo} onFrom={setYearFrom} onTo={setYearTo}/>
 
@@ -677,9 +641,10 @@ const miniBtn: React.CSSProperties = { fontSize: 12, padding: '6px 8px', minWidt
 
 function Section({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{label}</span>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, padding: '18px 20px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 13 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{label}</span>
+        <span style={{ flex: 1, height: 1, background: 'rgba(42,31,23,0.08)' }}/>
         {hint && <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{hint}</span>}
       </div>
       {children}

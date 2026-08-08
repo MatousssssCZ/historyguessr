@@ -10,22 +10,12 @@ import { preloadImage } from '@/lib/preload'
 import { maintainMultiplayer } from '@/lib/supabase'
 import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/multiplayer'
 import YearRange from '@/components/YearRange'
+import { SettingSection, SubLabel, Segmented, CategoryChips, EventCountPill } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 const DEFAULT_SETTINGS: RoomSettings = {
   rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025, mode: 'classic',
 }
-
-const CATEGORIES = [
-  { id: 'war' },
-  { id: 'moments' },
-  { id: 'places' },
-  { id: 'inventions' },
-  { id: 'art' },
-  { id: 'sports' },
-  { id: 'mysteries' },
-  { id: 'disasters' },
-]
 
 type Screen = 'menu' | 'join_code' | 'lobby'
 
@@ -295,33 +285,12 @@ export default function MultiplayerLobbyPage() {
     </div>
   )
 
-  // Segmentovaný přepínač (počet kol, časový limit) — sladěný s „Klasickou hrou"
-  const Segmented = <T extends number>({ value, options, onChange }: {
-    value: T; options: readonly { v: T; label: string }[]; onChange: (v: T) => void
-  }) => (
-    <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 4, gap: 4 }}>
-      {options.map(o => {
-        const on = value === o.v
-        return (
-          <button key={o.v} onClick={() => onChange(o.v)} style={{
-            flex: 1, border: 'none', padding: '9px 0', borderRadius: 9, cursor: 'pointer',
-            fontFamily: 'var(--font-serif)', fontSize: 15,
-            background: on ? 'var(--paper-50)' : 'transparent',
-            color: on ? 'var(--ink)' : 'var(--ink-2)', fontWeight: on ? 500 : 400,
-            boxShadow: on ? '0 1px 4px rgba(42,31,23,0.08)' : 'none',
-          }}>{o.label}</button>
-        )
-      })}
-    </div>
-  )
-
   const SettingsPanel = () => {
     const isBR = settings.mode === 'battle_royale'
     return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* Herní režim — výrazný výběr karet */}
-      <div>
-        <MpLabel>{t('lobby.modeLabel')}</MpLabel>
+      <SettingSection label={t('lobby.modeLabel')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <ModeCard
             icon="🏛" title={t('lobby.modeClassic')} desc={t('lobby.modeClassicDesc')}
@@ -330,45 +299,33 @@ export default function MultiplayerLobbyPage() {
             icon="⚔" title={t('lobby.modeBR')} desc={t('lobby.brHint')}
             on={isBR} onClick={() => handleSettingChange('mode', 'battle_royale')}/>
         </div>
-      </div>
+      </SettingSection>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isBR ? '1fr' : '1fr 1fr', gap: 18 }}>
-        {!isBR && (
-        <div>
-          <MpLabel>{t('pregame.rounds')}</MpLabel>
-          <Segmented value={settings.rounds}
-            options={[{ v: 3, label: '3' }, { v: 5, label: '5' }, { v: 10, label: '10' }]}
-            onChange={v => handleSettingChange('rounds', v)}/>
+      {/* Počet kol + čas na kolo */}
+      <SettingSection>
+        <div style={{ display: 'grid', gridTemplateColumns: isBR ? '1fr' : '1fr 1fr', gap: 18 }}>
+          {!isBR && (
+            <div>
+              <SubLabel>{t('pregame.rounds')}</SubLabel>
+              <Segmented value={settings.rounds}
+                options={[{ v: 3, label: '3' }, { v: 5, label: '5' }, { v: 10, label: '10' }]}
+                onChange={v => handleSettingChange('rounds', v)}/>
+            </div>
+          )}
+          <div>
+            <SubLabel>{t('lobby.timeLabel')}</SubLabel>
+            <Segmented value={settings.time_limit}
+              options={[{ v: 30, label: '30s' }, { v: 60, label: '60s' }, { v: 90, label: '90s' }, { v: 120, label: '120s' }]}
+              onChange={v => handleSettingChange('time_limit', v)}/>
+          </div>
         </div>
-        )}
-        <div>
-          <MpLabel>{t('lobby.timeLabel')}</MpLabel>
-          <Segmented value={settings.time_limit}
-            options={[{ v: 30, label: '30s' }, { v: 60, label: '60s' }, { v: 90, label: '90s' }, { v: 120, label: '120s' }]}
-            onChange={v => handleSettingChange('time_limit', v)}/>
-        </div>
-      </div>
+      </SettingSection>
 
-      <div>
-        <MpLabel>{t('lobby.categoriesLabel')}</MpLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {CATEGORIES.map(cat => {
-            const on = settings.categories.includes(cat.id)
-            return (
-              <button key={cat.id} onClick={() => toggleCategory(cat.id)} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999,
-                fontSize: 13, cursor: 'pointer',
-                border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
-                background: on ? 'var(--accent)' : 'transparent',
-                color: on ? '#fff' : 'var(--ink-2)',
-              }}>{t('cat.' + cat.id)}</button>
-            )
-          })}
-        </div>
-      </div>
+      <SettingSection label={t('lobby.categoriesLabel')}>
+        <CategoryChips selected={settings.categories} onToggle={toggleCategory}/>
+      </SettingSection>
 
-      <div>
-        <MpLabel>{t('lobby.yearSpread')}</MpLabel>
+      <SettingSection label={t('lobby.yearSpread')}>
         <YearRange
           from={settings.year_from}
           to={settings.year_to}
@@ -376,12 +333,12 @@ export default function MultiplayerLobbyPage() {
           onTo={v => handleSettingChange('year_to', v)}
         />
         {matchingEvents !== null && (
-          <p style={{ fontSize: 12, color: matchingEvents >= minEvents ? 'var(--ink-3)' : 'var(--danger)', margin: '8px 0 0', fontFamily: 'var(--font-mono)' }}>
+          <EventCountPill ok={matchingEvents >= minEvents}>
             {matchingEvents >= minEvents ? '✓' : '⚠'} {t('lobby.matching', { count: matchingEvents })}
-            {matchingEvents < minEvents && t('lobby.minRounds', { min: minEvents })}
-          </p>
+            {matchingEvents < minEvents ? t('lobby.minRounds', { min: minEvents }) : ''}
+          </EventCountPill>
         )}
-      </div>
+      </SettingSection>
     </div>
     )
   }
