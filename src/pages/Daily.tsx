@@ -7,8 +7,10 @@ import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
-  getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup,
+  getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup, getUserDailyResults, localDateISO,
 } from '@/lib/supabase'
+import { computeDailyStreak } from '@/lib/streak'
+import { streakUnlocks, type UnlockedTier } from '@/lib/achievements'
 import { haversineKm, roundScore, yearDiff, formatYear, formatDistance } from '@/lib/scoring'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { XP_BONUS_DAILY } from '@/lib/leveling'
@@ -58,6 +60,8 @@ export default function DailyChallengePage() {
   const [makeup, setMakeup] = useState<string | null>(null)
   const [makeupStatus, setMakeupStatus] = useState<{ balance: number; missed: string[] }>({ balance: 0, missed: [] })
   const [showMakeup, setShowMakeup] = useState(false)
+  // Odznaky za streak, které se právě získaly (ukážou se na výsledku u XP).
+  const [streakBadges, setStreakBadges] = useState<UnlockedTier[]>([])
 
   // Timer
   const [elapsed, setElapsed] = useState(0)
@@ -181,6 +185,18 @@ export default function DailyChallengePage() {
     setPhase('playing')
   }
 
+  // Spočte, jestli se přidáním daného dne (dnešek / doplněný den) překročil
+  // nějaký streak-milník → ty odznaky se ukážou na výsledku.
+  async function computeStreakBadges(addedISO: string) {
+    if (!user) return
+    try {
+      const rows = await getUserDailyResults(user.id)
+      const all = new Set(rows.map(r => r.date))
+      const before = new Set(all); before.delete(addedISO)
+      setStreakBadges(streakUnlocks(computeDailyStreak(before), computeDailyStreak(all)))
+    } catch { /* odznaky jsou best-effort */ }
+  }
+
   const doSubmit = useCallback(async (forceLat?: number | null, forceLng?: number | null, forceYear?: number) => {
     if (!event || !user || hasSubmittedRef.current) return
     hasSubmittedRef.current = true
@@ -205,6 +221,7 @@ export default function DailyChallengePage() {
       invalidateMenuCache()
       setLeaderboard([]); setAllScores([])
       getDailyMakeupStatus().then(setMakeupStatus).catch(() => {})
+      computeStreakBadges(makeup)
       setSubmitting(false); setShowStory(true); setPhase('result')
       return
     }
@@ -242,6 +259,7 @@ export default function DailyChallengePage() {
     ])
     setLeaderboard(lb)
     setAllScores(scores)
+    computeStreakBadges(localDateISO())
     setSubmitting(false)
     setShowStory(true)
     setPhase('result')
@@ -305,6 +323,7 @@ export default function DailyChallengePage() {
         isMakeup={!!makeup}
         makeupCount={makeupStatus.balance}
         onMakeup={makeupStatus.missed.length > 0 ? () => setShowMakeup(true) : undefined}
+        streakBadges={streakBadges}
         onMenu={() => navigate('/menu')}
       />
       {showMakeup && <MakeupSheet status={makeupStatus} onPick={startMakeup} onClose={() => setShowMakeup(false)}/>}
@@ -639,11 +658,11 @@ function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; my
 }
 
 // ── Výsledková obrazovka ──────────────────────────────────
-function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, onMenu }: {
+function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
   leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
-  makeupCount?: number; onMakeup?: () => void; onMenu: () => void
+  makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
 }) {
   const { t } = useTranslation()
   const [showShare, setShowShare] = useState(false)
@@ -789,6 +808,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         userId={userId}
         gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)}
         gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}}
+        extraUnlocked={streakBadges}
       />
     </div>
   ) : null

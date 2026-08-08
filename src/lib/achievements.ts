@@ -112,6 +112,35 @@ export const ACHIEVEMENTS: CategoryAchievements[] = [
   },
 ]
 
+// ── Série denních výzev ───────────────────────────────────
+// Odznaky za nepřerušený streak. Milníky = počet dní v řadě.
+export const STREAK_ACHIEVEMENTS: CategoryAchievements = {
+  id: 'streak', icon: '🔥', label: 'Série denních výzev',
+  tiers: [
+    { count: 3, icon: '🔥', name: 'Zapálený' },
+    { count: 7, icon: '📅', name: 'Týden v kuse' },
+    { count: 14, icon: '⚡', name: 'Dva týdny' },
+    { count: 30, icon: '🗓️', name: 'Měsíc v řadě' },
+    { count: 60, icon: '💎', name: 'Vytrvalec' },
+    { count: 100, icon: '🏆', name: 'Stovka v řadě' },
+    { count: 365, icon: '👑', name: 'Rok bez pauzy' },
+  ],
+}
+
+/** Odznak získaný na výsledkové obrazovce (ikona + název + kategorie). */
+export interface UnlockedTier { catIcon: string; catLabel: string; icon: string; name: string }
+
+/** Které streak-milníky se právě překročily (série z `before` na `after`). */
+export function streakUnlocks(before: number, after: number): UnlockedTier[] {
+  const out: UnlockedTier[] = []
+  for (const tier of STREAK_ACHIEVEMENTS.tiers) {
+    if (before < tier.count && tier.count <= after) {
+      out.push({ catIcon: STREAK_ACHIEVEMENTS.icon, catLabel: STREAK_ACHIEVEMENTS.label, icon: tier.icon, name: tier.name })
+    }
+  }
+  return out
+}
+
 /** Z počtu zásahů vrátí dosaženou a další úroveň. */
 export function tierProgress(tiers: Tier[], hits: number) {
   let current: Tier | null = null

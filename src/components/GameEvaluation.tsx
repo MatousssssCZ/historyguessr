@@ -3,17 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
 import { getProfile, getCategoryHits } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
-import { ACHIEVEMENTS } from '@/lib/achievements'
-
-interface UnlockedTier { catIcon: string; catLabel: string; icon: string; name: string }
+import { ACHIEVEMENTS, type UnlockedTier } from '@/lib/achievements'
 
 /**
  * Vyhodnocení po hře: získané XP, postup v levelu a nově odemčené achievementy.
  * `gameHits` = počet kol se skóre ≥950 v této hře po kategoriích (id → počet).
+ * `extraUnlocked` = předpočítané odznaky (např. streak) — přidají se navrch.
  * Odvozuje stav před/po z aktuálního XP v DB (= už po připsání) mínus `gainedXp`.
  */
-export default function GameEvaluation({ userId, gainedXp, gameHits }: {
-  userId?: string; gainedXp: number; gameHits: Record<string, number>
+export default function GameEvaluation({ userId, gainedXp, gameHits, extraUnlocked }: {
+  userId?: string; gainedXp: number; gameHits: Record<string, number>; extraUnlocked?: UnlockedTier[]
 }) {
   const { t } = useTranslation()
   const [xpAfter, setXpAfter] = useState<number | null>(null)
@@ -41,6 +40,7 @@ export default function GameEvaluation({ userId, gainedXp, gameHits }: {
     return () => { alive = false }
   }, [userId])
 
+  const shown = [...(extraUnlocked ?? []), ...unlocked]
   const before = xpAfter != null ? xpAfter - gainedXp : null
   const lvlBefore = before != null ? levelFromXp(before) : null
   const lvlAfter = xpAfter != null ? levelFromXp(xpAfter) : null
@@ -68,11 +68,11 @@ export default function GameEvaluation({ userId, gainedXp, gameHits }: {
       </div>
 
       {/* Odemčené achievementy */}
-      {unlocked.length > 0 && (
+      {shown.length > 0 && (
         <div className="card" style={{ padding: 16 }}>
           <p className="eyebrow" style={{ marginBottom: 10 }}>{t('game.newAchievements')}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {unlocked.map((u, i) => (
+            {shown.map((u, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ fontSize: 22, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: 'rgba(217,119,87,0.1)' }}>{u.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
