@@ -64,6 +64,8 @@ export default function DailyChallengePage() {
   // Odznaky za streak, které se právě získaly (ukážou se na výsledku u XP).
   const [streakBadges, setStreakBadges] = useState<UnlockedTier[]>([])
   const [streak, setStreak] = useState(0)   // aktuální série (pro žebříček milníků)
+  // Výsledek má 2 kroky: 'detail' (jak blízko/daleko, bez odznaků) → 'full' (odznaky, žebříček…)
+  const [resultStep, setResultStep] = useState<'detail' | 'full'>('full')
 
   // Timer
   const [elapsed, setElapsed] = useState(0)
@@ -111,6 +113,7 @@ export default function DailyChallengePage() {
         setGuessLat(existing.guess_lat); setGuessLng(existing.guess_lng); setGuessYear(existing.guess_year)
         setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: existing.score, yrDiff: yearDiff(existing.guess_year, yf, yt), xpMult: 1 })
       }
+      setResultStep('full')   // už odehráno → rovnou plný výsledek (bez detailu)
       setPhase('already_played')
       return
     }
@@ -227,7 +230,8 @@ export default function DailyChallengePage() {
       setLeaderboard([]); setAllScores([])
       getDailyMakeupStatus().then(setMakeupStatus).catch(() => {})
       computeStreakBadges(makeup)
-      setSubmitting(false); setShowStory(true); setPhase('result')
+      setResultStep('detail')
+      setSubmitting(false); setPhase('result')
       return
     }
 
@@ -265,8 +269,8 @@ export default function DailyChallengePage() {
     setLeaderboard(lb)
     setAllScores(scores)
     computeStreakBadges(localDateISO())
+    setResultStep('detail')
     setSubmitting(false)
-    setShowStory(true)
     setPhase('result')
   }, [event, user, guessLat, guessLng, guessYear, profile?.username, makeup])
 
@@ -310,7 +314,18 @@ export default function DailyChallengePage() {
     )
   }
 
-  // ── Výsledky (already_played nebo po odeslání) ──────────
+  // ── Krok 1 výsledku: jak blízko/daleko (bez odznaků) ────
+  if (phase === 'result' && resultStep === 'detail' && event && result) {
+    return (
+      <DailyDetailScreen
+        event={event} result={result}
+        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0} guessYear={guessYear}
+        onContinue={() => { setResultStep('full'); setShowStory(true) }}
+      />
+    )
+  }
+
+  // ── Krok 2 / Výsledky (already_played nebo po odeslání) ──
   if ((phase === 'result' || phase === 'already_played') && event && result) {
     return (
       <>
@@ -667,6 +682,44 @@ function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; my
 }
 
 // ── Výsledková obrazovka ──────────────────────────────────
+// ── Krok 1: čistá obrazovka „jak blízko/daleko" (bez odznaků) ──
+function DailyDetailScreen({ event, result, guessLat, guessLng, guessYear, onContinue }: {
+  event: Event
+  result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
+  guessLat: number; guessLng: number; guessYear: number; onContinue: () => void
+}) {
+  const { t } = useTranslation()
+  const distLabel = result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString(currentLocale())} km`
+  const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
+  const cell: React.CSSProperties = { background: 'var(--paper-200)', borderRadius: 12, padding: '11px 14px' }
+  const cellLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }
+  return (
+    <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)' }}>
+      <div style={{ textAlign: 'center', padding: '18px 16px 8px', flexShrink: 0 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>{t('daily.resultTitle')}</div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 56, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}</div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 5 }}>{t('common.pts')} · {t('game.outOf1000')}</div>
+      </div>
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        <ResultMap guessLat={guessLat} guessLng={guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+      </div>
+      <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flexShrink: 0 }}>
+        <div style={cell}>
+          <div style={cellLabel}>📍 {t('game.location')}</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20 }}>{distLabel}</div>
+        </div>
+        <div style={{ ...cell, background: result.yrDiff === 0 ? 'rgba(92,148,104,0.14)' : 'var(--paper-200)' }}>
+          <div style={cellLabel}>📅 {t('game.year')}</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: result.yrDiff === 0 ? 'var(--success-deep, #3f7a4d)' : 'var(--ink)' }}>{yearLabel}</div>
+        </div>
+      </div>
+      <div style={{ padding: '0 14px', paddingBottom: 'max(14px, env(safe-area-inset-bottom))', flexShrink: 0 }}>
+        <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '13px 0' }} onClick={onContinue}>{t('daily.continue')} →</button>
+      </div>
+    </div>
+  )
+}
+
 function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, streak, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
