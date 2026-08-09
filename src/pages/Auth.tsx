@@ -19,7 +19,7 @@ const PASSWORD_RULES = [
   { test: (p: string) => /[^A-Za-z0-9]/.test(p),  key: 'auth.ruleSpecial' },
 ]
 
-export default function AuthPage() {
+export default function AuthPage({ landing = false }: { landing?: boolean } = {}) {
   const { t } = useTranslation()
   const { isAnonymous } = useAuth()
   const navigate = useNavigate()
@@ -98,9 +98,7 @@ export default function AuthPage() {
 
   const isMobile = windowWidth < 768
 
-  if (!isMobile) {
-    // ── Desktop: split layout ──────────────────────────────
-    return (
+  const authUI = !isMobile ? (
       <div style={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--feature-bg)' }}>
 
         {/* Levá — branding */}
@@ -207,11 +205,8 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
-    )
-  }
-
-  // ── Mobil: fullscreen immersive ────────────────────────
-  return (
+  ) : (
+    // ── Mobil: fullscreen immersive ────────────────────────
     <div style={{
       minHeight: '100dvh',
       display: 'flex',
@@ -469,6 +464,59 @@ export default function AuthPage() {
           </p>
         </div>
       </div>
+    </div>
+  )
+
+  if (!landing) return authUI
+  return <>{authUI}<LandingSeo/></>
+}
+
+// Lehký, indexovatelný obsah pod přihlašovací stránkou (SEO / AI discoverability).
+// Vizuálně tlumený — hlavní je login nahoře; tohle je „pod ohybem".
+function LandingSeo() {
+  const { t } = useTranslation()
+  const steps = [
+    { icon: '🖼', t: t('menu.ht1t'), d: t('menu.ht1d') },
+    { icon: '📍', t: t('menu.ht2t'), d: t('menu.ht2d') },
+    { icon: '📅', t: t('menu.ht3t'), d: t('menu.ht3d') },
+  ]
+  const faq = [1, 2, 3, 4, 5].map(n => ({ q: t('landing.faqQ' + n), a: t('landing.faqA' + n) }))
+  return (
+    <div style={{ background: 'var(--paper-50)', color: 'var(--ink)', borderTop: '1px solid var(--line)' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 22px 20px' }}>
+        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65, textAlign: 'center', margin: '0 auto 40px', maxWidth: 580 }}>
+          {t('landing.sub')}
+        </p>
+
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, textAlign: 'center', margin: '0 0 20px', letterSpacing: '-0.01em' }}>{t('landing.howTitle')}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 44 }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 16px' }}>
+              <div style={{ fontSize: 24 }}>{s.icon}</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, margin: '10px 0 4px' }}>{i + 1}. {s.t}</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>{s.d}</div>
+            </div>
+          ))}
+        </div>
+
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, textAlign: 'center', margin: '0 0 20px', letterSpacing: '-0.01em' }}>{t('landing.faqTitle')}</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {faq.map((f, i) => (
+            <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px' }}>
+              <h3 style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, margin: '0 0 5px' }}>{f.q}</h3>
+              <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, margin: 0 }}>{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <footer style={{ maxWidth: 720, margin: '0 auto', padding: '32px 22px 48px', textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.7 }}>
+        <div>{t('landing.footer')}</div>
+        <div style={{ marginTop: 8 }}>
+          <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.terms')}</Link>
+          {' · '}
+          <Link to="/privacy" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.privacy')}</Link>
+        </div>
+      </footer>
     </div>
   )
 }

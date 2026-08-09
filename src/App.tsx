@@ -15,7 +15,6 @@ import PreGameLobbyPage from '@/pages/PreGameLobby'
 import AccountPage from '@/pages/Account'
 import PremiumPage from '@/pages/Premium'
 import RoadmapPage from '@/pages/Roadmap'
-import LandingPage from '@/pages/Landing'
 import DailyChallengePage from '@/pages/Daily'
 import ResetPasswordPage from '@/pages/ResetPassword'
 import StatsPage from '@/pages/Stats'
@@ -66,12 +65,12 @@ function RootRedirect() {
   return <Navigate to={user ? '/menu' : '/auth'} replace/>
 }
 
-// ── Domů: nepřihlášený → veřejná landing; přihlášený → menu ─
+// ── Domů: nepřihlášený → přihlašovací stránka (+ SEO blok); přihlášený → menu ─
 function HomeRoute() {
   const { user, loading } = useAuth()
   if (loading) return <FullScreenSpinner/>
   if (user) return <Navigate to="/menu" replace/>
-  return <LandingPage/>
+  return <AuthPage landing/>
 }
 
 // ── Full screen spinner ───────────────────────────────────
