@@ -8,7 +8,7 @@ import { validateUsername, USERNAME_MAX } from '@/lib/username'
 // který ještě nemá username (první přihlášení nebo historický účet bez ní).
 export default function UsernameSetup() {
   const { t } = useTranslation()
-  const { user, refreshProfile } = useAuth()
+  const { user, isAnonymous, refreshProfile } = useAuth()
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +48,15 @@ export default function UsernameSetup() {
           </button>
         </form>
         <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 14 }}>{t('setup.hint')}</p>
+        {isAnonymous && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 9, marginTop: 16,
+            background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 12, padding: '11px 13px',
+          }}>
+            <span style={{ flexShrink: 0, fontSize: 14, marginTop: 1 }}>ⓘ</span>
+            <span style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--ink-3)' }}>{t('setup.guestNote')}</span>
+          </div>
+        )}
       </div>
     </div>
   )
