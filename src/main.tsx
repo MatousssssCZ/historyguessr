@@ -5,8 +5,11 @@ import './styles/globals.css'
 import 'leaflet/dist/leaflet.css'
 import { applyTheme, getTheme } from './lib/theme'
 import { initInstallPrompt } from './lib/pwaInstall'
+import { initSentry } from './lib/sentry'
 import './i18n'
 
+// Sledování chyb (aktivní jen s VITE_SENTRY_DSN)
+initSentry()
 // Aplikuj uložené téma co nejdřív (zabrání bliknutí)
 applyTheme(getTheme())
 // Zachyť `beforeinstallprompt` dřív, než ji prohlížeč zahodí

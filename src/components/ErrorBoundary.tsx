@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react'
 import i18n from '@/i18n'
 import { submitFeedback } from '@/lib/feedback'
+import { Sentry } from '@/lib/sentry'
 
 interface Props { children: ReactNode }
 interface State { hasError: boolean; message?: string; reporting: boolean; note: string; sent: boolean }
@@ -16,6 +17,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(err: unknown) {
     console.error('[ErrorBoundary]', err)
+    Sentry.captureException(err)
   }
 
   private async sendReport() {
