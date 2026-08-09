@@ -266,6 +266,7 @@ export const resources = {
       quote: '„Kdo nezná historii, je odsouzen ji znovu prožívat."', quoteAuthor: '— George Santayana',
       disclaimer: 'Historyguesser je fanouškovský vzdělávací projekt. Historické události a panoramata mohou obsahovat nepřesnosti — berte je s rezervou.', legal: 'Používáním aplikace souhlasíš s', terms: 'podmínkami použití', and: 'a', privacy: 'zásadami ochrany údajů',
     },
+    ads: { label: 'Reklama' },
     menu: {
       welcomeBack: 'Vítej zpět', greeting: 'Vítej zpět, {{name}}',
       heroTitle: 'Začni novou výpravu', heroTag: 'Klasický mód · 5 kol', heroSub: '360° panoramy · tipni místo + rok', heroTagline: 'Buď u toho, když se psaly dějiny.',
@@ -556,6 +557,7 @@ export const resources = {
       quote: '"Those who cannot remember the past are condemned to repeat it."', quoteAuthor: '— George Santayana',
       disclaimer: 'Historyguesser is a fan-made educational project. Historical events and panoramas may contain inaccuracies — take them with a grain of salt.', legal: 'By using the app you agree to the', terms: 'terms of use', and: 'and', privacy: 'privacy policy',
     },
+    ads: { label: 'Advertisement' },
     menu: {
       welcomeBack: 'Welcome back', greeting: 'Welcome back, {{name}}',
       heroTitle: 'Start a new journey', heroTag: 'Classic mode · 5 rounds', heroSub: '360° panoramas · guess place + year', heroTagline: 'Be there when history was written.',
@@ -846,6 +848,7 @@ export const resources = {
       quote: '„Wer sich nicht an die Vergangenheit erinnern kann, ist dazu verdammt, sie zu wiederholen."', quoteAuthor: '— George Santayana',
       disclaimer: 'Historyguesser ist ein Fan-Bildungsprojekt. Historische Ereignisse und Panoramen können Ungenauigkeiten enthalten — nimm sie mit Vorsicht.', legal: 'Mit der Nutzung stimmst du den', terms: 'Nutzungsbedingungen', and: 'und der', privacy: 'Datenschutzerklärung',
     },
+    ads: { label: 'Werbung' },
     menu: {
       welcomeBack: 'Willkommen zurück', greeting: 'Willkommen zurück, {{name}}',
       heroTitle: 'Starte eine neue Reise', heroTag: 'Klassischer Modus · 5 Runden', heroSub: '360°-Panoramen · Ort + Jahr raten', heroTagline: 'Sei dabei, wenn Geschichte geschrieben wird.',

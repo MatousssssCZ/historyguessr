@@ -26,8 +26,8 @@ describe('reklamy — Premium je nikdy nevidí', () => {
   })
 })
 
-describe('reklamy — první verze je nezobrazuje', () => {
-  it('dokud je AD_ENABLED false, nezobrazí se nikomu a nikde', () => {
+describe('reklamy — bez AdSense klíče se nezobrazují', () => {
+  it('dokud není VITE_ADSENSE_CLIENT, AD_ENABLED je false a nezobrazí se nikde', () => {
     expect(AD_ENABLED).toBe(false)
     for (const p of ALL_PLACEMENTS) {
       expect(shouldShowAdAt(p, free, NOW)).toBe(false)

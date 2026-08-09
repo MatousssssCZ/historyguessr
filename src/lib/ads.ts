@@ -43,8 +43,28 @@ export function shouldShowAdAt(
   return AD_ENABLED && ALLOWED_PLACEMENTS.has(placement)
 }
 
-/** Přepínač pro celou appku — dokud je false, reklamy se nezobrazují nikde. */
-export const AD_ENABLED = false
+/**
+ * Publisher ID z AdSense (`ca-pub-…`). Žije jen v env — na produkci
+ * ve Vercelu. Dokud není nastaven, reklamy jsou globálně vypnuté.
+ */
+export const ADSENSE_CLIENT = (import.meta.env.VITE_ADSENSE_CLIENT as string | undefined) || ''
+
+/**
+ * Přepínač pro celou appku. Reklamy se zapnou automaticky, jakmile je
+ * v env vyplněn `VITE_ADSENSE_CLIENT` (tj. po schválení AdSense).
+ */
+export const AD_ENABLED = !!ADSENSE_CLIENT
+
+/** Slot ID pro dané umístění (z AdSense → Ad units). Prázdné = nezobrazí se. */
+export function adSlotId(placement: AdPlacement): string {
+  const map: Record<AdPlacement, string | undefined> = {
+    after_game_finished: import.meta.env.VITE_ADSENSE_SLOT_AFTER_GAME as string | undefined,
+    after_campaign_finished: import.meta.env.VITE_ADSENSE_SLOT_AFTER_CAMPAIGN as string | undefined,
+    overview_screen: import.meta.env.VITE_ADSENSE_SLOT_OVERVIEW as string | undefined,
+    before_next_game: import.meta.env.VITE_ADSENSE_SLOT_BEFORE_NEXT as string | undefined,
+  }
+  return map[placement] || ''
+}
 
 const ALLOWED_PLACEMENTS: ReadonlySet<AdPlacement> = new Set<AdPlacement>([
   'after_game_finished',

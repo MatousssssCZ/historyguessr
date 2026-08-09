@@ -14,6 +14,7 @@ import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
+import AdSlot from '@/components/AdSlot'
 import { isStandalone, isInstallTileHidden } from '@/lib/pwaInstall'
 import { DownloadIcon } from '@/components/BrowserIcons'
 
@@ -337,6 +338,9 @@ export default function MenuPage() {
 
         {/* Poslední dlaždice — přidání na plochu */}
         {installTile && <><div style={{ height: 12 }}/>{installTile}</>}
+
+        {/* Reklama (jen Free; zobrazí se až po zapnutí AdSense) */}
+        <AdSlot placement="overview_screen" label={t('ads.label')} />
       </div>
 
       {/* Sdílená spodní lišta */}
