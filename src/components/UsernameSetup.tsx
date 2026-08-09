@@ -1,17 +1,26 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { updateProfile } from '@/lib/supabase'
+import { updateProfile, signOut } from '@/lib/supabase'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
+import BackButton from '@/components/BackButton'
 
 // Vynucené nastavení přezdívky — zobrazí se přihlášenému uživateli,
 // který ještě nemá username (první přihlášení nebo historický účet bez ní).
 export default function UsernameSetup() {
   const { t } = useTranslation()
   const { user, isAnonymous, refreshProfile } = useAuth()
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Zpět na přihlášení — odhlásí (host = zahodí anon session) a jde na /
+  async function goBack() {
+    await signOut()
+    navigate('/', { replace: true })
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,6 +42,7 @@ export default function UsernameSetup() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)', padding: 24 }}>
       <div className="card" style={{ width: '100%', maxWidth: 420, padding: 32 }}>
+        <BackButton onClick={goBack} label={t('common.back')} style={{ marginBottom: 18 }} />
         <div style={{ fontSize: 36, marginBottom: 10 }}>👋</div>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, margin: '0 0 6px', letterSpacing: '-0.01em' }}>{t('setup.title')}</h1>
         <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 22px' }}>{t('setup.sub')}</p>
