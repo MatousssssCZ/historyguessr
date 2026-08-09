@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { signIn, signUp, requestPasswordReset, track, playAsGuest, convertGuestToAccount } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import Turnstile from '@/components/Turnstile'
+import { CAPTCHA_ENABLED } from '@/lib/turnstile'
 
 const forgotLinkStyle: React.CSSProperties = {
   alignSelf: 'flex-end', background: 'none', border: 'none', padding: 0,
@@ -29,8 +31,9 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
   // Vstup bez registrace — persistentní anonym (data se pak dají zachovat konverzí)
   async function startGuest() {
     setError(null)
-    const { error } = await playAsGuest()
-    if (error) { setError(t('auth.errGeneric')); return }
+    if (CAPTCHA_ENABLED && !captcha) { setError(t('auth.captchaWait')); return }
+    const { error } = await playAsGuest(captcha || undefined)
+    if (error) { setError(t('auth.errGeneric')); resetCaptcha(); return }
     navigate('/menu')
   }
   const [email, setEmail] = useState('')
@@ -40,6 +43,10 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  // Captcha token (Turnstile). '' = není potřeba (vypnuto), null = čeká na ověření.
+  const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
+  const [captchaKey, setCaptchaKey] = useState(0)
+  const resetCaptcha = () => { if (CAPTCHA_ENABLED) { setCaptcha(null); setCaptchaKey(k => k + 1) } }
 
   const passwordValid = PASSWORD_RULES.every(r => r.test(password))
   const isRegister = mode === 'register'
@@ -57,19 +64,21 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
       if (!passwordValid) { setError(t('auth.weak')); return }
       if (password !== confirmPassword) { setError(t('auth.mismatch')); return }
     }
+    // Konverze anonyma (updateUser) captcha nevyžaduje — jinak ji vyžadujeme.
+    if (CAPTCHA_ENABLED && !captcha && !(isRegister && isAnonymous)) { setError(t('auth.captchaWait')); return }
     setLoading(true)
     try {
       if (isRegister) {
         // Anonym → konverze na plný účet (data zůstanou); jinak nová registrace
         const { error } = isAnonymous
           ? await convertGuestToAccount(email, password)
-          : await signUp(email, password)
+          : await signUp(email, password, captcha || undefined)
         if (error) throw error
         setSuccess(t('auth.registered'))
         setPassword(''); setConfirmPassword('')
         track('sign_up', { email, converted: isAnonymous })
       } else {
-        const { error } = await signIn(email, password)
+        const { error } = await signIn(email, password, captcha || undefined)
         if (error) throw error
         track('login', { email })
         navigate('/menu')
@@ -80,20 +89,22 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
       else if (msg.includes('already registered')) setError(t('auth.errExists'))
       else if (msg.includes('Email not confirmed')) setError(t('auth.errUnconfirmed'))
       else setError(msg)
+      resetCaptcha()
     } finally { setLoading(false) }
   }
 
   async function handleForgot() {
     setError(null); setSuccess(null)
     if (!email) { setError(t('auth.enterEmailFirst')); return }
+    if (CAPTCHA_ENABLED && !captcha) { setError(t('auth.captchaWait')); return }
     setLoading(true)
     try {
-      const { error } = await requestPasswordReset(email)
+      const { error } = await requestPasswordReset(email, captcha || undefined)
       if (error) throw error
       setSuccess(t('auth.resetSent'))
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('auth.errResetFailed'))
-    } finally { setLoading(false) }
+    } finally { setLoading(false); resetCaptcha() }
   }
 
   const isMobile = windowWidth < 768
@@ -192,6 +203,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
             </form>
+            <Turnstile key={captchaKey} onToken={setCaptcha} theme="light"/>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
@@ -443,6 +455,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
             </button>
           </form>
 
+          <Turnstile key={captchaKey} onToken={setCaptcha} theme="light"/>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0 14px' }}>
             <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>

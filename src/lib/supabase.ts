@@ -36,16 +36,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // ─── Auth ─────────────────────────────────────────────────
 
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string, captchaToken?: string) {
   return supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback`, captchaToken },
   })
 }
 
-export async function signIn(email: string, password: string) {
-  return supabase.auth.signInWithPassword({ email, password })
+export async function signIn(email: string, password: string, captchaToken?: string) {
+  return supabase.auth.signInWithPassword({ email, password, options: { captchaToken } })
 }
 
 export async function signOut() {
@@ -54,8 +54,8 @@ export async function signOut() {
 
 /** Anonymní hraní bez registrace — vytvoří persistentní anon účet.
  *  Přezdívku si hráč zvolí v UsernameSetup (jeden krok), pak plná appka. */
-export async function playAsGuest(): Promise<{ error: Error | null }> {
-  const { error } = await supabase.auth.signInAnonymously()
+export async function playAsGuest(captchaToken?: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase.auth.signInAnonymously({ options: { captchaToken } })
   return { error: (error as Error) ?? null }
 }
 
@@ -69,9 +69,10 @@ export async function convertGuestToAccount(email: string, password: string) {
 }
 
 /** Pošle e-mail s odkazem na reset hesla */
-export async function requestPasswordReset(email: string) {
+export async function requestPasswordReset(email: string, captchaToken?: string) {
   return supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
+    captchaToken,
   })
 }
 
