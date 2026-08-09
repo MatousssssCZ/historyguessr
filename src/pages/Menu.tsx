@@ -47,7 +47,7 @@ export function invalidateMenuCache() { menuCache = null }
 
 export default function MenuPage() {
   const { t } = useTranslation()
-  const { user, profile } = useAuth()
+  const { user, profile, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
 
@@ -131,7 +131,7 @@ export default function MenuPage() {
       getTodayDailyResult(user.id).catch(() => null),
       getUserDailyResults(user.id).catch(() => [] as { date: string }[]),
       getFriendRequests().catch(() => [] as unknown[]),
-      getWorldRank().catch(() => null),
+      isAnonymous ? Promise.resolve(null) : getWorldRank().catch(() => null),  // žebříček jen pro registrované
       getCategoryHits(user.id).catch(() => ({} as Record<string, number>)),
     ]).then(([res, rows, reqs, w, hits]) => {
       if (!alive) return
@@ -274,7 +274,9 @@ export default function MenuPage() {
 
             {isPremium
               ? <div style={{ marginTop: 16 }}><RoadmapTile onClick={() => navigate('/roadmap')}/></div>
-              : <div style={{ marginTop: 16 }}><PremiumBanner onClick={() => navigate('/premium')}/></div>}
+              : isAnonymous
+                ? <div style={{ marginTop: 16 }}><SaveProgressBanner onClick={() => navigate('/auth', { state: { mode: 'register' } })}/></div>
+                : <div style={{ marginTop: 16 }}><PremiumBanner onClick={() => navigate('/premium')}/></div>}
 
             {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
           </div>
@@ -329,7 +331,9 @@ export default function MenuPage() {
 
         {isPremium
           ? <><div style={{ height: 12 }}/><RoadmapTile onClick={() => navigate('/roadmap')}/></>
-          : <><div style={{ height: 12 }}/><PremiumBanner onClick={() => navigate('/premium')}/></>}
+          : isAnonymous
+            ? <><div style={{ height: 12 }}/><SaveProgressBanner onClick={() => navigate('/auth', { state: { mode: 'register' } })}/></>
+            : <><div style={{ height: 12 }}/><PremiumBanner onClick={() => navigate('/premium')}/></>}
 
         {/* Poslední dlaždice — přidání na plochu */}
         {installTile && <><div style={{ height: 12 }}/>{installTile}</>}
@@ -584,6 +588,24 @@ function PremiumBanner({ onClick }: { onClick: () => void }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.premiumCtaTitle')}</div>
         <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.premiumCtaSub')}</div>
+      </div>
+      <span style={{ fontSize: 18, opacity: 0.9 }}>›</span>
+    </button>
+  )
+}
+
+// ─── Banner pro anonyma: ulož si postup / soutěž ──────────
+function SaveProgressBanner({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+      background: ACCENT_GRAD, border: 'none', borderRadius: 18, padding: '14px 16px', color: '#fff',
+    }}>
+      <span style={{ fontSize: 22, flexShrink: 0 }}>💾</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.guestSaveTitle')}</div>
+        <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.guestSaveSub')}</div>
       </div>
       <span style={{ fontSize: 18, opacity: 0.9 }}>›</span>
     </button>

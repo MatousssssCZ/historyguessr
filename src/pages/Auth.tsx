@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { signIn, signUp, requestPasswordReset, track } from '@/lib/supabase'
+import { signIn, signUp, requestPasswordReset, track, playAsGuest, convertGuestToAccount } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 const forgotLinkStyle: React.CSSProperties = {
@@ -20,9 +21,18 @@ const PASSWORD_RULES = [
 
 export default function AuthPage() {
   const { t } = useTranslation()
+  const { isAnonymous } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [mode, setMode] = useState<Mode>((location.state as { mode?: Mode } | null)?.mode === 'register' ? 'register' : 'login')
+
+  // Vstup bez registrace — persistentní anonym (data se pak dají zachovat konverzí)
+  async function startGuest() {
+    setError(null)
+    const { error } = await playAsGuest()
+    if (error) { setError(t('auth.errGeneric')); return }
+    navigate('/menu')
+  }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -50,11 +60,14 @@ export default function AuthPage() {
     setLoading(true)
     try {
       if (isRegister) {
-        const { error } = await signUp(email, password)
+        // Anonym → konverze na plný účet (data zůstanou); jinak nová registrace
+        const { error } = isAnonymous
+          ? await convertGuestToAccount(email, password)
+          : await signUp(email, password)
         if (error) throw error
         setSuccess(t('auth.registered'))
         setPassword(''); setConfirmPassword('')
-        track('sign_up', { email })
+        track('sign_up', { email, converted: isAnonymous })
       } else {
         const { error } = await signIn(email, password)
         if (error) throw error
@@ -186,7 +199,7 @@ export default function AuthPage() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
             </div>
-            <button onClick={() => navigate('/try')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 12, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--accent-deep)', cursor: 'pointer' }}>
+            <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 12, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--accent-deep)', cursor: 'pointer' }}>
               <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
             </button>
             <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 9 }}>{t('menu.trialFree')}</div>
@@ -440,7 +453,7 @@ export default function AuthPage() {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
             <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
           </div>
-          <button onClick={() => navigate('/try')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 13, padding: 14, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: 'var(--accent-deep)', cursor: 'pointer' }}>
+          <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 13, padding: 14, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: 'var(--accent-deep)', cursor: 'pointer' }}>
             <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
           </button>
           <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 8 }}>{t('menu.trialFree')}</div>

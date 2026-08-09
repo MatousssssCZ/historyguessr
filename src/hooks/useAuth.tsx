@@ -9,6 +9,7 @@ interface AuthContextValue {
   profile: Profile | null
   loading: boolean
   isAdmin: boolean
+  isAnonymous: boolean
   refreshProfile: () => Promise<void>
 }
 
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   loading: true,
   isAdmin: false,
+  isAnonymous: false,
   refreshProfile: async () => {},
 })
 
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       loading,
       isAdmin: profile?.role === 'admin',
+      isAnonymous: !!(user as (User & { is_anonymous?: boolean }) | null)?.is_anonymous,
       refreshProfile,
     }}>
       {children}

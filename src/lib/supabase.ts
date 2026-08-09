@@ -52,6 +52,22 @@ export async function signOut() {
   return supabase.auth.signOut()
 }
 
+/** Anonymní hraní bez registrace — vytvoří persistentní anon účet.
+ *  Přezdívku si hráč zvolí v UsernameSetup (jeden krok), pak plná appka. */
+export async function playAsGuest(): Promise<{ error: Error | null }> {
+  const { error } = await supabase.auth.signInAnonymously()
+  return { error: (error as Error) ?? null }
+}
+
+/** Konverze anonyma na plný účet — připojí e-mail/heslo, DATA ZŮSTANOU.
+ *  Supabase pošle potvrzovací e-mail; po potvrzení už není anonym. */
+export async function convertGuestToAccount(email: string, password: string) {
+  return supabase.auth.updateUser(
+    { email, password },
+    { emailRedirectTo: `${window.location.origin}/auth/callback` },
+  )
+}
+
 /** Pošle e-mail s odkazem na reset hesla */
 export async function requestPasswordReset(email: string) {
   return supabase.auth.resetPasswordForEmail(email, {
@@ -799,8 +815,9 @@ export async function getDailyLeaderboard(): Promise<DailyResult[]> {
   const today = localDateISO()
   const { data } = await supabase
     .from('daily_results')
-    .select('*, profiles(username)')
+    .select('*, profiles!inner(username, is_anonymous)')
     .eq('date', today)
+    .eq('profiles.is_anonymous', false)   // žebříček jen pro registrované
     .order('score', { ascending: false })
     .limit(10)
   return (data ?? []) as DailyResult[]
@@ -826,10 +843,13 @@ export async function getDailyFriendsLeaderboard(userId: string, ownUsername: st
   })) as unknown as DailyResult[]
 }
 
-/** Všechna dnešní skóre (pro histogram — celý svět). */
+/** Všechna dnešní skóre (pro histogram — celý svět, jen registrovaní). */
 export async function getDailyAllScores(): Promise<number[]> {
   const today = localDateISO()
-  const { data } = await supabase.from('daily_results').select('score').eq('date', today)
+  const { data } = await supabase.from('daily_results')
+    .select('score, profiles!inner(is_anonymous)')
+    .eq('date', today)
+    .eq('profiles.is_anonymous', false)
   return (data ?? []).map(r => (r as { score: number }).score)
 }
 

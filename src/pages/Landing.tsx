@@ -1,13 +1,24 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { Link } from 'react-router-dom'
+import { playAsGuest } from '@/lib/supabase'
 
 // Veřejná landing pro nepřihlášené — jediná bohatá, indexovatelná stránka
 // (SEO / AI discoverability). Nepotřebuje přihlášení. CTA vedou do hry.
 export default function LandingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [guestBusy, setGuestBusy] = useState(false)
+
+  async function startGuest() {
+    if (guestBusy) return
+    setGuestBusy(true)
+    const { error } = await playAsGuest()
+    if (error) { setGuestBusy(false); navigate('/auth'); return }
+    navigate('/menu')
+  }
 
   const steps = [
     { icon: '🖼', t: t('menu.ht1t'), d: t('menu.ht1d') },
@@ -34,7 +45,7 @@ export default function LandingPage() {
         <p style={{ fontSize: 17, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 auto 28px', maxWidth: 560 }}>{t('landing.sub')}</p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate('/auth', { state: { mode: 'register' } })} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 13, padding: '14px 26px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>{t('landing.ctaPlay')} →</button>
-          <button onClick={() => navigate('/try')} style={{ background: 'transparent', color: 'var(--ink)', border: '1.5px solid var(--line-strong)', borderRadius: 13, padding: '14px 26px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>{t('landing.ctaTry')}</button>
+          <button onClick={startGuest} disabled={guestBusy} style={{ background: 'transparent', color: 'var(--ink)', border: '1.5px solid var(--line-strong)', borderRadius: 13, padding: '14px 26px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: guestBusy ? 0.6 : 1 }}>{t('landing.ctaTry')}</button>
         </div>
         <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 12 }}>{t('landing.freeNote')}</div>
       </section>
