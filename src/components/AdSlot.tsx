@@ -5,10 +5,14 @@ import { shouldShowAdAt, adSlotId, ADSENSE_CLIENT, AD_ENABLED, type AdPlacement 
 
 // Jednorázové načtení AdSense skriptu. Google si sám řeší GDPR souhlas
 // (AdSense → Privacy & messaging), pokud je zapnutý — vlastní CMP neděláme.
+// Skript už je většinou v index.html (kvůli ověření webu) — pak ho znovu
+// nevkládáme, jen počkáme, až bude knihovna k dispozici.
 let scriptPromise: Promise<void> | null = null
 function loadAdSense(): Promise<void> {
   if (scriptPromise) return scriptPromise
   scriptPromise = new Promise<void>((resolve) => {
+    // Už načtený (index.html) → hotovo
+    if (document.querySelector('script[src*="adsbygoogle.js"]')) { resolve(); return }
     const s = document.createElement('script')
     s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`
     s.async = true
