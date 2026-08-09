@@ -15,6 +15,7 @@ import CompassLoader from '@/components/CompassLoader'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
+import AdSlot from '@/components/AdSlot'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Event, RoundResult, CampaignReward, RewardRarity } from '@/types/database'
 
@@ -1052,6 +1053,9 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
           <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onMenu}>{t('game.menu')}</button>
           <button className="btn btn-accent" style={{ flex: 1 }} onClick={onPlayAgain}>{t('game.playAgain')}</button>
         </div>
+
+        {/* Reklama (jen Free; oddělená od tlačítek kvůli AdSense pravidlům) */}
+        <AdSlot placement="after_game_finished" label={t('ads.label')} />
       </div>
     </div>
   )
