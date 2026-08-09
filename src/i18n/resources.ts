@@ -117,7 +117,7 @@ export const resources = {
       eyebrow: 'Historyguesser Premium', heroTitle: 'Odemkni celý Historyguesser', heroSub: 'Bez reklam, všechny kampaně a plná kontrola nad hrou.',
       activeTitle: 'Máš Premium 🎉', activeSub: 'Díky, že podporuješ projekt. Užívej všech výhod.',
       until: 'Platí do {{date}}', thanksActive: 'Předplatné je aktivní.',
-      whatYouGet: 'Co získáš', perMonth: 'měsíc', cancelAnytime: 'Zrušíš kdykoli.', cta: 'Odemknout Premium', comingSoon: 'Platební brána se brzy spustí — děkujeme za zájem!',
+      whatYouGet: 'Co získáš', perMonth: 'měsíc', cancelAnytime: 'Zrušíš kdykoli.', cta: 'Odemknout Premium', comingSoon: 'Platební brána se brzy spustí — děkujeme za zájem!', guestCta: 'Vytvoř si účet a pořiď Premium', guestNote: 'Hraješ bez registrace. Premium potřebuje účet — aby byl tvůj nákup obnovitelný a nepřišel jsi o něj. Postup i tak zůstane zachovaný.',
       benefit: {
         noAds: { t: 'Žádné reklamy', d: 'Čistá hra bez přerušení.' },
         campaigns: { t: 'Všechny kampaně a výpravy', d: 'Přístup k Premium kategoriím i kampaním.' },
@@ -409,7 +409,7 @@ export const resources = {
       eyebrow: 'Historyguesser Premium', heroTitle: 'Unlock the full Historyguesser', heroSub: 'No ads, every campaign and full control over your game.',
       activeTitle: "You're Premium 🎉", activeSub: 'Thanks for supporting the project. Enjoy all the perks.',
       until: 'Valid until {{date}}', thanksActive: 'Your subscription is active.',
-      whatYouGet: 'What you get', perMonth: 'month', cancelAnytime: 'Cancel anytime.', cta: 'Unlock Premium', comingSoon: 'The payment gateway is coming soon — thanks for your interest!',
+      whatYouGet: 'What you get', perMonth: 'month', cancelAnytime: 'Cancel anytime.', cta: 'Unlock Premium', comingSoon: 'The payment gateway is coming soon — thanks for your interest!', guestCta: 'Create an account & get Premium', guestNote: 'You are playing without an account. Premium needs an account so your purchase is recoverable and you won’t lose it. Your progress is kept either way.',
       benefit: {
         noAds: { t: 'No ads', d: 'A clean game without interruptions.' },
         campaigns: { t: 'All campaigns and expeditions', d: 'Access to Premium categories and campaigns.' },
@@ -701,7 +701,7 @@ export const resources = {
       eyebrow: 'Historyguesser Premium', heroTitle: 'Schalte den ganzen Historyguesser frei', heroSub: 'Keine Werbung, alle Kampagnen und volle Kontrolle über dein Spiel.',
       activeTitle: 'Du hast Premium 🎉', activeSub: 'Danke, dass du das Projekt unterstützt. Genieße alle Vorteile.',
       until: 'Gültig bis {{date}}', thanksActive: 'Dein Abonnement ist aktiv.',
-      whatYouGet: 'Das bekommst du', perMonth: 'Monat', cancelAnytime: 'Jederzeit kündbar.', cta: 'Premium freischalten', comingSoon: 'Die Zahlungsabwicklung kommt bald — danke für dein Interesse!',
+      whatYouGet: 'Das bekommst du', perMonth: 'Monat', cancelAnytime: 'Jederzeit kündbar.', cta: 'Premium freischalten', comingSoon: 'Die Zahlungsabwicklung kommt bald — danke für dein Interesse!', guestCta: 'Konto erstellen & Premium holen', guestNote: 'Du spielst ohne Konto. Premium braucht ein Konto, damit dein Kauf wiederherstellbar ist und nicht verloren geht. Dein Fortschritt bleibt so oder so erhalten.',
       benefit: {
         noAds: { t: 'Keine Werbung', d: 'Ein sauberes Spiel ohne Unterbrechungen.' },
         campaigns: { t: 'Alle Kampagnen und Expeditionen', d: 'Zugang zu Premium-Kategorien und Kampagnen.' },

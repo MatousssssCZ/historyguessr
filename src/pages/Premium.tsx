@@ -9,7 +9,7 @@ import { currentLocale } from '@/i18n'
 
 export default function PremiumPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [ent, setEnt] = useState<Entitlements | null>(null)
   const [loading, setLoading] = useState(true)
@@ -90,14 +90,28 @@ export default function PremiumPage() {
               <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>/ {t('premium.perMonth')}</span>
             </div>
             <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)', marginBottom: 16 }}>{t('premium.cancelAnytime')}</div>
-            <button onClick={handleCheckout} style={{
-              width: '100%', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 13,
-              padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer',
-            }}>{t('premium.cta')}</button>
-            {checkoutNote && (
-              <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12.5, color: 'var(--accent-deep)', background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.2)', borderRadius: 10, padding: '10px 12px' }}>
-                {t('premium.comingSoon')}
-              </div>
+            {isAnonymous ? (
+              <>
+                <button onClick={() => navigate('/auth', { state: { mode: 'register' } })} style={{
+                  width: '100%', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 13,
+                  padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer',
+                }}>{t('premium.guestCta')} →</button>
+                <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+                  {t('premium.guestNote')}
+                </div>
+              </>
+            ) : (
+              <>
+                <button onClick={handleCheckout} style={{
+                  width: '100%', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 13,
+                  padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, cursor: 'pointer',
+                }}>{t('premium.cta')}</button>
+                {checkoutNote && (
+                  <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12.5, color: 'var(--accent-deep)', background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.2)', borderRadius: 10, padding: '10px 12px' }}>
+                    {t('premium.comingSoon')}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
