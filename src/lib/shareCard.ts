@@ -19,7 +19,7 @@ export interface ShareCardData {
     year: string         // Rok
     better: string       // „Lepší než 78 % hráčů"
     cta: string          // „Zahraj si taky"
-    site: string         // historyguessr.vercel.app
+    site: string         // historyguesser.net
   }
 }
 

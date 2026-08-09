@@ -749,7 +749,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     `Historyguesser · ${t('menu.dailyMobile')} · ${dateLabel}`,
     `★ ${result.totalScore} / 1000`,
     `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`,
-    'historyguessr.vercel.app',
+    'historyguesser.net',
   ].join('\n')
   const [histModal, setHistModal] = useState(false)
   const [showPano, setShowPano] = useState(false)

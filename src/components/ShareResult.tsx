@@ -31,7 +31,7 @@ export default function ShareResult({ data, shareText, onClose }: ShareResultPro
         year: t('common.year'),
         better: data.betterThan != null ? t('daily.shareBetter', { p: data.betterThan }) : '',
         cta: t('daily.shareCta'),
-        site: 'historyguessr.vercel.app',
+        site: 'historyguesser.net',
       },
     }).then(b => {
       if (!alive) return
