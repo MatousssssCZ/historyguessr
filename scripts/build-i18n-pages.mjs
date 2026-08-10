@@ -96,7 +96,7 @@ function jsonLd(v) {
           { '@type': 'Offer', price: '0', priceCurrency: 'CZK', description: 'Free' },
           { '@type': 'Offer', price: '99', priceCurrency: 'CZK', description: 'Premium — monthly subscription' },
         ],
-        author: { '@type': 'Person', name: 'Matouš Bahník' },
+        author: { '@type': 'Organization', name: 'Historyguesser' },
       },
       {
         '@type': 'FAQPage',

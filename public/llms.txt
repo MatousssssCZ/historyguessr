@@ -15,4 +15,5 @@
 - Podmínky použití: https://historyguesser.net/terms
 
 ## Provozovatel
-- Matouš Bahník, Liberec, Česká republika
+- Nezávislý vzdělávací projekt, Česká republika
+- Kontakt: historyguesser.net@gmail.com
