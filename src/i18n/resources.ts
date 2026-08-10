@@ -7,7 +7,7 @@ export const resources = {
       lastUpdated: 'Poslední aktualizace',
       privacy: {
         title: 'Zásady ochrany osobních údajů',
-        s1t: '1. Kdo jsme', s1b: 'Historyguesser je vzdělávací webová hra dostupná na adrese historyguessr.vercel.app. Provozovatelem aplikace je Matouš Bahník, Liberec, IČO: 21213887.',
+        s1t: '1. Kdo jsme', s1b: 'Historyguesser je vzdělávací webová hra dostupná na adrese historyguesser.net. Provozovatelem aplikace je Matouš Bahník, Liberec, IČO: 21213887.',
         s2t: '2. Jaké údaje sbíráme', s2intro: 'Při registraci a používání aplikace shromažďujeme:',
         s2i1: 'E-mailová adresa', s2i1d: ' — pro přihlášení a komunikaci',
         s2i2: 'Uživatelské jméno', s2i2d: ' — zobrazované v žebříčcích',
@@ -299,7 +299,7 @@ export const resources = {
       lastUpdated: 'Last updated',
       privacy: {
         title: 'Privacy Policy',
-        s1t: '1. Who we are', s1b: 'Historyguesser is an educational web game available at historyguessr.vercel.app. The application is operated by Matouš Bahník, Liberec, Czech Republic (Business ID: 21213887).',
+        s1t: '1. Who we are', s1b: 'Historyguesser is an educational web game available at historyguesser.net. The application is operated by Matouš Bahník, Liberec, Czech Republic (Business ID: 21213887).',
         s2t: '2. What data we collect', s2intro: 'When you register and use the app we collect:',
         s2i1: 'Email address', s2i1d: ' — for sign-in and communication',
         s2i2: 'Username', s2i2d: ' — shown on leaderboards',
@@ -591,7 +591,7 @@ export const resources = {
       lastUpdated: 'Zuletzt aktualisiert',
       privacy: {
         title: 'Datenschutzerklärung',
-        s1t: '1. Wer wir sind', s1b: 'Historyguesser ist ein lehrreiches Web-Spiel, verfügbar unter historyguessr.vercel.app. Betreiber der Anwendung ist Matouš Bahník, Liberec, Tschechien (ID-Nr.: 21213887).',
+        s1t: '1. Wer wir sind', s1b: 'Historyguesser ist ein lehrreiches Web-Spiel, verfügbar unter historyguesser.net. Betreiber der Anwendung ist Matouš Bahník, Liberec, Tschechien (ID-Nr.: 21213887).',
         s2t: '2. Welche Daten wir erheben', s2intro: 'Bei der Registrierung und Nutzung der App erheben wir:',
         s2i1: 'E-Mail-Adresse', s2i1d: ' — zur Anmeldung und Kommunikation',
         s2i2: 'Benutzername', s2i2d: ' — wird in Bestenlisten angezeigt',
