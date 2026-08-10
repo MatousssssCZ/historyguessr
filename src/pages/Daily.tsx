@@ -731,8 +731,9 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
 
   // Podklady pro sdílecí kartu (bez názvu události — ať to nespoiluje ostatní)
   const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
+  // Percentil = % OSTATNÍCH hráčů, které jsem porazil (stejný vzorec jako histogram)
   const betterThan = allScores.length >= 5
-    ? Math.round((allScores.filter(v => v < result.totalScore).length / allScores.length) * 100)
+    ? Math.round((allScores.filter(v => v < result.totalScore).length / (allScores.length - 1)) * 100)
     : null
   const dateLabel = new Date().toLocaleDateString(currentLocale(), { day: 'numeric', month: 'long' })
   const shareData = {
