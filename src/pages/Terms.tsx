@@ -78,7 +78,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title={t('legal.terms.s9t')} last>
-            <p>{t('legal.terms.s9b1')}<strong>bahnik.matous2@gmail.com</strong></p>
+            <p>{t('legal.terms.s9b1')}<strong>historyguesser.net@gmail.com</strong></p>
           </Section>
         </div>
       </div>

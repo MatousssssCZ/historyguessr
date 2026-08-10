@@ -74,7 +74,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title={t('legal.privacy.s8t')} last>
-            <p>{t('legal.privacy.s8b1')}<strong>bahnik.matous2@gmail.com</strong></p>
+            <p>{t('legal.privacy.s8b1')}<strong>historyguesser.net@gmail.com</strong></p>
           </Section>
         </div>
       </div>
