@@ -209,10 +209,9 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
             </div>
-            <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 12, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--accent-deep)', cursor: 'pointer' }}>
-              <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
+            <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(92,148,104,0.10)', border: '1.5px solid var(--success)', borderRadius: 12, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--success-deep)', cursor: 'pointer' }}>
+              <span style={{ color: 'var(--success)' }}>▶</span> {t('menu.trialTry')}
             </button>
-            <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 9 }}>{t('menu.trialFree')}</div>
             <DisclaimerBox text={t('auth.disclaimer')}/>
           </div>
         </div>
@@ -461,10 +460,9 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
             <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
           </div>
-          <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(217,119,87,0.10)', border: '1.5px solid var(--accent)', borderRadius: 13, padding: 14, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: 'var(--accent-deep)', cursor: 'pointer' }}>
-            <span style={{ color: 'var(--accent)' }}>▶</span> {t('menu.trialTry')}
+          <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(92,148,104,0.10)', border: '1.5px solid var(--success)', borderRadius: 13, padding: 14, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: 'var(--success-deep)', cursor: 'pointer' }}>
+            <span style={{ color: 'var(--success)' }}>▶</span> {t('menu.trialTry')}
           </button>
-          <div style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 8 }}>{t('menu.trialFree')}</div>
 
           <DisclaimerBox text={t('auth.disclaimer')}/>
 
