@@ -319,7 +319,7 @@ export default function DailyChallengePage() {
     return (
       <DailyDetailScreen
         event={event} result={result}
-        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0} guessYear={guessYear}
+        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0}
         onContinue={() => { setResultStep('full'); setShowStory(true) }}
       />
     )
@@ -344,7 +344,6 @@ export default function DailyChallengePage() {
         makeupCount={makeupStatus.balance}
         onMakeup={makeupStatus.missed.length > 0 ? () => setShowMakeup(true) : undefined}
         streakBadges={streakBadges}
-        streak={streak}
         onMenu={() => navigate('/menu')}
       />
       {showMakeup && <MakeupSheet status={makeupStatus} onPick={startMakeup} onClose={() => setShowMakeup(false)}/>}
@@ -683,10 +682,10 @@ function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; my
 
 // ── Výsledková obrazovka ──────────────────────────────────
 // ── Krok 1: čistá obrazovka „jak blízko/daleko" (bez odznaků) ──
-function DailyDetailScreen({ event, result, guessLat, guessLng, guessYear, onContinue }: {
+function DailyDetailScreen({ event, result, guessLat, guessLng, onContinue }: {
   event: Event
   result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
-  guessLat: number; guessLng: number; guessYear: number; onContinue: () => void
+  guessLat: number; guessLng: number; onContinue: () => void
 }) {
   const { t } = useTranslation()
   const distLabel = result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString(currentLocale())} km`
@@ -720,11 +719,11 @@ function DailyDetailScreen({ event, result, guessLat, guessLng, guessYear, onCon
   )
 }
 
-function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, streak, onMenu }: {
+function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
   leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
-  makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; streak?: number; onMenu: () => void
+  makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
 }) {
   const { t } = useTranslation()
   const [showShare, setShowShare] = useState(false)
@@ -876,16 +875,9 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
     </div>
   ) : null
 
-  // Žebříček milníků série — vidět i při už odehrané výzvě
-  const streakSection = (streak ?? 0) > 0 ? (
-    <div style={{ padding: isMobile ? '0 12px 10px' : '0 20px 14px' }}>
-      <StreakLadder streak={streak ?? 0} tone="light"/>
-    </div>
-  ) : null
-
   // Obsah dle aktivního tabu
   const tabContent = tab === 'score'
-    ? <>{scoreSection}{evalSection}{streakSection}</>
+    ? <>{scoreSection}{evalSection}</>
     : tab === 'leaderboard' ? leaderboardSection : infoSection
 
   // Fullscreen panorama (bez časového limitu) — vyvolá se tlačítkem
