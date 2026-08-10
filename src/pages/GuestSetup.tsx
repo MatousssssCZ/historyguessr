@@ -20,6 +20,7 @@ export default function GuestSetupPage() {
   const [guestId, setGuestId] = useState<string | null>(null)
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const [captchaKey, setCaptchaKey] = useState(0)
+  const [captchaFailed, setCaptchaFailed] = useState(false)
   const resetCaptcha = () => { if (CAPTCHA_ENABLED) { setCaptcha(null); setCaptchaKey(k => k + 1) } }
 
   async function submit(e: React.FormEvent) {
@@ -69,7 +70,13 @@ export default function GuestSetupPage() {
             className="input" value={name} onChange={e => setName(e.target.value)}
             placeholder={t('setup.placeholder')} maxLength={USERNAME_MAX} autoFocus
           />
-          <Turnstile key={captchaKey} onToken={setCaptcha} theme="light" />
+          <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => setCaptchaFailed(true)} theme="light" />
+          {captchaFailed && (
+            <div className="alert alert-error" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+              <span>{t('auth.captchaFailed')}</span>
+              <button type="button" className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => window.location.reload()}>{t('common.reload')}</button>
+            </div>
+          )}
           {error && <div className="alert alert-error">{error}</div>}
           <button className="btn btn-accent" type="submit" disabled={saving || name.trim().length < 3}>
             {saving ? <span className="spinner" style={{ width: 16, height: 16 }}/> : null}

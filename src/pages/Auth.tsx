@@ -41,6 +41,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
   // Captcha token (Turnstile). '' = není potřeba (vypnuto), null = čeká na ověření.
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const [captchaKey, setCaptchaKey] = useState(0)
+  const [captchaFailed, setCaptchaFailed] = useState(false)
   const resetCaptcha = () => { if (CAPTCHA_ENABLED) { setCaptcha(null); setCaptchaKey(k => k + 1) } }
 
   const passwordValid = PASSWORD_RULES.every(r => r.test(password))
@@ -60,7 +61,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
       if (password !== confirmPassword) { setError(t('auth.mismatch')); return }
     }
     // Konverze anonyma (updateUser) captcha nevyžaduje — jinak ji vyžadujeme.
-    if (CAPTCHA_ENABLED && !captcha && !(isRegister && isAnonymous)) { setError(t('auth.captchaWait')); return }
+    if (CAPTCHA_ENABLED && !captcha && !(isRegister && isAnonymous)) { setError(t(captchaFailed ? 'auth.captchaFailed' : 'auth.captchaWait')); return }
     setLoading(true)
     try {
       if (isRegister) {
@@ -91,7 +92,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
   async function handleForgot() {
     setError(null); setSuccess(null)
     if (!email) { setError(t('auth.enterEmailFirst')); return }
-    if (CAPTCHA_ENABLED && !captcha) { setError(t('auth.captchaWait')); return }
+    if (CAPTCHA_ENABLED && !captcha) { setError(t(captchaFailed ? 'auth.captchaFailed' : 'auth.captchaWait')); return }
     setLoading(true)
     try {
       const { error } = await requestPasswordReset(email, captcha || undefined)
@@ -198,7 +199,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
             </form>
-            <Turnstile key={captchaKey} onToken={setCaptcha} theme="light" appearance="interaction-only"/>
+            <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => setCaptchaFailed(true)} theme="light" appearance="interaction-only"/>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
