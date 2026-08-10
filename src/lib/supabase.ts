@@ -54,9 +54,9 @@ export async function signOut() {
 
 /** Anonymní hraní bez registrace — vytvoří persistentní anon účet.
  *  Přezdívku si hráč zvolí v UsernameSetup (jeden krok), pak plná appka. */
-export async function playAsGuest(captchaToken?: string): Promise<{ error: Error | null }> {
-  const { error } = await supabase.auth.signInAnonymously({ options: { captchaToken } })
-  return { error: (error as Error) ?? null }
+export async function playAsGuest(captchaToken?: string): Promise<{ error: Error | null; userId?: string }> {
+  const { data, error } = await supabase.auth.signInAnonymously({ options: { captchaToken } })
+  return { error: (error as Error) ?? null, userId: data?.user?.id }
 }
 
 /** Konverze anonyma na plný účet — připojí e-mail/heslo, DATA ZŮSTANOU.

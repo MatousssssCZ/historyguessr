@@ -7,6 +7,7 @@ import CompassLoader from '@/components/CompassLoader'
 import UpdateWatcher from '@/components/UpdateWatcher'
 import EnvBadge from '@/components/EnvBadge'
 import AuthPage from '@/pages/Auth'
+import GuestSetupPage from '@/pages/GuestSetup'
 import TryGamePage from '@/pages/TryGame'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
@@ -73,6 +74,14 @@ function HomeRoute() {
   return <AuthPage landing/>
 }
 
+// ── Host setup: jen pro nepřihlášené (účet vzniká až tady); jinak menu ─
+function GuestRoute() {
+  const { user, loading } = useAuth()
+  if (loading) return <FullScreenSpinner/>
+  if (user) return <Navigate to="/menu" replace/>
+  return <GuestSetupPage/>
+}
+
 // ── Full screen spinner ───────────────────────────────────
 function FullScreenSpinner() {
   return (
@@ -98,6 +107,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<HomeRoute/>}/>
               <Route path="/auth" element={<AuthPage/>}/>
+              <Route path="/guest" element={<GuestRoute/>}/>
               <Route path="/try" element={<TryGamePage/>}/>
               <Route path="/auth/callback" element={<RootRedirect/>}/>
               <Route path="/reset-password" element={<ResetPasswordPage/>}/>

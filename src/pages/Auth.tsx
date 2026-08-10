@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { signIn, signUp, requestPasswordReset, track, playAsGuest, convertGuestToAccount } from '@/lib/supabase'
+import { signIn, signUp, requestPasswordReset, track, convertGuestToAccount } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import Turnstile from '@/components/Turnstile'
@@ -28,14 +28,9 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
   const location = useLocation()
   const [mode, setMode] = useState<Mode>((location.state as { mode?: Mode } | null)?.mode === 'register' ? 'register' : 'login')
 
-  // Vstup bez registrace — persistentní anonym (data se pak dají zachovat konverzí)
-  async function startGuest() {
-    setError(null)
-    if (CAPTCHA_ENABLED && !captcha) { setError(t('auth.captchaWait')); return }
-    const { error } = await playAsGuest(captcha || undefined)
-    if (error) { setError(t('auth.errGeneric')); resetCaptcha(); return }
-    navigate('/menu')
-  }
+  // Vstup bez registrace → samostatná obrazovka (přezdívka + viditelná captcha),
+  // účet vzniká až tam. Sem se anonym nepřihlašuje.
+  const startGuest = () => navigate('/guest')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -203,7 +198,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
             </form>
-            <Turnstile key={captchaKey} onToken={setCaptcha} theme="light"/>
+            <Turnstile key={captchaKey} onToken={setCaptcha} theme="light" appearance="interaction-only"/>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>

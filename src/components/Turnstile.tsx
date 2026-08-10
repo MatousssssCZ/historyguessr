@@ -4,12 +4,15 @@ import { CAPTCHA_ENABLED, TURNSTILE_SITE_KEY, loadTurnstile } from '@/lib/turnst
 interface Props {
   onToken: (token: string | null) => void
   theme?: 'light' | 'dark' | 'auto'
+  // 'always' = viditelný widget; 'interaction-only' = neviditelný, ukáže se
+  // jen když Cloudflare vyžaduje interakci (pro login/registraci).
+  appearance?: 'always' | 'interaction-only'
 }
 
 // Cloudflare Turnstile widget. Bez klíče (CAPTCHA_ENABLED=false) nevykreslí nic
 // a rovnou hlásí „token není potřeba" přes onToken(''), aby formuláře nešly blokovat.
 // Reset se dělá remountem (změnou `key` z rodiče) — token je jednorázový.
-export default function Turnstile({ onToken, theme = 'auto' }: Props) {
+export default function Turnstile({ onToken, theme = 'auto', appearance = 'always' }: Props) {
   const ref = useRef<HTMLDivElement | null>(null)
   const widgetId = useRef<string | null>(null)
 
@@ -21,6 +24,7 @@ export default function Turnstile({ onToken, theme = 'auto' }: Props) {
       widgetId.current = window.turnstile.render(ref.current, {
         sitekey: TURNSTILE_SITE_KEY,
         theme,
+        appearance,
         callback: (token: string) => onToken(token),
         'expired-callback': () => onToken(null),
         'error-callback': () => onToken(null),
