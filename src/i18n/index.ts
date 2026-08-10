@@ -17,7 +17,10 @@ i18n
     fallbackLng: 'en',
     supportedLngs: ['cs', 'en', 'de'],
     detection: {
-      order: ['localStorage', 'navigator'],
+      // 'path' první: /en a /de vstupní URL (SEO) vynutí daný jazyk.
+      // U běžných rout (/menu, /game…) první segment není jazyk → propadne dál.
+      order: ['path', 'localStorage', 'navigator'],
+      lookupFromPathIndex: 0,
       lookupLocalStorage: 'hg_lang',
       caches: ['localStorage'],
     },

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-i18n-pages.mjs",
     "preview": "vite preview",
     "lint": "eslint src",
     "test": "vitest run",
