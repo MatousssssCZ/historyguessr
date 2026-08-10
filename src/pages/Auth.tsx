@@ -518,6 +518,10 @@ function LandingSeo() {
       </div>
       <footer style={{ maxWidth: 720, margin: '0 auto', padding: '32px 22px 48px', textAlign: 'center', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.7 }}>
         <div>{t('landing.footer')}</div>
+        <div style={{ marginTop: 6 }}>
+          {t('landing.contact')}:{' '}
+          <a href="mailto:historyguesser.net@gmail.com" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>historyguesser.net@gmail.com</a>
+        </div>
         <div style={{ marginTop: 8 }}>
           <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.terms')}</Link>
           {' · '}
