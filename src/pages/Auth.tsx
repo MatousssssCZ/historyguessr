@@ -523,9 +523,9 @@ function LandingSeo() {
           <a href="mailto:historyguesser.net@gmail.com" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>historyguesser.net@gmail.com</a>
         </div>
         <div style={{ marginTop: 8 }}>
-          <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.terms')}</Link>
+          <Link to="/terms" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.termsLink')}</Link>
           {' · '}
-          <Link to="/privacy" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.privacy')}</Link>
+          <Link to="/privacy" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>{t('auth.privacyLink')}</Link>
         </div>
       </footer>
     </div>

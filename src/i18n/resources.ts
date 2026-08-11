@@ -265,7 +265,7 @@ export const resources = {
       tagline1: 'Hádej historii.', tagline2: 'Trefuj čas a místo.', eyebrow: 'Vzdělávací geolokační hra',
       bullet: '5 kol · 360° panoramy · tip místa + roku',
       quote: '„Kdo nezná historii, je odsouzen ji znovu prožívat."', quoteAuthor: '— George Santayana',
-      disclaimer: 'Historyguesser je fanouškovský vzdělávací projekt. Historické události a panoramata mohou obsahovat nepřesnosti — berte je s rezervou.', legal: 'Používáním aplikace souhlasíš s', terms: 'podmínkami použití', and: 'a', privacy: 'zásadami ochrany údajů',
+      disclaimer: 'Historyguesser je nezávislý vzdělávací projekt. Historické události a panoramata mohou obsahovat nepřesnosti — berte je s rezervou.', legal: 'Používáním aplikace souhlasíš s', terms: 'podmínkami použití', and: 'a', privacy: 'zásadami ochrany údajů', termsLink: 'Podmínky použití', privacyLink: 'Zásady ochrany údajů',
     },
     ads: { label: 'Reklama' },
     menu: {
@@ -557,7 +557,7 @@ export const resources = {
       tagline1: 'Guess history.', tagline2: 'Pin the time and place.', eyebrow: 'Educational geo-guessing game',
       bullet: '5 rounds · 360° panoramas · guess place + year',
       quote: '"Those who cannot remember the past are condemned to repeat it."', quoteAuthor: '— George Santayana',
-      disclaimer: 'Historyguesser is a fan-made educational project. Historical events and panoramas may contain inaccuracies — take them with a grain of salt.', legal: 'By using the app you agree to the', terms: 'terms of use', and: 'and', privacy: 'privacy policy',
+      disclaimer: 'Historyguesser is an independent educational project. Historical events and panoramas may contain inaccuracies — take them with a grain of salt.', legal: 'By using the app you agree to the', terms: 'terms of use', and: 'and', privacy: 'privacy policy', termsLink: 'Terms of Use', privacyLink: 'Privacy Policy',
     },
     ads: { label: 'Advertisement' },
     menu: {
@@ -849,7 +849,7 @@ export const resources = {
       tagline1: 'Errate die Geschichte.', tagline2: 'Triff Zeit und Ort.', eyebrow: 'Lehrreiches Geo-Ratespiel',
       bullet: '5 Runden · 360°-Panoramen · Ort + Jahr raten',
       quote: '„Wer sich nicht an die Vergangenheit erinnern kann, ist dazu verdammt, sie zu wiederholen."', quoteAuthor: '— George Santayana',
-      disclaimer: 'Historyguesser ist ein Fan-Bildungsprojekt. Historische Ereignisse und Panoramen können Ungenauigkeiten enthalten — nimm sie mit Vorsicht.', legal: 'Mit der Nutzung stimmst du den', terms: 'Nutzungsbedingungen', and: 'und der', privacy: 'Datenschutzerklärung',
+      disclaimer: 'Historyguesser ist ein unabhängiges Bildungsprojekt. Historische Ereignisse und Panoramen können Ungenauigkeiten enthalten — nimm sie mit Vorsicht.', legal: 'Mit der Nutzung stimmst du den', terms: 'Nutzungsbedingungen', and: 'und der', privacy: 'Datenschutzerklärung', termsLink: 'Nutzungsbedingungen', privacyLink: 'Datenschutz',
     },
     ads: { label: 'Werbung' },
     menu: {
