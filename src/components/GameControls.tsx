@@ -22,13 +22,14 @@ function CalIcon({ color }: { color: string }) {
   )
 }
 
-const TILE_W = 184  // 2× původní šířka
+const TILE_W = 184   // 2× původní šířka
+const TILE_H = 104   // 2× původní výšky
 
 function MapTile({ set, onClick }: { set: boolean; onClick: () => void }) {
   const { t } = useTranslation()
   return (
     <button onClick={onClick} style={{
-      width: TILE_W, borderRadius: 18, padding: '11px 15px', cursor: 'pointer', border: 'none',
+      width: TILE_W, height: TILE_H, boxSizing: 'border-box', borderRadius: 18, padding: '11px 15px', cursor: 'pointer', border: 'none',
       display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left',
       background: set ? GREEN : 'var(--accent)', color: '#fff',
       boxShadow: set ? '0 12px 26px -6px rgba(39,174,96,0.5)' : '0 12px 26px -6px rgba(190,98,64,0.5)',
@@ -49,7 +50,7 @@ function YearTile({ guessYear, guessYearSet, onClick }: { guessYear: number; gue
   const label = set ? `${Math.abs(guessYear)} ${bc ? t('game.bcShort') : t('game.adShort')}` : '—'
   return (
     <button onClick={onClick} style={{
-      width: TILE_W, borderRadius: 18, padding: '11px 15px', cursor: 'pointer',
+      width: TILE_W, height: TILE_H, boxSizing: 'border-box', borderRadius: 18, padding: '11px 15px', cursor: 'pointer',
       display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left',
       background: set ? GREEN : GLASS, backdropFilter: set ? 'none' : 'blur(14px)',
       border: set ? 'none' : '1px solid rgba(255,255,255,0.7)',
