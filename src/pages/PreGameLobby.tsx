@@ -120,7 +120,7 @@ export default function PreGameLobbyPage() {
   const sortedCandidates = useMemo(() => {
     const arr = [...filteredCandidates]
     if (sortBy === 'year') arr.sort((a, b) => a.year - b.year)
-    else arr.sort((a, b) => a.title.localeCompare(b.title, 'cs'))
+    else arr.sort((a, b) => eventTitle({ ...a, description: '' }).localeCompare(eventTitle({ ...b, description: '' })))
     return arr
   }, [filteredCandidates, sortBy])
 

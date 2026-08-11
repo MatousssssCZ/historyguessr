@@ -577,6 +577,19 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
   const pct = ((value - MIN) / TOTAL) * 100
   const zeroPct = ((0 - MIN) / TOTAL) * 100
   function step(d: number) { let n = value + d; if (n === 0) n = d > 0 ? 1 : -1; onChange(Math.max(MIN, Math.min(MAX, n))) }
+  const [draft, setDraft] = useState<string | null>(null)
+  const sign = value < 0 ? -1 : 1
+  function handleInput(raw: string) {
+    const digits = raw.replace(/\D/g, '')
+    if (digits === '') { setDraft(''); return }
+    setDraft(digits)
+    const mag = parseInt(digits, 10)
+    if (isNaN(mag)) return
+    let nv = sign * mag
+    if (nv === 0) nv = sign
+    onChange(Math.max(MIN, Math.min(MAX, nv)))
+  }
+  const inputValue = draft !== null ? draft : String(Math.abs(value))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ position: 'relative', height: 48, marginBottom: 4, touchAction: 'none' }}>
@@ -600,11 +613,19 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
           </button>
         ))}
       </div>
-      <input type="text" inputMode="decimal" pattern="-?[0-9]*" value={value === 0 ? '' : String(value)}
-        onChange={e => { const n = parseInt(e.target.value); if (!isNaN(n) && n !== 0) onChange(Math.max(MIN, Math.min(MAX, n))) }}
-        placeholder={t('daily.yearPlaceholder')}
-        style={{ width: '100%', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 18, padding: '11px 14px', border: '1px solid var(--line-strong)', borderRadius: 10, color: 'var(--ink)', background: 'var(--surface)', outline: 'none' }}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--line-strong)', borderRadius: 10, background: 'var(--surface)', padding: '0 6px 0 14px' }}>
+        <input type="text" inputMode="numeric" pattern="[0-9]*" value={inputValue}
+          onChange={e => handleInput(e.target.value)}
+          onBlur={() => setDraft(null)}
+          placeholder={t('daily.yearPlaceholder')}
+          style={{ flex: 1, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 18, padding: '11px 0', border: 'none', color: 'var(--ink)', background: 'transparent', outline: 'none', minWidth: 0 }}
+        />
+        <button type="button" onClick={() => onChange(Math.max(MIN, Math.min(MAX, -value)))} style={{
+          flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', fontWeight: 700,
+          color: value < 0 ? '#5a8fb5' : 'var(--accent-deep)', textTransform: 'uppercase',
+          background: 'var(--paper-100)', border: '0.5px solid var(--line-strong)', borderRadius: 8, cursor: 'pointer', padding: '7px 10px',
+        }}>{value < 0 ? t('game.bcShort') : t('game.adShort')}</button>
+      </div>
     </div>
   )
 }

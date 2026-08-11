@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
 export const GREEN = '#27ae60'
-export const GLASS = 'rgba(246,240,230,0.86)'
+// Neprůhlednější sklo + stín → dlaždice líp „vyskočí" z panoramatu.
+export const GLASS = 'rgba(250,247,240,0.94)'
+const TILE_SHADOW = '0 8px 22px -6px rgba(0,0,0,0.5)'
 
 function PinIcon({ color }: { color: string }) {
   return (
@@ -46,8 +48,8 @@ function YearTile({ guessYear, guessYearSet, onClick }: { guessYear: number; gue
       width: 92, borderRadius: 20, padding: '13px 0', cursor: 'pointer',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
       background: set ? GREEN : GLASS, backdropFilter: set ? 'none' : 'blur(14px)',
-      border: set ? 'none' : '1px solid rgba(255,255,255,0.5)',
-      boxShadow: set ? '0 12px 26px -6px rgba(39,174,96,0.5)' : 'none',
+      border: set ? 'none' : '1px solid rgba(255,255,255,0.7)',
+      boxShadow: set ? '0 12px 26px -6px rgba(39,174,96,0.5)' : TILE_SHADOW,
       color: set ? '#fff' : 'var(--ink)',
     }}>
       <CalIcon color={set ? '#fff' : 'var(--accent)'}/>
@@ -66,7 +68,7 @@ export default function ControlDock({ set, guessYear, guessYearSet, canSubmit, s
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20, padding: '12px 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))', pointerEvents: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <span style={{ pointerEvents: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(246,240,230,0.78)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.5)', borderRadius: 20, padding: '8px 12px', color: '#4a4033', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11 }}>
+        <span style={{ pointerEvents: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(250,247,240,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 14px -4px rgba(0,0,0,0.4)', borderRadius: 20, padding: '8px 12px', color: '#4a4033', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11 }}>
           ✥ {t('game.dragHint')}
         </span>
         <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>

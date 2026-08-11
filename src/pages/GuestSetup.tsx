@@ -49,6 +49,8 @@ export default function GuestSetupPage() {
       return
     }
     track('sign_up', { converted: false, guest: true }, uid)
+    // Nováčkovi po vytvoření hosta ukázat „Jak hrát" (Menu flag přečte a smaže).
+    try { localStorage.setItem('hg_show_howto', '1') } catch { /* private mode */ }
     // Plný reload → AuthProvider načte profil čerstvě z DB (s přezdívkou),
     // žádný závod s auth-listenerem, který by jinak ukázal UsernameSetup.
     window.location.assign('/menu')

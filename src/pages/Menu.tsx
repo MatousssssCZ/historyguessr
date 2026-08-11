@@ -63,7 +63,14 @@ export default function MenuPage() {
   const [catHits, setCatHits] = useState<Record<string, number>>({})
   const [resume, setResume] = useState<ResumeState | null>(null)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
-  const [showHowTo, setShowHowTo] = useState(false)
+  // Nový host (po zadání přezdívky) dostane „Jak hrát" automaticky — přes flag.
+  const [showHowTo, setShowHowTo] = useState(() => {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('hg_show_howto')) {
+      localStorage.removeItem('hg_show_howto')
+      return true
+    }
+    return false
+  })
   const [showInstall, setShowInstall] = useState(false)
   const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
   const [isPremium, setIsPremium] = useState(false)

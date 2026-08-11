@@ -175,6 +175,8 @@ export async function getRandomEvents(count = 5, filters?: EventFilters): Promis
 export interface CandidateEvent {
   id: string
   title: string
+  title_en?: string | null
+  title_de?: string | null
   year: number
   category: string | null
 }
@@ -182,7 +184,7 @@ export interface CandidateEvent {
 /** Načte seznam událostí odpovídajících filtrům (pro „vyladit" v předsálí) */
 export async function getCandidateEvents(filters?: EventFilters): Promise<CandidateEvent[]> {
   const { data } = await applyEventFilters(
-    supabase.from('events').select('id, title, year, category').eq('published', true),
+    supabase.from('events').select('id, title, title_en, title_de, year, category').eq('published', true),
     filters,
   )
     .order('year', { ascending: true })

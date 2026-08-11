@@ -557,18 +557,21 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
     onChange(Math.max(MIN, Math.min(MAX, next)))
   }
 
+  const sign = value < 0 ? -1 : 1
   function handleInput(raw: string) {
-    // Povol mezistavy: prázdno a samotné „−"
-    if (raw === '' || raw === '-') { setDraft(raw); return }
-    if (!/^-?\d+$/.test(raw)) return  // jen čísla a volitelný mínus
-    setDraft(raw)
-    const n = parseInt(raw, 10)
-    if (isNaN(n)) return
-    const clamped = Math.max(MIN, Math.min(MAX, n))
-    onChange(clamped === 0 ? -1 : clamped)
+    const digits = raw.replace(/\D/g, '')  // jen číslice (číselná klávesnice)
+    if (digits === '') { setDraft(''); return }  // povol prázdné pole
+    setDraft(digits)
+    const mag = parseInt(digits, 10)
+    if (isNaN(mag)) return
+    let nv = sign * mag
+    if (nv === 0) nv = sign
+    onChange(Math.max(MIN, Math.min(MAX, nv)))
   }
+  // BC/AD přepínač — otočí znaménko bez nutnosti psát „−"
+  function toggleEra() { onChange(Math.max(MIN, Math.min(MAX, -value))) }
 
-  const inputValue = draft !== null ? draft : (value === 0 ? '' : String(value))
+  const inputValue = draft !== null ? draft : String(Math.abs(value))
 
   const stepBtnStyle: React.CSSProperties = {
     flex: '0 0 44px', padding: '9px 0', borderRadius: 9,
@@ -641,21 +644,24 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
         }}>
           <input
             type="text"
-            inputMode="text"
-            pattern="-?[0-9]*"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={inputValue}
             onChange={e => handleInput(e.target.value)}
             onBlur={() => setDraft(null)}
             placeholder={t('game.yearInput')}
             style={{
-              width: 78, textAlign: 'right', border: 'none', background: 'transparent',
+              width: 66, textAlign: 'right', border: 'none', background: 'transparent',
               fontFamily: 'var(--font-mono)', fontSize: 17, color: 'var(--ink)',
               outline: 'none', padding: '9px 0',
             }}
           />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
+          <button type="button" onClick={toggleEra} style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: value < 0 ? '#5a8fb5' : 'var(--accent-deep)',
+            textTransform: 'uppercase', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 2px', fontWeight: 700,
+          }}>
             {value < 0 ? t('game.bcShort') : t('game.adShort')}
-          </span>
+          </button>
         </div>
         <button onClick={() => step(1)} style={stepBtnStyle}>+1</button>
         <button onClick={() => step(10)} style={stepBtnStyle}>+10</button>
