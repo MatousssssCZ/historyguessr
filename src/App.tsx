@@ -74,11 +74,11 @@ function HomeRoute() {
   return <AuthPage landing/>
 }
 
-// ── Host setup: jen pro nepřihlášené (účet vzniká až tady); jinak menu ─
+// ── Host setup (účet vzniká až tady). Přesměrování „už přihlášený → menu"
+//    řeší sama stránka, aby přežila zobrazení „Jak hrát" po vytvoření hosta. ─
 function GuestRoute() {
-  const { user, loading } = useAuth()
+  const { loading } = useAuth()
   if (loading) return <FullScreenSpinner/>
-  if (user) return <Navigate to="/menu" replace/>
   return <GuestSetupPage/>
 }
 

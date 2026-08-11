@@ -1,23 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { playAsGuest, updateProfile, track } from '@/lib/supabase'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import { CAPTCHA_ENABLED } from '@/lib/turnstile'
 import Turnstile from '@/components/Turnstile'
 import BackButton from '@/components/BackButton'
+import HowToPlay from '@/components/HowToPlay'
 
 // Vytvoření host účtu (bez registrace). Účet vzniká AŽ TADY, při odeslání
 // přezdívky — proto je tu viditelná CAPTCHA (chrání anonymní sign-in).
 export default function GuestSetupPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
+  // Zachytí, zda byl uživatel přihlášený už při příchodu (pak sem nepatří →
+  // menu). Přihlášení během vytváření hosta redirect nespustí.
+  const wasLoggedIn = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (loading) return
+    if (wasLoggedIn.current === null) wasLoggedIn.current = !!user
+    if (wasLoggedIn.current) navigate('/menu', { replace: true })
+  }, [loading, user, navigate])
+
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Když anonymní účet už vznikl, ale uložení jména selhalo (obsazené) —
   // při dalším pokusu se už znovu nepřihlašujeme (a captcha není potřeba).
   const [guestId, setGuestId] = useState<string | null>(null)
+  const [showHowTo, setShowHowTo] = useState(false)
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const [captchaKey, setCaptchaKey] = useState(0)
   const [captchaFailed, setCaptchaFailed] = useState(false)
@@ -49,16 +62,18 @@ export default function GuestSetupPage() {
       return
     }
     track('sign_up', { converted: false, guest: true }, uid)
-    // Nováčkovi po vytvoření hosta ukázat „Jak hrát" (Menu flag přečte a smaže).
-    try { localStorage.setItem('hg_show_howto', '1') } catch { /* private mode */ }
-    // Plný reload → AuthProvider načte profil čerstvě z DB (s přezdívkou),
-    // žádný závod s auth-listenerem, který by jinak ukázal UsernameSetup.
-    window.location.assign('/menu')
+    // Hned po přezdívce ukázat „Jak hrát"; po zavření → plný reload na menu
+    // (AuthProvider načte profil čerstvě z DB, žádný závod s auth-listenerem).
+    setSaving(false)
+    setShowHowTo(true)
   }
 
   async function goBack() {
     navigate('/', { replace: true })
   }
+
+  // Po vytvoření hosta → „Jak hrát" na celou obrazovku, pak reload na menu.
+  if (showHowTo) return <HowToPlay onClose={() => window.location.assign('/menu')} />
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)', padding: 24 }}>
