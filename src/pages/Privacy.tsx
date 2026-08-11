@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { currentLocale } from '@/i18n'
 import BackButton from '@/components/BackButton'
 import LegalDocView from '@/components/LegalDocView'
+import { useNoindex } from '@/lib/useNoindex'
 import { PRIVACY, type LegalLocale } from './legalContent'
 
 export default function PrivacyPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  useNoindex()
   const lng = (currentLocale().slice(0, 2) as LegalLocale)
   const doc = PRIVACY[lng] ?? PRIVACY.cs
 
