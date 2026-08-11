@@ -22,18 +22,22 @@ function CalIcon({ color }: { color: string }) {
   )
 }
 
+const TILE_W = 184  // 2× původní šířka
+
 function MapTile({ set, onClick }: { set: boolean; onClick: () => void }) {
   const { t } = useTranslation()
   return (
     <button onClick={onClick} style={{
-      width: 92, borderRadius: 20, padding: '13px 0', cursor: 'pointer', border: 'none',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      width: TILE_W, borderRadius: 18, padding: '11px 15px', cursor: 'pointer', border: 'none',
+      display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left',
       background: set ? GREEN : 'var(--accent)', color: '#fff',
       boxShadow: set ? '0 12px 26px -6px rgba(39,174,96,0.5)' : '0 12px 26px -6px rgba(190,98,64,0.5)',
     }}>
       <PinIcon color="#fff"/>
-      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12.5 }}>{t('game.mapTile')}</span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>{set ? '✓' : t('game.placeHint')}</span>
+      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25, minWidth: 0 }}>
+        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13 }}>{t('game.mapTile')}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{set ? `✓ ${t('game.placeHint')}` : t('game.mapCta')}</span>
+      </span>
     </button>
   )
 }
@@ -45,16 +49,18 @@ function YearTile({ guessYear, guessYearSet, onClick }: { guessYear: number; gue
   const label = set ? `${Math.abs(guessYear)} ${bc ? t('game.bcShort') : t('game.adShort')}` : '—'
   return (
     <button onClick={onClick} style={{
-      width: 92, borderRadius: 20, padding: '13px 0', cursor: 'pointer',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      width: TILE_W, borderRadius: 18, padding: '11px 15px', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left',
       background: set ? GREEN : GLASS, backdropFilter: set ? 'none' : 'blur(14px)',
       border: set ? 'none' : '1px solid rgba(255,255,255,0.7)',
       boxShadow: set ? '0 12px 26px -6px rgba(39,174,96,0.5)' : TILE_SHADOW,
       color: set ? '#fff' : 'var(--ink)',
     }}>
       <CalIcon color={set ? '#fff' : 'var(--accent)'}/>
-      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: set ? 700 : 600, fontSize: 12.5, color: set ? '#fff' : '#26211C' }}>{t('game.year')}</span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.04em', textTransform: 'uppercase', color: set ? 'rgba(255,255,255,0.85)' : '#8C8175' }}>{set ? `✓ ${label}` : `${t('game.tip')}: —`}</span>
+      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25, minWidth: 0 }}>
+        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: set ? 700 : 600, fontSize: 13, color: set ? '#fff' : '#26211C' }}>{t('game.year')}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.04em', textTransform: 'uppercase', color: set ? 'rgba(255,255,255,0.85)' : '#8C8175', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{set ? `✓ ${label}` : t('game.yearCta')}</span>
+      </span>
     </button>
   )
 }
@@ -68,8 +74,9 @@ export default function ControlDock({ set, guessYear, guessYearSet, canSubmit, s
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20, padding: '12px 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))', pointerEvents: 'none' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <span style={{ pointerEvents: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(250,247,240,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 14px -4px rgba(0,0,0,0.4)', borderRadius: 20, padding: '8px 12px', color: '#4a4033', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11 }}>
-          ✥ {t('game.dragHint')}
+        <span style={{ pointerEvents: 'auto', flexShrink: 1, minWidth: 0, display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(250,247,240,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 14px -4px rgba(0,0,0,0.4)', borderRadius: 20, padding: '8px 12px', color: '#4a4033', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 11 }}>
+          <span style={{ flexShrink: 0 }}>✥</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('game.dragHint')}</span>
         </span>
         <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
           <YearTile guessYear={guessYear} guessYearSet={guessYearSet} onClick={onYear}/>
