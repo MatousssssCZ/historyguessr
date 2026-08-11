@@ -1014,7 +1014,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
       {/* Tlačítka — pod sebou */}
       <div style={{ flexShrink: 0, padding: '8px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {panoBtn}
-        {leaderboard.length > 1 && (
+        {canShowDist && (
           <button
             onClick={() => setHistModal(true)}
             style={{ width: '100%', padding: '10px', background: 'var(--paper-200)', border: '0.5px solid var(--line-strong)', borderRadius: 10, fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}

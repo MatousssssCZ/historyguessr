@@ -846,14 +846,12 @@ export async function getDailyFriendsLeaderboard(userId: string, ownUsername: st
   })) as unknown as DailyResult[]
 }
 
-/** Všechna dnešní skóre (pro histogram — celý svět, jen registrovaní). */
+/** Všechna dnešní skóre (pro histogram — celý svět, jen registrovaní).
+ *  RPC (SECURITY DEFINER) — profiles RLS povoluje jen vlastní profil, takže
+ *  přímý join by vrátil jen jedno skóre. */
 export async function getDailyAllScores(): Promise<number[]> {
-  const today = localDateISO()
-  const { data } = await supabase.from('daily_results')
-    .select('score, profiles!inner(is_anonymous)')
-    .eq('date', today)
-    .eq('profiles.is_anonymous', false)
-  return (data ?? []).map(r => (r as { score: number }).score)
+  const { data } = await supabase.rpc('daily_score_distribution', { p_date: localDateISO() })
+  return (data as number[] | null) ?? []
 }
 
 // ─── Daily Challenge Admin ────────────────────────────────
