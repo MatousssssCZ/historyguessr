@@ -3,7 +3,7 @@
 // na výšku by širší hfov působil jako rybí oko a scéna byla moc „daleko".
 // TODO: přesunout do admin „Nastavení UI hry" (živě konfigurovatelné).
 export function panoramaHfov(): number {
-  if (typeof window !== 'undefined' && window.innerWidth >= 900) return 170
+  if (typeof window !== 'undefined' && window.innerWidth >= 900) return 155
   return 126
 }
 
