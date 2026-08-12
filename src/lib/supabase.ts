@@ -59,6 +59,19 @@ export async function playAsGuest(captchaToken?: string): Promise<{ error: Error
   return { error: (error as Error) ?? null, userId: data?.user?.id }
 }
 
+/** Přiřadí hostovi automatické jméno „Host" + náhodné číslice.
+ *  Host si jméno nevolí; při kolizi (unikátní index → 23505) zkusí znovu. */
+export async function assignGuestUsername(userId: string): Promise<{ error: Error | null }> {
+  for (let i = 0; i < 8; i++) {
+    const name = 'Host' + Math.floor(1000 + Math.random() * 9000) // 4 číslice
+    const { error } = await supabase.from('profiles').update({ username: name }).eq('id', userId)
+    if (!error) return { error: null }
+    if ((error as { code?: string }).code !== '23505') return { error: error as Error } // jiná chyba než kolize
+    // kolize → zkus jiné číslo
+  }
+  return { error: new Error('guest_username_collision') }
+}
+
 /** Konverze anonyma na plný účet — připojí e-mail/heslo, DATA ZŮSTANOU.
  *  Supabase pošle potvrzovací e-mail; po potvrzení už není anonym. */
 export async function convertGuestToAccount(email: string, password: string) {

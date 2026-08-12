@@ -156,7 +156,7 @@ export const resources = {
       reportProblem: 'Nahlásit problém', crashPlaceholder: 'Co jsi dělal(a), když to spadlo? (nepovinné)',
       kind: { bug: '🐞 Chyba', idea: '💡 Nápad', other: '💬 Jiné' } },
     setup: {
-      title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.',
+      title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.', creating: 'Vytvářím tvůj účet…',
       placeholder: 'Tvoje přezdívka', confirm: 'Pokračovat', hint: 'Min. 3 znaky. Změnit ji můžeš později v účtu.',
       guestNote: 'Hraješ bez registrace. Účty nečinné 30 dní se automaticky mažou — vytvoř si účet a postup si udržíš natrvalo.',
       tooShort: 'Přezdívka musí mít aspoň 3 znaky.', tooLong: 'Přezdívka může mít max. 20 znaků.', invalid: 'Povolena jsou jen písmena, číslice, mezera a _ . -', reserved: 'Tuhle přezdívku nelze použít (je vyhrazená).', profane: 'Zvol prosím slušnější přezdívku.', taken: 'Tahle přezdívka už je obsazená.', error: 'Nepodařilo se uložit. Zkus to znovu.',
@@ -448,7 +448,7 @@ export const resources = {
       reportProblem: 'Report a problem', crashPlaceholder: 'What were you doing when it crashed? (optional)',
       kind: { bug: '🐞 Bug', idea: '💡 Idea', other: '💬 Other' } },
     setup: {
-      title: 'Choose a nickname', sub: 'Other players will see you under this name.',
+      title: 'Choose a nickname', sub: 'Other players will see you under this name.', creating: 'Creating your account…',
       placeholder: 'Your nickname', confirm: 'Continue', hint: 'Min. 3 characters. You can change it later in your account.',
       guestNote: 'You are playing without an account. Accounts inactive for 30 days are deleted automatically — create an account to keep your progress for good.',
       tooShort: 'Nickname must be at least 3 characters.', tooLong: 'Nickname can be at most 20 characters.', invalid: 'Only letters, digits, space and _ . - are allowed', reserved: 'This nickname is reserved and cannot be used.', profane: 'Please choose a more appropriate nickname.', taken: 'That nickname is already taken.', error: 'Could not save. Try again.',
@@ -740,7 +740,7 @@ export const resources = {
       reportProblem: 'Problem melden', crashPlaceholder: 'Was hast du gemacht, als es abstürzte? (optional)',
       kind: { bug: '🐞 Fehler', idea: '💡 Idee', other: '💬 Sonstiges' } },
     setup: {
-      title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.',
+      title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.', creating: 'Dein Konto wird erstellt…',
       placeholder: 'Dein Spitzname', confirm: 'Weiter', hint: 'Min. 3 Zeichen. Du kannst ihn später im Konto ändern.',
       guestNote: 'Du spielst ohne Konto. Konten, die 30 Tage inaktiv sind, werden automatisch gelöscht — erstelle ein Konto, um deinen Fortschritt dauerhaft zu behalten.',
       tooShort: 'Der Spitzname muss mindestens 3 Zeichen haben.', tooLong: 'Der Spitzname darf höchstens 20 Zeichen haben.', invalid: 'Nur Buchstaben, Ziffern, Leerzeichen und _ . - sind erlaubt', reserved: 'Dieser Spitzname ist reserviert und kann nicht verwendet werden.', profane: 'Bitte wähle einen passenderen Spitznamen.', taken: 'Dieser Spitzname ist bereits vergeben.', error: 'Speichern fehlgeschlagen. Versuch es erneut.',

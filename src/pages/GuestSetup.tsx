@@ -2,19 +2,19 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { playAsGuest, updateProfile, track } from '@/lib/supabase'
-import { validateUsername, USERNAME_MAX } from '@/lib/username'
+import { playAsGuest, assignGuestUsername, track } from '@/lib/supabase'
 import { CAPTCHA_ENABLED } from '@/lib/turnstile'
 import Turnstile from '@/components/Turnstile'
-import BackButton from '@/components/BackButton'
 import HowToPlay from '@/components/HowToPlay'
 
-// Vytvoření host účtu (bez registrace). Účet vzniká AŽ TADY, při odeslání
-// přezdívky — proto je tu viditelná CAPTCHA (chrání anonymní sign-in).
+// Vstup bez registrace. Host si NEvolí přezdívku — účet se vytvoří automaticky
+// a dostane jméno „Host" + náhodné číslice. CAPTCHA běží neviditelně
+// (interaction-only). Po vytvoření → „Jak hrát" → menu.
 export default function GuestSetupPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, loading } = useAuth()
+
   // Zachytí, zda byl uživatel přihlášený už při příchodu (pak sem nepatří →
   // menu). Přihlášení během vytváření hosta redirect nespustí.
   const wasLoggedIn = useRef<boolean | null>(null)
@@ -24,89 +24,58 @@ export default function GuestSetupPage() {
     if (wasLoggedIn.current) navigate('/menu', { replace: true })
   }, [loading, user, navigate])
 
-  const [name, setName] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  // Když anonymní účet už vznikl, ale uložení jména selhalo (obsazené) —
-  // při dalším pokusu se už znovu nepřihlašujeme (a captcha není potřeba).
-  const [guestId, setGuestId] = useState<string | null>(null)
-  const [showHowTo, setShowHowTo] = useState(false)
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const [captchaKey, setCaptchaKey] = useState(0)
-  const [captchaFailed, setCaptchaFailed] = useState(false)
-  const resetCaptcha = () => { if (CAPTCHA_ENABLED) { setCaptcha(null); setCaptchaKey(k => k + 1) } }
+  const [phase, setPhase] = useState<'creating' | 'howto' | 'error'>('creating')
+  const [errMsg, setErrMsg] = useState('')
+  const started = useRef(false)
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    const v = validateUsername(name)
-    if (!v.ok) { setError(t('setup.' + v.error)); return }
-    setSaving(true); setError(null)
-
-    let uid = guestId
-    if (!uid) {
-      if (CAPTCHA_ENABLED && !captcha) { setSaving(false); setError(t('auth.captchaWait')); return }
+  // Jakmile je captcha token (nebo captcha vypnutá), vytvoř host účet.
+  useEffect(() => {
+    if (started.current || captcha === null || wasLoggedIn.current) return
+    started.current = true
+    ;(async () => {
       const res = await playAsGuest(captcha || undefined)
-      if (res.error || !res.userId) {
-        setSaving(false); resetCaptcha()
-        setError(t('auth.errGeneric'))
-        return
-      }
-      uid = res.userId
-      setGuestId(uid)
-    }
+      if (res.error || !res.userId) { setErrMsg(t('auth.errGeneric')); setPhase('error'); return }
+      const { error } = await assignGuestUsername(res.userId)
+      if (error) { setErrMsg(t('setup.error')); setPhase('error'); return }
+      track('sign_up', { converted: false, guest: true }, res.userId)
+      setPhase('howto')
+    })()
+  }, [captcha, t])
 
-    const { error: err } = await updateProfile(uid, { username: v.value })
-    if (err) {
-      setSaving(false)
-      setError((err as { code?: string }).code === '23505' ? t('setup.taken') : t('setup.error'))
-      return
-    }
-    track('sign_up', { converted: false, guest: true }, uid)
-    // Hned po přezdívce ukázat „Jak hrát"; po zavření → plný reload na menu
-    // (AuthProvider načte profil čerstvě z DB, žádný závod s auth-listenerem).
-    setSaving(false)
-    setShowHowTo(true)
-  }
-
-  async function goBack() {
-    navigate('/', { replace: true })
+  function retry() {
+    started.current = false
+    setErrMsg(''); setPhase('creating')
+    setCaptcha(CAPTCHA_ENABLED ? null : ''); setCaptchaKey(k => k + 1)
   }
 
   // Po vytvoření hosta → „Jak hrát" na celou obrazovku, pak reload na menu.
-  if (showHowTo) return <HowToPlay onClose={() => window.location.assign('/menu')} />
+  if (phase === 'howto') return <HowToPlay onClose={() => window.location.assign('/menu')} />
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)', padding: 24 }}>
-      <div className="card" style={{ width: '100%', maxWidth: 420, padding: 32 }}>
-        <BackButton onClick={goBack} label={t('common.back')} style={{ marginBottom: 18 }} />
-        <div style={{ fontSize: 36, marginBottom: 10 }}>👋</div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, margin: '0 0 6px', letterSpacing: '-0.01em' }}>{t('setup.title')}</h1>
-        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 22px' }}>{t('setup.sub')}</p>
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <input
-            className="input" value={name} onChange={e => setName(e.target.value)}
-            placeholder={t('setup.placeholder')} maxLength={USERNAME_MAX} autoFocus
-          />
-          <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => setCaptchaFailed(true)} theme="light" />
-          {captchaFailed && (
-            <div className="alert alert-error" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-              <span>{t('auth.captchaFailed')}</span>
-              <button type="button" className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => window.location.reload()}>{t('common.reload')}</button>
+      <div className="card" style={{ width: '100%', maxWidth: 400, padding: 32, textAlign: 'center' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
+        {phase === 'error' ? (
+          <>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: '0 0 8px', letterSpacing: '-0.01em' }}>{t('common.errorTitle')}</h1>
+            <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: '0 0 18px', lineHeight: 1.5 }}>{errMsg}</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button className="btn btn-ghost" onClick={() => navigate('/', { replace: true })}>{t('common.back')}</button>
+              <button className="btn btn-accent" onClick={retry}>{t('game.retry')}</button>
             </div>
-          )}
-          {error && <div className="alert alert-error">{error}</div>}
-          <button className="btn btn-accent" type="submit" disabled={saving || name.trim().length < 3}>
-            {saving ? <span className="spinner" style={{ width: 16, height: 16 }}/> : null}
-            {t('setup.confirm')}
-          </button>
-        </form>
-        <div style={{
-          display: 'flex', alignItems: 'flex-start', gap: 9, marginTop: 16,
-          background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 12, padding: '11px 13px',
-        }}>
-          <span style={{ flexShrink: 0, fontSize: 14, marginTop: 1 }}>ⓘ</span>
-          <span style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--ink-3)' }}>{t('setup.guestNote')}</span>
-        </div>
+          </>
+        ) : (
+          <>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, margin: '0 0 6px', letterSpacing: '-0.01em' }}>{t('setup.creating')}</h1>
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+              <span className="spinner" style={{ width: 22, height: 22 }}/>
+            </div>
+          </>
+        )}
+        {/* Neviditelná CAPTCHA — token pro anonymní sign-in. Bez klíče se přeskočí. */}
+        <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => { setErrMsg(t('auth.captchaFailed')); setPhase('error') }} appearance="interaction-only" theme="light" />
       </div>
     </div>
   )
