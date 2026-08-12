@@ -195,6 +195,12 @@ function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
         <polyline points={line('active_users', '')} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round"/>
         <polyline points={line('games', '')} fill="none" stroke="#5b7fa6" strokeWidth="2" strokeLinejoin="round"/>
         <polyline points={line('new_users', '')} fill="none" stroke="#1d6b3a" strokeWidth="2" strokeDasharray="4 4" strokeLinejoin="round"/>
+        {/* Neviditelné sloupce — hover kdekoli ve dni ukáže hodnoty */}
+        {rows.map((r, i) => (
+          <rect key={`h${i}`} x={pad + i * bw} y={0} width={bw} height={H} fill="transparent">
+            <title>{`${r.day}\nAktivní hráči: ${r.active_users}\nHry: ${r.games}\nNoví uživatelé: ${r.new_users}`}</title>
+          </rect>
+        ))}
       </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 6 }}>
         <span>{rows[0]?.day}</span><span>{rows[rows.length - 1]?.day}</span>

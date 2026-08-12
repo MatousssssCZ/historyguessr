@@ -81,6 +81,12 @@ export async function convertGuestToAccount(email: string, password: string) {
   )
 }
 
+/** Vymaže přezdívku (nastaví null) — po konverzi hosta na účet, ať si zvolí
+ *  pravé jméno přes UsernameSetup (host měl auto „Host####"). */
+export async function clearUsername(userId: string) {
+  return supabase.from('profiles').update({ username: null }).eq('id', userId)
+}
+
 /** Pošle e-mail s odkazem na reset hesla */
 export async function requestPasswordReset(email: string, captchaToken?: string) {
   return supabase.auth.resetPasswordForEmail(email, {

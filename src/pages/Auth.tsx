@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { signIn, signUp, requestPasswordReset, track, convertGuestToAccount } from '@/lib/supabase'
+import { signIn, signUp, requestPasswordReset, track, convertGuestToAccount, clearUsername } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import Turnstile from '@/components/Turnstile'
@@ -23,7 +23,7 @@ const PASSWORD_RULES = [
 
 export default function AuthPage({ landing = false }: { landing?: boolean } = {}) {
   const { t } = useTranslation()
-  const { isAnonymous } = useAuth()
+  const { isAnonymous, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [mode, setMode] = useState<Mode>((location.state as { mode?: Mode } | null)?.mode === 'register' ? 'register' : 'login')
@@ -70,9 +70,16 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
           ? await convertGuestToAccount(email, password)
           : await signUp(email, password, captcha || undefined)
         if (error) throw error
+        track('sign_up', { email, converted: isAnonymous })
+        if (isAnonymous && user) {
+          // Převedený host: zahoď auto „Host####" a nech ho zvolit pravé jméno
+          // (reload → UsernameSetup). E-mail potvrdí zvlášť z doručené pošty.
+          await clearUsername(user.id)
+          window.location.assign('/menu')
+          return
+        }
         setSuccess(t('auth.registered'))
         setPassword(''); setConfirmPassword('')
-        track('sign_up', { email, converted: isAnonymous })
       } else {
         const { error } = await signIn(email, password, captcha || undefined)
         if (error) throw error
