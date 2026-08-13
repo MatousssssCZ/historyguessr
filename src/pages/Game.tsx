@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
+import RoundResultView from '@/components/round/RoundResult'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
-import { formatYear, formatDistance } from '@/lib/scoring'
 import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
@@ -200,6 +200,8 @@ export default function GamePage() {
             round={lastRound}
             onNext={nextRound}
             isLast={state.currentRound === roundsCount - 1}
+            roundNumber={state.currentRound + 1}
+            totalRounds={roundsCount}
           />
         </div>
       )}
@@ -672,152 +674,32 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
   )
 }
 
-// ── Round result overlay ──────────────────────────────────
-function RoundResult({ event, round, onNext, isLast }: {
+// ── Round result overlay (redesign 17e — sólo bez detailu) ──
+function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }: {
   event: Event; round: ReturnType<typeof useGame>['lastRound']
-  onNext: () => void; isLast: boolean
+  onNext: () => void; isLast: boolean; roundNumber: number; totalRounds: number
 }) {
   const { t } = useTranslation()
-  // Hooky musí být volané bezpodmínečně a ve stejném pořadí — early return až za nimi.
-  const isMobile = useIsMobile(641)
-
   if (!round) return null
-
-  const yearDiffLabel = round.year_diff === 0 ? t('game.exactTip') : t('game.yearOff', { n: round.year_diff })
-  const locPct = Math.round(round.location_score / 5)
-  const yrPct = Math.round(round.year_score / 5)
-
-  const nextBtn = (
-    <button
-      className="btn btn-accent"
-      style={{ width: '100%', fontSize: 15, padding: '13px 0' }}
-      onClick={onNext}
-    >
-      {isLast ? t('game.showTotal') : t('game.nextRound')}
-    </button>
-  )
-
-  if (isMobile) {
-    return (
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(13,9,6,0.88)',
-        backdropFilter: 'blur(6px)',
-        display: 'flex', alignItems: 'stretch',
-        paddingTop: 'calc(var(--safe-top) + 48px)',
-        zIndex: 20,
-      }}>
-        <div style={{
-          background: 'var(--paper-50)',
-          borderRadius: '20px 20px 0 0',
-          width: '100%',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', flex: 1, minHeight: 0,
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.4)',
-        }}>
-          {/* Header — název + skóre */}
-          <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 3 }}>{t('game.resultRound')}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}<span style={{ fontSize: 15, marginLeft: 3 }}>{t('common.pts')}</span></div>
-                <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Jeden plynulý sloupec: mapa → skóre → příběh.
-              Dřív byl příběh schovaný v tabu „info" a skoro nikdo ho neotevřel;
-              zvědavost na něj vzniká až po odhalení skóre. */}
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-            <div style={{ height: 230, position: 'relative', flexShrink: 0 }}>
-              <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
-            </div>
-
-            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <ScoreCard label={t('game.location')} score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
-                <ScoreCard label={t('game.year')} score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
-              </div>
-              <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.correctYear')}</div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{t('game.yourGuess')}</div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(round.guess_year)}</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ borderTop: '0.5px solid var(--line)', marginTop: 4 }}>
-              <InfoContent event={event}/>
-            </div>
-          </div>
-
-          {/* Tlačítko dole */}
-          <div style={{ padding: `10px 14px`, paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)', flexShrink: 0 }}>
-            {nextBtn}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Desktop — 2 sloupce
+  const dots = Array.from({ length: totalRounds }, (_, i) => i <= roundNumber - 1)
   return (
-    <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,9,6,0.92)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, padding: 20 }}>
-      <div style={{ background: 'var(--paper-50)', borderRadius: 20, maxWidth: 860, width: '100%', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', maxHeight: 'calc(100dvh - 40px)' }}>
-        {/* Levý — mapa + skóre */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
-          <div style={{ padding: '18px 24px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-            <div className="eyebrow" style={{ marginBottom: 3 }}>{t('game.resultRound')}</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>{eventTitle(event)}</h2>
-              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1 }}>{round.round_score.toLocaleString(currentLocale())}<span style={{ fontSize: 16, marginLeft: 3 }}>{t('common.pts')}</span></div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t('game.outOf1000pts')}</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ borderBottom: '1px solid var(--line)' }}>
-            <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
-          </div>
-          <div style={{ padding: '16px 24px', flex: 1 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-              <ScoreCard label={t('game.location')} score={round.location_score} pct={locPct} sub={formatDistance(round.distance_km)}/>
-              <ScoreCard label={t('game.year')} score={round.year_score} pct={yrPct} sub={yearDiffLabel} highlight={round.year_diff === 0}/>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--ink-3)', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
-              <span>{t('game.correctYearInline')} <strong style={{ color: 'var(--ink)' }}>{formatYear(event.year)}</strong></span>
-              <span>{t('game.yourGuessInline')} <strong style={{ color: 'var(--ink)' }}>{formatYear(round.guess_year)}</strong></span>
-            </div>
-          </div>
-          <div style={{ padding: '12px 24px 16px', borderTop: '1px solid var(--line)' }}>{nextBtn}</div>
-        </div>
-        {/* Pravý — info */}
-        <div style={{ overflow: 'auto' }}><InfoContent event={event}/></div>
-      </div>
-    </div>
-  )
-}
-
-// ── Score karta ───────────────────────────────────────────
-function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score: number; pct: number; sub: string; highlight?: boolean }) {
-  const { t } = useTranslation()
-  return (
-    <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
-      <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>
-        {score.toLocaleString(currentLocale())}<span style={{ fontSize: 13, marginLeft: 2, color: 'var(--ink-3)' }}>{t('common.pts')}</span>
-      </div>
-      <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
-      </div>
-      <div style={{ fontSize: 11, color: highlight ? '#1d6b3a' : 'var(--ink-3)' }}>{sub}</div>
-    </div>
+    <RoundResultView
+      map={<ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>}
+      roundLabel={t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()}
+      dots={dots}
+      eventTitle={eventTitle(event)}
+      eventYear={event.year}
+      scoreTotal={round.round_score}
+      scoreMax={1000}
+      distanceKm={round.distance_km}
+      placePoints={round.location_score}
+      placeMax={500}
+      yearOff={round.year_diff}
+      yearPoints={round.year_score}
+      yearMax={500}
+      ctaLabel={isLast ? t('round.ctaGameResult') : t('round.ctaNext')}
+      onCta={onNext}
+    />
   )
 }
 
