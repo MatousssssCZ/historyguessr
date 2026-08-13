@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { updateProfile, signOut, getMyEntitlements, deleteMyAccount } from '@/lib/supabase'
+import { updateProfile, signOut, getMyEntitlements, deleteMyAccount, getFriendRequests } from '@/lib/supabase'
 import { isPremiumUser, type Entitlements } from '@/lib/entitlements'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -31,6 +31,8 @@ export default function AccountPage() {
   const [ent, setEnt] = useState<Entitlements | null>(null)
   useEffect(() => { getMyEntitlements().then(setEnt).catch(() => {}) }, [])
   const premium = isPremiumUser(ent)
+  const [friendReqs, setFriendReqs] = useState(0)
+  useEffect(() => { getFriendRequests().then(r => setFriendReqs(r.length)).catch(() => {}) }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -119,6 +121,17 @@ export default function AccountPage() {
             </span>
             <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
           </div>
+        </button>
+
+        {/* Přátelé */}
+        <button onClick={() => navigate('/friends')} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
+          <span style={{ fontSize: 22 }}>👥</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('menu.friendsTitle')}</span>
+            <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.friendsSub')}</span>
+          </span>
+          {friendReqs > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>{friendReqs}</span>}
+          <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
         </button>
 
         {/* Vzhled */}

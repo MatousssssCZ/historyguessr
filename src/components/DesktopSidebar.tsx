@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { levelFromXp } from '@/lib/leveling'
+import { getFriendRequests } from '@/lib/supabase'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
@@ -21,6 +23,8 @@ export default function DesktopSidebar({ streak }: { streak?: number }) {
   const navigate = useNavigate()
   const location = useLocation()
   const isMobile = useIsMobile()
+  const [friendReqs, setFriendReqs] = useState(0)
+  useEffect(() => { getFriendRequests().then(r => setFriendReqs(r.length)).catch(() => {}) }, [])
 
   if (isMobile) return null
 
@@ -69,7 +73,11 @@ export default function DesktopSidebar({ streak }: { streak?: number }) {
               color: active ? 'var(--ink)' : 'var(--ink-2)',
               fontFamily: 'var(--font-sans)', fontWeight: active ? 700 : 500, fontSize: 13.5,
             }}>
-              <span style={{ fontSize: 18 }}>{n.icon}</span>{n.label}
+              <span style={{ fontSize: 18 }}>{n.icon}</span>
+              <span style={{ flex: 1 }}>{n.label}</span>
+              {friendReqs > 0 && (n.to === '/friends' || n.to === '/account') && (
+                <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 6px', borderRadius: 999 }}>{friendReqs}</span>
+              )}
             </button>
           )
         })}
