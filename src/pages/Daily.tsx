@@ -25,6 +25,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { invalidateMenuCache } from '@/pages/Menu'
 import ShareResult from '@/components/ShareResult'
 import EventStory from '@/components/EventStory'
+import EraToggle from '@/components/EraToggle'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -613,19 +614,13 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
           </button>
         ))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--line-strong)', borderRadius: 10, background: 'var(--surface)', padding: '0 6px 0 14px' }}>
-        <input type="text" inputMode="numeric" pattern="[0-9]*" value={inputValue}
-          onChange={e => handleInput(e.target.value)}
-          onBlur={() => setDraft(null)}
-          placeholder={t('daily.yearPlaceholder')}
-          style={{ flex: 1, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 18, padding: '11px 0', border: 'none', color: 'var(--ink)', background: 'transparent', outline: 'none', minWidth: 0 }}
-        />
-        <button type="button" onClick={() => onChange(Math.max(MIN, Math.min(MAX, -value)))} style={{
-          flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', fontWeight: 700,
-          color: value < 0 ? '#5a8fb5' : 'var(--accent-deep)', textTransform: 'uppercase',
-          background: 'var(--paper-100)', border: '0.5px solid var(--line-strong)', borderRadius: 8, cursor: 'pointer', padding: '7px 10px',
-        }}>{value < 0 ? t('game.bcShort') : t('game.adShort')}</button>
-      </div>
+      <input type="text" inputMode="numeric" pattern="[0-9]*" value={inputValue}
+        onChange={e => handleInput(e.target.value)}
+        onBlur={() => setDraft(null)}
+        placeholder={t('daily.yearPlaceholder')}
+        style={{ width: '100%', boxSizing: 'border-box', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 18, padding: '11px 14px', border: '1px solid var(--line-strong)', borderRadius: 10, color: 'var(--ink)', background: 'var(--surface)', outline: 'none' }}
+      />
+      <EraToggle bc={value < 0} onSelect={(bc) => { const mag = Math.abs(value) || 1; onChange(Math.max(MIN, Math.min(MAX, bc ? -mag : mag))) }}/>
     </div>
   )
 }

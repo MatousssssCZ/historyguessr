@@ -16,6 +16,7 @@ import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
 import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
 import AdSlot from '@/components/AdSlot'
+import EraToggle from '@/components/EraToggle'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Event, RoundResult, CampaignReward, RewardRarity } from '@/types/database'
 
@@ -568,8 +569,11 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
     if (nv === 0) nv = sign
     onChange(Math.max(MIN, Math.min(MAX, nv)))
   }
-  // BC/AD přepínač — otočí znaménko bez nutnosti psát „−"
-  function toggleEra() { onChange(Math.max(MIN, Math.min(MAX, -value))) }
+  // Volba éry přes segmentový přepínač (bez nutnosti psát „−")
+  function selectEra(bc: boolean) {
+    const mag = Math.abs(value) || 1
+    onChange(Math.max(MIN, Math.min(MAX, bc ? -mag : mag)))
+  }
 
   const inputValue = draft !== null ? draft : String(Math.abs(value))
 
@@ -651,21 +655,16 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
             onBlur={() => setDraft(null)}
             placeholder={t('game.yearInput')}
             style={{
-              width: 66, textAlign: 'right', border: 'none', background: 'transparent',
+              width: '100%', textAlign: 'center', border: 'none', background: 'transparent',
               fontFamily: 'var(--font-mono)', fontSize: 17, color: 'var(--ink)',
               outline: 'none', padding: '9px 0',
             }}
           />
-          <button type="button" onClick={toggleEra} style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: value < 0 ? '#5a8fb5' : 'var(--accent-deep)',
-            textTransform: 'uppercase', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 2px', fontWeight: 700,
-          }}>
-            {value < 0 ? t('game.bcShort') : t('game.adShort')}
-          </button>
         </div>
         <button onClick={() => step(1)} style={stepBtnStyle}>+1</button>
         <button onClick={() => step(10)} style={stepBtnStyle}>+10</button>
       </div>
+      <EraToggle bc={value < 0} onSelect={selectEra}/>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--ink-3)', textTransform: 'uppercase', textAlign: 'center' }}>
         {t('game.yearHint')}
       </div>
