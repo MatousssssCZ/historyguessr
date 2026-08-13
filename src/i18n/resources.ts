@@ -111,7 +111,7 @@ export const resources = {
     account: { title: 'Můj účet', stats: 'Statistiky', totalScore: 'Celkové skóre', gamesPlayed: 'Odehráno her',
       profile: 'Profil', username: 'Uživatelské jméno', usernamePlaceholder: 'např. historik42',
       saveError: 'Nepodařilo se uložit.', saved: 'Profil uložen.', saving: 'Ukládám…',
-      appearance: 'Vzhled', themeLabel: 'Světlý / tmavý režim', session: 'Relace', loggedInAs: 'Přihlášen jako', signOut: 'Odhlásit se',
+      appearance: 'Vzhled', themeLabel: 'Světlý / tmavý režim', session: 'Relace', loggedInAs: 'Přihlášen jako', signOut: 'Odhlásit se', deleteTitle: 'Smazat účet', deleteWord: 'SMAZAT', deleteDanger: 'Účet a všechna data (přezdívka, skóre, série, odznaky) budou úplně a trvale smazány. Tuto akci nelze vzít zpět.', deleteConfirmLabel: 'Pro potvrzení napiš „{{word}}"', deleteBtn: 'Smazat natrvalo', deleteError: 'Smazání se nepodařilo. Zkus to znovu.',
       subscription: 'Předplatné', planFree: 'Free plán', planPremium: 'Premium', manageSub: 'Spravovat předplatné', upgradeSub: 'Získej Premium →' },
     premium: {
       eyebrow: 'Historyguesser Premium', heroTitle: 'Odemkni celý Historyguesser', heroSub: 'Bez reklam, všechny kampaně a plná kontrola nad hrou.',
@@ -403,7 +403,7 @@ export const resources = {
     account: { title: 'My account', stats: 'Statistics', totalScore: 'Total score', gamesPlayed: 'Games played',
       profile: 'Profile', username: 'Username', usernamePlaceholder: 'e.g. historian42',
       saveError: 'Could not save.', saved: 'Profile saved.', saving: 'Saving…',
-      appearance: 'Appearance', themeLabel: 'Light / dark mode', session: 'Session', loggedInAs: 'Logged in as', signOut: 'Log out',
+      appearance: 'Appearance', themeLabel: 'Light / dark mode', session: 'Session', loggedInAs: 'Logged in as', signOut: 'Log out', deleteTitle: 'Delete account', deleteWord: 'DELETE', deleteDanger: 'Your account and all data (nickname, scores, streak, badges) will be permanently and completely deleted. This cannot be undone.', deleteConfirmLabel: 'Type “{{word}}" to confirm', deleteBtn: 'Delete permanently', deleteError: 'Deletion failed. Please try again.',
       subscription: 'Subscription', planFree: 'Free plan', planPremium: 'Premium', manageSub: 'Manage subscription', upgradeSub: 'Get Premium →' },
     premium: {
       eyebrow: 'Historyguesser Premium', heroTitle: 'Unlock the full Historyguesser', heroSub: 'No ads, every campaign and full control over your game.',
@@ -695,7 +695,7 @@ export const resources = {
     account: { title: 'Mein Konto', stats: 'Statistiken', totalScore: 'Gesamtpunkte', gamesPlayed: 'Gespielte Spiele',
       profile: 'Profil', username: 'Benutzername', usernamePlaceholder: 'z. B. historiker42',
       saveError: 'Speichern fehlgeschlagen.', saved: 'Profil gespeichert.', saving: 'Speichern…',
-      appearance: 'Darstellung', themeLabel: 'Heller / dunkler Modus', session: 'Sitzung', loggedInAs: 'Angemeldet als', signOut: 'Abmelden',
+      appearance: 'Darstellung', themeLabel: 'Heller / dunkler Modus', session: 'Sitzung', loggedInAs: 'Angemeldet als', signOut: 'Abmelden', deleteTitle: 'Konto löschen', deleteWord: 'LÖSCHEN', deleteDanger: 'Dein Konto und alle Daten (Spitzname, Punkte, Serie, Abzeichen) werden vollständig und dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.', deleteConfirmLabel: 'Tippe zur Bestätigung „{{word}}"', deleteBtn: 'Dauerhaft löschen', deleteError: 'Löschen fehlgeschlagen. Bitte versuche es erneut.',
       subscription: 'Abonnement', planFree: 'Free-Plan', planPremium: 'Premium', manageSub: 'Abonnement verwalten', upgradeSub: 'Premium holen →' },
     premium: {
       eyebrow: 'Historyguesser Premium', heroTitle: 'Schalte den ganzen Historyguesser frei', heroSub: 'Keine Werbung, alle Kampagnen und volle Kontrolle über dein Spiel.',

@@ -87,6 +87,14 @@ export async function clearUsername(userId: string) {
   return supabase.from('profiles').update({ username: null }).eq('id', userId)
 }
 
+/** Úplně a trvale smaže vlastní účet (RPC → kaskáda z auth.users), pak odhlásí. */
+export async function deleteMyAccount(): Promise<{ error: Error | null }> {
+  const { error } = await supabase.rpc('delete_my_account')
+  if (error) return { error: error as Error }
+  await supabase.auth.signOut()
+  return { error: null }
+}
+
 /** Pošle e-mail s odkazem na reset hesla */
 export async function requestPasswordReset(email: string, captchaToken?: string) {
   return supabase.auth.resetPasswordForEmail(email, {

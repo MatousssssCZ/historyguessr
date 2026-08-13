@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { updateProfile, signOut, getMyEntitlements } from '@/lib/supabase'
+import { updateProfile, signOut, getMyEntitlements, deleteMyAccount } from '@/lib/supabase'
 import { isPremiumUser, type Entitlements } from '@/lib/entitlements'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -48,6 +48,20 @@ export default function AccountPage() {
   }
 
   async function handleSignOut() { await signOut(); navigate('/auth') }
+
+  // Smazání účtu — vyžaduje napsat potvrzovací slovo (jazykově nezávisle)
+  const [delOpen, setDelOpen] = useState(false)
+  const [delText, setDelText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const DELETE_WORDS = ['smazat', 'delete', 'löschen', 'loschen']
+  const canDelete = DELETE_WORDS.includes(delText.trim().toLowerCase())
+  async function handleDelete() {
+    if (!canDelete || deleting) return
+    setDeleting(true)
+    const { error } = await deleteMyAccount()
+    if (error) { setDeleting(false); setMessage({ type: 'error', text: t('account.deleteError') }); return }
+    window.location.assign('/')
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
@@ -158,6 +172,37 @@ export default function AccountPage() {
             width: '100%', background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)', borderRadius: 12,
             padding: 11, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
           }}>{t('account.signOut')}</button>
+        </div>
+
+        {/* Smazání účtu (nebezpečná zóna) */}
+        <div style={{ ...cardStyle, borderColor: 'rgba(200,60,50,0.35)' }}>
+          <p style={{ ...eyebrow, color: '#c0392b' }}>{t('account.deleteTitle')}</p>
+          {!delOpen ? (
+            <button onClick={() => setDelOpen(true)} style={{
+              width: '100%', background: 'transparent', border: '1px solid #c0392b', color: '#c0392b', borderRadius: 12,
+              padding: 11, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}>{t('account.deleteTitle')}</button>
+          ) : (
+            <>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)', margin: '0 0 12px' }}>
+                ⚠️ {t('account.deleteDanger')}
+              </p>
+              <label style={fieldLabel}>{t('account.deleteConfirmLabel', { word: t('account.deleteWord') })}</label>
+              <input className="input" value={delText} onChange={e => setDelText(e.target.value)} placeholder={t('account.deleteWord')} autoFocus style={{ marginBottom: 12 }}/>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => { setDelOpen(false); setDelText('') }} style={{
+                  flex: 1, background: 'transparent', border: '1px solid var(--line-strong)', color: 'var(--ink-2)', borderRadius: 12,
+                  padding: 11, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                }}>{t('common.cancel')}</button>
+                <button onClick={handleDelete} disabled={!canDelete || deleting} style={{
+                  flex: 1, background: canDelete ? '#c0392b' : 'var(--paper-300)', border: 'none',
+                  color: canDelete ? '#fff' : 'var(--ink-3)', borderRadius: 12,
+                  padding: 11, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
+                  cursor: canDelete && !deleting ? 'pointer' : 'default',
+                }}>{deleting ? '…' : t('account.deleteBtn')}</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
       </div>
