@@ -7,20 +7,21 @@ import { formatDistance, formatYear } from '@/lib/scoring'
 // jedna spodní karta. Prezentační komponenta — data i mapa přijdou přes props.
 // Používá se pro denní výzvu (s detailem) i sólo hru (bez detailu).
 
-export type DetailTab = 'panorama' | 'distribution' | 'leaderboard'
-export const DETAIL_TABS: DetailTab[] = ['panorama', 'distribution', 'leaderboard']
+export type DetailTab = 'panorama' | 'story' | 'leaderboard'
+export const DETAIL_TABS: DetailTab[] = ['panorama', 'story', 'leaderboard']
 
-// Design tokeny (handoff)
+// Layout dle handoffu 17e, ale barvy sjednocené s appkou (CSS proměnné →
+// funguje i tmavý režim). Fixní zůstává jen zlatá (1. místo) a streak tečka.
 export const C = {
-  bg: '#F2ECE2', surface: '#FBF7F0', ink: '#26211C', ink2: '#3A332B',
-  muted: '#6B6357', muted2: '#8C8175', muted3: '#A79C8C',
-  accent: '#BE6240', good: '#4E7A50', gold: '#C89A3C', streak: '#E8C88A',
-  line: 'rgba(40,30,20,.09)', lineStrong: 'rgba(40,30,20,.12)', bar: 'rgba(40,30,20,.13)',
-  accentSoft: 'rgba(190,98,64,.10)', accentBorder: 'rgba(190,98,64,.32)',
+  bg: 'var(--paper-200)', surface: 'var(--surface)', ink: 'var(--ink)', ink2: 'var(--ink-2)',
+  muted: 'var(--ink-3)', muted2: 'var(--ink-3)', muted3: 'var(--ink-3)',
+  accent: 'var(--accent)', good: 'var(--success)', gold: '#C89A3C', streak: '#E8C88A',
+  line: 'var(--line)', lineStrong: 'var(--line-strong)', bar: 'var(--line-strong)',
+  accentSoft: 'rgba(217,119,87,.10)', accentBorder: 'rgba(217,119,87,.32)',
 }
+export const SHADOW_CTA = '0 10px 22px -10px rgba(217,119,87,.6)'
 export const F = {
-  display: "'Fraunces', Georgia, serif", ui: "'Inter', system-ui, sans-serif",
-  mono: "'JetBrains Mono', ui-monospace, monospace",
+  display: 'var(--font-serif)', ui: 'var(--font-sans)', mono: 'var(--font-mono)',
 }
 
 interface Props {
@@ -44,13 +45,13 @@ interface Props {
   secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
 }
 
-const DETAIL_ICON: Record<DetailTab, string> = { panorama: '🖼', distribution: '📊', leaderboard: '🏆' }
+const DETAIL_ICON: Record<DetailTab, string> = { panorama: '🖼', story: '📖', leaderboard: '🏆' }
 
 export default function RoundResult(p: Props) {
   const { t } = useTranslation()
   const loc = currentLocale()
   const detailLabel: Record<DetailTab, string> = {
-    panorama: t('round.tabPanorama'), distribution: t('round.tabDistribution'), leaderboard: t('round.tabLeaderboard'),
+    panorama: t('round.tabPanorama'), story: t('round.tabStory'), leaderboard: t('round.tabLeaderboard'),
   }
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100dvh', background: C.bg, overflow: 'hidden' }}>
@@ -98,7 +99,7 @@ export default function RoundResult(p: Props) {
           </div>
         )}
 
-        <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: '0 10px 22px -10px rgba(190,98,64,.65)', cursor: 'pointer' }}>
+        <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer' }}>
           {p.ctaLabel} <span style={{ fontSize: 15 }}>→</span>
         </button>
         {p.secondaryActions && <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>{p.secondaryActions}</div>}

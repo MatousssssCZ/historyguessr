@@ -21,11 +21,11 @@ import ControlDock from '@/components/GameControls'
 import type { Event } from '@/types/database'
 import type { DailyLeaderRow } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
-import { useIsMobile } from '@/hooks/useIsMobile'
 import { invalidateMenuCache } from '@/pages/Menu'
 import ShareResult from '@/components/ShareResult'
-import EventStory from '@/components/EventStory'
 import EraToggle from '@/components/EraToggle'
+import RoundResult, { type DetailTab } from '@/components/round/RoundResult'
+import RoundDetail, { type LeaderEntry, type Distribution } from '@/components/round/RoundDetail'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -57,7 +57,6 @@ export default function DailyChallengePage() {
   const [yearExpanded, setYearExpanded] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   // Příběh události po odeslání tipu (u již dříve odehrané výzvy se neukazuje)
-  const [showStory, setShowStory] = useState(false)
   // Make-up: doplnění zameškané výzvy. `makeup` = datum (ISO) doplňovaného dne.
   const [makeup, setMakeup] = useState<string | null>(null)
   const [makeupStatus, setMakeupStatus] = useState<{ balance: number; missed: string[] }>({ balance: 0, missed: [] })
@@ -66,7 +65,6 @@ export default function DailyChallengePage() {
   const [streakBadges, setStreakBadges] = useState<UnlockedTier[]>([])
   const [streak, setStreak] = useState(0)   // aktuální série (pro žebříček milníků)
   // Výsledek má 2 kroky: 'detail' (jak blízko/daleko, bez odznaků) → 'full' (odznaky, žebříček…)
-  const [resultStep, setResultStep] = useState<'detail' | 'full'>('full')
 
   // Timer
   const [elapsed, setElapsed] = useState(0)
@@ -114,7 +112,6 @@ export default function DailyChallengePage() {
         setGuessLat(existing.guess_lat); setGuessLng(existing.guess_lng); setGuessYear(existing.guess_year)
         setResult({ distKm: dist, locScore: locSc, yrScore: yrSc, totalScore: existing.score, yrDiff: yearDiff(existing.guess_year, yf, yt), xpMult: 1 })
       }
-      setResultStep('full')   // už odehráno → rovnou plný výsledek (bez detailu)
       setPhase('already_played')
       return
     }
@@ -231,7 +228,6 @@ export default function DailyChallengePage() {
       setLeaderboard([]); setAllScores([])
       getDailyMakeupStatus().then(setMakeupStatus).catch(() => {})
       computeStreakBadges(makeup)
-      setResultStep('detail')
       setSubmitting(false); setPhase('result')
       return
     }
@@ -270,7 +266,6 @@ export default function DailyChallengePage() {
     setLeaderboard(lb)
     setAllScores(scores)
     computeStreakBadges(localDateISO())
-    setResultStep('detail')
     setSubmitting(false)
     setPhase('result')
   }, [event, user, guessLat, guessLng, guessYear, profile?.username, makeup])
@@ -315,33 +310,15 @@ export default function DailyChallengePage() {
     )
   }
 
-  // ── Krok 1 výsledku: jak blízko/daleko (bez odznaků) ────
-  if (phase === 'result' && resultStep === 'detail' && event && result) {
-    return (
-      <DailyDetailScreen
-        event={event} result={result}
-        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0}
-        onContinue={() => { setResultStep('full'); setShowStory(true) }}
-      />
-    )
-  }
-
-  // ── Krok 2 / Výsledky (already_played nebo po odeslání) ──
+  // ── Výsledek (redesign 17e): RoundResult + RoundDetail ──
   if ((phase === 'result' || phase === 'already_played') && event && result) {
     return (
       <>
-      {showStory && <EventStory event={event} onNext={() => setShowStory(false)}/>}
-      <DailyResultScreen
-        event={event}
-        result={result}
-        guessLat={guessLat ?? 0}
-        guessLng={guessLng ?? 0}
-        guessYear={guessYear}
-        leaderboard={leaderboard}
-        allScores={allScores}
-        userId={user?.id}
-        alreadyPlayed={phase === 'already_played'}
-        isMakeup={!!makeup}
+      <DailyResultView
+        event={event} result={result}
+        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0}
+        leaderboard={leaderboard} allScores={allScores} userId={user?.id}
+        alreadyPlayed={phase === 'already_played'} isMakeup={!!makeup}
         makeupCount={makeupStatus.balance}
         onMakeup={makeupStatus.missed.length > 0 ? () => setShowMakeup(true) : undefined}
         streakBadges={streakBadges}
@@ -627,430 +604,79 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 
 // ── Histogram ─────────────────────────────────────────────
 // Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
-function DistributionModal({ scores, myScore, onClose, t }: {
-  scores: number[]; myScore: number; onClose: () => void; t: (k: string) => string
-}) {
-  const isMobile = useIsMobile()
-  const panel: React.CSSProperties = isMobile
-    ? { width: '100%', minHeight: '50vh', borderRadius: '20px 20px 0 0', paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }
-    : { width: '100%', maxWidth: 560, borderRadius: 20, boxShadow: 'var(--shadow-xl)' }
-  return (
-    <div
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(13,9,6,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 24 }}
-    >
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper-50)', padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', ...panel }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
-          <button onClick={onClose} style={{ background: 'var(--paper-200)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)' }}>{t('daily.close')}</button>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
-          <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{t('daily.yourScore')}</span>
-          <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--accent)' }}>{myScore.toLocaleString(currentLocale())}</span>
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <ScoreHistogram scores={scores} myScore={myScore} height={240}/>
-        </div>
-      </div>
-    </div>
-  )
-}
 
-function ScoreHistogram({ scores, myScore, height = 64 }: { scores: number[]; myScore: number; height?: number }) {
-  const BINS = 20
-  const bins = Array(BINS).fill(0)
-  scores.forEach(s => {
-    const idx = Math.min(BINS - 1, Math.floor((s / 1000) * BINS))
-    bins[idx]++
-  })
-  const max = Math.max(...bins, 1)
-  const myBin = Math.min(BINS - 1, Math.floor((myScore / 1000) * BINS))
-  // Percentil = kolik % OSTATNÍCH hráčů jsem porazil (nejhorší = 0 %, nejlepší = 100 %)
-  const others = Math.max(scores.length - 1, 0)
-  const beaten = scores.filter(s => s < myScore).length
-  const pct = others > 0 ? Math.round((beaten / others) * 100) : 0
-  const barMax = height - 8
-  const big = height >= 120
-
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: big ? 4 : 2, height }}>
-        {bins.map((v, i) => (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', position: 'relative' }}>
-            {i === myBin && (
-              <div style={{ position: 'absolute', bottom: '100%', marginBottom: 3, fontFamily: 'var(--font-mono)', fontSize: big ? 11 : 9, color: '#d97757', whiteSpace: 'nowrap' }}>ty</div>
-            )}
-            <div style={{ width: '100%', background: i === myBin ? '#d97757' : 'var(--line-strong)', borderRadius: big ? '3px 3px 0 0' : '2px 2px 0 0', height: `${Math.max(4, (v / max) * barMax)}px` }}/>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-        {['0', '250', '500', '750', '1 000'].map(l => (
-          <span key={l} style={{ fontFamily: 'var(--font-mono)', fontSize: big ? 10 : 9, color: 'var(--ink-3)' }}>{l}</span>
-        ))}
-      </div>
-      <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: big ? 13 : 12, color: 'var(--ink-3)', margin: '10px 0 0' }}>
-        {others > 0 ? `Lepší než ${pct} % hráčů` : `Zatím jediný hráč`} · {scores.length} celkem
-      </p>
-    </div>
-  )
-}
-
-// ── Výsledková obrazovka ──────────────────────────────────
-// ── Krok 1: čistá obrazovka „jak blízko/daleko" (bez odznaků) ──
-function DailyDetailScreen({ event, result, guessLat, guessLng, onContinue }: {
-  event: Event
-  result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
-  guessLat: number; guessLng: number; onContinue: () => void
-}) {
-  const { t } = useTranslation()
-  const distLabel = result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString(currentLocale())} km`
-  const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
-  const cell: React.CSSProperties = { background: 'var(--paper-200)', borderRadius: 12, padding: '11px 14px' }
-  const cellLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 4 }
-  return (
-    <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)' }}>
-      <div style={{ textAlign: 'center', padding: '18px 16px 8px', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 8 }}>{t('daily.resultTitle')}</div>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 56, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}</div>
-        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 5 }}>{t('common.pts')} · {t('game.outOf1000')}</div>
-      </div>
-      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        <ResultMap guessLat={guessLat} guessLng={guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
-      </div>
-      <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flexShrink: 0 }}>
-        <div style={cell}>
-          <div style={cellLabel}>📍 {t('game.location')}</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20 }}>{distLabel}</div>
-        </div>
-        <div style={{ ...cell, background: result.yrDiff === 0 ? 'rgba(92,148,104,0.14)' : 'var(--paper-200)' }}>
-          <div style={cellLabel}>📅 {t('game.year')}</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: result.yrDiff === 0 ? 'var(--success-deep, #3f7a4d)' : 'var(--ink)' }}>{yearLabel}</div>
-        </div>
-      </div>
-      <div style={{ padding: '0 14px', paddingBottom: 'max(14px, env(safe-area-inset-bottom))', flexShrink: 0 }}>
-        <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '13px 0' }} onClick={onContinue}>{t('daily.continue')} →</button>
-      </div>
-    </div>
-  )
-}
-
-function LeaderRowView({ r, me, t }: { r: DailyLeaderRow; me: boolean; t: (k: string) => string }) {
-  const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : null
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, background: me ? 'rgba(217,119,87,0.07)' : 'var(--paper-100)', border: me ? '0.5px solid rgba(217,119,87,0.2)' : '0.5px solid var(--line)' }}>
-      <span style={{ fontSize: 13, width: 26, textAlign: 'center', flexShrink: 0 }}>
-        {medal ?? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{r.rank}.</span>}
-      </span>
-      <span style={{ flex: 1, fontSize: 13, fontWeight: me ? 500 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {r.username ?? t('daily.player')}
-        {me && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>{t('daily.youShort')}</span>}
-      </span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: me ? 600 : 400, color: me ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString(currentLocale())}</span>
-    </div>
-  )
-}
-
-function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, onMenu }: {
+// ── Výsledek denní výzvy (redesign 17e) ───────────────────
+function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
-  guessLat: number; guessLng: number; guessYear: number
+  guessLat: number; guessLng: number
   leaderboard: DailyLeaderRow[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
   makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
 }) {
   const { t } = useTranslation()
+  const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
   const [showShare, setShowShare] = useState(false)
+  const loc = currentLocale()
 
-  // Podklady pro sdílecí kartu (bez názvu události — ať to nespoiluje ostatní)
   const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
-  // Percentil = % OSTATNÍCH hráčů, které jsem porazil (stejný vzorec jako histogram)
-  const betterThan = allScores.length >= 5
-    ? Math.round((allScores.filter(v => v < result.totalScore).length / (allScores.length - 1)) * 100)
-    : null
-  const dateLabel = new Date().toLocaleDateString(currentLocale(), { day: 'numeric', month: 'long' })
-  const shareData = {
-    dateLabel,
-    score: result.totalScore,
-    maxScore: 1000,
-    locScore: result.locScore,
-    yearScore: result.yrScore,
-    distanceLabel: formatDistance(result.distKm),
-    yearLabel,
-    betterThan,
+  const betterThan = allScores.length >= 5 ? Math.round((allScores.filter(v => v < result.totalScore).length / (allScores.length - 1)) * 100) : null
+  const dateLabel = new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long' })
+  const shareData = { dateLabel, score: result.totalScore, maxScore: 1000, locScore: result.locScore, yearScore: result.yrScore, distanceLabel: formatDistance(result.distKm), yearLabel, betterThan }
+  const shareText = [`Historyguesser · ${t('menu.dailyMobile')} · ${dateLabel}`, `★ ${result.totalScore} / 1000`, `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`, 'historyguesser.net'].join('\n')
+
+  const entries: LeaderEntry[] = leaderboard.map(r => ({
+    id: r.user_id, name: r.username ?? t('daily.player'), score: r.score,
+    distanceKm: (r.guess_lat != null && r.guess_lng != null) ? haversineKm(r.guess_lat, r.guess_lng, event.lat, event.lng) : 0,
+    yearOff: r.guess_year != null ? yearDiff(r.guess_year, event.year_from, event.year_to) : 0,
+    isMe: r.user_id === userId,
+  }))
+  const myIdx = entries.findIndex(e => e.isMe)
+  const shown = myIdx >= 5 ? [...entries.slice(0, 5), entries[myIdx]] : entries.slice(0, 5)
+
+  const BINS = 9
+  const bins = Array(BINS).fill(0) as number[]
+  allScores.forEach(sc => { bins[Math.min(BINS - 1, Math.floor((sc / 1000) * BINS))]++ })
+  const distribution: Distribution = {
+    bins,
+    myBinIndex: Math.min(BINS - 1, Math.floor((result.totalScore / 1000) * BINS)),
+    percentileBetterThan: allScores.length > 0 ? Math.round((allScores.filter(sc => sc < result.totalScore).length / allScores.length) * 100) : 0,
   }
-  const shareText = [
-    `Historyguesser · ${t('menu.dailyMobile')} · ${dateLabel}`,
-    `★ ${result.totalScore} / 1000`,
-    `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`,
-    'historyguesser.net',
-  ].join('\n')
-  const [histModal, setHistModal] = useState(false)
-  const [showPano, setShowPano] = useState(false)
-  const [tab, setTab] = useState<'score' | 'leaderboard' | 'info'>('score')
-  const isMobile = useIsMobile()
+
   const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
-  const locPct = Math.round(result.locScore / 5)
-  const yrPct = Math.round(result.yrScore / 5)
-  const myRow = leaderboard.find(r => r.user_id === userId)
-  const myRank = myRow?.rank ?? (leaderboard.filter(r => r.score > result.totalScore).length + 1)
-  // Zobrazit top 5; když jsem níž, přidat okolí mé pozice (nade + pode mnou).
-  const myIdx = leaderboard.findIndex(r => r.user_id === userId)
-  const topRows = leaderboard.slice(0, 5)
-  const nearRows = myIdx >= 5 ? leaderboard.slice(Math.max(5, myIdx - 1), myIdx + 2) : []
+  const map = <ResultMap guessLat={guessLat} guessLng={guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+  const panorama = hasPanorama ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
+  const story = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+  const xpSection = (!alreadyPlayed && userId) ? <GameEvaluation userId={userId} gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)} gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}} extraUnlocked={streakBadges}/> : null
 
-  const scoreSection = (
-    <>
-      {/* Mapa */}
-      <div style={{ height: isMobile ? 130 : 180, flexShrink: 0, overflow: 'hidden' }}>
-        <ResultMap guessLat={guessLat} guessLng={guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
-      </div>
-      {/* Skóre karty */}
-      <div style={{ padding: isMobile ? '10px 12px' : '12px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <ScoreCard label={t('game.location')} score={result.locScore} pct={locPct} sub={result.distKm < 1 ? '<1 km' : `${Math.round(result.distKm).toLocaleString(currentLocale())} km`}/>
-          <ScoreCard label={t('game.year')} score={result.yrScore} pct={yrPct} sub={result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })} highlight={result.yrDiff === 0}/>
-        </div>
-        <div style={{ background: 'var(--paper-200)', borderRadius: 9, padding: '8px 12px', display: 'flex', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.correctYear')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(event.year)}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 2 }}>{t('game.yourGuess')}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 500 }}>{formatYear(guessYear)}</div>
-          </div>
-        </div>
-      </div>
-    </>
-  )
-
-  const infoSection = (
-    <div style={{ padding: isMobile ? '12px 14px 14px' : '16px 20px 18px' }}>
-      {event.event_image_url && (
-        <img src={event.event_image_url} alt={eventTitle(event)} loading="lazy" style={{ width: '100%', borderRadius: 12, border: '0.5px solid var(--line)', marginBottom: 14, display: 'block', maxHeight: isMobile ? 220 : 280, objectFit: 'cover' }}/>
-      )}
-      <p style={{ fontSize: 14.5, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
-    </div>
-  )
-
-  // Na desktopu je žebříček ve pravém sloupci → tab jen na mobilu
-  // V make-upu není žebříček (minulý den, ostatní hráli naživo).
-  const tabKeys: ('score' | 'leaderboard' | 'info')[] = isMakeup
-    ? ['score', 'info']
-    : isMobile ? ['score', 'leaderboard', 'info'] : ['score', 'info']
-  const canShowDist = !isMakeup && allScores.length > 1
-
-  const resultTabs = (
-    <div style={{ display: 'flex', gap: 6, padding: isMobile ? '10px 12px 2px' : '12px 20px 4px', flexShrink: 0 }}>
-      {tabKeys.map(k => {
-        const active = tab === k
-        const label = k === 'score' ? `🏆 ${t('game.tabScore')}`
-          : k === 'leaderboard' ? `🏅 ${t('daily.tabLeaderboard')}`
-          : `📖 ${t('game.tabInfo')}`
-        return (
-          <button key={k} type="button" onClick={() => setTab(k)} style={{
-            flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer',
-            border: active ? '1px solid var(--accent)' : '1px solid var(--line)',
-            background: active ? 'rgba(217,119,87,0.08)' : 'transparent',
-            color: active ? 'var(--accent-deep)' : 'var(--ink-3)',
-            fontSize: isMobile ? 12 : 13, fontWeight: active ? 500 : 400,
-            fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
-          }}>
-            {label}
-          </button>
-        )
-      })}
-    </div>
-  )
-
-  const leaderboardSection = (
-    <div style={{ padding: isMobile ? '10px 12px 8px' : '18px 20px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.leaderboard')}</p>
-          <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 5, fontStyle: 'italic' }}>
-            <span style={{ fontStyle: 'normal' }}>🌍</span> {t('daily.leaderboardWorld')}
-          </p>
-        </div>
-        {leaderboard.length > 0 && (
-          <span style={{ background: 'rgba(217,119,87,0.1)', color: 'var(--accent-deep)', fontSize: 11, fontFamily: 'var(--font-mono)', padding: '3px 10px', borderRadius: 999, border: '0.5px solid rgba(217,119,87,0.25)', flexShrink: 0 }}>
-            #{myRank} z {leaderboard.length}
-          </span>
-        )}
-      </div>
-      {leaderboard.length <= 1 && (
-        <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 8px', lineHeight: 1.5 }}>{t('daily.leaderboardWorldEmpty')}</p>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {topRows.map(r => <LeaderRowView key={r.user_id} r={r} me={r.user_id === userId} t={t}/>)}
-        {nearRows.length > 0 && (
-          <>
-            <div style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 14, lineHeight: 1, padding: '2px 0' }}>⋯</div>
-            {nearRows.map(r => <LeaderRowView key={r.user_id} r={r} me={r.user_id === userId} t={t}/>)}
-          </>
-        )}
-      </div>
-    </div>
-  )
-
-  // Vyhodnocení (XP/level + achievementy) — jen po dnešním odehrání
-  const evalSection = !alreadyPlayed && userId ? (
-    <div style={{ padding: isMobile ? '0 12px 8px' : '0 20px 14px' }}>
-      <GameEvaluation
-        userId={userId}
-        gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)}
-        gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}}
-        extraUnlocked={streakBadges}
+  if (detailTab) {
+    return (
+      <RoundDetail
+        initialTab={detailTab}
+        title={eventTitle(event)}
+        subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
+        leaderboard={shown} playersToday={entries.length} distribution={distribution}
+        panorama={panorama} story={story} xpSection={xpSection}
+        onBack={() => setDetailTab(null)} ctaLabel={t('round.ctaDone')} onCta={onMenu}
       />
-    </div>
-  ) : null
-
-  // Obsah dle aktivního tabu
-  const tabContent = tab === 'score'
-    ? <>{scoreSection}{evalSection}</>
-    : tab === 'leaderboard' ? leaderboardSection : infoSection
-
-  // Fullscreen panorama (bez časového limitu) — vyvolá se tlačítkem
-  const panoramaOverlay = showPano && hasPanorama ? (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: '#0d0906' }}>
-      <PanoramaViewer url={event.panorama_url}/>
-      <button onClick={() => setShowPano(false)} aria-label={t('daily.close')} style={{
-        position: 'absolute', top: 'calc(env(safe-area-inset-top,0px) + 14px)', right: 14, zIndex: 2,
-        width: 40, height: 40, borderRadius: '50%', cursor: 'pointer',
-        background: 'rgba(246,240,230,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)',
-        color: '#26211C', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>✕</button>
-      <div style={{
-        position: 'absolute', left: 16, bottom: 'calc(env(safe-area-inset-bottom,0px) + 16px)',
-        background: 'rgba(20,17,14,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)',
-        borderRadius: 20, padding: '8px 13px', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 12,
-      }}>{eventTitle(event)}</div>
-    </div>
-  ) : null
-
-  const panoBtn = hasPanorama ? (
-    <button
-      onClick={() => setShowPano(true)}
-      style={{ width: '100%', padding: '10px', background: 'var(--paper-200)', border: '0.5px solid var(--line-strong)', borderRadius: 10, fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-    >🖼 {t('daily.panorama')}</button>
-  ) : null
-
-  // ── Desktop ────────────────────────────────────────────
-  if (!isMobile) {
-    return (<>
-      {panoramaOverlay}
-      <div style={{ height: '100dvh', background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ background: 'var(--paper-50)', border: '1px solid var(--line)', borderRadius: 20, maxWidth: 860, width: '100%', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', maxHeight: 'calc(100dvh - 40px)' }}>
-          {/* Levá — výsledky */}
-          <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)', overflow: 'auto' }}>
-            <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-                {isMakeup ? t('daily.makeupResult') : alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '-0.01em', flex: 1 }}>{eventTitle(event)}</div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}<span style={{ fontSize: 16, marginLeft: 3 }}>{t('common.pts')}</span></div>
-                  <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
-                </div>
-              </div>
-            </div>
-            {resultTabs}
-            {tabContent}
-            <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--line)', marginTop: 'auto', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-              {hasPanorama && (
-                <button onClick={() => setShowPano(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>🖼 {t('daily.panorama')}</button>
-              )}
-              {canShowDist && (
-                <button onClick={() => setHistModal(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>📊 {t('daily.distribution')}</button>
-              )}
-              {!isMakeup && <button onClick={() => setShowShare(true)} className="btn btn-ghost" style={{ minWidth: 0 }}>↗ {t('daily.shareBtn')}</button>}
-              {!isMakeup && makeupCount > 0 && onMakeup && <button onClick={onMakeup} className="btn btn-ghost" style={{ minWidth: 0 }}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
-              <button className="btn btn-accent" style={{ minWidth: 0 }} onClick={onMenu}>{t('daily.menu')}</button>
-            </div>
-          </div>
-
-          {/* Pravá — sociální panel: žebříček přátel + distribuce skóre */}
-          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flexShrink: 0 }}>{leaderboardSection}</div>
-            <div style={{ marginTop: 'auto', borderTop: '1px solid var(--line)', padding: '18px 20px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.distribution')}</p>
-                {canShowDist && (
-                  <button onClick={() => setHistModal(true)} title={t('daily.distribution')} style={{
-                    background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 8,
-                    padding: '4px 10px', fontSize: 11, cursor: 'pointer', color: 'var(--ink-2)',
-                  }}>⤢ Zvětšit</button>
-                )}
-              </div>
-              {canShowDist ? (
-                <ScoreHistogram scores={allScores} myScore={result.totalScore} height={120}/>
-              ) : (
-                <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: 0 }}>{t('daily.distributionEmpty')}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      {histModal && <DistributionModal scores={allScores} myScore={result.totalScore} onClose={() => setHistModal(false)} t={t}/>}
-      {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
-    </>)
+    )
   }
 
-  // ── Mobil ──────────────────────────────────────────────
-  return (<>
-    {panoramaOverlay}
-    <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 'env(safe-area-inset-top,0px)' }}>
-      {/* Header */}
-      <div style={{ padding: '14px 16px 12px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 4 }}>
-          {isMakeup ? t('daily.makeupResult') : alreadyPlayed ? t('daily.alreadyPlayed') : t('daily.resultTitle')}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em', flex: 1, lineHeight: 1.2 }}>{eventTitle(event)}</div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--accent)', letterSpacing: '-0.03em', lineHeight: 1 }}>{result.totalScore.toLocaleString(currentLocale())}<span style={{ fontSize: 15, marginLeft: 3 }}>{t('common.pts')}</span></div>
-            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{t('game.outOf1000')}</div>
-          </div>
-        </div>
-      </div>
-
-      {resultTabs}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {tabContent}
-      </div>
-
-      {/* Tlačítka — pod sebou */}
-      <div style={{ flexShrink: 0, padding: '8px 12px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', borderTop: '0.5px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {panoBtn}
-        {canShowDist && (
-          <button
-            onClick={() => setHistModal(true)}
-            style={{ width: '100%', padding: '10px', background: 'var(--paper-200)', border: '0.5px solid var(--line-strong)', borderRadius: 10, fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-          >
-            📊 {t('daily.distribution')}
-          </button>
-        )}
-        {!isMakeup && <button onClick={() => setShowShare(true)} className="btn btn-accent" style={{ width: '100%' }}>↗ {t('daily.share')}</button>}
-        {!isMakeup && makeupCount > 0 && onMakeup && <button onClick={onMakeup} className="btn btn-ghost" style={{ width: '100%' }}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
-        <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onMenu}>{t('daily.menu')}</button>
-      </div>
-
-      {histModal && <DistributionModal scores={allScores} myScore={result.totalScore} onClose={() => setHistModal(false)} t={t}/>}
-      {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
-    </div>
+  const ghost = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }
+  const secondary = isMakeup ? null : (<>
+    <button onClick={() => setShowShare(true)} style={ghost}>↗ {t('daily.share')}</button>
+    {makeupCount > 0 && onMakeup && <button onClick={onMakeup} style={ghost}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
   </>)
-}
 
-// ── Score karta ───────────────────────────────────────────
-function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score: number; pct: number; sub: string; highlight?: boolean }) {
-  return (
-    <div style={{ background: 'var(--paper-200)', borderRadius: 12, padding: '12px 14px' }}>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>{score.toLocaleString(currentLocale())}</div>
-      <div style={{ height: 3, background: 'rgba(42,31,23,0.12)', borderRadius: 999, overflow: 'hidden', marginBottom: 5 }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
-      </div>
-      <div style={{ fontSize: 11, color: highlight ? '#1d6b3a' : 'var(--ink-3)' }}>{sub}</div>
-    </div>
-  )
+  return (<>
+    <RoundResult
+      map={map} roundLabel={null}
+      eventTitle={eventTitle(event)} eventYear={event.year}
+      scoreTotal={result.totalScore} scoreMax={1000}
+      distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
+      yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+      showDetail onOpenDetail={setDetailTab}
+      ctaLabel={t('round.ctaDone')} onCta={onMenu}
+      secondaryActions={secondary}
+    />
+    {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
+  </>)
 }

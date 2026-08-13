@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
 import { formatDistance } from '@/lib/scoring'
-import { C, F, DETAIL_TABS, type DetailTab } from './RoundResult'
+import { C, F, SHADOW_CTA, DETAIL_TABS, type DetailTab } from './RoundResult'
 
 export interface LeaderEntry {
   id: string
@@ -22,6 +22,7 @@ interface Props {
   playersToday: number
   distribution: Distribution
   panorama: React.ReactNode
+  story: React.ReactNode        // „O události" — popis/příběh (nahradil tab Rozložení)
   xpSection?: React.ReactNode   // XP bar přes celou šířku (pod dlaždicemi/detailem)
   onBack: () => void
   ctaLabel: string
@@ -32,7 +33,7 @@ export default function RoundDetail(p: Props) {
   const { t } = useTranslation()
   const [tab, setTab] = useState<DetailTab>(p.initialTab)
   const label: Record<DetailTab, string> = {
-    panorama: t('round.tabPanorama'), distribution: t('round.tabDistribution'), leaderboard: t('round.tabLeaderboard'),
+    panorama: t('round.tabPanorama'), story: t('round.tabStory'), leaderboard: t('round.tabLeaderboard'),
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: C.bg, overflow: 'hidden', maxWidth: 480, marginInline: 'auto' }}>
@@ -74,11 +75,8 @@ export default function RoundDetail(p: Props) {
             <DistributionCard dist={p.distribution} t={t}/>
           </>
         )}
-        {tab === 'distribution' && (
-          <>
-            <DistributionCard dist={p.distribution} big t={t}/>
-            {p.xpSection && <div style={{ marginTop: 5 }}>{p.xpSection}</div>}
-          </>
+        {tab === 'story' && (
+          <div style={{ padding: '4px 0 10px' }}>{p.story}</div>
         )}
         {tab === 'panorama' && (
           <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#3a342b', aspectRatio: '16/10' }}>
@@ -89,7 +87,7 @@ export default function RoundDetail(p: Props) {
 
       {/* Footer CTA */}
       <div style={{ flex: 'none', padding: '12px 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}>
-        <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: '0 10px 22px -10px rgba(190,98,64,.65)', cursor: 'pointer' }}>{p.ctaLabel} <span style={{ fontSize: 15 }}>→</span></button>
+        <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer' }}>{p.ctaLabel} <span style={{ fontSize: 15 }}>→</span></button>
       </div>
     </div>
   )
@@ -101,7 +99,7 @@ function Row({ e, rank, youLabel }: { e: LeaderEntry; rank: number; youLabel: st
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 12, background: e.isMe ? C.accentSoft : C.surface, border: e.isMe ? `1px solid ${C.accentBorder}` : 'none' }}>
       <span style={{ width: 16, font: `${e.isMe || rank === 1 ? 700 : 600} 10px ${F.mono}`, color: rank === 1 ? C.gold : e.isMe ? C.accent : C.muted2 }}>{rank}</span>
-      <div style={{ flex: 'none', width: 26, height: 26, borderRadius: '50%', background: e.isMe ? 'linear-gradient(150deg,#D0754F,#BE6240)' : 'linear-gradient(150deg,#e8dfd0,#cdbfa9)' }}/>
+      <div style={{ flex: 'none', width: 26, height: 26, borderRadius: '50%', background: e.isMe ? 'linear-gradient(150deg,#d97757,#b85a3e)' : 'linear-gradient(150deg,#e8dfd0,#cdbfa9)' }}/>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ font: `${e.isMe ? 700 : 600} 12px ${F.ui}`, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.isMe ? youLabel : e.name}</div>
         <div style={{ font: `500 9px ${F.mono}`, color: e.isMe ? C.accent : C.muted3 }}>{formatDistance(e.distanceKm).toUpperCase()} · {e.yearOff} {t('round.yearsShort', { n: e.yearOff })}</div>
