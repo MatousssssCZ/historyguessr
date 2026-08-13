@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getDailyChallenge, getTodayDailyResult,
-  submitDailyResult, startDailyChallenge, getDailyStart, getDailyFriendsLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
+  submitDailyResult, startDailyChallenge, getDailyStart, getDailyGlobalLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
   getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup, getUserDailyResults, localDateISO,
 } from '@/lib/supabase'
 import { computeDailyStreak } from '@/lib/streak'
@@ -19,7 +19,7 @@ import BackButton from '@/components/BackButton'
 import GameEvaluation from '@/components/GameEvaluation'
 import ControlDock from '@/components/GameControls'
 import type { Event } from '@/types/database'
-import type { DailyResult } from '@/lib/supabase'
+import type { DailyResult, DailyLeaderRow } from '@/lib/supabase'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { invalidateMenuCache } from '@/pages/Menu'
@@ -44,7 +44,7 @@ export default function DailyChallengePage() {
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [event, setEvent] = useState<Event | null>(null)
-  const [leaderboard, setLeaderboard] = useState<DailyResult[]>([])
+  const [leaderboard, setLeaderboard] = useState<DailyLeaderRow[]>([])
   const [allScores, setAllScores] = useState<number[]>([])
   const [panoramaReady, setPanoramaReady] = useState(false)
 
@@ -96,7 +96,7 @@ export default function DailyChallengePage() {
     const [ev, existing, lb, scores] = await Promise.all([
       getDailyChallenge(),
       getTodayDailyResult(user!.id),
-      getDailyFriendsLeaderboard(user!.id, profile?.username ?? null),
+      getDailyGlobalLeaderboard(),
       getDailyAllScores(),
     ])
     setLeaderboard(lb)
@@ -264,7 +264,7 @@ export default function DailyChallengePage() {
     // Zahoď cache menu, ať se streak a ✓ za dnešek projeví hned po návratu
     invalidateMenuCache()
     const [lb, scores] = await Promise.all([
-      getDailyFriendsLeaderboard(user.id, profile?.username ?? null),
+      getDailyGlobalLeaderboard(),
       getDailyAllScores(),
     ])
     setLeaderboard(lb)
@@ -735,10 +735,26 @@ function DailyDetailScreen({ event, result, guessLat, guessLng, onContinue }: {
   )
 }
 
+function LeaderRowView({ r, me, t }: { r: DailyLeaderRow; me: boolean; t: (k: string) => string }) {
+  const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : null
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, background: me ? 'rgba(217,119,87,0.07)' : 'var(--paper-100)', border: me ? '0.5px solid rgba(217,119,87,0.2)' : '0.5px solid var(--line)' }}>
+      <span style={{ fontSize: 13, width: 26, textAlign: 'center', flexShrink: 0 }}>
+        {medal ?? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{r.rank}.</span>}
+      </span>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: me ? 500 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {r.username ?? t('daily.player')}
+        {me && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>{t('daily.youShort')}</span>}
+      </span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: me ? 600 : 400, color: me ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString(currentLocale())}</span>
+    </div>
+  )
+}
+
 function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
-  leaderboard: DailyResult[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
+  leaderboard: DailyLeaderRow[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
   makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
 }) {
   const { t } = useTranslation()
@@ -774,7 +790,12 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
   const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
   const locPct = Math.round(result.locScore / 5)
   const yrPct = Math.round(result.yrScore / 5)
-  const myRank = leaderboard.filter(r => r.score > result.totalScore).length + 1
+  const myRow = leaderboard.find(r => r.user_id === userId)
+  const myRank = myRow?.rank ?? (leaderboard.filter(r => r.score > result.totalScore).length + 1)
+  // Zobrazit top 5; když jsem níž, přidat okolí mé pozice (nade + pode mnou).
+  const myIdx = leaderboard.findIndex(r => r.user_id === userId)
+  const topRows = leaderboard.slice(0, 5)
+  const nearRows = myIdx >= 5 ? leaderboard.slice(Math.max(5, myIdx - 1), myIdx + 2) : []
 
   const scoreSection = (
     <>
@@ -847,7 +868,7 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         <div>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>{t('daily.leaderboard')}</p>
           <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 5, fontStyle: 'italic' }}>
-            <span style={{ fontStyle: 'normal' }}>🤝</span> {t('daily.leaderboardFriends')}
+            <span style={{ fontStyle: 'normal' }}>🌍</span> {t('daily.leaderboardWorld')}
           </p>
         </div>
         {leaderboard.length > 0 && (
@@ -857,24 +878,16 @@ function DailyResultScreen({ event, result, guessLat, guessLng, guessYear, leade
         )}
       </div>
       {leaderboard.length <= 1 && (
-        <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 8px', lineHeight: 1.5 }}>{t('daily.leaderboardEmpty')}</p>
+        <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 8px', lineHeight: 1.5 }}>{t('daily.leaderboardWorldEmpty')}</p>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {leaderboard.slice(0, 5).map((r, i) => {
-          const isMe = r.user_id === userId
-          return (
-            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, background: isMe ? 'rgba(217,119,87,0.07)' : 'var(--paper-100)', border: isMe ? '0.5px solid rgba(217,119,87,0.2)' : '0.5px solid var(--line)' }}>
-              <span style={{ fontSize: 13, width: 22, textAlign: 'center', flexShrink: 0 }}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{i + 1}.</span>}
-              </span>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>
-                {(r.profiles as { username?: string })?.username ?? t('daily.player')}
-                {isMe && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6 }}>ty</span>}
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400, color: isMe ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString(currentLocale())}</span>
-            </div>
-          )
-        })}
+        {topRows.map(r => <LeaderRowView key={r.user_id} r={r} me={r.user_id === userId} t={t}/>)}
+        {nearRows.length > 0 && (
+          <>
+            <div style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 14, lineHeight: 1, padding: '2px 0' }}>⋯</div>
+            {nearRows.map(r => <LeaderRowView key={r.user_id} r={r} me={r.user_id === userId} t={t}/>)}
+          </>
+        )}
       </div>
     </div>
   )

@@ -876,6 +876,13 @@ export async function getDailyFriendsLeaderboard(userId: string, ownUsername: st
 /** Všechna dnešní skóre (pro histogram — celý svět, jen registrovaní).
  *  RPC (SECURITY DEFINER) — profiles RLS povoluje jen vlastní profil, takže
  *  přímý join by vrátil jen jedno skóre. */
+export interface DailyLeaderRow { rank: number; user_id: string; username: string | null; score: number }
+/** Globální žebříček denní výzvy (všichni hráči) — přes RPC (profiles RLS). */
+export async function getDailyGlobalLeaderboard(): Promise<DailyLeaderRow[]> {
+  const { data } = await supabase.rpc('daily_global_leaderboard', { p_date: localDateISO() })
+  return (data as DailyLeaderRow[] | null) ?? []
+}
+
 export async function getDailyAllScores(): Promise<number[]> {
   const { data } = await supabase.rpc('daily_score_distribution', { p_date: localDateISO() })
   return (data as number[] | null) ?? []
