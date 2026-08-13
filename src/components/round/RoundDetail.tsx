@@ -67,7 +67,7 @@ export default function RoundDetail(p: Props) {
       )}
 
       {/* Obsah */}
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: tab === 'panorama' ? 'hidden' : 'auto', WebkitOverflowScrolling: 'touch', padding: tab === 'panorama' ? 0 : '0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {tab === 'leaderboard' && (
           <>
             {p.leaderboard.map((e, i) => <Row key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
@@ -79,7 +79,7 @@ export default function RoundDetail(p: Props) {
           <div style={{ padding: '4px 0 10px' }}>{p.story}</div>
         )}
         {tab === 'panorama' && (
-          <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#3a342b', aspectRatio: '16/10' }}>
+          <div style={{ position: 'relative', flex: 1, minHeight: 0, background: '#3a342b', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0 }}>{p.panorama}</div>
           </div>
         )}

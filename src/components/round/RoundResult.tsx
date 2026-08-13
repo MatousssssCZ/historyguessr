@@ -45,7 +45,19 @@ interface Props {
   secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
 }
 
-const DETAIL_ICON: Record<DetailTab, string> = { panorama: '🖼', story: '📖', leaderboard: '🏆' }
+// Vektorové ikony (line, currentColor) — panorama / „i" v kroužku / pohár
+export function DetailIcon({ tab, size = 19 }: { tab: DetailTab; size?: number }) {
+  const s = { width: size, height: size, fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, viewBox: '0 0 24 24' }
+  if (tab === 'panorama') return (
+    <svg {...s}><rect x="3" y="5" width="18" height="14" rx="2.2"/><circle cx="8.5" cy="10" r="1.4"/><path d="M4 17l4.6-5 3 3.2L15 11l5 6"/></svg>
+  )
+  if (tab === 'story') return (
+    <svg {...s}><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/></svg>
+  )
+  return (
+    <svg {...s}><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4.4C3.6 6 3 6.7 3 7.6 3 9.6 4.8 11 7 11"/><path d="M17 6h2.6c.8 0 1.4.7 1.4 1.6C21 9.6 19.2 11 17 11"/><path d="M12 14v2.4"/><path d="M9.5 20h5"/><path d="M10 20l.4-3.6h3.2L14 20"/></svg>
+  )
+}
 
 export default function RoundResult(p: Props) {
   const { t } = useTranslation()
@@ -73,14 +85,12 @@ export default function RoundResult(p: Props) {
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '16px 18px calc(env(safe-area-inset-bottom,0px) + 20px)', background: C.surface, borderTop: `1px solid ${C.line}`, borderRadius: '26px 26px 0 0', boxShadow: '0 -18px 40px -20px rgba(60,45,30,.35)', maxWidth: 480, marginInline: 'auto' }}>
         <div style={{ marginBottom: 5, font: `500 9.5px ${F.mono}`, letterSpacing: '.14em', color: C.accent }}>{t('round.correctAnswer')}</div>
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 13 }}>
-          <h2 style={{ margin: 0, maxWidth: '62%', font: `400 18px/1.2 ${F.display}`, color: C.ink }}>
-            {p.eventTitle} <span style={{ color: C.muted2 }}>· {formatYear(p.eventYear)}</span>
-          </h2>
-          <div style={{ flex: 'none', textAlign: 'right' }}>
-            <span style={{ font: `400 36px ${F.display}`, letterSpacing: '-.02em', color: C.accent }}>{p.scoreTotal.toLocaleString(loc)}</span>
-            <span style={{ font: `500 11px ${F.ui}`, color: C.muted2 }}> / {p.scoreMax.toLocaleString(loc)}</span>
-          </div>
+        <h2 style={{ margin: '0 0 4px', font: `400 22px/1.22 ${F.display}`, color: C.ink, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {p.eventTitle} <span style={{ color: C.muted2 }}>· {formatYear(p.eventYear)}</span>
+        </h2>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 13 }}>
+          <span style={{ font: `400 34px ${F.display}`, letterSpacing: '-.02em', color: C.accent }}>{p.scoreTotal.toLocaleString(loc)}</span>
+          <span style={{ font: `500 12px ${F.ui}`, color: C.muted2 }}>/ {p.scoreMax.toLocaleString(loc)}</span>
         </div>
 
         <div style={{ display: 'flex', gap: 9, marginBottom: 13 }}>
@@ -92,7 +102,7 @@ export default function RoundResult(p: Props) {
           <div style={{ display: 'flex', gap: 7, marginBottom: 13 }}>
             {DETAIL_TABS.map(tab => (
               <button key={tab} type="button" onClick={() => p.onOpenDetail!(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '9px 4px', minHeight: 56, border: `1px solid ${C.lineStrong}`, borderRadius: 12, background: C.surface, color: C.ink2, font: `600 9.5px ${F.ui}`, cursor: 'pointer' }}>
-                <span style={{ fontSize: 17 }}>{DETAIL_ICON[tab]}</span>
+                <span style={{ color: C.accent, display: 'flex' }}><DetailIcon tab={tab}/></span>
                 <span>{detailLabel[tab]}</span>
               </button>
             ))}
