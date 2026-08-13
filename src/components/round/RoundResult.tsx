@@ -68,21 +68,21 @@ export default function RoundResult(p: Props) {
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100dvh', background: C.bg, overflow: 'hidden' }}>
       {/* Mapa (hrdina) */}
-      <div style={{ position: 'absolute', left: 0, top: 0, right: 0, height: '62%' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, right: 0, height: '62%', zIndex: 0 }}>
         <div style={{ position: 'absolute', inset: 0 }}>{p.map}</div>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(38,33,28,.42) 0%, rgba(38,33,28,0) 24%, rgba(38,33,28,0) 60%, rgba(242,236,226,.5) 92%, ' + C.bg + ' 100%)' }}/>
       </div>
 
       {/* Čip kola (jen sólo) */}
       {p.roundLabel && (
-        <div style={{ position: 'absolute', left: 16, top: 'calc(env(safe-area-inset-top,0px) + 10px)', display: 'flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 999, background: 'rgba(28,24,18,.5)', backdropFilter: 'blur(8px)', color: C.surface, font: `600 9.5px ${F.mono}`, letterSpacing: '.12em' }}>
+        <div style={{ position: 'absolute', zIndex: 2, left: 16, top: 'calc(env(safe-area-inset-top,0px) + 10px)', display: 'flex', alignItems: 'center', gap: 7, padding: '5px 11px', borderRadius: 999, background: 'rgba(28,24,18,.5)', backdropFilter: 'blur(8px)', color: C.surface, font: `600 9.5px ${F.mono}`, letterSpacing: '.12em' }}>
           <span>{p.roundLabel}</span>
           {p.dots && <span style={{ display: 'flex', gap: 3 }}>{p.dots.map((on, i) => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: on ? C.streak : 'rgba(251,247,240,.35)' }}/>)}</span>}
         </div>
       )}
 
       {/* Spodní karta */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '16px 18px calc(env(safe-area-inset-bottom,0px) + 20px)', background: C.surface, borderTop: `1px solid ${C.line}`, borderRadius: '26px 26px 0 0', boxShadow: '0 -18px 40px -20px rgba(60,45,30,.35)', maxWidth: 480, marginInline: 'auto' }}>
+      <div style={{ position: 'absolute', zIndex: 1, left: 0, right: 0, bottom: 0, padding: '16px 18px calc(env(safe-area-inset-bottom,0px) + 20px)', background: C.surface, borderTop: `1px solid ${C.line}`, borderRadius: '26px 26px 0 0', boxShadow: '0 -18px 40px -20px rgba(60,45,30,.35)', maxWidth: 480, marginInline: 'auto' }}>
         <div style={{ marginBottom: 5, font: `500 9.5px ${F.mono}`, letterSpacing: '.14em', color: C.accent }}>{t('round.correctAnswer')}</div>
 
         <h2 style={{ margin: '0 0 4px', font: `400 22px/1.22 ${F.display}`, color: C.ink, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
