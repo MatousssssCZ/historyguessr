@@ -279,7 +279,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
 
       // Fit bounds
       const bounds = L.latLngBounds([guessLat, gLng], [truthLat, tLng])
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
+      map.fitBounds(bounds, { padding: [90, 90], maxZoom: 9 })
       map.invalidateSize({ animate: false })
       setTimeout(() => map.invalidateSize({ animate: false }), 100)
 
