@@ -41,6 +41,7 @@ interface Props {
   onOpenDetail?: (tab: DetailTab) => void
   ctaLabel: string
   onCta: () => void
+  secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
 }
 
 const DETAIL_ICON: Record<DetailTab, string> = { panorama: '🖼', distribution: '📊', leaderboard: '🏆' }
@@ -100,6 +101,7 @@ export default function RoundResult(p: Props) {
         <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: '0 10px 22px -10px rgba(190,98,64,.65)', cursor: 'pointer' }}>
           {p.ctaLabel} <span style={{ fontSize: 15 }}>→</span>
         </button>
+        {p.secondaryActions && <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>{p.secondaryActions}</div>}
       </div>
     </div>
   )

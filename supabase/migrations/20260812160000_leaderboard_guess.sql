@@ -1,7 +1,10 @@
 -- Žebříček denní výzvy: vrátit i tip hráče (guess), aby klient dopočítal
 -- vzdálenost v km a rozdíl roku pro každý řádek (redesign detailu kola).
+-- DROP nutný — měníme návratový typ (CREATE OR REPLACE to neumí).
 
-create or replace function public.daily_global_leaderboard(p_date date)
+drop function if exists public.daily_global_leaderboard(date);
+
+create function public.daily_global_leaderboard(p_date date)
 returns table(rank integer, user_id uuid, username text, score integer,
               guess_lat double precision, guess_lng double precision, guess_year integer)
 language sql
