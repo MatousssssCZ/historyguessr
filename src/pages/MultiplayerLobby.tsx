@@ -12,6 +12,8 @@ import type { MultiplayerRoom, MultiplayerPlayer, RoomSettings } from '@/lib/mul
 import YearRange from '@/components/YearRange'
 import { SettingSection, SubLabel, Segmented, CategoryChips, EventCountPill } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { PageHeader } from '@/components/ui/Page'
+import Icon from '@/components/Icon'
 
 const DEFAULT_SETTINGS: RoomSettings = {
   rounds: 5, time_limit: 60, categories: [], year_from: -3000, year_to: 2025, mode: 'classic',
@@ -187,16 +189,14 @@ export default function MultiplayerLobbyPage() {
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
         <div style={{ maxWidth: 460, margin: '0 auto', padding: '16px 18px' }}>
-          <MpBack onClick={() => navigate('/menu')} label={t('daily.menu')}/>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: '18px 0 8px' }}>{t('menu.multiplayer')}</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--ink)', margin: '0 0 26px', letterSpacing: '-0.02em', lineHeight: 1.05 }}>{t('menu.multiplayerSub2')}</h1>
+          <PageHeader eyebrow={t('menu.multiplayer')} title={t('menu.multiplayerSub2')} onBack={() => navigate('/menu')}/>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button onClick={handleCreate} disabled={loading} style={{
               display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',
               background: 'rgba(217,119,87,0.09)', border: '1px solid var(--accent)', borderRadius: 18,
             }}>
-              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 23, color: '#fff', background: 'linear-gradient(150deg,#d97757,#b85a3e)' }}>＋</span>
+              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', background: 'linear-gradient(150deg,#d97757,#b85a3e)' }}><Icon name="plus" size={24}/></span>
               <div>
                 <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{t('lobby.create')}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.createSub')}</div>
@@ -207,7 +207,7 @@ export default function MultiplayerLobbyPage() {
               display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',
               background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18,
             }}>
-              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--accent)', background: 'var(--paper-300)' }}>🔗</span>
+              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', background: 'var(--paper-300)' }}><Icon name="link" size={22}/></span>
               <div>
                 <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>{t('lobby.join')}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.joinSub')}</div>

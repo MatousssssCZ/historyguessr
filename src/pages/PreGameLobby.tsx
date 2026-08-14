@@ -15,6 +15,7 @@ import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
 import { Segmented, CategoryChips } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { PageHeader } from '@/components/ui/Page'
 import type { GameOptions } from '@/hooks/useGame'
 
 const ROUND_OPTIONS = [3, 5, 10]
@@ -393,14 +394,7 @@ export default function PreGameLobbyPage() {
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 32px 0' }}>
-          {/* Hlavička */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-            {backBtn}
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--accent-deep)', marginBottom: 3 }}>{t('pregame.mode')}</div>
-              <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 34, color: 'var(--ink)', letterSpacing: '-0.015em', margin: 0, lineHeight: 1 }}>{t('pregame.title')}</h1>
-            </div>
-          </div>
+          <PageHeader eyebrow={t('pregame.mode')} title={t('pregame.title')} onBack={() => navigate('/menu')}/>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.55fr) minmax(320px,1fr)', gap: 24, alignItems: 'start' }}>
             {/* Levý sloupec — nastavení */}
