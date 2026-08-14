@@ -232,19 +232,16 @@ export async function getEventImages(limit = 60): Promise<string[]> {
     .filter((u): u is string => !!u)
 }
 
-/** Náhodná panoramata pozadí přihlašovací obrazovky (preview, fallback pano). */
+/** Náhodná panoramata (360° ekvirektangulární) pro pozadí přihlašovací obrazovky. */
 export async function getRandomPanoramas(n = 5): Promise<string[]> {
   const { data } = await supabase
     .from('events')
-    .select('preview_url, panorama_url')
+    .select('panorama_url')
     .eq('published', true)
     .not('panorama_url', 'is', null)
     .limit(48)
   const urls = (data ?? [])
-    .map(r => {
-      const row = r as { preview_url: string | null; panorama_url: string | null }
-      return row.preview_url || row.panorama_url
-    })
+    .map(r => (r as { panorama_url: string | null }).panorama_url)
     .filter((u): u is string => !!u && u !== 'pending')
   // Fisher–Yates zamíchání → vezmi prvních n
   for (let i = urls.length - 1; i > 0; i--) {

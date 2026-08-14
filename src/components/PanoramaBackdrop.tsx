@@ -12,7 +12,7 @@ export default function PanoramaBackdrop() {
     let alive = true
     getRandomPanoramas(5).then(list => {
       if (!alive) return
-      const disp = list.map(u => transformedImageUrl(u, { width: 1920, quality: 55 }))
+      const disp = list.map(u => transformedImageUrl(u, { width: 2560, quality: 68 }))
       setUrls(disp)
       disp.forEach(u => { const img = new Image(); img.src = u })  // přednačti do mezipaměti
     }).catch(() => {})
@@ -30,8 +30,8 @@ export default function PanoramaBackdrop() {
       {urls.map((u, i) => (
         <div key={u} style={{ position: 'absolute', inset: 0, opacity: i === idx ? 1 : 0, transition: 'opacity 1.8s ease-in-out' }}>
           <div style={{
-            position: 'absolute', top: 0, bottom: 0, left: '-15%', width: '130%',
-            backgroundImage: `url(${u})`, backgroundSize: 'cover', backgroundPosition: 'center',
+            position: 'absolute', top: 0, bottom: 0, left: '-7%', width: '114%',
+            backgroundImage: `url(${u})`, backgroundSize: 'auto 118%', backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
             animation: `hgPan ${80 + (i % 3) * 12}s ease-in-out infinite alternate`,
           }}/>
         </div>
