@@ -110,7 +110,7 @@ export default function RoundResultDesktop(p: Props) {
               {/* Dlaždice km / rok */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
                 <MetricRow icon="📍" label={t('round.kmOff', { d: formatDistance(p.distanceKm) })} points={p.placePoints} max={p.placeMax} color={C.accent}/>
-                <MetricRow icon="📅" label={t('round.yearsOff', { n: p.yearOff })} points={p.yearPoints} max={p.yearMax} color={C.good}/>
+                <MetricRow icon="📅" label={t('round.yearsOffLong', { count: p.yearOff })} points={p.yearPoints} max={p.yearMax} color={C.good}/>
               </div>
 
               {p.xpSection && <div style={{ marginBottom: 6 }}>{p.xpSection}</div>}
