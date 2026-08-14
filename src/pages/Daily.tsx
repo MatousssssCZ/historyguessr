@@ -663,7 +663,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         leaderboard={shown} playersToday={entries.length} distribution={distribution}
         xpSection={xpSection}
         onShare={isMakeup ? null : () => setShowShare(true)}
-        ctaLabel={t('round.ctaDone')} onCta={onMenu}
+        ctaLabel={t('daily.menu')} onCta={onMenu}
       />
       {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     </>)
@@ -677,7 +677,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
         leaderboard={shown} playersToday={entries.length} distribution={distribution}
         panorama={panorama} story={story} xpSection={xpSection}
-        onBack={() => setDetailTab(null)} ctaLabel={t('round.ctaDone')} onCta={onMenu}
+        onBack={() => setDetailTab(null)} ctaLabel={t('daily.menu')} onCta={onMenu}
       />
     )
   }
@@ -696,7 +696,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
       distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
       yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
       showDetail onOpenDetail={setDetailTab}
-      ctaLabel={t('round.ctaDone')} onCta={onMenu}
+      ctaLabel={t('daily.menu')} onCta={onMenu}
       secondaryActions={secondary}
     />
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
