@@ -7,7 +7,8 @@ import { isPremiumUser, type Entitlements } from '@/lib/entitlements'
 import { validateUsername, USERNAME_MAX } from '@/lib/username'
 import ThemeToggle from '@/components/ThemeToggle'
 import MobileNav from '@/components/MobileNav'
-import DesktopSidebar from '@/components/DesktopSidebar'
+import { PageShell, PageHeader } from '@/components/ui/Page'
+import Icon from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
 import { isStandalone } from '@/lib/pwaInstall'
@@ -66,19 +67,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
-      <DesktopSidebar/>
-      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'var(--nav-space)' }}>
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>
-          <button onClick={() => navigate('/menu')} aria-label={t('common.back')} style={{
-            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-          }}>←</button>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em' }}>{t('account.title')}</h1>
-        </div>
+    <PageShell maxWidth={640}>
+        <PageHeader eyebrow={t('menu.navProfile')} title={t('account.title')} onBack={() => navigate('/menu')}/>
 
         {/* Profil */}
         <form onSubmit={handleSave} style={cardStyle}>
@@ -110,7 +100,7 @@ export default function AccountPage() {
         <button onClick={() => navigate('/premium')} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer' }}>
           <p style={eyebrow}>{t('account.subscription')}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-            <span style={{ fontSize: 22 }}>{premium ? '⭐' : '✦'}</span>
+            <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="star" size={22}/></span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>
                 {premium ? t('account.planPremium') : t('account.planFree')}
@@ -125,7 +115,7 @@ export default function AccountPage() {
 
         {/* Přátelé */}
         <button onClick={() => navigate('/friends')} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
-          <span style={{ fontSize: 22 }}>👥</span>
+          <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="friends" size={22}/></span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('menu.friendsTitle')}</span>
             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.friendsSub')}</span>
@@ -145,7 +135,7 @@ export default function AccountPage() {
 
         {/* Nápověda */}
         <button onClick={() => setShowHowTo(true)} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
-          <span style={{ fontSize: 22 }}>🎓</span>
+          <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="help" size={22}/></span>
           <span style={{ flex: 1 }}>
             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('menu.htHow')}</span>
             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.htHowSub')}</span>
@@ -155,7 +145,7 @@ export default function AccountPage() {
 
         {/* Nahlásit chybu / zpětná vazba */}
         <button onClick={() => setShowFeedback(true)} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
-          <span style={{ fontSize: 22 }}>🐞</span>
+          <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="bug" size={22}/></span>
           <span style={{ flex: 1 }}>
             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)' }}>{t('feedback.title')}</span>
             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('feedback.accountSub')}</span>
@@ -217,12 +207,10 @@ export default function AccountPage() {
             </>
           )}
         </div>
-      </div>
-      </div>
       <MobileNav active="profile"/>
       {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)}/>}
       {showInstall && <InstallGuide onClose={() => setShowInstall(false)}/>}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)}/>}
-    </div>
+    </PageShell>
   )
 }

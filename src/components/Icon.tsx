@@ -4,7 +4,7 @@
 export type IconName =
   | 'home' | 'campaign' | 'badge' | 'friends' | 'profile' | 'admin'
   | 'bolt' | 'sliders' | 'swords' | 'pin' | 'calendar' | 'trophy'
-  | 'chart' | 'globe' | 'star' | 'save' | 'roadmap' | 'flame'
+  | 'chart' | 'globe' | 'star' | 'save' | 'roadmap' | 'flame' | 'help' | 'bug'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   home: <><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></>,
@@ -25,6 +25,8 @@ const PATHS: Record<IconName, React.ReactNode> = {
   save: <><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><rect x="8" y="13" width="8" height="7"/></>,
   roadmap: <><path d="M4 6h13l3 2.5-3 2.5H4z"/><path d="M4 6v14"/><path d="M4 15h9l3 2.5-3 2.5H4"/></>,
   flame: <path d="M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3.5 3 6a5 5 0 0 1-10 0c0-4 3-5 5-13z"/>,
+  help: <><circle cx="12" cy="12" r="9"/><path d="M9.2 9.3a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2.3-2.6 3.9"/><path d="M12 17.3h.01"/></>,
+  bug: <><rect x="7" y="8" width="10" height="11" rx="5"/><path d="M12 8V5"/><path d="M9 5.5 8 4M15 5.5 16 4"/><path d="M7 11H3.5M7 15H4M17 11h3.5M17 15h3.5M12 19v2"/></>,
 }
 
 export default function Icon({ name, size = 20, strokeWidth = 1.7, style }: {
