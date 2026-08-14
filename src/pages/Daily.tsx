@@ -26,6 +26,9 @@ import ShareResult from '@/components/ShareResult'
 import EraToggle from '@/components/EraToggle'
 import RoundResult, { type DetailTab } from '@/components/round/RoundResult'
 import RoundDetail, { type LeaderEntry, type Distribution } from '@/components/round/RoundDetail'
+import RoundResultDesktop from '@/components/round/RoundResultDesktop'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { roundMetaLine } from '@/lib/eventLocale'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -613,6 +616,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
 }) {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
   const [showShare, setShowShare] = useState(false)
   const loc = currentLocale()
@@ -646,6 +650,24 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const panorama = hasPanorama ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
   const story = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
   const xpSection = (!alreadyPlayed && userId) ? <GameEvaluation userId={userId} gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)} gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}} extraUnlocked={streakBadges}/> : null
+
+  if (!isMobile) {
+    return (<>
+      <RoundResultDesktop
+        map={map} panorama={panorama}
+        eventTitle={eventTitle(event)} eventYear={event.year} metaLine={roundMetaLine(event)}
+        story={story}
+        scoreTotal={result.totalScore} scoreMax={1000}
+        distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
+        yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+        leaderboard={shown} playersToday={entries.length} distribution={distribution}
+        xpSection={xpSection}
+        onShare={isMakeup ? null : () => setShowShare(true)}
+        ctaLabel={t('round.ctaDone')} onCta={onMenu}
+      />
+      {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
+    </>)
+  }
 
   if (detailTab) {
     return (

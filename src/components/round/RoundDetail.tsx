@@ -70,7 +70,7 @@ export default function RoundDetail(p: Props) {
       <div style={{ flex: 1, minHeight: 0, overflowY: tab === 'panorama' ? 'hidden' : 'auto', WebkitOverflowScrolling: 'touch', padding: tab === 'panorama' ? 0 : '0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {tab === 'leaderboard' && (
           <>
-            {p.leaderboard.map((e, i) => <Row key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
+            {p.leaderboard.map((e, i) => <LeaderRow key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
             {p.xpSection && <div style={{ marginTop: 5 }}>{p.xpSection}</div>}
             <DistributionCard dist={p.distribution} t={t}/>
           </>
@@ -93,7 +93,7 @@ export default function RoundDetail(p: Props) {
   )
 }
 
-function Row({ e, rank, youLabel }: { e: LeaderEntry; rank: number; youLabel: string }) {
+export function LeaderRow({ e, rank, youLabel }: { e: LeaderEntry; rank: number; youLabel: string }) {
   const loc = currentLocale()
   const { t } = useTranslation()
   return (
@@ -109,7 +109,7 @@ function Row({ e, rank, youLabel }: { e: LeaderEntry; rank: number; youLabel: st
   )
 }
 
-function DistributionCard({ dist, big, t }: { dist: Distribution; big?: boolean; t: (k: string, o?: Record<string, unknown>) => string }) {
+export function DistributionCard({ dist, big, t }: { dist: Distribution; big?: boolean; t: (k: string, o?: Record<string, unknown>) => string }) {
   const max = Math.max(...dist.bins, 1)
   return (
     <div style={{ marginTop: 5, padding: '11px 14px', borderRadius: 14, background: C.surface }}>

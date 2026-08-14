@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
-import { eventTitle, eventDescription } from '@/lib/eventLocale'
+import { eventTitle, eventDescription, roundMetaLine } from '@/lib/eventLocale'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import RoundResultView from '@/components/round/RoundResult'
+import RoundResultDesktop from '@/components/round/RoundResultDesktop'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
@@ -680,12 +681,36 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   onNext: () => void; isLast: boolean; roundNumber: number; totalRounds: number
 }) {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   if (!round) return null
   const dots = Array.from({ length: totalRounds }, (_, i) => i <= roundNumber - 1)
+  const roundLabel = t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()
+  const map = <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
+  const ctaLabel = isLast ? t('round.ctaGameResult') : t('round.ctaNext')
+
+  if (!isMobile) {
+    const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
+    return (
+      <RoundResultDesktop
+        map={map}
+        panorama={hasPanorama ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>}
+        roundLabel={roundLabel} dots={dots}
+        eventTitle={eventTitle(event)} eventYear={event.year} metaLine={roundMetaLine(event)}
+        story={<p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>}
+        scoreTotal={round.round_score} scoreMax={1000}
+        distanceKm={round.distance_km} placePoints={round.location_score} placeMax={500}
+        yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500}
+        leaderboard={null}
+        ctaLabel={ctaLabel} onCta={onNext}
+        ctaHint={isLast ? null : t('round.spaceNext')} enableSpaceKey
+      />
+    )
+  }
+
   return (
     <RoundResultView
-      map={<ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>}
-      roundLabel={t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()}
+      map={map}
+      roundLabel={roundLabel}
       dots={dots}
       eventTitle={eventTitle(event)}
       eventYear={event.year}
@@ -697,7 +722,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearOff={round.year_diff}
       yearPoints={round.year_score}
       yearMax={500}
-      ctaLabel={isLast ? t('round.ctaGameResult') : t('round.ctaNext')}
+      ctaLabel={ctaLabel}
       onCta={onNext}
     />
   )

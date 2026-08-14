@@ -1,5 +1,19 @@
 import i18n from '@/i18n'
+import { currentLocale } from '@/i18n'
+import { formatYear } from '@/lib/scoring'
 import type { Event } from '@/types/database'
+
+// Meta řádek pod názvem (desktop výsledek): přesné datum (když je) nebo rok
+// + kategorie. Místní název (město/stát) zatím v DB není.
+export function roundMetaLine(ev: Pick<Event, 'event_date' | 'year' | 'category'>): string {
+  const loc = currentLocale()
+  let when = formatYear(ev.year)
+  if (ev.event_date) {
+    const d = new Date(ev.event_date)
+    if (!isNaN(d.getTime())) when = d.toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  return [when, ev.category?.trim()].filter(Boolean).join(' · ')
+}
 
 // Lokalizovaný název/popis události podle aktuálního jazyka.
 // Základní (české) sloupce title/description jsou fallback, když chybí překlad.
