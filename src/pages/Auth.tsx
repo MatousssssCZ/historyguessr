@@ -122,7 +122,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
         {/* Horní lišta */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 40px' }}>
           <Wordmark color="#f5f1e8"/>
-          <LanguageSwitcher variant="dark"/>
+          <LanguageSwitcher variant="glass"/>
         </div>
 
         {/* Střed — vertikálně vycentrovaná karta (scroll na nízkých výškách) */}

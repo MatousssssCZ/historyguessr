@@ -7,14 +7,15 @@ const FLAGS: Record<string, string> = { cs: '🇨🇿', en: '🇬🇧', de: '�
 /** Přepínač jazyka jako dropdown s vlaječkami.
  *  variant="dark"  → na feature ploše (tématické tokeny)
  *  variant="light" → na běžné (flipující) ploše */
-export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dark' | 'light' }) {
+export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dark' | 'light' | 'glass' }) {
   const { i18n } = useTranslation()
   const cur = (i18n.language || 'en').slice(0, 2)
+  const glass = variant === 'glass'
   const onFeature = variant === 'dark'
-  const fg = onFeature ? 'var(--feature-fg)' : 'var(--ink)'
-  const idle = onFeature ? 'var(--feature-fg2)' : 'var(--ink-3)'
-  const border = onFeature ? 'var(--feature-line)' : 'var(--line-strong)'
-  const surface = onFeature ? 'var(--feature-bg)' : 'var(--surface)'
+  const fg = glass ? '#f5f1e8' : onFeature ? 'var(--feature-fg)' : 'var(--ink)'
+  const idle = glass ? 'rgba(245,241,232,0.65)' : onFeature ? 'var(--feature-fg2)' : 'var(--ink-3)'
+  const border = glass ? 'rgba(245,241,232,0.28)' : onFeature ? 'var(--feature-line)' : 'var(--line-strong)'
+  const surface = glass ? 'rgba(30,23,15,0.92)' : onFeature ? 'var(--feature-bg)' : 'var(--surface)'
 
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -38,9 +39,12 @@ export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dar
         aria-expanded={open}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '5px 9px', borderRadius: 8, cursor: 'pointer',
-          border: `1px solid ${border}`, background: 'transparent',
-          fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.04em', color: fg,
+          padding: glass ? '8px 13px' : '5px 9px', borderRadius: glass ? 999 : 8, cursor: 'pointer',
+          border: `1px solid ${border}`,
+          background: glass ? 'rgba(245,241,232,0.14)' : 'transparent',
+          backdropFilter: glass ? 'blur(10px)' : undefined,
+          WebkitBackdropFilter: glass ? 'blur(10px)' : undefined,
+          fontFamily: 'var(--font-mono)', fontSize: glass ? 12 : 11, letterSpacing: '0.04em', color: fg,
         }}
       >
         <span style={{ fontSize: 14, lineHeight: 1 }}>{FLAGS[current.code]}</span>
