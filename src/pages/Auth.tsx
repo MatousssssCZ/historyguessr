@@ -120,15 +120,15 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(120% 80% at 50% 38%, rgba(22,16,9,.30) 0%, rgba(22,16,9,.72) 58%, rgba(22,16,9,.93) 100%)' }}/>
 
         {/* Horní lišta */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 40px' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 40px' }}>
           <Wordmark color="#f5f1e8"/>
           <LanguageSwitcher variant="dark"/>
         </div>
 
-        {/* Střed */}
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 24px 32px' }}>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', color: 'var(--accent)', margin: '0 0 14px', textTransform: 'uppercase', textAlign: 'center' }}>{t('auth.eyebrow')}</p>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 46, color: '#f5f1e8', margin: '0 0 30px', letterSpacing: '-0.02em', lineHeight: 1.08, textAlign: 'center' }}>
+        {/* Střed — vertikálně vycentrovaná karta (scroll na nízkých výškách) */}
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '72px 24px 32px', overflowY: 'auto' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', color: 'var(--accent)', margin: '0 0 10px', textTransform: 'uppercase', textAlign: 'center' }}>{t('auth.eyebrow')}</p>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 38, color: '#f5f1e8', margin: '0 0 20px', letterSpacing: '-0.02em', lineHeight: 1.08, textAlign: 'center' }}>
             {t('auth.tagline1')}<br/><span style={{ color: 'var(--accent)' }}>{t('auth.tagline2')}</span>
           </h1>
 
