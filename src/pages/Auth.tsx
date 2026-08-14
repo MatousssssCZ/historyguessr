@@ -463,11 +463,12 @@ function LandingSeo() {
     { icon: '📍', t: t('menu.ht2t'), d: t('menu.ht2d') },
     { icon: '📅', t: t('menu.ht3t'), d: t('menu.ht3d') },
   ]
-  const faq = [1, 2, 3, 4, 5].map(n => ({ q: t('landing.faqQ' + n), a: t('landing.faqA' + n) }))
+  const faq = [1, 2, 3, 4, 5, 6, 7].map(n => ({ q: t('landing.faqQ' + n), a: t('landing.faqA' + n) }))
   return (
     <div style={{ background: 'var(--paper-50)', color: 'var(--ink)', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 22px 20px' }}>
-        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65, textAlign: 'center', margin: '0 auto 40px', maxWidth: 580 }}>
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, textAlign: 'center', margin: '0 0 16px', letterSpacing: '-0.015em' }}>{t('landing.h1')}</h2>
+        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65, textAlign: 'center', margin: '0 auto 40px', maxWidth: 620 }}>
           {t('landing.sub')}
         </p>
 

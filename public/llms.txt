@@ -1,6 +1,6 @@
 # HistoryGuesser
 
-> HistoryGuesser je vzdělávací geolokační hra jako GeoGuessr, ale pro historii. Hráč vidí 360° panorama historického místa a hádá, kde na světě se událost odehrála a v jakém roce. Dostupné zdarma; volitelné Premium (99 Kč/měsíc). Jazyky: čeština, angličtina, němčina.
+> HistoryGuesser je vzdělávací historická hra inspirovaná principem GeoGuessru. Hráč se ocitne přímo uprostřed historické události v interaktivním 360° panoramatu, hledá stopy a určuje dvě věci: kde na světě se nachází a v jakém roce se událost odehrála. Čím přesnější tipy, tím více bodů. Dostupné zdarma; volitelné Premium (99 Kč/měsíc). Jazyky: čeština, angličtina, němčina.
 
 ## Co to je
 - **Kategorie:** vzdělávací hra, geolokační hádání (GeoGuessr-style), historie
