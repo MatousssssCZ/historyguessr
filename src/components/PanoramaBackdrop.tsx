@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getRandomPanoramas, transformedImageUrl } from '@/lib/supabase'
+import { getRandomPanoramas } from '@/lib/supabase'
 import { encodePanoramaUrl } from '@/lib/panorama'
 
 declare const pannellum: {
@@ -40,7 +40,7 @@ export default function PanoramaBackdrop() {
 
     const cfg = (url: string) => ({
       type: 'equirectangular',
-      panorama: encodePanoramaUrl(transformedImageUrl(url, { width: 2048, quality: 70 })),
+      panorama: encodePanoramaUrl(url),
       autoLoad: true,
       autoRotate: ROTATE_DEG_PER_SEC,
       showControls: false,
