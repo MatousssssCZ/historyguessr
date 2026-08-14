@@ -649,7 +649,7 @@ function EventPicker({ events, usedIds, onPick, onClose }: {
         {/* Filtry: hledání, kategorie, období */}
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <input className="input" placeholder="Hledat událost…" value={search} onChange={e => setSearch(e.target.value)} autoFocus/>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 8 }}>
+          <div className="rgrid rgrid-3" style={{ gap: 8 }}>
             <select className="input" value={cat} onChange={e => setCat(e.target.value)}>
               <option value="">Všechny kategorie</option>
               {cats.map(c => <option key={c} value={c}>{c}</option>)}

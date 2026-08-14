@@ -401,3 +401,18 @@ body {
 
 /* ── Panorama pozadí přihlašovací obrazovky ─────────────── */
 @keyframes hgPan { from { transform: translateX(0); } to { transform: translateX(-13%); } }
+
+/* ── Admin responsivita ─────────────────────────────────── */
+/* Pevné mřížky, které se na úzkém displeji samy zúží (nic se neschová). */
+.rgrid { display: grid; gap: 12px; }
+.rgrid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rgrid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rgrid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 700px) {
+  .rgrid-3, .rgrid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 440px) {
+  .rgrid-2, .rgrid-3, .rgrid-4 { grid-template-columns: minmax(0, 1fr); }
+}
+/* Vodorovný scroll pro široký obsah (tabulky) místo ořezu/rozbití stránky. */
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }

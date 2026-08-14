@@ -448,7 +448,7 @@ export default function AdminImportPage() {
         {step === 'preview' && (
           <>
             {/* Shrnutí */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+            <div className="rgrid rgrid-3">
               {[
                 { label: 'Celkem řádků', value: rows.length },
                 { label: 'Připraveno k importu', value: validRows.length },

@@ -52,7 +52,7 @@ export default function AdminContinentsPage() {
         {result && (
           <>
             {/* Report přesnosti */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
+            <div className="rgrid rgrid-4" style={{ marginBottom: 18 }}>
               <Stat label="Celkem" value={result.total}/>
               <Stat label="Spolehlivě" value={result.confident} accent="#5c9468"/>
               <Stat label="Nejisté" value={result.uncertain.length} accent="var(--danger)"/>

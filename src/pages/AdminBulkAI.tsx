@@ -255,7 +255,7 @@ export default function AdminBulkAIPage() {
                   {/* Editovatelná vygenerovaná data */}
                   {it.draft && !it.saved && (
                     <div style={{ marginTop: 14, borderTop: '1px solid var(--line)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                      <div className="rgrid rgrid-3">
                         <Field l="Název CZ" v={it.draft.title} on={v => patchDraft(it.key, { title: v })} />
                         <Field l="Název EN" v={it.draft.title_en} on={v => patchDraft(it.key, { title_en: v })} />
                         <Field l="Název DE" v={it.draft.title_de} on={v => patchDraft(it.key, { title_de: v })} />
@@ -265,7 +265,7 @@ export default function AdminBulkAIPage() {
                         <Area l="Popis EN" v={it.draft.description_en} on={v => patchDraft(it.key, { description_en: v })} />
                         <Area l="Popis DE" v={it.draft.description_de} on={v => patchDraft(it.key, { description_de: v })} />
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+                      <div className="rgrid rgrid-4">
                         <Field l="Datum (YYYY-MM-DD)" v={it.draft.event_date} on={v => patchDraft(it.key, { event_date: v })} />
                         <Field l="Rok od" v={it.draft.year_from} on={v => patchDraft(it.key, { year_from: v })} />
                         <Field l="Rok do" v={it.draft.year_to} on={v => patchDraft(it.key, { year_to: v })} />

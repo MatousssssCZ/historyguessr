@@ -338,7 +338,8 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
       )}
 
       {filtered.length > 0 && (
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <div className="scroll-x">
+      <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
             {['ID', 'Název', 'Rok', 'Radius', 'Obtížnost', 'Soubory', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
@@ -415,6 +416,7 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
           ))}
         </tbody>
       </table>
+      </div>
       )}
     </div>
   )
@@ -833,7 +835,7 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
                 </div>
               </div>
             </details>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div className="rgrid rgrid-3">
               <div>
                 <label className="label">Kategorie</label>
                 <select className="input" value={form.category} onChange={set('category') as React.ChangeEventHandler<HTMLSelectElement>}>
@@ -866,7 +868,7 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
           <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 16 }}>
             Zadej rozsah let. Hráč dostane plný počet bodů za libovolný rok v tomto rozsahu. Záporné = př. n. l.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, alignItems: 'end' }}>
+          <div className="rgrid rgrid-3" style={{ alignItems: 'end' }}>
             <div>
               <label className="label">Rok od *</label>
               <input className="input" type="number" value={form.year_from} onChange={set('year_from')} required min={-3000} max={2025} placeholder="-1200"/>
@@ -902,7 +904,7 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
           {/* Interaktivní mapa */}
           <AdminMap lat={lat} lng={lng} radiusKm={radiusKm} onLocationChange={handleMapClick}/>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
+          <div className="rgrid rgrid-3" style={{ marginTop: 16 }}>
             <div>
               <label className="label">Zeměpisná šířka (lat) *</label>
               <input className="input" type="number" step="0.000001" value={form.lat} onChange={set('lat')} required/>

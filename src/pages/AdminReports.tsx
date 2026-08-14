@@ -96,7 +96,7 @@ export default function AdminReportsPage() {
         </Section>
 
         {/* Top / Bottom události */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="rgrid rgrid-2" style={{ gap: 24 }}>
           <Section title="Nejhranější události">
             <EventList rows={topEvents}/>
           </Section>

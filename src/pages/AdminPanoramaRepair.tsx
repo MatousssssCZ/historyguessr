@@ -54,7 +54,7 @@ export default function AdminPanoramaRepairPage() {
 
         {result && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 18 }}>
+            <div className="rgrid rgrid-3" style={{ marginBottom: 18 }}>
               <Stat label="Zkontrolováno" value={result.total}/>
               <Stat label="Opraveno" value={result.fixed} accent="#5c9468"/>
               <Stat label="K řešení" value={result.problems.length} accent={result.problems.length ? 'var(--danger)' : undefined}/>
