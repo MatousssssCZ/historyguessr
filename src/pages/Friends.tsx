@@ -7,7 +7,8 @@ import {
 } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import MobileNav from '@/components/MobileNav'
-import DesktopSidebar from '@/components/DesktopSidebar'
+import { PageShell, PageHeader } from '@/components/ui/Page'
+import Icon from '@/components/Icon'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }
 const rowCard: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '12px 13px', display: 'flex', alignItems: 'center', gap: 12 }
@@ -43,15 +44,8 @@ export default function FriendsPage() {
   async function unfriend(id: string) { if (!confirm(t('friends.removeConfirm'))) return; await removeFriend(id); load() }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
-      <DesktopSidebar/>
-      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'var(--nav-space)' }}>
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 18px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 20px' }}>
-          <BackCircle onClick={() => navigate('/menu')} label={t('common.backToMenu')}/>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em' }}>{t('friends.title')}</h1>
-        </div>
+    <PageShell maxWidth={640}>
+        <PageHeader eyebrow={t('menu.friendsTitle')} title={t('friends.title')} onBack={() => navigate('/menu')}/>
 
         {/* Přidat přítele */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: 15, marginBottom: 22 }}>
@@ -92,7 +86,7 @@ export default function FriendsPage() {
             <p style={{ ...eyebrow, margin: '0 0 12px' }}>{t('friends.list')} ({friends.length})</p>
             {friends.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px 20px', color: 'var(--ink-3)' }}>
-                <div style={{ fontSize: 34, marginBottom: 10 }}>👥</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: 'var(--ink-3)' }}><Icon name="friends" size={32}/></div>
                 <p style={{ fontSize: 14, margin: 0 }}>{t('friends.empty')}</p>
               </div>
             ) : (
@@ -111,20 +105,8 @@ export default function FriendsPage() {
             )}
           </>
         )}
-      </div>
-      </div>
       <MobileNav/>
-    </div>
-  )
-}
-
-function BackCircle({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button onClick={onClick} aria-label={label} style={{
-      width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-      background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-    }}>←</button>
+    </PageShell>
   )
 }
 

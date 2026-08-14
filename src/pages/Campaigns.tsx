@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
+import { PageShell, PageHeader } from '@/components/ui/Page'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import CompassLoader from '@/components/CompassLoader'
 import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
@@ -64,35 +65,20 @@ export default function CampaignsPage() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
-      <DesktopSidebar/>
-      <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'var(--nav-space)' : 40, paddingTop: 'var(--safe-top)' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '18px 18px 0' : '30px 40px' }}>
-        {/* Hlavička: zpět + název + ★ + výpravy */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-            {isMobile && <button onClick={() => navigate('/menu')} aria-label={t('camp.backToMenu')} style={{
-              width: 40, height: 40, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-              background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-            }}>←</button>}
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 32 : 40, margin: 0, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{t('camp.title')}</h1>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0, paddingTop: 4 }}>
-            <StarPill stars={bundle.totalStars}/>
-            <ExpeditionPill bundle={bundle}/>
-          </div>
-        </div>
-        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 20px' }}>{t('camp.sub')}</p>
+    <PageShell maxWidth={1100}>
+        <PageHeader
+          title={t('camp.title')}
+          onBack={isMobile ? () => navigate('/menu') : undefined}
+          actions={<><StarPill stars={bundle.totalStars}/><ExpeditionPill bundle={bundle}/></>}
+        />
+        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '-14px 0 20px' }}>{t('camp.sub')}</p>
 
         <CategoriesGrid bundle={bundle} isMobile={isMobile} userId={user?.id} onOpen={(id) => {
           campaignAnalytics.categoryOpened(id, user?.id)
           navigate(`/campaigns/${id}`)
         }}/>
-      </div>
-      </div>
       {isMobile && <MobileNav active="campaigns"/>}
-    </div>
+    </PageShell>
   )
 }
 

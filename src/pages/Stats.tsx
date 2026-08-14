@@ -9,7 +9,7 @@ import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/ach
 import StreakLadder from '@/components/StreakLadder'
 import MobileNav from '@/components/MobileNav'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
-import DesktopSidebar from '@/components/DesktopSidebar'
+import { PageShell, PageHeader } from '@/components/ui/Page'
 import type { RoundResult, EarnedReward, RewardRarity } from '@/types/database'
 
 // Barvy vzácnosti relikvií (funkční i v tmavém režimu — poloprůhledné podklady)
@@ -115,20 +115,9 @@ export default function StatsPage() {
   const n = (v: number) => v.toLocaleString(currentLocale())
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
-      <DesktopSidebar/>
-      <div style={{ flex: 1, minWidth: 0, paddingTop: 'var(--safe-top)', paddingBottom: 'var(--nav-space)' }}>
-      {/* Hlavička (Pergamen) */}
-      <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 18px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 16px' }}>
-          <button onClick={() => navigate('/menu')} aria-label={t('pregame.backToMenu')} style={{
-            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-          }}>←</button>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', letterSpacing: '-0.01em', margin: 0 }}>{t('stats.title')}</h1>
-        </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 16px' }}>
+    <PageShell maxWidth={640}>
+        <PageHeader eyebrow={t('menu.navBadges')} title={t('stats.title')} onBack={() => navigate('/menu')}/>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 16px', marginBottom: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
             <b style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t('menu.level')} {lvl.level}</b>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
@@ -137,9 +126,7 @@ export default function StatsPage() {
             <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #d89a54)' }}/>
           </div>
         </div>
-      </div>
 
-      <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 18px 24px' }}>
         {loading || !stats ? (
           <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
         ) : (
@@ -222,10 +209,8 @@ export default function StatsPage() {
             </div>
           </>
         )}
-      </div>
-      </div>
       <MobileNav active="badges"/>
-    </div>
+    </PageShell>
   )
 }
 
