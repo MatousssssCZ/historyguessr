@@ -181,7 +181,7 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
               {!isRegister && (
-                <button type="button" onClick={handleForgot} style={{ ...forgotLinkStyle, textAlign: 'center', color: 'rgba(245,241,232,0.7)' }}>{t('auth.forgot')}</button>
+                <button type="button" onClick={handleForgot} style={{ ...forgotLinkStyle, alignSelf: 'center', textAlign: 'center', color: 'rgba(245,241,232,0.7)' }}>{t('auth.forgot')}</button>
               )}
             </form>
             <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => setCaptchaFailed(true)} theme="dark" appearance="interaction-only"/>
