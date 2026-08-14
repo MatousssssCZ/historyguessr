@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
 import { formatDistance, formatYear } from '@/lib/scoring'
 import { C, F, SHADOW_CTA, DetailIcon } from './RoundResult'
+import Icon, { type IconName } from '@/components/Icon'
 import { LeaderRow, DistributionCard, type LeaderEntry, type Distribution } from './RoundDetail'
 
 // Desktop výsledek kola (handoff 17f) — dvousloupcový layout:
@@ -109,8 +110,8 @@ export default function RoundResultDesktop(p: Props) {
 
               {/* Dlaždice km / rok */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-                <MetricRow icon="📍" label={t('round.kmOff', { d: formatDistance(p.distanceKm) })} points={p.placePoints} max={p.placeMax} color={C.accent}/>
-                <MetricRow icon="📅" label={t('round.yearsOffLong', { count: p.yearOff })} points={p.yearPoints} max={p.yearMax} color={C.good}/>
+                <MetricRow icon="pin" label={t('round.kmOff', { d: formatDistance(p.distanceKm) })} points={p.placePoints} max={p.placeMax} color={C.accent}/>
+                <MetricRow icon="calendar" label={t('round.yearsOffLong', { count: p.yearOff })} points={p.yearPoints} max={p.yearMax} color={C.good}/>
               </div>
 
               {p.xpSection && <div style={{ marginBottom: 6 }}>{p.xpSection}</div>}
@@ -119,7 +120,7 @@ export default function RoundResultDesktop(p: Props) {
             <>
               {/* Žebříček */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ font: `600 10px ${F.mono}`, letterSpacing: '.12em', color: C.muted2 }}>👥 {t('round.playedToday')}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, font: `600 10px ${F.mono}`, letterSpacing: '.12em', color: C.muted2 }}><Icon name="friends" size={14}/> {t('round.playedToday')}</span>
                 <span style={{ font: `700 12px ${F.ui}`, color: C.ink }}>{(p.playersToday ?? p.leaderboard!.length).toLocaleString(loc)} {t('round.players')}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
@@ -160,11 +161,11 @@ export default function RoundResultDesktop(p: Props) {
   )
 }
 
-function MetricRow({ icon, label, points, max, color }: { icon: string; label: string; points: number; max: number; color: string }) {
+function MetricRow({ icon, label, points, max, color }: { icon: IconName; label: string; points: number; max: number; color: string }) {
   return (
     <div style={{ padding: '11px 14px', borderRadius: 13, background: C.bg }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ font: `600 12px ${F.ui}`, color: C.ink }}><span style={{ marginRight: 6 }}>{icon}</span>{label}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, font: `600 12px ${F.ui}`, color: C.ink }}><span style={{ display: 'flex', color }}><Icon name={icon} size={15}/></span>{label}</span>
         <span style={{ font: `600 12px ${F.mono}`, color: C.ink }}>{points} <span style={{ color: C.muted2 }}>/ {max}</span></span>
       </div>
       <div style={{ height: 5, borderRadius: 3, background: C.lineStrong, overflow: 'hidden' }}>

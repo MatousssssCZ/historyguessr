@@ -32,7 +32,7 @@ export default function PanoramaBackdrop() {
           <div style={{
             position: 'absolute', top: 0, bottom: 0, left: '-7%', width: '114%',
             backgroundImage: `url(${u})`, backgroundSize: 'auto 118%', backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
-            animation: `hgPan ${80 + (i % 3) * 12}s ease-in-out infinite alternate`,
+            animation: `hgPan ${44 + (i % 3) * 8}s ease-in-out infinite alternate`,
           }}/>
         </div>
       ))}

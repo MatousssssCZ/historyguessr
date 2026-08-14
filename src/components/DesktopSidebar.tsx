@@ -5,10 +5,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { levelFromXp } from '@/lib/leveling'
 import { getFriendRequests } from '@/lib/supabase'
+import Icon, { type IconName } from '@/components/Icon'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
-type NavItem = { icon: string; label: string; to: string; match: string[] }
+type NavItem = { icon: IconName; label: string; to: string; match: string[] }
 
 /**
  * Trvalý postranní panel na desktopu — sdílený mezi stránkami „nabídky"
@@ -33,13 +34,13 @@ export default function DesktopSidebar({ streak }: { streak?: number }) {
   const lvl = levelFromXp(profile?.xp ?? 0)
 
   const nav: NavItem[] = [
-    { icon: '🏠', label: t('menu.navHome'), to: '/menu', match: ['/menu'] },
-    { icon: '🏛', label: t('menu.campaigns'), to: '/campaigns', match: ['/campaigns'] },
-    { icon: '🏅', label: t('menu.navBadges'), to: '/stats', match: ['/stats'] },
-    { icon: '👥', label: t('menu.friendsTitle'), to: '/friends', match: ['/friends'] },
-    { icon: '👤', label: t('menu.navProfile'), to: '/account', match: ['/account'] },
+    { icon: 'home', label: t('menu.navHome'), to: '/menu', match: ['/menu'] },
+    { icon: 'campaign', label: t('menu.campaigns'), to: '/campaigns', match: ['/campaigns'] },
+    { icon: 'badge', label: t('menu.navBadges'), to: '/stats', match: ['/stats'] },
+    { icon: 'friends', label: t('menu.friendsTitle'), to: '/friends', match: ['/friends'] },
+    { icon: 'profile', label: t('menu.navProfile'), to: '/account', match: ['/account'] },
   ]
-  if (isAdmin) nav.push({ icon: '⚙️', label: t('menu.admin'), to: '/admin', match: ['/admin'] })
+  if (isAdmin) nav.push({ icon: 'admin', label: t('menu.admin'), to: '/admin', match: ['/admin'] })
 
   const activeOf = (item: NavItem) => item.match.some(m => location.pathname === m || location.pathname.startsWith(m + '/'))
 
@@ -73,7 +74,7 @@ export default function DesktopSidebar({ streak }: { streak?: number }) {
               color: active ? 'var(--ink)' : 'var(--ink-2)',
               fontFamily: 'var(--font-sans)', fontWeight: active ? 700 : 500, fontSize: 13.5,
             }}>
-              <span style={{ fontSize: 18 }}>{n.icon}</span>
+              <span style={{ display: 'flex' }}><Icon name={n.icon} size={19}/></span>
               <span style={{ flex: 1 }}>{n.label}</span>
               {friendReqs > 0 && (n.to === '/friends' || n.to === '/account') && (
                 <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 6px', borderRadius: 999 }}>{friendReqs}</span>

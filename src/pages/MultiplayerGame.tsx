@@ -20,6 +20,7 @@ import { GuessMap, ResultMap } from '@/components/GameMap'
 import ControlDock from '@/components/GameControls'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { DetailIcon } from '@/components/round/RoundResult'
+import Icon, { type IconName } from '@/components/Icon'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -570,9 +571,9 @@ export default function MultiplayerGamePage() {
             {timerRing}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--paper-100)', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-            {([['round', '🏆', t('mp.tabRound')], ['total', '📊', t('mp.tabTotal')]] as const).map(([key, icon, label]) => (
+            {([['round', 'trophy', t('mp.tabRound')], ['total', 'chart', t('mp.tabTotal')]] as const).map(([key, icon, label]) => (
               <button key={key} onClick={() => setActiveTab(key)} style={{ padding: '12px 0', border: 'none', borderBottom: activeTab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12.5, fontWeight: activeTab === key ? 600 : 400, color: activeTab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <span style={{ fontSize: 14 }}>{icon}</span>{label}
+                <span style={{ display: "flex" }}><Icon name={icon as IconName} size={15}/></span>{label}
               </button>
             ))}
           </div>
@@ -618,10 +619,10 @@ export default function MultiplayerGamePage() {
 
         {/* Tabs */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--paper-100)', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
-          {([['round', '🏆', t('mp.tabRound')], ['total', '📊', t('mp.tabTotal')]] as const).map(([key, icon, label]) => (
+          {([['round', 'trophy', t('mp.tabRound')], ['total', 'chart', t('mp.tabTotal')]] as const).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
               style={{ padding: '10px 0', border: 'none', borderBottom: activeTab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12, fontWeight: activeTab === key ? 600 : 400, color: activeTab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <span style={{ fontSize: 14 }}>{icon}</span>{label}
+              <span style={{ display: "flex" }}><Icon name={icon as IconName} size={15}/></span>{label}
             </button>
           ))}
         </div>

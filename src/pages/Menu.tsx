@@ -12,6 +12,7 @@ import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
+import Icon, { type IconName } from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
 import AdSlot from '@/components/AdSlot'
@@ -252,29 +253,30 @@ export default function MenuPage() {
       <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex' }}>
         <DesktopSidebar streak={dailyStreak}/>
         <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '30px 40px 48px', display: 'flex', gap: 28, alignItems: 'flex-start' }}>
+          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '30px 40px 48px' }}>
+            {/* Header (přes celou šířku) */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', marginBottom: 8 }}>{dateStr}</div>
+                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--ink)', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{greet}, {name}</h1>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <HelpButton onClick={() => setShowHowTo(true)}/>
+                <LanguageSwitcher/>
+                <ThemeToggle variant="light"/>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
             {/* ── Hlavní sloupec ── */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', marginBottom: 8 }}>{dateStr}</div>
-                  <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--ink)', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{greet}, {name}</h1>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <HelpButton onClick={() => setShowHowTo(true)}/>
-                  <LanguageSwitcher/>
-                  <ThemeToggle variant="light"/>
-                </div>
-              </div>
-
               <DailyHero {...dailyProps} tall/>
 
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', margin: '18px 0 13px' }}>{t('menu.newGame').toUpperCase()}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
-                <ModeTile icon="⚡" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
-                <ModeTile icon="🎚" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic}/>
-                <ModeTile icon="⚔" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
+                <ModeTile icon="bolt" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
+                <ModeTile icon="sliders" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic}/>
+                <ModeTile icon="swords" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
               </div>
 
               {resume && <div style={{ marginBottom: 16 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
@@ -294,6 +296,7 @@ export default function MenuPage() {
               <NearestBadges catHits={catHits} navigate={navigate}/>
               {!isAnonymous && <FriendsToday data={friendsToday} navigate={navigate}/>}
             </aside>
+            </div>
           </div>
         </div>
         {showHowTo && <HowToPlay onClose={closeHowTo}/>}
@@ -335,7 +338,7 @@ export default function MenuPage() {
           display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
           background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
         }}>
-          <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👥</span>
+          <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="friends" size={21}/></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('menu.friendsTitle')}</div>
             <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.friendsSub')}</div>
@@ -570,7 +573,7 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
       </div>
       <div style={{ padding: '12px 14px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-          <span style={{ fontSize: 22 }}>🔥</span>
+          <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="flame" size={20}/></span>
           <div style={{ lineHeight: 1.18, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{t('menu.streakDays', { n: streak })}</div>
             {week.length > 0
@@ -602,7 +605,7 @@ function ProgressCard({ lvl, world, delta, loading }: { lvl: LevelInfo; world: {
       </div>
       {/* Světový žebříček — využívá uvolněné místo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, background: 'var(--paper-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌍</div>
+        <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, background: 'var(--paper-200)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="globe" size={22}/></div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('menu.worldRank')}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minHeight: 32 }}>
@@ -634,7 +637,7 @@ function PremiumBanner({ onClick }: { onClick: () => void }) {
       display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
       background: ACCENT_GRAD, border: 'none', borderRadius: 18, padding: '14px 16px', color: '#fff',
     }}>
-      <span style={{ fontSize: 22, flexShrink: 0 }}>⭐</span>
+      <span style={{ flexShrink: 0, display: 'flex' }}><Icon name="star" size={22}/></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.premiumCtaTitle')}</div>
         <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.premiumCtaSub')}</div>
@@ -652,7 +655,7 @@ function SaveProgressBanner({ onClick }: { onClick: () => void }) {
       display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
       background: ACCENT_GRAD, border: 'none', borderRadius: 18, padding: '14px 16px', color: '#fff',
     }}>
-      <span style={{ fontSize: 22, flexShrink: 0 }}>💾</span>
+      <span style={{ flexShrink: 0, display: 'flex' }}><Icon name="save" size={22}/></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.guestSaveTitle')}</div>
         <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.guestSaveSub')}</div>
@@ -670,7 +673,7 @@ function RoadmapTile({ onClick }: { onClick: () => void }) {
       display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
       background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
     }}>
-      <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🗳️</span>
+      <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="roadmap" size={21}/></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('menu.roadmapTitle')}</div>
         <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.roadmapSub')}</div>
@@ -681,7 +684,7 @@ function RoadmapTile({ onClick }: { onClick: () => void }) {
 }
 
 // ─── Dlaždice režimu (desktop / sheet řádek) ──────────────
-function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; title: string; sub: string; onClick: () => void; recommended?: boolean }) {
+function ModeTile({ icon, title, sub, onClick, recommended }: { icon: IconName; title: string; sub: string; onClick: () => void; recommended?: boolean }) {
   const { t } = useTranslation()
   return (
     <button onClick={onClick} style={{
@@ -691,7 +694,7 @@ function ModeTile({ icon, title, sub, onClick, recommended }: { icon: string; ti
       borderRadius: 16, padding: 15,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, background: recommended ? ACCENT_GRAD : 'var(--paper-300)', color: recommended ? '#fff' : 'var(--accent)' }}>{icon}</div>
+        <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, background: recommended ? ACCENT_GRAD : 'var(--paper-300)', color: recommended ? '#fff' : 'var(--accent)' }}><Icon name={icon} size={20}/></div>
         {recommended && <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, padding: '2px 6px', borderRadius: 20 }}>{t('menu.recommended').toUpperCase()}</span>}
       </div>
       <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{title}</div>
