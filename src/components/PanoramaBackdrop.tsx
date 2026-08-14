@@ -11,7 +11,7 @@ declare const pannellum: {
 // náhodnými scénami. Dvě vrstvy A/B se střídají, aby přechod byl plynulý.
 // Neinteraktivní (draggable false) a pointerEvents none → neruší formulář.
 
-const ROTATE_DEG_PER_SEC = -6   // rychlost horizontálního otáčení (Street View pan)
+const ROTATE_DEG_PER_SEC = -3   // rychlost horizontálního otáčení (Street View pan)
 const SCENE_MS = 12000          // jak dlouho je jedna scéna vidět
 const FADE_MS = 1800            // délka prolnutí
 
@@ -50,9 +50,9 @@ export default function PanoramaBackdrop() {
       disableKeyboardCtrl: true,
       showZoomCtrl: false,
       showFullscreenCtrl: false,
-      hfov: 110,
-      minHfov: 110,
-      maxHfov: 110,
+      hfov: 132,
+      minHfov: 132,
+      maxHfov: 132,
       friction: 1,
     })
 
