@@ -1,6 +1,6 @@
 {
-  "name": "Historyguesser",
-  "short_name": "Historyguesser",
+  "name": "HistoryGuesser",
+  "short_name": "HistoryGuesser",
   "description": "Uhádni místo a rok historické události",
   "start_url": "/",
   "display": "standalone",

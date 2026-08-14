@@ -625,7 +625,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const betterThan = allScores.length >= 5 ? Math.round((allScores.filter(v => v < result.totalScore).length / (allScores.length - 1)) * 100) : null
   const dateLabel = new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long' })
   const shareData = { dateLabel, score: result.totalScore, maxScore: 1000, locScore: result.locScore, yearScore: result.yrScore, distanceLabel: formatDistance(result.distKm), yearLabel, betterThan }
-  const shareText = [`Historyguesser · ${t('menu.dailyMobile')} · ${dateLabel}`, `★ ${result.totalScore} / 1000`, `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`, 'historyguesser.net'].join('\n')
+  const shareText = [`HistoryGuesser · ${t('menu.dailyMobile')} · ${dateLabel}`, `★ ${result.totalScore} / 1000`, `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`, 'historyguesser.net'].join('\n')
 
   const entries: LeaderEntry[] = leaderboard.map(r => ({
     id: r.user_id, name: r.username ?? t('daily.player'), score: r.score,

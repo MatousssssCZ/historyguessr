@@ -18,7 +18,7 @@ export default function TermsPage() {
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <BackButton onClick={() => navigate(-1)} label={t('legal.back')} />
         <div>
-          <div className="eyebrow" style={{ fontSize: 9 }}>Historyguesser</div>
+          <div className="eyebrow" style={{ fontSize: 9 }}>HistoryGuesser</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: 0, letterSpacing: '-0.01em' }}>{doc.title}</h1>
         </div>
       </header>

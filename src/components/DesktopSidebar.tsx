@@ -59,7 +59,7 @@ export default function DesktopSidebar({ streak }: { streak?: number }) {
             <circle cx="16" cy="16" r="2.3" fill="#fff"/>
           </svg>
         </div>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', color: 'var(--ink)' }}>Historyguesser</span>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', color: 'var(--ink)' }}>HistoryGuesser</span>
       </button>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

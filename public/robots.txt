@@ -1,4 +1,4 @@
-# Historyguesser — https://historyguesser.net
+# HistoryGuesser — https://historyguesser.net
 # Veřejné stránky se smí indexovat; herní/účtové routy ne.
 
 User-agent: *
