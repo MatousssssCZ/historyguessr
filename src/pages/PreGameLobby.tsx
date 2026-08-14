@@ -13,12 +13,20 @@ import { singlePlayerAnalytics, monetizationAnalytics } from '@/lib/analytics'
 import type { SinglePlayerPreset, PresetRules } from '@/lib/presets'
 import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
-import { Segmented, CategoryChips } from '@/components/GameSettings'
+import { Segmented, CategoryChips, CATEGORY_IDS as CAT_IDS } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { PageHeader } from '@/components/ui/Page'
 import type { GameOptions } from '@/hooks/useGame'
 
 const ROUND_OPTIONS = [3, 5, 10]
+
+// Rychlé předvolby období (chipy). „Vlastní" = cokoli mimo tyto rozsahy.
+const ERAS: { key: string; from: number; to: number }[] = [
+  { key: 'eraAll', from: YEAR_MIN, to: YEAR_MAX },
+  { key: 'eraAntiquity', from: -3000, to: 500 },
+  { key: 'eraMedieval', from: 500, to: 1500 },
+  { key: 'era20', from: 1900, to: 2000 },
+]
 
 type SortBy = 'year' | 'title'
 
@@ -36,6 +44,22 @@ export default function PreGameLobbyPage() {
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState(false)
   const [sortBy, setSortBy] = useState<SortBy>('year')
+  const [search, setSearch] = useState('')
+  const [catCounts, setCatCounts] = useState<Record<string, number>>({})
+
+  // Počty událostí po kategoriích v aktuálním rozsahu let (nezávisle na výběru kategorií)
+  useEffect(() => {
+    let alive = true
+    const lo = Math.min(yearFrom, yearTo), hi = Math.max(yearFrom, yearTo)
+    getCandidateEvents({ categories: [], yearFrom: lo, yearTo: hi })
+      .then(list => {
+        if (!alive) return
+        const m: Record<string, number> = {}
+        for (const e of list) if (e.category) m[e.category] = (m[e.category] ?? 0) + 1
+        setCatCounts(m)
+      }).catch(() => {})
+    return () => { alive = false }
+  }, [yearFrom, yearTo])
 
   // Desktop dostává vlastní, přehlednější dvousloupcový layout
   const isMobile = useIsMobile()
@@ -124,6 +148,15 @@ export default function PreGameLobbyPage() {
     else arr.sort((a, b) => eventTitle({ ...a, description: '' }).localeCompare(eventTitle({ ...b, description: '' })))
     return arr
   }, [filteredCandidates, sortBy])
+
+  const displayCandidates = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return sortedCandidates
+    return sortedCandidates.filter(e => eventTitle({ ...e, description: '' }).toLowerCase().includes(q))
+  }, [sortedCandidates, search])
+
+  const lo = Math.min(yearFrom, yearTo), hi = Math.max(yearFrom, yearTo)
+  const activeEra = ERAS.find(e => e.from === lo && e.to === hi)?.key ?? 'eraCustom'
 
   const activeIds = useMemo(() => new Set(filteredCandidates.map(e => e.id)), [filteredCandidates])
   const excludedActive = [...excluded].filter(id => activeIds.has(id))
@@ -292,20 +325,12 @@ export default function PreGameLobbyPage() {
     </div>
   )
 
-  // Vyladit události — na desktopu vždy rozbaleno (bez skládací hlavičky)
-  const tuneList = (
-    <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('pregame.sort')}</span>
-        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-          <SortBtn active={sortBy === 'year'} onClick={() => setSortBy('year')}>{t('pregame.sortYear')}</SortBtn>
-          <SortBtn active={sortBy === 'title'} onClick={() => setSortBy('title')}>{t('pregame.sortTitle')}</SortBtn>
-        </div>
-      </div>
-      <div style={{ maxHeight: isMobile ? 320 : 460, overflowY: 'auto', borderTop: '1px solid var(--line)' }}>
+  // Scrollovatelné tělo seznamu událostí (sdílené mobil/desktop)
+  const eventListBody = (
+      <div style={{ maxHeight: isMobile ? 320 : 380, overflowY: 'auto', borderTop: '1px solid var(--line)' }}>
         {loading && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>{t('pregame.loadingEvents')}</div>}
-        {!loading && sortedCandidates.length === 0 && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>{t('pregame.noEvents')}</div>}
-        {sortedCandidates.map(ev => {
+        {!loading && displayCandidates.length === 0 && <div style={{ padding: 16, fontSize: 13, color: 'var(--ink-3)' }}>{t('pregame.noEvents')}</div>}
+        {displayCandidates.map(ev => {
           const out = excluded.has(ev.id)
           return (
             <div key={ev.id} style={{
@@ -337,6 +362,19 @@ export default function PreGameLobbyPage() {
           )
         })}
       </div>
+  )
+
+  // Vyladit události (mobil) — řadicí hlavička + tělo seznamu
+  const tuneList = (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('pregame.sort')}</span>
+        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+          <SortBtn active={sortBy === 'year'} onClick={() => setSortBy('year')}>{t('pregame.sortYear')}</SortBtn>
+          <SortBtn active={sortBy === 'title'} onClick={() => setSortBy('title')}>{t('pregame.sortTitle')}</SortBtn>
+        </div>
+      </div>
+      {eventListBody}
     </>
   )
 
@@ -389,90 +427,139 @@ export default function PreGameLobbyPage() {
     }}>←</button>
   )
 
-  // ── Desktop: přehledný dvousloupcový layout ────────────────
+  // ── Desktop: layout dle mockupu (mřížka 2×2 + pravý rail) ──
   if (!isMobile) {
+    const catName = (id: string) => t('cat.' + id).split(' ').slice(1).join(' ') || t('cat.' + id)
+    const catSummary = categories.length === 0 ? t('pregame.allCats')
+      : categories.length === 1 ? catName(categories[0]) : String(categories.length)
+
+    const eraChip = (key: string, from?: number, to?: number, onClick?: () => void) => {
+      const on = activeEra === key
+      return (
+        <button key={key} onClick={onClick} style={{
+          padding: '8px 14px', borderRadius: 999, cursor: onClick ? 'pointer' : 'default',
+          border: `1px solid ${on ? 'var(--ink)' : 'var(--line-strong)'}`,
+          background: on ? 'var(--ink)' : 'transparent', color: on ? 'var(--paper-50)' : 'var(--ink-2)',
+          fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 500, fontSize: 13, whiteSpace: 'nowrap',
+        }}>{t('pregame.' + key)}</button>
+      )
+    }
+
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(24px, var(--safe-bottom))' }}>
-        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 32px 0' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(28px, var(--safe-bottom))' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '30px 40px 0' }}>
           <PageHeader eyebrow={t('pregame.mode')} title={t('pregame.title')} onBack={() => navigate('/menu')}/>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.55fr) minmax(320px,1fr)', gap: 24, alignItems: 'start' }}>
-            {/* Levý sloupec — nastavení */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.55fr) minmax(300px,0.9fr)', gap: 20, alignItems: 'start' }}>
+            {/* ── Levý sloupec ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Počet kol + Období */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px,0.8fr) minmax(0,1.35fr)', gap: 18 }}>
+                <Card>
+                  <CardLabel>{t('pregame.rounds')}</CardLabel>
+                  {roundsCtl}
+                </Card>
+                <Card>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('pregame.period')}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--ink)' }}>{formatYear(lo)} — {formatYear(hi)}</span>
+                  </div>
+                  {yearCtl}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+                    {ERAS.map(e => eraChip(e.key, e.from, e.to, () => { setYearFrom(e.from); setYearTo(e.to) }))}
+                    {eraChip('eraCustom')}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Kategorie */}
               <Card>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22 }}>
-                  <div>
-                    <CardLabel>{t('pregame.rounds')}</CardLabel>
-                    {roundsCtl}
-                  </div>
-                  <div>
-                    <CardLabel>{t('pregame.yearRange')}</CardLabel>
-                    <div style={{ paddingTop: 4 }}>{yearCtl}</div>
-                  </div>
-                </div>
-                <div style={{ marginTop: 22 }}>
-                  <CardLabel hint={t('pregame.noFilter')}>{t('pregame.categories')}</CardLabel>
-                  {categoriesCtl}
+                <CardLabel hint={t('pregame.noFilter')}>{t('pregame.categories')}</CardLabel>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {CAT_IDS.map(id => {
+                    const on = categories.includes(id)
+                    return (
+                      <button key={id} onClick={() => toggleCategory(id)} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 14px', borderRadius: 999, cursor: 'pointer',
+                        border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
+                        background: on ? 'rgba(217,119,87,0.09)' : 'transparent',
+                        color: on ? 'var(--accent-deep)' : 'var(--ink-2)',
+                        fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 500, fontSize: 13.5,
+                      }}>
+                        {t('cat.' + id)}
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: on ? 'var(--accent)' : 'var(--ink-3)' }}>{catCounts[id] ?? 0}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </Card>
 
+              {/* Události v losování */}
               <Card padding={0}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px' }}>
-                  <span style={{ fontSize: 16 }}>🗂</span>
-                  <span style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 500 }}>{t('pregame.tune')}</span>
-                  <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)' }}>
-                    {excluded.size > 0 ? t('pregame.away', { n: excluded.size }) : candidates.length}
-                  </span>
+                <div style={{ padding: '15px 18px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--ink)' }}>{t('pregame.drawPool')}</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{t('pregame.drawPoolSub')}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 11px', borderRadius: 999, background: 'var(--paper-200)', border: '1px solid var(--line)' }}>
+                        <span style={{ color: 'var(--ink-3)', fontSize: 12 }}>⌕</span>
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('pregame.search')} style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--ink)', width: 110 }}/>
+                      </div>
+                      <SortBtn active={sortBy === 'year'} onClick={() => setSortBy('year')}>{t('pregame.sortYear')}</SortBtn>
+                      <SortBtn active={sortBy === 'title'} onClick={() => setSortBy('title')}>{t('pregame.sortTitle')}</SortBtn>
+                    </div>
+                  </div>
+                  <div style={{ height: 12 }}/>
                 </div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', padding: '0 18px 12px' }}>{t('pregame.tuneHint')}</div>
-                {tuneList}
+                {eventListBody}
               </Card>
             </div>
 
-            {/* Pravý sloupec — shrnutí + Premium */}
+            {/* ── Pravý rail ── */}
             <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
               <Card>
-                <CardLabel>{t('pregame.mode')}</CardLabel>
-                <div style={{ marginBottom: 14 }}>{counterCtl}</div>
+                <CardLabel>{t('pregame.yourGame')}</CardLabel>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 18 }}>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 56, lineHeight: 1, letterSpacing: '-0.02em', color: enough ? 'var(--ink)' : 'var(--danger)' }}>{loading ? '…' : availableCount}</span>
+                  <span style={{ fontSize: 13, color: 'var(--ink-3)', maxWidth: 120, lineHeight: 1.3 }}>{t('pregame.poolLabel')}</span>
+                </div>
+                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                  <SummaryRow label={t('pregame.sumRounds')} value={String(rounds)}/>
+                  <SummaryRow label={t('pregame.period')} value={t('pregame.' + activeEra)}/>
+                  <SummaryRow label={t('pregame.sumCats')} value={catSummary}/>
+                </div>
+                {!enough && !loading && (
+                  <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 12 }}>⚠ {t('pregame.notEnough', { n: availableCount, min: rounds })}</div>
+                )}
                 {startBtn}
               </Card>
 
-              {/* Premium nástroje — vizuálně odlišený panel */}
-              <div style={{
-                borderRadius: 16, overflow: 'hidden',
-                border: `1px solid ${isPremium ? 'var(--accent)' : 'var(--line-strong)'}`,
-                background: 'var(--surface)',
-              }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px',
-                  background: isPremium ? 'linear-gradient(150deg,rgba(217,119,87,0.14),rgba(217,119,87,0.04))' : 'var(--paper-200)',
-                  borderBottom: '1px solid var(--line)',
-                }}>
-                  <span style={{ fontSize: 15 }}>♛</span>
-                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)' }}>{t('pregame.advTools')}</span>
-                  <span style={{
-                    marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em',
-                    textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999,
-                    background: isPremium ? 'var(--accent)' : 'var(--paper-300)',
-                    color: isPremium ? '#fff' : 'var(--ink-3)',
-                  }}>{isPremium ? t('pregame.active') : 'Premium'}</span>
+              {/* Pokročilé filtry */}
+              <Card padding={0}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 18px', borderBottom: '1px solid var(--line)' }}>
+                  <span style={{ fontSize: 15, color: isPremium ? 'var(--accent)' : 'var(--ink-3)' }}>♛</span>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)' }}>{t('pregame.advFilters')}</span>
+                  <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '3px 9px', borderRadius: 999, background: isPremium ? 'var(--accent)' : 'var(--paper-300)', color: isPremium ? '#fff' : 'var(--ink-3)' }}>{isPremium ? t('pregame.active') : 'Premium'}</span>
                 </div>
-                <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  {!isPremium && (
-                    <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                      {t('pregame.advToolsDesc')}
-                    </div>
-                  )}
-                  <div>
-                    <CardLabel>{t('pregame.smartFilters')}</CardLabel>
-                    {smartCtl}
-                  </div>
-                  <div>
-                    <CardLabel>{t('pregame.presets')}</CardLabel>
-                    {presetsCtl}
-                  </div>
+                <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <PremiumRow icon="✦" label={t('pregame.onlyUnplayed').replace(/^\S+\s+/, '')} on={onlyUnplayed} locked={!caps.canUseSmartFilters}
+                    onClick={() => { if (!caps.canUseSmartFilters) { setPresetMsg(t('pregame.lockUnplayed')); return } setOnlyUnplayed(v => !v) }}/>
+                  <PremiumRow icon="◎" label={t('pregame.onlyMistakes').replace(/^\S+\s+/, '')} on={onlyMistakes} locked={!caps.canUseSmartFilters}
+                    onClick={() => { if (!caps.canUseSmartFilters) { setPresetMsg(t('pregame.lockMistakes')); return } setOnlyMistakes(v => !v) }}/>
+                  <PremiumRow icon="🔖" label={t('pregame.savePreset')} on={false} locked={!caps.canSavePresets}
+                    onClick={async () => {
+                      if (!caps.canSavePresets || !user) { setPresetMsg(t('pregame.presetsPremium')); return }
+                      const name = window.prompt(t('pregame.presetNamePh') || 'Název scénáře')
+                      if (!name?.trim()) return
+                      const { data } = await createPreset(user.id, name.trim(), currentRules())
+                      if (data) singlePlayerAnalytics.presetCreated((data as { id: string }).id, user.id)
+                      setPresetMsg(t('pregame.presetSaved')); reloadPresets()
+                    }}/>
                 </div>
-              </div>
+                {presetMsg && <div style={{ fontSize: 12, color: 'var(--accent-deep)', padding: '0 14px 14px' }}>{presetMsg}</div>}
+              </Card>
             </div>
           </div>
         </div>
@@ -516,6 +603,30 @@ function Card({ children, padding = 20 }: { children: React.ReactNode; padding?:
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding, overflow: 'hidden' }}>
       {children}
     </div>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+      <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--ink-3)' }}>{label}</span>
+      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+    </div>
+  )
+}
+
+function PremiumRow({ icon, label, on, locked, onClick }: { icon: string; label: string; on: boolean; locked: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', cursor: 'pointer',
+      padding: '11px 13px', borderRadius: 12,
+      border: `1px solid ${on ? 'var(--accent)' : 'var(--line)'}`,
+      background: on ? 'rgba(217,119,87,0.09)' : 'var(--paper-100)',
+    }}>
+      <span style={{ fontSize: 15, color: on ? 'var(--accent)' : 'var(--ink-3)', width: 18, textAlign: 'center' }}>{icon}</span>
+      <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 13.5, color: locked ? 'var(--ink-3)' : 'var(--ink)' }}>{label}</span>
+      <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{locked ? '🔒' : on ? '✓' : ''}</span>
+    </button>
   )
 }
 
