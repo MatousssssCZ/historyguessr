@@ -497,6 +497,14 @@ export async function getFriendRequests(): Promise<Friend[]> {
   return (data ?? []) as Friend[]
 }
 
+export interface FriendTodayScore { user_id: string; username: string; score: number; is_me: boolean }
+
+/** „Přátelé dnes" — součet dnešních bodů napříč režimy (já + přátelé), seřazeno. */
+export async function getFriendsTodayScores(): Promise<FriendTodayScore[]> {
+  const { data } = await supabase.rpc('friends_today_scores')
+  return ((data ?? []) as FriendTodayScore[]).map(r => ({ ...r, score: Number(r.score) }))
+}
+
 // ─── Reporting (admin) ────────────────────────────────────
 
 export interface DailySeriesRow { day: string; new_users: number; active_users: number; games: number }

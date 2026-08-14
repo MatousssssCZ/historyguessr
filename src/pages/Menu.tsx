@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, type DailyResult } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getFriendsTodayScores, type DailyResult, type FriendTodayScore } from '@/lib/supabase'
 import { isPremiumUser } from '@/lib/entitlements'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
@@ -58,6 +58,7 @@ export default function MenuPage() {
   const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
+  const [friendsToday, setFriendsToday] = useState<FriendTodayScore[]>([])
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
@@ -206,6 +207,14 @@ export default function MenuPage() {
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
 
+  // „Přátelé dnes" — jen registrovaní; host nemá přátele
+  useEffect(() => {
+    if (isAnonymous) { setFriendsToday([]); return }
+    let alive = true
+    getFriendsTodayScores().then(r => { if (alive) setFriendsToday(r) }).catch(() => {})
+    return () => { alive = false }
+  }, [isAnonymous])
+
   const hour = new Date().getHours()
   const greet = t(hour < 11 ? 'menu.greetMorning' : hour < 18 ? 'menu.greetAfternoon' : 'menu.greetEvening')
   const dateStr = new Date().toLocaleDateString(currentLocale(), { weekday: 'short', day: 'numeric', month: 'long' }).toUpperCase()
@@ -243,43 +252,48 @@ export default function MenuPage() {
       <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex' }}>
         <DesktopSidebar streak={dailyStreak}/>
         <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
-          <div style={{ maxWidth: 980, margin: '0 auto', padding: '30px 40px 48px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 26 }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', marginBottom: 8 }}>{dateStr}</div>
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--ink)', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{greet}, {name}</h1>
+          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '30px 40px 48px', display: 'flex', gap: 28, alignItems: 'flex-start' }}>
+            {/* ── Hlavní sloupec ── */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', marginBottom: 8 }}>{dateStr}</div>
+                  <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--ink)', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{greet}, {name}</h1>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <HelpButton onClick={() => setShowHowTo(true)}/>
+                  <LanguageSwitcher/>
+                  <ThemeToggle variant="light"/>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <HelpButton onClick={() => setShowHowTo(true)}/>
-                <LanguageSwitcher/>
-                <ThemeToggle variant="light"/>
+
+              <DailyHero {...dailyProps} tall/>
+
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', margin: '18px 0 13px' }}>{t('menu.newGame').toUpperCase()}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
+                <ModeTile icon="⚡" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
+                <ModeTile icon="🎚" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic}/>
+                <ModeTile icon="⚔" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
               </div>
+
+              {resume && <div style={{ marginBottom: 16 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
+
+              {isPremium
+                ? <RoadmapTile onClick={() => navigate('/roadmap')}/>
+                : isAnonymous
+                  ? <SaveProgressBanner onClick={() => navigate('/auth', { state: { mode: 'register' } })}/>
+                  : <PremiumBanner onClick={() => navigate('/premium')}/>}
+
+              {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
             </div>
 
-            <DailyHero {...dailyProps} tall/>
-
-            {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
-
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', margin: '18px 0 13px' }}>{t('menu.newGame').toUpperCase()}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 18 }}>
-              <ModeTile icon="⚡" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
-              <ModeTile icon="🎚" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic}/>
-              <ModeTile icon="⚔" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+            {/* ── Pravý rail ── */}
+            <aside style={{ width: 300, flex: 'none', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'}/>
               <NearestBadges catHits={catHits} navigate={navigate}/>
-            </div>
-
-            {isPremium
-              ? <div style={{ marginTop: 16 }}><RoadmapTile onClick={() => navigate('/roadmap')}/></div>
-              : isAnonymous
-                ? <div style={{ marginTop: 16 }}><SaveProgressBanner onClick={() => navigate('/auth', { state: { mode: 'register' } })}/></div>
-                : <div style={{ marginTop: 16 }}><PremiumBanner onClick={() => navigate('/premium')}/></div>}
-
-            {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
+              {!isAnonymous && <FriendsToday data={friendsToday} navigate={navigate}/>}
+            </aside>
           </div>
         </div>
         {showHowTo && <HowToPlay onClose={closeHowTo}/>}
@@ -436,6 +450,38 @@ function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>;
           )
         })}
       </div>
+    </div>
+  )
+}
+
+// ─── Přátelé dnes (skóre za dnešek napříč režimy) ─────────
+function FriendsToday({ data, navigate }: { data: FriendTodayScore[]; navigate: ReturnType<typeof useNavigate> }) {
+  const { t } = useTranslation()
+  const loc = currentLocale()
+  const rows = data.filter(r => r.score > 0 || r.is_me).slice(0, 6)
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '15px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('menu.friendsToday')}</span>
+        <button onClick={() => navigate('/friends')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.seeAll')}</button>
+      </div>
+      {rows.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{t('menu.friendsTodayEmpty')}</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {rows.map(r => {
+            const mono = (r.username || '?').trim().charAt(0).toUpperCase() || '?'
+            return (
+              <div key={r.user_id} style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: r.is_me ? '#fff' : 'var(--ink-2)', background: r.is_me ? ACCENT_GRAD : 'var(--paper-300)' }}>{mono}</span>
+                <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sans)', fontWeight: r.is_me ? 700 : 500, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.is_me ? t('round.you') : r.username}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: r.is_me ? 700 : 500, fontSize: 13, color: r.is_me ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString(loc)}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
