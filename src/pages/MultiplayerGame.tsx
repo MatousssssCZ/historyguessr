@@ -18,6 +18,8 @@ import { supabase, recordEventScore, recordCategoryHit } from '@/lib/supabase'
 import type { Event } from '@/types/database'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import ControlDock from '@/components/GameControls'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { DetailIcon } from '@/components/round/RoundResult'
 
 declare const pannellum: {
   viewer: (container: HTMLElement, config: Record<string, unknown>) => { destroy: () => void }
@@ -37,6 +39,7 @@ export default function MultiplayerGamePage() {
   const { roomId } = useParams<{ roomId: string }>()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   // Nová hra (multiplayer) → zahoď rozehranou solo hru („Pokračovat ve hře")
   useEffect(() => { if (user?.id) clearResume(user.id) }, [user?.id])
@@ -426,6 +429,37 @@ export default function MultiplayerGamePage() {
   if (phase === 'my_results' && myResult && event) {
     const locPct = Math.round(myResult.locScore / 5)
     const yrPct = Math.round(myResult.yrScore / 5)
+    const roundChip = (
+      <div style={{ display: 'flex', alignItems: 'center', padding: '6px 13px', borderRadius: 999, background: 'rgba(28,24,18,.55)', backdropFilter: 'blur(8px)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10.5, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+        {t('game.round', { n: currentRound?.round_number, total: room?.settings.rounds })}
+      </div>
+    )
+    if (!isMobile) {
+      return (
+        <MpResultDesktop map={<ResultMap guessLat={myResult.guessLat} guessLng={myResult.guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>} panoramaUrl={event.panorama_url} roundChip={roundChip}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '26px 26px 8px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 10 }}>{t('round.correctAnswer')}</div>
+            <h2 style={{ margin: '0 0 8px', fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 26, lineHeight: 1.18, color: 'var(--ink)' }}>{eventTitle(event)}</h2>
+            <div style={{ marginBottom: 20, fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 12, color: 'var(--ink-2)' }}>{formatYear(event.year)}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 18 }}>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 52, letterSpacing: '-.02em', color: 'var(--accent)', lineHeight: 1 }}>{myResult.totalScore.toLocaleString(currentLocale())}</span>
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 13, color: 'var(--ink-2)' }}>/ 1000 {t('common.pts')}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              <ScoreCard label={t('game.location')} score={myResult.locScore} pct={locPct} sub={myResult.distKm < 1 ? '<1 km' : `${Math.round(myResult.distKm)} km`}/>
+              <ScoreCard label={t('game.year')} score={myResult.yrScore} pct={yrPct} sub={myResult.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: myResult.yrDiff })} highlight={myResult.yrDiff === 0}/>
+            </div>
+            <div style={{ background: 'var(--paper-200)', borderRadius: 11, padding: '11px 14px', display: 'flex', justifyContent: 'space-between' }}>
+              <div><div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 3 }}>{t('game.correctYear')}</div><div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500 }}>{formatYear(event.year)}</div></div>
+              <div style={{ textAlign: 'right' }}><div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 3 }}>{t('game.yourGuess')}</div><div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, fontWeight: 500 }}>{formatYear(myResult.guessYear)}</div></div>
+            </div>
+          </div>
+          <div style={{ flex: 'none', padding: '14px 26px calc(env(safe-area-inset-bottom,0px) + 20px)' }}>
+            <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '15px' }} onClick={handleShowRoundResults}>{t('mp.showResults')}</button>
+          </div>
+        </MpResultDesktop>
+      )
+    }
     return (
       <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)' }}>
         <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
@@ -476,6 +510,78 @@ export default function MultiplayerGamePage() {
   if (phase === 'round_results' && event) {
     const sortedByRound = [...roundAnswers].sort((a, b) => b.round_score - a.round_score)
     const sortedByTotal = [...players].sort((a, b) => b.total_score - a.total_score)
+
+    const timerRing = (
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        <div style={{ position: 'relative', width: 44, height: 44 }}>
+          <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3"/>
+            <circle cx="22" cy="22" r="18" fill="none" stroke="#d97757" strokeWidth="3" strokeDasharray="113" strokeDashoffset={113 * (1 - Math.max(0, Math.min(1, nextRoundCountdown / nextRoundTotalRef.current)))} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s linear' }}/>
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 600, color: 'var(--on-dark)' }}>{nextRoundCountdown}</span>
+          </div>
+        </div>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'rgba(245,241,232,0.35)', textTransform: 'uppercase' }}>{t('mp.next')}</span>
+      </div>
+    )
+    const roundList = (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {sortedByRound.map((a, i) => {
+          const isMe = a.user_id === user?.id
+          const pName = (a.profiles as { username?: string | null })?.username ?? t('daily.player')
+          return (
+            <div key={a.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 10, background: isMe ? 'rgba(39,174,96,0.06)' : 'var(--paper-100)', border: isMe ? '0.5px solid rgba(39,174,96,0.2)' : '0.5px solid var(--line)' }}>
+              <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{i + 1}.</span>}</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>{pName}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>{t('lobby.you')}</span>}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: isMe ? 600 : 400 }}>{a.round_score.toLocaleString(currentLocale())}</span>
+            </div>
+          )
+        })}
+      </div>
+    )
+    const totalList = (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {sortedByTotal.map((p, i) => {
+          const isMe = p.user_id === user?.id
+          const maxScore = sortedByTotal[0]?.total_score || 1
+          return (
+            <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', borderRadius: 10, background: isMe ? 'rgba(39,174,96,0.06)' : 'var(--paper-100)', border: isMe ? '0.5px solid rgba(39,174,96,0.2)' : '0.5px solid var(--line)' }}>
+              <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{i + 1}.</span>}</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: isMe ? 500 : 400 }}>{p.username}{isMe && <span style={{ fontSize: 10, color: '#1d6b3a', marginLeft: 6 }}>{t('lobby.you')}</span>}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: isMe ? 600 : 400, color: isMe ? '#1d6b3a' : 'var(--ink)' }}>{p.total_score.toLocaleString(currentLocale())}</span>
+                <div style={{ width: 60, height: 3, background: 'rgba(42,31,23,0.1)', borderRadius: 999, overflow: 'hidden' }}><div style={{ width: `${(p.total_score / maxScore) * 100}%`, height: '100%', background: isMe ? '#1d6b3a' : 'var(--line-strong)', borderRadius: 999 }}/></div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+
+    if (!isMobile) {
+      return (
+        <MpResultDesktop map={<ResultMap guessLat={myResult?.guessLat ?? event.lat} guessLng={myResult?.guessLng ?? event.lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>} panoramaUrl={event.panorama_url}>
+          <div style={{ background: '#1a1208', padding: '20px 24px 16px', flexShrink: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+            <div>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', color: 'rgba(217,119,87,0.6)', textTransform: 'uppercase', margin: '0 0 5px' }}>{t('game.round', { n: currentRound?.round_number, total: room?.settings.rounds })}</p>
+              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 21, color: 'var(--on-dark)', margin: 0, lineHeight: 1.2 }}>{eventTitle(event)}</p>
+            </div>
+            {timerRing}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--paper-100)', borderBottom: '0.5px solid var(--line)', flexShrink: 0 }}>
+            {([['round', '🏆', t('mp.tabRound')], ['total', '📊', t('mp.tabTotal')]] as const).map(([key, icon, label]) => (
+              <button key={key} onClick={() => setActiveTab(key)} style={{ padding: '12px 0', border: 'none', borderBottom: activeTab === key ? '2px solid var(--accent)' : '2px solid transparent', background: 'transparent', fontSize: 12.5, fontWeight: activeTab === key ? 600 : 400, color: activeTab === key ? 'var(--accent)' : 'var(--ink-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <span style={{ fontSize: 14 }}>{icon}</span>{label}
+              </button>
+            ))}
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 24px 24px' }}>
+            {activeTab === 'round' ? roundList : totalList}
+          </div>
+        </MpResultDesktop>
+      )
+    }
 
     return (
       <div style={{ height: '100dvh', background: 'var(--paper-50)', display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)' }}>
@@ -752,6 +858,44 @@ function ScoreCard({ label, score, pct, sub, highlight }: { label: string; score
         <div style={{ width: `${pct}%`, height: '100%', background: highlight ? '#1d6b3a' : 'var(--accent)', borderRadius: 999 }}/>
       </div>
       <div style={{ fontSize: 11, color: highlight ? '#1d6b3a' : 'var(--ink-3)' }}>{sub}</div>
+    </div>
+  )
+}
+
+// ── Desktop shell výsledku (2 sloupce) — zachovává tok, jen přestyluje ──
+function MpResultDesktop({ map, panoramaUrl, roundChip, dark, children }: {
+  map: React.ReactNode; panoramaUrl?: string | null; roundChip?: React.ReactNode
+  dark?: boolean; children: React.ReactNode
+}) {
+  const { t } = useTranslation()
+  const [pano, setPano] = useState(false)
+  const hasPano = !!panoramaUrl && panoramaUrl !== 'pending'
+  useEffect(() => {
+    if (!pano) return
+    const onKey = (e: KeyboardEvent) => { if (e.code === 'Escape') setPano(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [pano])
+  return (
+    <div style={{ display: 'flex', height: '100dvh', background: 'var(--paper-50)', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>{map}</div>
+        {roundChip && <div style={{ position: 'absolute', zIndex: 2, left: 20, top: 20 }}>{roundChip}</div>}
+        {hasPano && (
+          <button type="button" onClick={() => setPano(true)} style={{ position: 'absolute', zIndex: 2, left: 20, bottom: 20, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', border: 0, borderRadius: 14, background: 'rgba(28,24,18,.72)', backdropFilter: 'blur(10px)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', boxShadow: '0 8px 20px -8px rgba(0,0,0,.5)' }}>
+            <span style={{ display: 'flex', color: '#fff' }}><DetailIcon tab="panorama" size={17}/></span>{t('round.tabPanorama')}
+          </button>
+        )}
+      </div>
+      <aside style={{ flex: 'none', width: 400, maxWidth: '42%', display: 'flex', flexDirection: 'column', background: dark ? '#1a1208' : 'var(--surface)', borderLeft: '1px solid var(--line)', boxShadow: '-18px 0 40px -30px rgba(60,45,30,.5)' }}>
+        {children}
+      </aside>
+      {pano && hasPano && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000' }}>
+          <div style={{ position: 'absolute', inset: 0 }}><PanoramaViewer url={panoramaUrl!}/></div>
+          <button type="button" onClick={() => setPano(false)} aria-label={t('common.close')} style={{ position: 'absolute', zIndex: 2, top: 16, right: 16, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, borderRadius: '50%', background: 'rgba(28,24,18,.7)', backdropFilter: 'blur(8px)', color: '#fff', fontSize: 20, cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
     </div>
   )
 }
