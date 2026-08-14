@@ -5,6 +5,7 @@ import { signIn, signUp, requestPasswordReset, track, convertGuestToAccount, cle
 import { useAuth } from '@/hooks/useAuth'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import Turnstile from '@/components/Turnstile'
+import PanoramaBackdrop from '@/components/PanoramaBackdrop'
 import { CAPTCHA_ENABLED } from '@/lib/turnstile'
 
 const forgotLinkStyle: React.CSSProperties = {
@@ -113,109 +114,77 @@ export default function AuthPage({ landing = false }: { landing?: boolean } = {}
   const isMobile = windowWidth < 768
 
   const authUI = !isMobile ? (
-      <div style={{ minHeight: '100dvh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--feature-bg)' }}>
+      <div style={{ position: 'relative', minHeight: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#161009' }}>
+        <PanoramaBackdrop/>
+        {/* Ztmavovací scrim (radiální + vertikální) — čitelnost formuláře */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(120% 80% at 50% 38%, rgba(22,16,9,.30) 0%, rgba(22,16,9,.72) 58%, rgba(22,16,9,.93) 100%)' }}/>
 
-        {/* Levá — branding */}
-        <div style={{ position: 'relative', padding: 56, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
-          <svg style={{ position: 'absolute', inset: 0, opacity: 0.05 }} width="100%" height="100%">
-            <defs><pattern id="auth-grid-d" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="var(--feature-fg)" strokeWidth="0.5"/></pattern></defs>
-            <rect width="100%" height="100%" fill="url(#auth-grid-d)"/>
-          </svg>
-          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '70%', height: '70%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,87,0.12) 0%, transparent 70%)', pointerEvents: 'none' }}/>
-          <svg width="320" height="320" viewBox="0 0 120 120" style={{ position: 'absolute', bottom: -40, right: -60, opacity: 0.06 }}>
-            <circle cx="60" cy="60" r="52" stroke="var(--feature-fg)" strokeWidth="0.8" fill="none"/>
-            <ellipse cx="60" cy="60" rx="26" ry="52" stroke="var(--feature-fg)" strokeWidth="0.5" fill="none"/>
-            <ellipse cx="60" cy="60" rx="48" ry="20" stroke="var(--feature-fg)" strokeWidth="0.5" fill="none"/>
-            <line x1="8" y1="60" x2="112" y2="60" stroke="var(--feature-fg)" strokeWidth="0.5"/>
-            <line x1="60" y1="8" x2="60" y2="112" stroke="var(--feature-fg)" strokeWidth="0.5"/>
-          </svg>
-          <div style={{ position: 'relative' }}><Wordmark/></div>
-          <div style={{ position: 'relative' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--accent)', margin: '0 0 20px', textTransform: 'uppercase' }}>{t('auth.eyebrow')}</p>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--feature-fg)', margin: '0 0 16px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-              {t('auth.tagline1')}<br/><span style={{ color: 'var(--accent)' }}>{t('auth.tagline2')}</span>
-            </h1>
-            <p style={{ fontSize: 16, color: 'var(--feature-fg2)', margin: '0 0 40px', lineHeight: 1.6 }}>
-              {t('auth.bullet')}
-            </p>
-            <blockquote style={{ margin: 0, borderLeft: '2px solid rgba(217,119,87,0.4)', paddingLeft: 20 }}>
-              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--feature-fg2)', margin: '0 0 8px', lineHeight: 1.5 }}>
-                {t('auth.quote')}
-              </p>
-              <cite style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--feature-fg3)', letterSpacing: '0.1em' }}>{t('auth.quoteAuthor')}</cite>
-            </blockquote>
-          </div>
-          <div style={{ position: 'relative' }}/>
+        {/* Horní lišta */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 40px' }}>
+          <Wordmark color="#f5f1e8"/>
+          <LanguageSwitcher variant="dark"/>
         </div>
 
-        {/* Pravá — formulář */}
-        <div style={{ background: 'var(--paper-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
-          <div style={{ width: '100%', maxWidth: 400 }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-              <LanguageSwitcher/>
+        {/* Střed */}
+        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 24px 32px' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', color: 'var(--accent)', margin: '0 0 14px', textTransform: 'uppercase', textAlign: 'center' }}>{t('auth.eyebrow')}</p>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 46, color: '#f5f1e8', margin: '0 0 30px', letterSpacing: '-0.02em', lineHeight: 1.08, textAlign: 'center' }}>
+            {t('auth.tagline1')}<br/><span style={{ color: 'var(--accent)' }}>{t('auth.tagline2')}</span>
+          </h1>
+
+          <div style={{ width: '100%', maxWidth: 500, borderRadius: 22, padding: '26px 28px', background: 'rgba(30,23,15,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(245,241,232,0.10)', boxShadow: '0 30px 70px -30px rgba(0,0,0,.7)' }}>
+            {/* Host — hlavní CTA */}
+            <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: 'var(--accent)', border: 'none', borderRadius: 14, padding: 17, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: '#fff', cursor: 'pointer', boxShadow: '0 12px 28px -12px rgba(217,119,87,.8)' }}>
+              <span>▶</span> {t('auth.guestCta')}
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(245,241,232,0.12)' }}/>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'rgba(245,241,232,0.5)', textTransform: 'uppercase' }}>{t('auth.orSave')}</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(245,241,232,0.12)' }}/>
             </div>
-            {/* Tab */}
-            <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 12, padding: 3, marginBottom: 36 }}>
+
+            {/* Tab přihlásit/registrovat */}
+            <div style={{ display: 'flex', background: 'rgba(20,15,9,0.5)', borderRadius: 12, padding: 3, marginBottom: 18 }}>
               {(['login', 'register'] as Mode[]).map(m => (
                 <button key={m} onClick={() => { setMode(m); setError(null); setSuccess(null) }}
-                  style={{ flex: 1, padding: '9px 0', border: 'none', borderRadius: 10, background: mode === m ? 'var(--surface)' : 'transparent', boxShadow: mode === m ? 'var(--shadow-sm)' : 'none', fontSize: 14, fontWeight: 500, color: mode === m ? 'var(--ink)' : 'var(--ink-3)', cursor: 'pointer', transition: 'all 200ms' }}>
+                  style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 10, background: mode === m ? 'var(--paper-50)' : 'transparent', fontSize: 14, fontWeight: 600, color: mode === m ? 'var(--ink)' : 'rgba(245,241,232,0.6)', cursor: 'pointer', transition: 'all 200ms' }}>
                   {m === 'login' ? t('auth.login') : t('auth.register')}
                 </button>
               ))}
             </div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 30, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-              {isRegister ? t('auth.createAccount') : t('auth.welcomeBack')}
-            </h2>
-            <p style={{ fontSize: 15, color: 'var(--ink-3)', margin: '0 0 28px' }}>
-              {isRegister ? t('auth.registerSub') : t('auth.loginSub')}
-            </p>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div>
-                <label className="label">{t('auth.email')}</label>
-                <input className="input" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email"/>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <input className="input" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email"/>
+              <div style={{ position: 'relative' }}>
+                <input className="input" type={showPassword ? 'text' : 'password'} placeholder={isRegister ? t('auth.strongPassword') : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isRegister ? 'new-password' : 'current-password'} style={{ paddingRight: 48 }}/>
+                <button type="button" onClick={() => setShowPassword(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 16 }}>{showPassword ? '🙈' : '👁'}</button>
               </div>
-              <div>
-                <label className="label">{t('auth.password')}</label>
-                <div style={{ position: 'relative' }}>
-                  <input className="input" type={showPassword ? 'text' : 'password'} placeholder={isRegister ? t('auth.strongPassword') : '••••••••'} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isRegister ? 'new-password' : 'current-password'} style={{ paddingRight: 48 }}/>
-                  <button type="button" onClick={() => setShowPassword(s => !s)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 16 }}>{showPassword ? '🙈' : '👁'}</button>
+              {isRegister && password.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
+                  {PASSWORD_RULES.map(rule => (
+                    <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: rule.test(password) ? 'var(--success)' : 'rgba(245,241,232,0.55)' }}>
+                      <span>{rule.test(password) ? '✓' : '○'}</span>{t(rule.key)}
+                    </div>
+                  ))}
                 </div>
-                {isRegister && password.length > 0 && (
-                  <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
-                    {PASSWORD_RULES.map(rule => (
-                      <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: rule.test(password) ? '#1d6b3a' : 'var(--ink-3)', transition: 'color 200ms' }}>
-                        <span>{rule.test(password) ? '✓' : '○'}</span>{t(rule.key)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {!isRegister && (
-                <button type="button" onClick={handleForgot} style={forgotLinkStyle}>{t('auth.forgot')}</button>
               )}
               {isRegister && (
                 <div>
-                  <label className="label">{t('auth.confirmPassword')}</label>
                   <input className={`input${confirmPassword && password !== confirmPassword ? ' input-error' : ''}`} type={showPassword ? 'text' : 'password'} placeholder={t('auth.repeatPassword')} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required autoComplete="new-password"/>
                   {confirmPassword && password !== confirmPassword && <p className="field-error">{t('common.pwMismatch')}</p>}
                 </div>
               )}
               {error && <div className="alert alert-error">⚠ {error}</div>}
               {success && <div className="alert alert-success">✓ {success}</div>}
-              <button type="submit" className="btn btn-accent" disabled={loading} style={{ width: '100%', padding: '14px 0', fontSize: 16, marginTop: 4, borderRadius: 12 }}>
+              <button type="submit" className="btn btn-accent" disabled={loading} style={{ width: '100%', padding: '13px 0', fontSize: 15, marginTop: 2, borderRadius: 12 }}>
                 {loading ? <><span className="spinner" style={{ width: 16, height: 16 }}/> {t('common.loading')}</> : isRegister ? t('auth.submitCreate') : t('auth.submitLogin')}
               </button>
+              {!isRegister && (
+                <button type="button" onClick={handleForgot} style={{ ...forgotLinkStyle, textAlign: 'center', color: 'rgba(245,241,232,0.7)' }}>{t('auth.forgot')}</button>
+              )}
             </form>
-            <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => setCaptchaFailed(true)} theme="light" appearance="interaction-only"/>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 14px' }}>
-              <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('auth.or')}</span>
-              <div style={{ flex: 1, height: 1, background: 'var(--line)' }}/>
-            </div>
-            <button onClick={startGuest} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, background: 'rgba(92,148,104,0.10)', border: '1.5px solid var(--success)', borderRadius: 12, padding: 15, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--success-deep)', cursor: 'pointer' }}>
-              <span style={{ color: 'var(--success)' }}>▶</span> {t('menu.trialTry')}
-            </button>
-            <DisclaimerBox text={t('auth.disclaimer')}/>
+            <Turnstile key={captchaKey} onToken={setCaptcha} onError={() => setCaptchaFailed(true)} theme="dark" appearance="interaction-only"/>
           </div>
         </div>
       </div>

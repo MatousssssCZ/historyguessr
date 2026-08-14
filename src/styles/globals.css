@@ -398,3 +398,6 @@ body {
 .screen { container-type: inline-size; container-name: screen; }
 @container screen (max-width: 600px) { .hide-mobile { display: none !important; } }
 @container screen (min-width: 601px) { .hide-desktop { display: none !important; } }
+
+/* ── Panorama pozadí přihlašovací obrazovky ─────────────── */
+@keyframes hgPan { from { transform: translateX(0); } to { transform: translateX(-13%); } }

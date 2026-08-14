@@ -232,6 +232,28 @@ export async function getEventImages(limit = 60): Promise<string[]> {
     .filter((u): u is string => !!u)
 }
 
+/** Náhodná panoramata pozadí přihlašovací obrazovky (preview, fallback pano). */
+export async function getRandomPanoramas(n = 5): Promise<string[]> {
+  const { data } = await supabase
+    .from('events')
+    .select('preview_url, panorama_url')
+    .eq('published', true)
+    .not('panorama_url', 'is', null)
+    .limit(48)
+  const urls = (data ?? [])
+    .map(r => {
+      const row = r as { preview_url: string | null; panorama_url: string | null }
+      return row.preview_url || row.panorama_url
+    })
+    .filter((u): u is string => !!u && u !== 'pending')
+  // Fisher–Yates zamíchání → vezmi prvních n
+  for (let i = urls.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [urls[i], urls[j]] = [urls[j], urls[i]]
+  }
+  return urls.slice(0, n)
+}
+
 /**
  * Převede veřejnou Storage URL na zmenšenou (render/image) variantu — výrazně
  * menší přenos pro náhledy/hero. Pokud projekt transformace nepodporuje, render
