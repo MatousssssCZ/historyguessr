@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { getMyEntitlements } from '@/lib/supabase'
 import { isPremiumUser } from '@/lib/entitlements'
 import { getRoadmap, toggleRoadmapVote, suggestRoadmapItem, type RoadmapItem, type RoadmapStatus } from '@/lib/roadmap'
+import { PageHeader } from '@/components/ui/Page'
 
 const STATUS_STYLE: Record<RoadmapStatus, { bg: string; fg: string }> = {
   in_progress: { bg: 'rgba(217,119,87,0.16)', fg: 'var(--accent-deep)' },
@@ -54,16 +55,8 @@ export default function RoadmapPage() {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)' }}>
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 18px 60px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 8px' }}>
-          <button onClick={() => navigate(-1)} aria-label={t('common.back')} style={{
-            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-          }}>←</button>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em' }}>{t('roadmap.title')}</h1>
-        </div>
-        <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: '0 0 18px', lineHeight: 1.5 }}>{t('roadmap.intro')}</p>
+        <PageHeader title={t('roadmap.title')} onBack={() => navigate(-1)}/>
+        <p style={{ fontSize: 13.5, color: 'var(--ink-3)', margin: '-14px 0 18px', lineHeight: 1.5 }}>{t('roadmap.intro')}</p>
 
         {!premium && !loading && (
           <button onClick={() => navigate('/premium')} style={{

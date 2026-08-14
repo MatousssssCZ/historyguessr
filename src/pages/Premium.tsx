@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getMyEntitlements, track } from '@/lib/supabase'
 import { isPremiumUser, type Entitlements } from '@/lib/entitlements'
 import { PREMIUM_PRICE, PREMIUM_BENEFITS } from '@/lib/premium'
+import { PageHeader } from '@/components/ui/Page'
 import { currentLocale } from '@/i18n'
 
 export default function PremiumPage() {
@@ -31,14 +32,7 @@ export default function PremiumPage() {
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)' }}>
       {/* Header */}
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '16px 18px 60px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 20px' }}>
-          <button onClick={() => navigate(-1)} aria-label={t('common.back')} style={{
-            width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-            background: 'var(--surface)', border: '1px solid var(--line)', color: 'var(--ink)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-          }}>←</button>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 25, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em' }}>Premium</h1>
-        </div>
+        <PageHeader title="Premium" onBack={() => navigate(-1)}/>
 
         {/* Hero */}
         <div style={{
