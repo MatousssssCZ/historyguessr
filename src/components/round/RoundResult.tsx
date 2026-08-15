@@ -43,6 +43,7 @@ interface Props {
   ctaLabel: string
   onCta: () => void
   secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
+  rating?: React.ReactNode             // hodnocení události (kompaktní)
 }
 
 // Vektorové ikony (line, currentColor) — panorama / „i" v kroužku / pohár
@@ -108,6 +109,8 @@ export default function RoundResult(p: Props) {
             ))}
           </div>
         )}
+
+        {p.rating && <div style={{ padding: '2px 2px 12px' }}>{p.rating}</div>}
 
         <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer' }}>
           {p.ctaLabel} <span style={{ fontSize: 15 }}>→</span>

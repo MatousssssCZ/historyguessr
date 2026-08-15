@@ -6,6 +6,7 @@ import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import RoundResultView from '@/components/round/RoundResult'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
+import EventRating from '@/components/EventRating'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
@@ -701,6 +702,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
         distanceKm={round.distance_km} placePoints={round.location_score} placeMax={500}
         yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500}
         leaderboard={null}
+        rating={<EventRating eventId={event.id}/>}
         ctaLabel={ctaLabel} onCta={onNext}
         ctaHint={isLast ? null : t('round.spaceNext')} enableSpaceKey
       />
@@ -724,6 +726,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearMax={500}
       ctaLabel={ctaLabel}
       onCta={onNext}
+      rating={<EventRating eventId={event.id} compact/>}
     />
   )
 }

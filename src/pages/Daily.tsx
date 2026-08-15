@@ -27,6 +27,7 @@ import EraToggle from '@/components/EraToggle'
 import RoundResult, { type DetailTab } from '@/components/round/RoundResult'
 import RoundDetail, { type LeaderEntry, type Distribution } from '@/components/round/RoundDetail'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
+import EventRating from '@/components/EventRating'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { roundMetaLine } from '@/lib/eventLocale'
 
@@ -663,6 +664,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         leaderboard={shown} playersToday={entries.length} distribution={distribution}
         xpSection={xpSection}
         onShare={isMakeup ? null : () => setShowShare(true)}
+        rating={<EventRating eventId={event.id}/>}
         ctaLabel={t('daily.menu')} onCta={onMenu}
       />
       {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
@@ -698,6 +700,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
       showDetail onOpenDetail={setDetailTab}
       ctaLabel={t('daily.menu')} onCta={onMenu}
       secondaryActions={secondary}
+      rating={<EventRating eventId={event.id} compact/>}
     />
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
   </>)

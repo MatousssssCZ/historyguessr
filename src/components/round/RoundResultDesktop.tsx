@@ -36,6 +36,7 @@ interface Props {
   onCta: () => void
   ctaHint?: string | null              // „MEZERNÍK · DALŠÍ KOLO"
   enableSpaceKey?: boolean
+  rating?: React.ReactNode             // hodnocení události
 }
 
 type View = 'score' | 'leaderboard'
@@ -115,6 +116,7 @@ export default function RoundResultDesktop(p: Props) {
               </div>
 
               {p.xpSection && <div style={{ marginBottom: 6 }}>{p.xpSection}</div>}
+              {p.rating && <div style={{ marginTop: 6, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>{p.rating}</div>}
             </>
           ) : (
             <>
