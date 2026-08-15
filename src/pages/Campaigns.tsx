@@ -11,6 +11,7 @@ import {
 import MobileNav from '@/components/MobileNav'
 import DesktopSidebar from '@/components/DesktopSidebar'
 import { PageShell, PageHeader } from '@/components/ui/Page'
+import Icon from '@/components/Icon'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import CompassLoader from '@/components/CompassLoader'
 import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
@@ -235,6 +236,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
   const [intro, setIntro] = useState<Campaign | null>(null)  // popis kampaně před spuštěním
   const [showUpsell, setShowUpsell] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [filter, setFilter] = useState<'all' | 'playable' | 'completed' | 'locked'>('all')
 
   const cat = bundle.categories.find(c => c.id === categoryId)
   const camps = bundle.campaignsByCat[categoryId] ?? []
@@ -287,181 +289,254 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
   }
 
   const color = cat.color || '#BE6240'
-  const roundsHint = camps.length > 0 ? camps[0].rounds_count : 5
   const heroImg = cat.hero_image_url || null
+
+  // Odvozený stav každé kampaně (server-pravda přes campaignAccess + progress)
+  const derived = camps.map((c, i) => {
+    const acc = campaignAccess(c, cs.earned, bundle.entitlements, cat)
+    const prog = bundle.progress[c.id]
+    const completed = !!prog?.completed_runs
+    const st: 'completed' | 'playable' | 'locked' = !acc.isUnlocked ? 'locked' : completed ? 'completed' : 'playable'
+    return { c, i, acc, prog, st }
+  })
+  const continueId = derived.find(d => d.st === 'playable')?.c.id ?? null
+  const counts = {
+    all: derived.length,
+    playable: derived.filter(d => d.st === 'playable').length,
+    completed: derived.filter(d => d.st === 'completed').length,
+    locked: derived.filter(d => d.st === 'locked').length,
+  }
+  const completedTotal = counts.completed
+  const visible = filter === 'all' ? derived : derived.filter(d => d.st === filter)
+  const pct = derived.length ? (completedTotal / derived.length) * 100 : 0
 
   const backBtn = (
     <button onClick={onBack} aria-label={t('camp.back')} style={{
-      width: 44, height: 44, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
-      background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 18,
+      position: 'absolute', top: isMobile ? 'calc(var(--safe-top) + 12px)' : 16, left: isMobile ? 14 : 16, zIndex: 3,
+      width: 34, height: 34, borderRadius: '50%', cursor: 'pointer',
+      background: 'rgba(20,16,10,0.5)', backdropFilter: 'blur(8px)',
+      border: '1px solid rgba(255,255,255,0.18)', color: '#fff', fontSize: 16,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>←</button>
   )
 
-  const heroTitle = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      <span style={{
-        width: 60, height: 60, borderRadius: 15, flexShrink: 0, fontSize: 28,
-        background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>{cat.icon || '📁'}</span>
-      <div style={{ minWidth: 0 }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 28 : 34, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05 }}>{localizedTitle(cat)}</h1>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13.5, color: 'rgba(255,255,255,0.92)', marginTop: 5 }}>
-          <span style={{ color: GOLD }}>★</span> {cs.earned} / {cs.max} <span style={{ color: GOLD }}>★</span>
-          {camps.length > 0 && <span style={{ color: 'rgba(255,255,255,0.7)' }}> · {t('camp.count', { count: camps.length })}</span>}
+  // Hrdina — obrázek + gradient scrim, text jen ve spodním tmavém pruhu
+  const hero = (
+    <div style={{ position: 'relative', height: isMobile ? 198 : 212, overflow: 'hidden', borderRadius: isMobile ? 0 : 20, background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})` }}>
+      {heroImg && <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,16,10,.45) 0%, rgba(20,16,10,0) 30%, rgba(20,16,10,.15) 55%, rgba(20,16,10,.88) 100%)' }}/>
+      {backBtn}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: isMobile ? '0 18px 16px' : '0 28px 20px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 18 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, color: '#E8C88A' }}>
+            <Icon name="swords" size={15}/>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase' }}>{t('camp.catKicker')}</span>
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? 26 : 34, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05, textShadow: '0 2px 12px rgba(0,0,0,.55)' }}>{localizedTitle(cat)}</h1>
+          {localizedDescription(cat) && (
+            <p style={{ fontSize: isMobile ? 12.5 : 14, color: 'rgba(245,241,232,0.82)', margin: '6px 0 0', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', maxWidth: 560 }}>{localizedDescription(cat)}</p>
+          )}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#fff', whiteSpace: 'nowrap' }}><span style={{ color: GOLD }}>★</span> {cs.earned} / {cs.max}</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>·</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}>{completedTotal} / {derived.length} {t('camp.campaignsWord')}</span>
+              <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.2)', overflow: 'hidden', minWidth: 24 }}><div style={{ height: '100%', width: `${pct}%`, background: '#BE6240' }}/></div>
+            </div>
+          )}
         </div>
+        {!isMobile && (
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 18, padding: '12px 18px', borderRadius: 14, background: 'rgba(20,16,10,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)' }}>
+            <HeroStat label={t('camp.hStars')} value={`${cs.earned} / ${cs.max}`}/>
+            <div style={{ width: 1, height: 34, background: 'rgba(255,255,255,0.18)' }}/>
+            <HeroStat label={t('camp.hDone')} value={`${completedTotal} / ${derived.length}`}/>
+            <div style={{ width: 90, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}><div style={{ height: '100%', width: `${pct}%`, background: '#BE6240' }}/></div>
+          </div>
+        )}
       </div>
     </div>
   )
 
-  const heroBg = (
-    <>
-      {heroImg && (
-        <>
-          <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
-          <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}e6)` }}/>
-        </>
-      )}
-    </>
+  // Filtry stavu (klientská filtrace)
+  const filterChips: { key: typeof filter; label: string; count: number }[] = [
+    { key: 'all', label: t('camp.fAll'), count: counts.all },
+    { key: 'playable', label: t('camp.fPlayable'), count: counts.playable },
+    ...(!isMobile ? [{ key: 'completed' as const, label: t('camp.fCompleted'), count: counts.completed }] : []),
+    { key: 'locked', label: t('camp.fLocked'), count: counts.locked },
+  ]
+  const filters = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+      {filterChips.map(f => {
+        const on = filter === f.key
+        return (
+          <button key={f.key} onClick={() => setFilter(f.key)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+            border: `1px solid ${on ? '#26211C' : 'var(--line-strong)'}`, background: on ? '#26211C' : 'var(--surface)',
+            color: on ? 'var(--paper-50)' : 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 500, fontSize: 13,
+          }}>{f.label} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: on ? 0.85 : 0.6 }}>{f.count}</span></button>
+        )
+      })}
+      {!isMobile && <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>{t('camp.starsUnlock')}</span>}
+    </div>
   )
 
-  const desc = (localizedDescription(cat) || camps.length > 0) && (
-    <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.55, margin: isMobile ? '0 0 18px' : '0 0 22px' }}>
-      {localizedDescription(cat)}
-      {camps.length > 0 && ` ${t('camp.count', { count: camps.length })}, ${t('camp.eventsEach', { rounds: roundsHint })}`}
-    </p>
-  )
-
-  const rows = (
+  const grid = (
     <>
       {err && <div className="alert alert-error" style={{ marginBottom: 14 }}>⚠ {err}</div>}
-      {camps.length === 0 && <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>{t('camp.noCampaigns')}</p>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 12 }}>
-        {camps.map((c, i) => (
-          <CampaignRow
-            key={c.id} campaign={c} index={i} cat={cat} bundle={bundle} isMobile={isMobile}
-            categoryStarsEarned={cs.earned} busy={starting === c.id} onPlay={setIntro}
-          />
+      {visible.length === 0 && <p style={{ color: 'var(--ink-3)', fontSize: 14, padding: '20px 2px' }}>{t('camp.fEmpty')}</p>}
+      <div style={isMobile
+        ? { display: 'flex', flexDirection: 'column', gap: 12 }
+        : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: 186, gap: 12 }}>
+        {visible.map(d => (
+          <CampaignCard key={d.c.id} d={d} cat={cat} isMobile={isMobile} categoryStarsEarned={cs.earned}
+            isContinue={d.c.id === continueId} busy={starting === d.c.id} onPlay={setIntro}/>
         ))}
       </div>
     </>
   )
 
-  // ── Desktop: hero jako zaoblená karta v širokém sloupci ──
+  const overlays = (
+    <>
+      {intro && <CampaignIntro campaign={intro} cat={cat} bundle={bundle} busy={starting === intro.id} onStart={() => { const c = intro; setIntro(null); play(c) }} onClose={() => setIntro(null)}/>}
+      {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
+    </>
+  )
+
   if (!isMobile) {
     return (
       <>
-        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '28px 40px 8px' }}>
-          <div style={{
-            position: 'relative', overflow: 'hidden', borderRadius: 20,
-            background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
-            padding: '22px 28px 26px',
-          }}>
-            {heroBg}
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {backBtn}
-              {heroTitle}
-            </div>
-          </div>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '20px 40px 0' }}>{hero}</div>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '18px 40px 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {filters}
+          {grid}
         </div>
-        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '20px 40px 8px' }}>
-          {desc}
-          {rows}
-        </div>
-        {intro && (
-        <CampaignIntro campaign={intro} cat={cat} bundle={bundle} busy={starting === intro.id}
-          onStart={() => { const c = intro; setIntro(null); play(c) }} onClose={() => setIntro(null)}/>
-      )}
-      {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
+        {overlays}
       </>
     )
   }
-
-  // ── Mobil: full-bleed hlavička ──
   return (
     <>
-      <div style={{
-        position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
-        padding: 'calc(var(--safe-top) + 14px) 18px 20px',
-      }}>
-        {heroBg}
-        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {backBtn}
-          {heroTitle}
-        </div>
+      {hero}
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {filters}
+        {grid}
       </div>
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: 18 }}>
-        {desc}
-        {rows}
-      </div>
-      {intro && (
-        <CampaignIntro campaign={intro} cat={cat} bundle={bundle} busy={starting === intro.id}
-          onStart={() => { const c = intro; setIntro(null); play(c) }} onClose={() => setIntro(null)}/>
-      )}
-      {showUpsell && <ExpeditionUpsell bundle={bundle} userId={userId} onClose={() => { setShowUpsell(false); onReload() }}/>}
+      {overlays}
     </>
   )
 }
 
-function CampaignRow({ campaign, index, cat, bundle, categoryStarsEarned, busy, onPlay, isMobile }: {
-  campaign: Campaign; index: number; cat: CampaignCategory; bundle: CampaignBundle
-  categoryStarsEarned: number; busy: boolean; onPlay: (c: Campaign) => void; isMobile?: boolean
+function HeroStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(245,241,232,0.6)', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, color: '#fff' }}>{value}</div>
+    </div>
+  )
+}
+
+type Derived = { c: Campaign; i: number; acc: ReturnType<typeof campaignAccess>; prog: CampaignBundle['progress'][string] | undefined; st: 'completed' | 'playable' | 'locked' }
+
+function CampaignCard({ d, cat, isMobile, isContinue, busy, categoryStarsEarned, onPlay }: {
+  d: Derived; cat: CampaignCategory; isMobile: boolean; isContinue: boolean; busy: boolean; categoryStarsEarned: number; onPlay: (c: Campaign) => void
 }) {
   const { t } = useTranslation()
-  // Odemyká se POČTEM ★ v kategorii — ne dokončením předchozí kampaně
-  const acc = campaignAccess(campaign, categoryStarsEarned, bundle.entitlements, cat)
-  const prog = bundle.progress[campaign.id]
+  const { c, i, acc, prog, st } = d
+  const reqStars = c.required_category_stars ?? 0
+  const curStars = Math.min(categoryStarsEarned, reqStars)
+  const color = cat.color || '#BE6240'
+  const locked = st === 'locked'
+  const completed = st === 'completed'
   const stars = prog?.best_stars ?? 0
-  const played = !!prog?.completed_runs
-  const locked = !acc.isUnlocked
-  // Zvýrazni první odemčenou nehranou kampaň — „kde jsi"
-  const isNext = !locked && !played
+  const clickable = !locked && !busy
+  const go = () => { if (clickable) onPlay(c) }
 
+  const imgBg: React.CSSProperties = { position: 'relative', flexShrink: 0, overflow: 'hidden', background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})` }
+  const imgInner = (
+    <>
+      {c.visual_url && <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${c.visual_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>}
+      {locked && <div style={{ position: 'absolute', inset: 0, background: 'rgba(30,26,20,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.85)' }}><Icon name="lock" size={22}/></div>}
+    </>
+  )
+  const kicker = (label: string) => (
+    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{label}</div>
+  )
+  const title = (
+    <div style={{ fontFamily: 'var(--font-serif)', fontSize: isContinue ? 20 : 16.5, letterSpacing: '-0.01em', color: locked ? '#5b5349' : 'var(--ink)', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{localizedTitle(c)}</div>
+  )
+
+  // ── A) Pokračuj zde ──
+  if (isContinue) {
+    const inner = (
+      <>
+        <div style={{ ...imgBg, width: isMobile ? '100%' : 150, height: isMobile ? 74 : 'auto' }}>
+          {imgInner}
+          <span style={{ position: 'absolute', top: 10, left: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: 999, background: 'var(--accent)', color: '#fff' }}>{t('camp.continueHere')}</span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '12px 14px 14px' : '16px 18px', display: 'flex', flexDirection: 'column' }}>
+          {kicker(`${t('camp.continueHere')} · ${t('camp.campNo', { n: i + 1 })}`)}
+          <div style={{ margin: '6px 0 4px' }}>{title}</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-3)' }}>{t('camp.eventsShort', { n: c.rounds_count })}</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 12 : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
+            <div style={{ color: 'var(--line-strong)', fontSize: 15, letterSpacing: 3 }}>☆☆☆</div>
+            <button className="btn btn-accent" style={{ fontSize: 14, minWidth: 110, width: isMobile ? '100%' : 'auto' }} disabled={busy} onClick={(e) => { e.stopPropagation(); go() }}>{busy ? '…' : t('camp.play')} →</button>
+          </div>
+        </div>
+      </>
+    )
+    return (
+      <div role="button" onClick={go} style={{
+        gridColumn: isMobile ? undefined : 'span 2', flexShrink: 0,
+        display: 'flex', flexDirection: isMobile ? 'column' : 'row', cursor: clickable ? 'pointer' : 'default',
+        background: 'var(--surface)', border: '1.5px solid var(--accent)', borderRadius: 16, overflow: 'hidden',
+        boxShadow: '0 10px 26px -14px rgba(190,98,64,0.5)', height: isMobile ? 'auto' : 186,
+      }}>{inner}</div>
+    )
+  }
+
+  // ── B/C/D) mřížkové karty (obrázek nahoře + obsah dole) ──
   return (
-    <div style={{
-      background: locked ? 'var(--paper-200)' : isNext ? 'rgba(217,119,87,0.07)' : 'var(--surface)',
-      border: `1px solid ${isNext ? 'var(--accent)' : 'var(--line)'}`,
-      borderRadius: 16, padding: isMobile ? '14px 16px' : '18px 22px', display: 'flex', alignItems: 'center', gap: 14,
+    <div role={clickable ? 'button' : undefined} onClick={go} style={{
+      flexShrink: 0, display: 'flex', flexDirection: 'column', cursor: clickable ? 'pointer' : 'default',
+      background: locked ? '#F4EEE4' : 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, overflow: 'hidden',
+      height: isMobile ? 'auto' : 186,
     }}>
-      <div style={{
-        width: 30, flexShrink: 0, textAlign: 'center',
-        fontFamily: 'var(--font-serif)', fontSize: 17, color: locked ? 'var(--ink-3)' : 'var(--ink-2)',
-      }}>{locked ? '🔒' : index + 1}</div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontFamily: 'var(--font-serif)', fontSize: 16.5, letterSpacing: '-0.01em',
-          color: locked ? 'var(--ink-3)' : 'var(--ink)',
-        }}>{localizedTitle(campaign)}</div>
-
-        {locked ? (
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
-            {acc.lockReason === 'premium' ? t('camp.premiumPart') : t('camp.missingStarsCat', { n: acc.missingStars })}
-          </div>
-        ) : played ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-            <StarRow stars={stars}/>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>
-              {prog!.best_score.toLocaleString('cs-CZ')} b.
-            </span>
-          </div>
-        ) : (
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>
-            {t('camp.notPlayed', { n: campaign.rounds_count })}
-          </div>
-        )}
+      <div style={{ ...imgBg, height: isMobile ? 84 : 92 }}>
+        {imgInner}
+        {completed && <span style={{ position: 'absolute', top: 10, left: 10, display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: 999, background: '#4E7A50', color: '#fff' }}>✓ {t('camp.done')}</span>}
+        {!completed && !locked && <span style={{ position: 'absolute', top: 10, left: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: 999, background: 'var(--surface)', color: 'var(--ink-2)', border: '1px solid var(--line)' }}>{t('camp.fPlayable')}</span>}
       </div>
-
-      {!locked && (
-        <button className={isNext ? 'btn btn-accent' : 'btn btn-ghost'}
-          style={{ fontSize: 13, flexShrink: 0, minWidth: 92 }}
-          disabled={busy} onClick={() => onPlay(campaign)}>
-          {busy ? '…' : played ? t('camp.replay') : t('camp.play')}
-        </button>
-      )}
+      <div style={{ flex: 1, minWidth: 0, padding: '11px 14px 13px', display: 'flex', flexDirection: 'column' }}>
+        {kicker(t('camp.campNo', { n: i + 1 }))}
+        <div style={{ margin: '5px 0 0' }}>{title}</div>
+        <div style={{ marginTop: 'auto', paddingTop: 10 }}>
+          {locked ? (
+            acc.lockReason === 'premium' ? (
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#5b5349' }}>{t('camp.premiumPart')}</div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ height: 5, borderRadius: 999, background: 'var(--line)', overflow: 'hidden', flex: 1, marginRight: 10 }}>
+                  <div style={{ height: '100%', width: `${Math.round((curStars / Math.max(1, reqStars)) * 100)}%`, background: '#C89A3C' }}/>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#5b5349', whiteSpace: 'nowrap' }}>{curStars} / {reqStars} <span style={{ color: '#C89A3C' }}>★</span></span>
+              </div>
+            )
+          ) : completed ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <StarRow stars={stars}/>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{(prog?.best_score ?? 0).toLocaleString('cs-CZ')} b.</span>
+              </div>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12.5, flexShrink: 0 }} disabled={busy} onClick={(e) => { e.stopPropagation(); go() }}>{busy ? '…' : t('camp.replay')}</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-3)' }}>{t('camp.eventsShort', { n: c.rounds_count })}</span>
+              <button className="btn btn-ghost" style={{ fontSize: 12.5, minWidth: 78, flexShrink: 0 }} disabled={busy} onClick={(e) => { e.stopPropagation(); go() }}>{busy ? '…' : t('camp.play')}</button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
