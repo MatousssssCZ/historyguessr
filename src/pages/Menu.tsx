@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getFriendsTodayScores, type DailyResult, type FriendTodayScore } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getFriendsWeekScores, type DailyResult, type FriendWeekScore } from '@/lib/supabase'
 import { isPremiumUser } from '@/lib/entitlements'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
@@ -59,7 +59,7 @@ export default function MenuPage() {
   const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
-  const [friendsToday, setFriendsToday] = useState<FriendTodayScore[]>([])
+  const [friendsWeek, setFriendsWeek] = useState<FriendWeekScore[]>([])
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
@@ -210,9 +210,9 @@ export default function MenuPage() {
 
   // „Přátelé dnes" — jen registrovaní; host nemá přátele
   useEffect(() => {
-    if (isAnonymous) { setFriendsToday([]); return }
+    if (isAnonymous) { setFriendsWeek([]); return }
     let alive = true
-    getFriendsTodayScores().then(r => { if (alive) setFriendsToday(r) }).catch(() => {})
+    getFriendsWeekScores().then(r => { if (alive) setFriendsWeek(r) }).catch(() => {})
     return () => { alive = false }
   }, [isAnonymous])
 
@@ -294,7 +294,7 @@ export default function MenuPage() {
             <aside style={{ width: 300, flex: 'none', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'}/>
               <NearestBadges catHits={catHits} navigate={navigate}/>
-              {!isAnonymous && <FriendsToday data={friendsToday} navigate={navigate}/>}
+              {!isAnonymous && <FriendsWeek data={friendsWeek} navigate={navigate}/>}
             </aside>
             </div>
           </div>
@@ -458,7 +458,7 @@ function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>;
 }
 
 // ─── Přátelé dnes (skóre za dnešek napříč režimy) ─────────
-function FriendsToday({ data, navigate }: { data: FriendTodayScore[]; navigate: ReturnType<typeof useNavigate> }) {
+function FriendsWeek({ data, navigate }: { data: FriendWeekScore[]; navigate: ReturnType<typeof useNavigate> }) {
   const { t } = useTranslation()
   const loc = currentLocale()
   const rows = data.filter(r => r.score > 0 || r.is_me).slice(0, 6)
@@ -466,11 +466,11 @@ function FriendsToday({ data, navigate }: { data: FriendTodayScore[]; navigate: 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('menu.friendsToday')}</span>
+        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('menu.friendsWeek')}</span>
         <button onClick={() => navigate('/friends')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.seeAll')}</button>
       </div>
       {rows.length === 0 ? (
-        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{t('menu.friendsTodayEmpty')}</div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{t('menu.friendsWeekEmpty')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           {rows.map(r => {
