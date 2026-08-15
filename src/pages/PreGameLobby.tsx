@@ -450,11 +450,11 @@ export default function PreGameLobbyPage() {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '30px 40px 0' }}>
           <PageHeader eyebrow={t('pregame.mode')} title={t('pregame.title')} onBack={() => navigate('/menu')}/>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.55fr) minmax(300px,0.9fr)', gap: 20, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2.3fr) minmax(290px,1fr)', gap: 20, alignItems: 'start' }}>
             {/* ── Levý sloupec ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Počet kol + Období */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px,0.8fr) minmax(0,1.35fr)', gap: 18 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(160px,1fr) minmax(0,2fr)', gap: 18 }}>
                 <Card>
                   <CardLabel>{t('pregame.rounds')}</CardLabel>
                   {roundsCtl}
