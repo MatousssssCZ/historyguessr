@@ -263,6 +263,19 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
 }) {
   const hasFilters = !!search || categoryFilters.length > 0 || !!statusFilter
 
+  // „Ke opravě" — priorita = jak špatné hodnocení × jak moc se to hraje.
+  // Bereme jen události s dostatkem hlasů (≥3) a průměrem pod 3,5.
+  const [needsFix, setNeedsFix] = useState(false)
+  const RATED_MIN = 3
+  const avgOf = (e: Event) => (e.rating_count > 0 ? e.rating_sum / e.rating_count : null)
+  const priorityOf = (e: Event) => {
+    const a = avgOf(e)
+    if (a == null || e.rating_count < RATED_MIN || a >= 3.5) return -1
+    return (4 - a) * ((e.play_count ?? 0) + 5)
+  }
+  const attention = filtered.filter(e => priorityOf(e) > 0)
+  const shown = needsFix ? [...attention].sort((a, b) => priorityOf(b) - priorityOf(a)) : filtered
+
   if (total === 0) {
     return (
       <div className="card" style={{ padding: 48, textAlign: 'center' }}>
@@ -302,8 +315,17 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
               ✕ Zrušit filtry
             </button>
           )}
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setNeedsFix(v => !v)}
+            title="Publikované události s nízkým hodnocením, seřazené podle dopadu (hodnocení × počet odehrání)"
+            style={{ padding: '7px 12px', fontSize: 13, borderColor: needsFix ? 'var(--accent)' : undefined, color: needsFix ? 'var(--accent)' : undefined, fontWeight: needsFix ? 700 : undefined }}
+          >
+            ⚠ Ke opravě{attention.length > 0 ? ` (${attention.length})` : ''}
+          </button>
           <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-            {filtered.length} / {total}
+            {shown.length} / {total}
           </span>
         </div>
         {/* Kategorie — vícenásobný výběr (klikni pro přepnutí) */}
@@ -331,13 +353,13 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
         )}
       </div>
 
-      {filtered.length === 0 && (
+      {shown.length === 0 && (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-          Žádné události neodpovídají filtru.
+          {needsFix ? 'Žádné publikované události k opravě 🎉' : 'Žádné události neodpovídají filtru.'}
         </div>
       )}
 
-      {filtered.length > 0 && (
+      {shown.length > 0 && (
       <div className="scroll-x">
       <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
@@ -350,8 +372,8 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
           </tr>
         </thead>
         <tbody>
-          {filtered.map((ev, i) => (
-            <tr key={ev.id} style={{ borderBottom: '1px solid var(--line)', background: i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
+          {shown.map((ev, i) => (
+            <tr key={ev.id} style={{ borderBottom: '1px solid var(--line)', background: needsFix && priorityOf(ev) > 0 ? 'rgba(217,119,87,0.06)' : i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
               <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-3)' }}>
                 {ev.seq != null ? `#${ev.seq}` : '—'}
               </td>
@@ -385,14 +407,17 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
               </td>
               <td style={{ padding: '12px 16px' }}>
                 {ev.rating_count > 0 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ color: '#d97757', fontSize: 14 }}>{'★'.repeat(Math.round(ev.rating_sum / ev.rating_count))}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-                      {(ev.rating_sum / ev.rating_count).toFixed(1)} ({ev.rating_count}×)
-                    </span>
+                  <div style={{ lineHeight: 1.5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: priorityOf(ev) > 0 ? 'var(--accent)' : '#d97757', fontSize: 14 }}>{'★'.repeat(Math.max(1, Math.round(ev.rating_sum / ev.rating_count)))}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: priorityOf(ev) > 0 ? 'var(--accent-deep)' : 'var(--ink-3)', fontWeight: priorityOf(ev) > 0 ? 700 : 400 }}>
+                        {(ev.rating_sum / ev.rating_count).toFixed(1)} ({ev.rating_count}×){priorityOf(ev) > 0 ? ' ⚠' : ''}
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{ev.play_count ?? 0}× odehráno</div>
                   </div>
                 ) : (
-                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>–</span>
+                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>– <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>({ev.play_count ?? 0}×)</span></span>
                 )}
               </td>
               <td style={{ padding: '12px 16px' }}>
