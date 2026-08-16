@@ -27,6 +27,7 @@ import EraToggle from '@/components/EraToggle'
 import RoundResult, { type DetailTab } from '@/components/round/RoundResult'
 import RoundDetail, { type LeaderEntry, type Distribution } from '@/components/round/RoundDetail'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
+import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { roundMetaLine } from '@/lib/eventLocale'
@@ -620,6 +621,8 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const isMobile = useIsMobile()
   const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
   const [showShare, setShowShare] = useState(false)
+  // Mezikrok: popis události + hodnocení → skóre. Znovunavštívení (už odehráno) ho přeskočí.
+  const [scoreShown, setScoreShown] = useState(alreadyPlayed)
   const loc = currentLocale()
 
   const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
@@ -652,6 +655,19 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const story = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
   const xpSection = (!alreadyPlayed && userId) ? <GameEvaluation userId={userId} gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)} gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}} extraUnlocked={streakBadges}/> : null
 
+  // Mezikrok: nejdřív popis události + hodnocení, pak skóre
+  if (!scoreShown) {
+    return (<>
+      <RoundReveal
+        heroUrl={event.event_image_url}
+        eventTitle={eventTitle(event)} eventYear={event.year}
+        description={eventDescription(event)}
+        rating={<EventRating eventId={event.id}/>}
+        onReveal={() => setScoreShown(true)} enableSpaceKey
+      />
+    </>)
+  }
+
   if (!isMobile) {
     return (<>
       <RoundResultDesktop
@@ -664,7 +680,6 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         leaderboard={shown} playersToday={entries.length} distribution={distribution}
         xpSection={xpSection}
         onShare={isMakeup ? null : () => setShowShare(true)}
-        rating={<EventRating eventId={event.id}/>}
         ctaLabel={t('daily.menu')} onCta={onMenu}
       />
       {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
@@ -699,9 +714,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
       yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
       showDetail onOpenDetail={setDetailTab}
       ctaLabel={t('daily.menu')} onCta={onMenu}
-      secondaryActions={secondary}
-      rating={<EventRating eventId={event.id} compact/>}
-    />
+      secondaryActions={secondary}    />
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
   </>)
 }

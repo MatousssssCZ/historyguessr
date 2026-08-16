@@ -6,6 +6,7 @@ import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import RoundResultView from '@/components/round/RoundResult'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
+import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -198,6 +199,7 @@ export default function GamePage() {
           zIndex: 100,
         }}>
           <RoundResult
+            key={state.currentRound}
             event={currentEvent}
             round={lastRound}
             onNext={nextRound}
@@ -683,11 +685,25 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
 }) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
+  const [scoreShown, setScoreShown] = useState(false)
   if (!round) return null
   const dots = Array.from({ length: totalRounds }, (_, i) => i <= roundNumber - 1)
   const roundLabel = t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()
   const map = <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
   const ctaLabel = isLast ? t('round.ctaGameResult') : t('round.ctaNext')
+
+  // Mezikrok: nejdřív popis události + hodnocení, pak skóre
+  if (!scoreShown) {
+    return (
+      <RoundReveal
+        heroUrl={event.event_image_url}
+        eventTitle={eventTitle(event)} eventYear={event.year}
+        description={eventDescription(event)}
+        rating={<EventRating eventId={event.id}/>}
+        onReveal={() => setScoreShown(true)} enableSpaceKey
+      />
+    )
+  }
 
   if (!isMobile) {
     const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
@@ -702,7 +718,6 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
         distanceKm={round.distance_km} placePoints={round.location_score} placeMax={500}
         yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500}
         leaderboard={null}
-        rating={<EventRating eventId={event.id}/>}
         ctaLabel={ctaLabel} onCta={onNext}
         ctaHint={isLast ? null : t('round.spaceNext')} enableSpaceKey
       />
@@ -725,9 +740,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearPoints={round.year_score}
       yearMax={500}
       ctaLabel={ctaLabel}
-      onCta={onNext}
-      rating={<EventRating eventId={event.id} compact/>}
-    />
+      onCta={onNext}    />
   )
 }
 
