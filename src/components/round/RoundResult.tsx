@@ -38,7 +38,8 @@ interface Props {
   yearOff: number                 // roky vedle
   yearPoints: number
   yearMax: number
-  showDetail?: boolean            // 3 vstupy do detailu (jen denní)
+  showDetail?: boolean            // vstupy do detailu
+  detailTabs?: DetailTab[]        // které taby ukázat (default všechny 3)
   onOpenDetail?: (tab: DetailTab) => void
   ctaLabel: string
   onCta: () => void
@@ -101,7 +102,7 @@ export default function RoundResult(p: Props) {
 
         {p.showDetail && p.onOpenDetail && (
           <div style={{ display: 'flex', gap: 7, marginBottom: 13 }}>
-            {DETAIL_TABS.map(tab => (
+            {(p.detailTabs ?? DETAIL_TABS).map(tab => (
               <button key={tab} type="button" onClick={() => p.onOpenDetail!(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '9px 4px', minHeight: 56, border: `1px solid ${C.lineStrong}`, borderRadius: 12, background: C.surface, color: C.ink2, font: `600 9.5px ${F.ui}`, cursor: 'pointer' }}>
                 <span style={{ color: C.accent, display: 'flex' }}><DetailIcon tab={tab}/></span>
                 <span>{detailLabel[tab]}</span>

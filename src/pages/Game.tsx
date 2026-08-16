@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription, roundMetaLine } from '@/lib/eventLocale'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
-import RoundResultView from '@/components/round/RoundResult'
+import RoundResultView, { type DetailTab } from '@/components/round/RoundResult'
+import RoundDetail from '@/components/round/RoundDetail'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
 import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
+import { formatYear } from '@/lib/scoring'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
@@ -678,7 +680,7 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
   )
 }
 
-// ── Round result overlay (redesign 17e — sólo bez detailu) ──
+// ── Round result overlay (redesign 17e — sólo: Panorama + O události, bez žebříčku) ──
 function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }: {
   event: Event; round: ReturnType<typeof useGame>['lastRound']
   onNext: () => void; isLast: boolean; roundNumber: number; totalRounds: number
@@ -686,11 +688,16 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   const { t } = useTranslation()
   const isMobile = useIsMobile()
   const [scoreShown, setScoreShown] = useState(false)
+  const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
   if (!round) return null
   const dots = Array.from({ length: totalRounds }, (_, i) => i <= roundNumber - 1)
   const roundLabel = t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()
   const map = <ResultMap guessLat={round.guess_lat} guessLng={round.guess_lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
   const ctaLabel = isLast ? t('round.ctaGameResult') : t('round.ctaNext')
+  const hasPano = !!event.panorama_url && event.panorama_url !== 'pending'
+  const panoNode = hasPano ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
+  const storyNode = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+  const SOLO_TABS: DetailTab[] = ['panorama', 'story']
 
   // Mezikrok: nejdřív popis události + hodnocení, pak skóre
   if (!scoreShown) {
@@ -724,6 +731,18 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
     )
   }
 
+  if (detailTab) {
+    return (
+      <RoundDetail
+        initialTab={detailTab} tabs={SOLO_TABS}
+        title={eventTitle(event)} subtitle={`${round.round_score.toLocaleString(currentLocale())} ${t('common.pts')} · ${formatYear(event.year)}`}
+        leaderboard={[]} playersToday={0} distribution={{ bins: [], myBinIndex: 0, percentileBetterThan: 0 }}
+        panorama={panoNode} story={storyNode}
+        onBack={() => setDetailTab(null)} ctaLabel={ctaLabel} onCta={onNext}
+      />
+    )
+  }
+
   return (
     <RoundResultView
       map={map}
@@ -739,8 +758,10 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearOff={round.year_diff}
       yearPoints={round.year_score}
       yearMax={500}
+      showDetail detailTabs={SOLO_TABS} onOpenDetail={setDetailTab}
       ctaLabel={ctaLabel}
-      onCta={onNext}    />
+      onCta={onNext}
+    />
   )
 }
 

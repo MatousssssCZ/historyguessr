@@ -16,6 +16,7 @@ export interface Distribution { bins: number[]; myBinIndex: number; percentileBe
 
 interface Props {
   initialTab: DetailTab
+  tabs?: DetailTab[]           // které taby ukázat (default všechny 3)
   title: string           // „Kolo 3 · IBM PC" nebo název události
   subtitle: string        // „826 B. · 1981 · BOCA RATON"
   leaderboard: LeaderEntry[]
@@ -48,7 +49,7 @@ export default function RoundDetail(p: Props) {
 
       {/* Taby */}
       <div style={{ flex: 'none', display: 'flex', gap: 5, padding: '0 18px 12px' }} role="tablist">
-        {DETAIL_TABS.map(tk => {
+        {(p.tabs ?? DETAIL_TABS).map(tk => {
           const on = tab === tk
           return (
             <button key={tk} type="button" role="tab" aria-selected={on} onClick={() => setTab(tk)} style={{ flex: 1, textAlign: 'center', padding: '8px 0', borderRadius: 10, cursor: 'pointer', border: on ? `1px solid ${C.ink}` : `1px solid ${C.lineStrong}`, background: on ? C.ink : C.surface, color: on ? C.surface : C.muted, font: `${on ? 700 : 600} 11px ${F.ui}` }}>{label[tk]}</button>
