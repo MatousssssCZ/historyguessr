@@ -11,6 +11,7 @@ import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
 import { formatYear } from '@/lib/scoring'
 import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
+import Icon from '@/components/Icon'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
@@ -688,9 +689,11 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   onNext: () => void; isLast: boolean; roundNumber: number; totalRounds: number
 }) {
   const { t } = useTranslation()
+  const { profile } = useAuth()
   const isMobile = useIsMobile()
   const [scoreShown, setScoreShown] = useState(false)
   const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
+  const [chCopied, setChCopied] = useState(false)
   if (!round) return null
   const dots = Array.from({ length: totalRounds }, (_, i) => i <= roundNumber - 1)
   const roundLabel = t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()
@@ -700,6 +703,16 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   const panoNode = hasPano ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
   const storyNode = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
   const SOLO_TABS: DetailTab[] = ['panorama', 'story']
+
+  // „Vyzvi kamaráda" — na tuhle právě zahranou událost, se svým skóre v odkazu
+  const challengeGhost: React.CSSProperties = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }
+  const challengeBtn = (
+    <button style={challengeGhost} onClick={async () => {
+      const url = buildChallengeUrl(event.id, round.round_score, profile?.username)
+      const r = await shareChallenge(url, t('challenge.shareText', { score: round.round_score }))
+      if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
+    }}>{chCopied ? <>✓ {t('challenge.linkCopied')}</> : <><Icon name="swords" size={14}/> {t('challenge.friendBtn')}</>}</button>
+  )
 
   // Mezikrok: nejdřív popis události + hodnocení, pak skóre
   if (!scoreShown) {
@@ -727,6 +740,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
         distanceKm={round.distance_km} placePoints={round.location_score} placeMax={500}
         yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500}
         leaderboard={null}
+        secondaryActions={challengeBtn}
         ctaLabel={ctaLabel} onCta={onNext}
         ctaHint={isLast ? null : t('round.spaceNext')} enableSpaceKey
       />
@@ -761,6 +775,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearPoints={round.year_score}
       yearMax={500}
       showDetail detailTabs={SOLO_TABS} onOpenDetail={setDetailTab}
+      secondaryActions={challengeBtn}
       ctaLabel={ctaLabel}
       onCta={onNext}
     />
@@ -1016,8 +1031,8 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
                   const url = buildChallengeUrl(events[0].id, totalScore, profile?.username)
                   const r = await shareChallenge(url, t('challenge.shareText', { score: totalScore }))
                   if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
-                }} className="btn btn-ghost" style={{ marginTop: 12, fontSize: 13, padding: '8px 16px' }}>
-                  {chCopied ? `✓ ${t('challenge.linkCopied')}` : `⚔ ${t('challenge.challengeBack')}`}
+                }} className="btn btn-ghost" style={{ marginTop: 12, fontSize: 13, padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  {chCopied ? <>✓ {t('challenge.linkCopied')}</> : <><Icon name="swords" size={14}/> {t('challenge.challengeBack')}</>}
                 </button>
               )}
             </div>

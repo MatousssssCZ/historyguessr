@@ -4,7 +4,7 @@
 export type IconName =
   | 'home' | 'campaign' | 'badge' | 'friends' | 'profile' | 'admin'
   | 'bolt' | 'sliders' | 'swords' | 'pin' | 'calendar' | 'trophy'
-  | 'chart' | 'globe' | 'star' | 'save' | 'roadmap' | 'flame' | 'help' | 'bug' | 'link' | 'plus' | 'lock'
+  | 'chart' | 'globe' | 'star' | 'save' | 'roadmap' | 'flame' | 'help' | 'bug' | 'link' | 'plus' | 'lock' | 'share'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   home: <><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></>,
@@ -30,6 +30,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   link: <><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12.5 5a3.5 3.5 0 0 1 5 5l-1.5 1.5"/><path d="M13 17.5 11.5 19a3.5 3.5 0 0 1-5-5L8 12.5"/></>,
   plus: <path d="M12 5v14M5 12h14"/>,
   lock: <><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></>,
+  share: <><path d="M12 15V4"/><path d="M8.5 7.5 12 4l3.5 3.5"/><path d="M5 12v5.5A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5V12"/></>,
 }
 
 export default function Icon({ name, size = 20, strokeWidth = 1.7, style }: {

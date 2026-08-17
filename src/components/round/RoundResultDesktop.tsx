@@ -37,6 +37,7 @@ interface Props {
   ctaHint?: string | null              // „MEZERNÍK · DALŠÍ KOLO"
   enableSpaceKey?: boolean
   rating?: React.ReactNode             // hodnocení události
+  secondaryActions?: React.ReactNode   // pod CTA (např. Vyzvi kamaráda)
 }
 
 type View = 'score' | 'leaderboard'
@@ -90,7 +91,7 @@ export default function RoundResultDesktop(p: Props) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
             <span style={{ font: `600 10.5px ${F.mono}`, letterSpacing: '.16em', color: C.accent }}>{t('round.correctAnswer')}</span>
             {p.onShare && (
-              <button type="button" onClick={p.onShare} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, border: `1px solid ${C.lineStrong}`, background: C.surface, color: C.ink2, font: `600 11px ${F.ui}`, cursor: 'pointer' }}>⤴ {t('daily.share')}</button>
+              <button type="button" onClick={p.onShare} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, border: `1px solid ${C.lineStrong}`, background: C.surface, color: C.ink2, font: `600 11px ${F.ui}`, cursor: 'pointer' }}><Icon name="share" size={13}/> {t('daily.share')}</button>
             )}
           </div>
 
@@ -149,6 +150,7 @@ export default function RoundResultDesktop(p: Props) {
             {p.ctaLabel} <span style={{ fontSize: 16 }}>→</span>
           </button>
           {p.ctaHint && <div style={{ marginTop: 9, textAlign: 'center', font: `500 9.5px ${F.mono}`, letterSpacing: '.12em', color: C.muted3 }}>{p.ctaHint}</div>}
+          {p.secondaryActions && <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>{p.secondaryActions}</div>}
         </div>
       </aside>
 

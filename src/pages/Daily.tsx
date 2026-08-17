@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, type CSSProperties } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
@@ -30,6 +30,7 @@ import RoundDetail, { type LeaderEntry, type Distribution } from '@/components/r
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
 import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
+import Icon from '@/components/Icon'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { roundMetaLine } from '@/lib/eventLocale'
 
@@ -702,14 +703,14 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
     )
   }
 
-  const ghost = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }
+  const ghost: CSSProperties = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }
   const secondary = isMakeup ? null : (<>
-    <button onClick={() => setShowShare(true)} style={ghost}>↗ {t('daily.share')}</button>
+    <button onClick={() => setShowShare(true)} style={ghost}><Icon name="share" size={14}/> {t('daily.share')}</button>
     <button onClick={async () => {
       const url = buildChallengeUrl(event.id, result.totalScore, profile?.username)
       const r = await shareChallenge(url, t('challenge.shareText', { score: result.totalScore }))
       if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
-    }} style={ghost}>{chCopied ? `✓ ${t('challenge.linkCopied')}` : `⚔ ${t('challenge.friendBtn')}`}</button>
+    }} style={ghost}>{chCopied ? <>✓ {t('challenge.linkCopied')}</> : <><Icon name="swords" size={14}/> {t('challenge.friendBtn')}</>}</button>
     {makeupCount > 0 && onMakeup && <button onClick={onMakeup} style={ghost}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
   </>)
 
