@@ -20,6 +20,7 @@ export default function ChallengePage() {
 
   const [event, setEvent] = useState<Event | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const [authErr, setAuthErr] = useState(false)
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const guestStarted = useRef(false)
 
@@ -37,7 +38,7 @@ export default function ChallengePage() {
     guestStarted.current = true
     ;(async () => {
       const res = await playAsGuest(captcha || undefined)
-      if (res.error || !res.userId) { guestStarted.current = false; return }
+      if (res.error || !res.userId) { console.error('[Challenge] guest sign-in selhal:', res.error); setAuthErr(true); guestStarted.current = false; return }
       await assignGuestUsername(res.userId).catch(() => {})
       track('sign_up', { converted: false, guest: true, challenge: true }, res.userId)
     })()
@@ -66,10 +67,10 @@ export default function ChallengePage() {
         </div>
 
         <div style={{ padding: '22px 24px 24px', textAlign: 'center' }}>
-          {notFound ? (
+          {notFound || authErr ? (
             <>
-              <p style={{ fontSize: 15, color: 'var(--ink-2)', margin: '4px 0 18px' }}>{t('challenge.notFound')}</p>
-              <button className="btn btn-ghost" onClick={() => navigate('/')}>{t('common.back')}</button>
+              <p style={{ fontSize: 15, color: 'var(--ink-2)', margin: '4px 0 18px' }}>{authErr ? t('challenge.authErr') : t('challenge.notFound')}</p>
+              <button className="btn btn-accent" onClick={() => navigate('/auth')}>{t('menu.trialLogin')}</button>
             </>
           ) : (
             <>

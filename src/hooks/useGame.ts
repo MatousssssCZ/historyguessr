@@ -89,7 +89,8 @@ export function useGame(userId: string | undefined) {
     }
     const { data: sessionData, error } = await createGameSession(userId)
     if (error || !sessionData) {
-      update({ phase: 'idle', error: 'Nepodařilo se spustit hru.' })
+      console.error('[useGame] createGameSession selhal:', error)
+      update({ phase: 'idle', error: `Nepodařilo se spustit hru.${error?.message ? ` (${error.message})` : ''}` })
       return
     }
     const sid = (sessionData as { id: string }).id
