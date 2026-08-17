@@ -9,6 +9,7 @@ import EnvBadge from '@/components/EnvBadge'
 import AuthPage from '@/pages/Auth'
 import GuestSetupPage from '@/pages/GuestSetup'
 import TryGamePage from '@/pages/TryGame'
+import ChallengePage from '@/pages/Challenge'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
 import CampaignsPage from '@/pages/Campaigns'
@@ -109,6 +110,7 @@ export default function App() {
               <Route path="/auth" element={<AuthPage/>}/>
               <Route path="/guest" element={<GuestRoute/>}/>
               <Route path="/try" element={<TryGamePage/>}/>
+              <Route path="/vyzva/:eventId" element={<ChallengePage/>}/>
               <Route path="/auth/callback" element={<RootRedirect/>}/>
               <Route path="/reset-password" element={<ResetPasswordPage/>}/>
               <Route path="/menu"    element={<RequireAuth><MenuPage/></RequireAuth>}/>

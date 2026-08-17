@@ -16,6 +16,7 @@ export interface GameOptions extends EventFilters {
   campaignTitle?: string
   attemptId?: string       // ID serverového pokusu (kampaň) — skóre počítá server
   resume?: boolean         // pokračovat v uložené rozehrané hře
+  challenge?: { target: number; by: string }  // výzva od kamaráda (skóre k poražení)
 }
 
 export type GamePhase = 'idle' | 'loading' | 'playing' | 'round_result' | 'finished'
@@ -38,6 +39,7 @@ export interface GameState {
   attemptId: string | null
   campaignStars: number | null   // vyplní se po dohrání kampaně (0–3)
   campaignRewards: CampaignReward[]  // nově získané artefakty
+  challenge: { target: number; by: string } | null  // výzva od kamaráda
 }
 
 const INITIAL_STATE: GameState = {
@@ -58,6 +60,7 @@ const INITIAL_STATE: GameState = {
   attemptId: null,
   campaignStars: null,
   campaignRewards: [],
+  challenge: null,
 }
 
 export function useGame(userId: string | undefined) {
@@ -95,6 +98,7 @@ export function useGame(userId: string | undefined) {
       sessionId: sid,
       campaignId: options?.campaignId ?? null, campaignTitle: options?.campaignTitle ?? null,
       attemptId: options?.attemptId ?? null,
+      challenge: options?.challenge ?? null,
     })
     // Ulož rozehranou hru (jen solo, ≥2 kola) pro „Pokračovat ve hře"
     if (!options?.campaignId && events.length >= 2) {

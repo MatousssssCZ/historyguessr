@@ -10,6 +10,7 @@ import RoundResultDesktop from '@/components/round/RoundResultDesktop'
 import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
 import { formatYear } from '@/lib/scoring'
+import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
@@ -87,6 +88,7 @@ export default function GamePage() {
       campaignStars={state.campaignStars}
       campaignTitle={state.campaignTitle}
       campaignRewards={state.campaignRewards}
+      challenge={state.challenge}
       onCampaigns={state.campaignId ? () => navigate('/campaigns') : undefined}
       onPlayAgain={state.campaignId ? retryCampaign : () => { resetGame(); startGame(options) }}
       onMenu={() => navigate('/menu')}
@@ -868,13 +870,15 @@ function ErrorScreen({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   )
 }
 
-function FinishedScreen({ totalScore, rounds, roundResults, events, userId, campaignStars, campaignTitle, campaignRewards, onCampaigns, onPlayAgain, onMenu }: {
+function FinishedScreen({ totalScore, rounds, roundResults, events, userId, campaignStars, campaignTitle, campaignRewards, challenge, onCampaigns, onPlayAgain, onMenu }: {
   totalScore: number; rounds: number; roundResults: RoundResult[]; events: Event[]
   userId?: string; campaignStars?: number | null; campaignTitle?: string | null
-  campaignRewards?: CampaignReward[]
+  campaignRewards?: CampaignReward[]; challenge?: { target: number; by: string } | null
   onCampaigns?: () => void; onPlayAgain: () => void; onMenu: () => void
 }) {
   const { t } = useTranslation()
+  const { profile } = useAuth()
+  const [chCopied, setChCopied] = useState(false)
   const pct = Math.round((totalScore / (rounds * 1000)) * 100)
   const gainedXp = totalScore + XP_BONUS_GAME
   const isCampaign = !!onCampaigns
@@ -995,6 +999,30 @@ function FinishedScreen({ totalScore, rounds, roundResults, events, userId, camp
         <p style={{ color: 'var(--ink-3)', margin: '6px 0 22px', fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'center' }}>
           {t('game.accuracy', { pct })}
         </p>
+
+        {challenge && (() => {
+          const by = challenge.by || t('challenge.kicker')
+          const won = totalScore > challenge.target, tie = totalScore === challenge.target
+          return (
+            <div style={{ background: won ? 'rgba(92,148,104,0.10)' : 'var(--paper-200)', border: `1px solid ${won ? 'var(--success)' : 'var(--line)'}`, borderRadius: 16, padding: '14px 16px', marginBottom: 18, textAlign: 'center' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: won ? 'var(--success-deep, #3f7a4d)' : 'var(--ink)', marginBottom: 4 }}>
+                {tie ? t('challenge.tie') : won ? (challenge.by ? t('challenge.youWon', { by }) : t('challenge.youWonNoName')) : (challenge.by ? t('challenge.youLost', { by }) : t('challenge.youLostNoName'))}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--ink-3)' }}>
+                {t('challenge.vsLine', { you: totalScore.toLocaleString(currentLocale()), by, them: challenge.target.toLocaleString(currentLocale()) })}
+              </div>
+              {events[0] && (
+                <button onClick={async () => {
+                  const url = buildChallengeUrl(events[0].id, totalScore, profile?.username)
+                  const r = await shareChallenge(url, t('challenge.shareText', { score: totalScore }))
+                  if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
+                }} className="btn btn-ghost" style={{ marginTop: 12, fontSize: 13, padding: '8px 16px' }}>
+                  {chCopied ? `✓ ${t('challenge.linkCopied')}` : `⚔ ${t('challenge.challengeBack')}`}
+                </button>
+              )}
+            </div>
+          )
+        })()}
 
         <GameEvaluation userId={userId} gainedXp={gainedXp} gameHits={gameHits}/>
 

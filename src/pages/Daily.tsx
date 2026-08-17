@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
 import {
   getDailyChallenge, getTodayDailyResult,
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyGlobalLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
@@ -623,6 +624,8 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const [showShare, setShowShare] = useState(false)
   // Mezikrok: popis události + hodnocení → skóre. Znovunavštívení (už odehráno) ho přeskočí.
   const [scoreShown, setScoreShown] = useState(alreadyPlayed)
+  const [chCopied, setChCopied] = useState(false)
+  const { profile } = useAuth()
   const loc = currentLocale()
 
   const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
@@ -702,6 +705,11 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const ghost = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }
   const secondary = isMakeup ? null : (<>
     <button onClick={() => setShowShare(true)} style={ghost}>↗ {t('daily.share')}</button>
+    <button onClick={async () => {
+      const url = buildChallengeUrl(event.id, result.totalScore, profile?.username)
+      const r = await shareChallenge(url, t('challenge.shareText', { score: result.totalScore }))
+      if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
+    }} style={ghost}>{chCopied ? `✓ ${t('challenge.linkCopied')}` : `⚔ ${t('challenge.friendBtn')}`}</button>
     {makeupCount > 0 && onMakeup && <button onClick={onMakeup} style={ghost}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
   </>)
 
