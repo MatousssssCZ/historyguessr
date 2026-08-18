@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { currentLocale } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { levelFromXp } from '@/lib/leveling'
-import { getGlobalLeaderboard, getWorldSlice, getFriendsWeekScores, type LeaderboardRow, type FriendWeekScore } from '@/lib/supabase'
+import { getGlobalLeaderboard, getWorldSlice, getFriendsLeaderboard, type LeaderboardRow } from '@/lib/supabase'
 import { PageShell, PageHeader } from '@/components/ui/Page'
 import MobileNav from '@/components/MobileNav'
 
@@ -24,7 +24,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true)
   const [world, setWorld] = useState<LeaderboardRow[]>([])
   const [slice, setSlice] = useState<LeaderboardRow[]>([])
-  const [friends, setFriends] = useState<FriendWeekScore[]>([])
+  const [friends, setFriends] = useState<LeaderboardRow[]>([])
 
   useEffect(() => {
     let alive = true
@@ -32,7 +32,7 @@ export default function LeaderboardPage() {
     Promise.all([
       getGlobalLeaderboard(50).catch(() => [] as LeaderboardRow[]),
       getWorldSlice(3).catch(() => [] as LeaderboardRow[]),
-      isAnonymous ? Promise.resolve([] as FriendWeekScore[]) : getFriendsWeekScores().catch(() => [] as FriendWeekScore[]),
+      isAnonymous ? Promise.resolve([] as LeaderboardRow[]) : getFriendsLeaderboard().catch(() => [] as LeaderboardRow[]),
     ]).then(([w, s, f]) => {
       if (!alive) return
       setWorld(w); setSlice(s); setFriends(f); setLoading(false)
@@ -51,8 +51,10 @@ export default function LeaderboardPage() {
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
     score: r.total_score, isMe: r.user_id === user?.id,
   })) : []
-  const friendEntries: Entry[] = friends.filter(f => f.score > 0 || f.is_me).map((f, i) => ({
-    rank: i + 1, id: f.user_id, name: f.is_me ? t('round.you') : f.username, score: f.score, isMe: f.is_me,
+  const friendEntries: Entry[] = friends.map(r => ({
+    rank: r.rank, id: r.user_id, name: r.user_id === user?.id ? t('round.you') : (r.username ?? '—'),
+    sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
+    score: r.total_score, isMe: r.user_id === user?.id,
   }))
 
   const entries = tab === 'world' ? worldEntries : friendEntries

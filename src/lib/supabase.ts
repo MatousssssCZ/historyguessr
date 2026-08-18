@@ -530,6 +530,13 @@ export async function getWorldSlice(radius = 3): Promise<LeaderboardRow[]> {
   return ((data ?? []) as LeaderboardRow[]).map(r => ({ ...r, xp: Number(r.xp), total_score: Number(r.total_score) }))
 }
 
+/** Žebříček přátel (celoživotní, podle total_score) — pro stránku /leaderboard. */
+export async function getFriendsLeaderboard(): Promise<LeaderboardRow[]> {
+  const { data } = await supabase.rpc('friends_leaderboard')
+  return ((data ?? []) as { rank: number; user_id: string; username: string | null; xp: number; total_score: number }[])
+    .map(r => ({ rank: r.rank, user_id: r.user_id, username: r.username, xp: Number(r.xp), total_score: Number(r.total_score), rounds_played: 0 }))
+}
+
 export interface PublicProfile { username: string | null; xp: number; total_score: number; games_played: number; rounds_played: number; sum_round_score: number; streak: number; created_at: string; world_rank: number }
 
 /** Veřejný profil hráče (bezpečná podmnožina, přes SECURITY DEFINER). */
