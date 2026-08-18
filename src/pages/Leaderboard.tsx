@@ -42,13 +42,13 @@ export default function LeaderboardPage() {
 
   const worldEntries: Entry[] = world.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
-    sub: `${t('menu.level')} ${levelFromXp(r.xp).level} · ${t('lb.rounds', { count: r.rounds_played })}`,
+    sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
     score: r.total_score, isMe: r.user_id === user?.id,
   }))
   const inTop = world.some(r => r.user_id === user?.id)
   const sliceEntries: Entry[] = (!inTop && slice.length) ? slice.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
-    sub: `${t('menu.level')} ${levelFromXp(r.xp).level} · ${t('lb.rounds', { count: r.rounds_played })}`,
+    sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
     score: r.total_score, isMe: r.user_id === user?.id,
   })) : []
   const friendEntries: Entry[] = friends.filter(f => f.score > 0 || f.is_me).map((f, i) => ({
@@ -83,11 +83,11 @@ export default function LeaderboardPage() {
         <div style={{ padding: '30px 4px', color: 'var(--ink-3)', fontSize: 14 }}>{t('lb.empty')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {entries.map(e => <Row key={e.id} e={e} loc={loc}/>)}
+          {entries.map(e => <Row key={e.id} e={e} loc={loc} onOpen={() => navigate(`/player/${e.id}`)}/>)}
           {showSlice && (
             <>
               <div style={{ textAlign: 'center', color: 'var(--ink-3)', letterSpacing: 4, fontSize: 14, padding: '2px 0' }}>···</div>
-              {sliceEntries.map(e => <Row key={`s-${e.id}`} e={e} loc={loc}/>)}
+              {sliceEntries.map(e => <Row key={`s-${e.id}`} e={e} loc={loc} onOpen={() => navigate(`/player/${e.id}`)}/>)}
             </>
           )}
         </div>
@@ -97,12 +97,12 @@ export default function LeaderboardPage() {
   )
 }
 
-function Row({ e, loc }: { e: Entry; loc: string }) {
+function Row({ e, loc, onOpen }: { e: Entry; loc: string; onOpen?: () => void }) {
   const mono = (e.name || '?').trim().charAt(0).toUpperCase() || '?'
   const medal = e.rank <= 3
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 13,
+    <div role={onOpen ? 'button' : undefined} onClick={onOpen} style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 13, cursor: onOpen ? 'pointer' : 'default',
       background: e.isMe ? 'rgba(217,119,87,0.09)' : 'var(--surface)',
       border: `1px solid ${e.isMe ? 'var(--accent)' : 'var(--line)'}`,
     }}>
@@ -115,6 +115,7 @@ function Row({ e, loc }: { e: Entry; loc: string }) {
         {e.sub && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>{e.sub}</div>}
       </div>
       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: e.isMe ? 'var(--accent)' : 'var(--ink)' }}>{e.score.toLocaleString(loc)}</span>
+      {onOpen && <span style={{ color: 'var(--ink-3)', fontSize: 16, flexShrink: 0 }}>›</span>}
     </div>
   )
 }

@@ -530,6 +530,24 @@ export async function getWorldSlice(radius = 3): Promise<LeaderboardRow[]> {
   return ((data ?? []) as LeaderboardRow[]).map(r => ({ ...r, xp: Number(r.xp), total_score: Number(r.total_score) }))
 }
 
+export interface PublicProfile { username: string | null; xp: number; total_score: number; games_played: number; rounds_played: number; created_at: string; world_rank: number }
+
+/** Veřejný profil hráče (bezpečná podmnožina, přes SECURITY DEFINER). */
+export async function getPublicProfile(userId: string): Promise<PublicProfile | null> {
+  const { data } = await supabase.rpc('public_profile', { p_user_id: userId })
+  const row = (Array.isArray(data) ? data[0] : data) as PublicProfile | undefined
+  if (!row) return null
+  return { ...row, xp: Number(row.xp), total_score: Number(row.total_score) }
+}
+
+/** Odznaky (počty ≥950 kol po kategoriích) jiného hráče — pro veřejný profil. */
+export async function getPublicCategoryHits(userId: string): Promise<Record<string, number>> {
+  const { data } = await supabase.rpc('public_category_hits', { p_user_id: userId })
+  const m: Record<string, number> = {}
+  for (const r of (data ?? []) as { category: string; hits: number }[]) m[r.category] = r.hits
+  return m
+}
+
 export interface FriendWeekScore { user_id: string; username: string; score: number; is_me: boolean }
 
 /** „Přátelé tento týden" — součet bodů od pondělí napříč režimy (já + přátelé), seřazeno. */

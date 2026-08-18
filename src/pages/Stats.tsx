@@ -214,7 +214,7 @@ export default function StatsPage() {
   )
 }
 
-function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number }) {
+export function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const { current, next } = tierProgress(cat.tiers, hits)
