@@ -530,7 +530,7 @@ export async function getWorldSlice(radius = 3): Promise<LeaderboardRow[]> {
   return ((data ?? []) as LeaderboardRow[]).map(r => ({ ...r, xp: Number(r.xp), total_score: Number(r.total_score) }))
 }
 
-export interface PublicProfile { username: string | null; xp: number; total_score: number; games_played: number; rounds_played: number; sum_round_score: number; created_at: string; world_rank: number }
+export interface PublicProfile { username: string | null; xp: number; total_score: number; games_played: number; rounds_played: number; sum_round_score: number; streak: number; created_at: string; world_rank: number }
 
 /** Veřejný profil hráče (bezpečná podmnožina, přes SECURITY DEFINER). */
 export async function getPublicProfile(userId: string): Promise<PublicProfile | null> {
