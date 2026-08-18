@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
       <PageHeader eyebrow={t('lb.subtitle')} title={t('lb.title')} onBack={() => navigate('/menu')}/>
 
       {/* Přepínač Svět / Přátelé */}
-      <div style={{ display: 'flex', gap: 6, padding: 4, borderRadius: 13, background: 'var(--paper-300)', marginBottom: 16, maxWidth: 320 }}>
+      <div style={{ display: 'flex', gap: 6, padding: 4, borderRadius: 13, background: 'var(--paper-300)', margin: '0 auto 16px', maxWidth: 320, width: '100%' }}>
         {(['world', 'friends'] as Tab[]).map(tk => {
           const on = tab === tk
           return (
