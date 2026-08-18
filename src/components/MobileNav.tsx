@@ -53,15 +53,17 @@ export default function MobileNav({ active }: { active?: Tab }) {
           {item('home', t('menu.navHome'), () => navigate('/menu'), 'home')}
           {item('compass', t('menu.campaigns'), () => navigate('/campaigns'), 'campaigns')}
         </div>
-        <button onClick={() => setSheet(true)} aria-label={t('menu.navPlay')} style={{
-          position: 'absolute', left: '50%', top: -16, transform: 'translateX(-50%)',
-          width: 56, height: 56, borderRadius: '50%', background: ACCENT_GRAD, border: 'none', cursor: 'pointer',
-          boxShadow: '0 14px 30px -6px rgba(217,119,87,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg width="35" height="35" viewBox="0 0 24 24">
-            <path d="M9.2 7 L17.2 12 L9.2 17 Z" fill="#fff" stroke="#fff" strokeWidth="3.4" strokeLinejoin="round" strokeLinecap="round"/>
-          </svg>
-        </button>
+        <div style={{ position: 'absolute', left: '50%', top: -22, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => setSheet(true)} aria-label={t('menu.navPlay')} style={{
+            width: 56, height: 56, borderRadius: '50%', background: ACCENT_GRAD, border: 'none', cursor: 'pointer',
+            boxShadow: '0 14px 30px -6px rgba(217,119,87,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="35" height="35" viewBox="0 0 24 24">
+              <path d="M9.2 7 L17.2 12 L9.2 17 Z" fill="#fff" stroke="#fff" strokeWidth="3.4" strokeLinejoin="round" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <span onClick={() => setSheet(true)} style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 10.5, color: 'var(--accent)', cursor: 'pointer' }}>{t('menu.navPlay')}</span>
+        </div>
         <div style={{ display: 'flex', gap: 38 }}>
           {item('medal', t('menu.navBadges'), () => navigate('/stats'), 'badges')}
           {item('user', t('menu.navProfile'), () => navigate('/account'), 'profile', friendReqs)}
