@@ -33,7 +33,7 @@ export default function PlayerProfilePage() {
   const name = profile?.username ?? '—'
   const mono = name.trim().charAt(0).toUpperCase() || '?'
   const lvl = profile ? levelFromXp(profile.xp) : null
-  const avgRound = profile && profile.rounds_played > 0 ? Math.round(profile.total_score / profile.rounds_played) : 0
+  const avgRound = profile && profile.rounds_played > 0 ? Math.round(profile.sum_round_score / profile.rounds_played) : 0
   const memberSince = profile ? new Date(profile.created_at).toLocaleDateString(loc, { month: 'long', year: 'numeric' }) : ''
 
   return (
