@@ -10,6 +10,7 @@ import AuthPage from '@/pages/Auth'
 import GuestSetupPage from '@/pages/GuestSetup'
 import TryGamePage from '@/pages/TryGame'
 import ChallengePage from '@/pages/Challenge'
+import LeaderboardPage from '@/pages/Leaderboard'
 import MenuPage from '@/pages/Menu'
 import GamePage from '@/pages/Game'
 import CampaignsPage from '@/pages/Campaigns'
@@ -122,6 +123,7 @@ export default function App() {
               <Route path="/premium" element={<RequireAuth><PremiumPage/></RequireAuth>}/>
               <Route path="/roadmap" element={<RequireAuth><RoadmapPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
+              <Route path="/leaderboard" element={<RequireAuth><LeaderboardPage/></RequireAuth>}/>
               <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>
               <Route path="/admin"   element={<RequireAdmin><AdminHubPage/></RequireAdmin>}/>
               <Route path="/admin/events" element={<RequireAdmin><AdminPage/></RequireAdmin>}/>

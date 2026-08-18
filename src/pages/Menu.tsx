@@ -292,7 +292,7 @@ export default function MenuPage() {
 
             {/* ── Pravý rail ── */}
             <aside style={{ width: 300, flex: 'none', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'}/>
+              <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'} onOpen={() => navigate('/leaderboard')}/>
               <NearestBadges catHits={catHits} navigate={navigate}/>
               {!isAnonymous && <FriendsWeek data={friendsWeek} navigate={navigate}/>}
             </aside>
@@ -330,7 +330,7 @@ export default function MenuPage() {
         <DailyHero {...dailyProps}/>
         <div style={{ height: 12 }}/>
         {resume && <><ResumeBar resume={resume} onResume={goResume}/><div style={{ height: 12 }}/></>}
-        <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'}/>
+        <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'} onOpen={() => navigate('/leaderboard')}/>
         <div style={{ height: 12 }}/>
         <NearestBadges catHits={catHits} navigate={navigate}/>
         <div style={{ height: 12 }}/>
@@ -590,7 +590,7 @@ function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall
 }
 
 // ─── Progres karta (Level + XP + světový žebříček) ────────
-function ProgressCard({ lvl, world, delta, loading }: { lvl: LevelInfo; world: { rank: number; total: number } | null; delta: number; loading?: boolean }) {
+function ProgressCard({ lvl, world, delta, loading, onOpen }: { lvl: LevelInfo; world: { rank: number; total: number } | null; delta: number; loading?: boolean; onOpen?: () => void }) {
   const { t } = useTranslation()
   const loc = currentLocale()
   const up = delta > 0, down = delta < 0
@@ -603,10 +603,10 @@ function ProgressCard({ lvl, world, delta, loading }: { lvl: LevelInfo; world: {
       <div style={{ height: 8, borderRadius: 10, background: 'var(--paper-300)', overflow: 'hidden', marginBottom: 18 }}>
         <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg,#d97757,#d89a54)', transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
       </div>
-      {/* Světový žebříček — využívá uvolněné místo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      {/* Světový žebříček — klikací, otevře plný žebříček */}
+      <button onClick={onOpen} disabled={!onOpen} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: onOpen ? 'pointer' : 'default' }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, background: 'var(--paper-200)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="globe" size={22}/></div>
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('menu.worldRank')}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minHeight: 32 }}>
             {world
@@ -624,7 +624,12 @@ function ProgressCard({ lvl, world, delta, loading }: { lvl: LevelInfo; world: {
             )}
           </div>
         </div>
-      </div>
+        {onOpen && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--accent)' }}>
+            {t('lb.viewCta')} <span style={{ fontSize: 14 }}>→</span>
+          </span>
+        )}
+      </button>
     </div>
   )
 }

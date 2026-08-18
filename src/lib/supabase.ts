@@ -516,6 +516,20 @@ export async function getFriendRequests(): Promise<Friend[]> {
   return (data ?? []) as Friend[]
 }
 
+export interface LeaderboardRow { rank: number; user_id: string; username: string | null; xp: number; total_score: number; games_played: number }
+
+/** Globální žebříček — top N hráčů podle celkového skóre. */
+export async function getGlobalLeaderboard(limit = 50): Promise<LeaderboardRow[]> {
+  const { data } = await supabase.rpc('global_leaderboard', { p_limit: limit })
+  return ((data ?? []) as LeaderboardRow[]).map(r => ({ ...r, xp: Number(r.xp), total_score: Number(r.total_score) }))
+}
+
+/** „Moje okolí" v globálním žebříčku (já ± radius řádků). */
+export async function getWorldSlice(radius = 3): Promise<LeaderboardRow[]> {
+  const { data } = await supabase.rpc('world_leaderboard_slice', { p_radius: radius })
+  return ((data ?? []) as LeaderboardRow[]).map(r => ({ ...r, xp: Number(r.xp), total_score: Number(r.total_score) }))
+}
+
 export interface FriendWeekScore { user_id: string; username: string; score: number; is_me: boolean }
 
 /** „Přátelé tento týden" — součet bodů od pondělí napříč režimy (já + přátelé), seřazeno. */
