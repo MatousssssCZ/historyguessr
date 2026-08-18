@@ -516,7 +516,7 @@ export async function getFriendRequests(): Promise<Friend[]> {
   return (data ?? []) as Friend[]
 }
 
-export interface LeaderboardRow { rank: number; user_id: string; username: string | null; xp: number; total_score: number; games_played: number }
+export interface LeaderboardRow { rank: number; user_id: string; username: string | null; xp: number; total_score: number; rounds_played: number }
 
 /** Globální žebříček — top N hráčů podle celkového skóre. */
 export async function getGlobalLeaderboard(limit = 50): Promise<LeaderboardRow[]> {

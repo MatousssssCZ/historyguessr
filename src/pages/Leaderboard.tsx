@@ -42,13 +42,13 @@ export default function LeaderboardPage() {
 
   const worldEntries: Entry[] = world.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
-    sub: `${t('menu.level')} ${levelFromXp(r.xp).level} · ${t('lb.games', { n: r.games_played })}`,
+    sub: `${t('menu.level')} ${levelFromXp(r.xp).level} · ${t('lb.rounds', { count: r.rounds_played })}`,
     score: r.total_score, isMe: r.user_id === user?.id,
   }))
   const inTop = world.some(r => r.user_id === user?.id)
   const sliceEntries: Entry[] = (!inTop && slice.length) ? slice.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
-    sub: `${t('menu.level')} ${levelFromXp(r.xp).level} · ${t('lb.games', { n: r.games_played })}`,
+    sub: `${t('menu.level')} ${levelFromXp(r.xp).level} · ${t('lb.rounds', { count: r.rounds_played })}`,
     score: r.total_score, isMe: r.user_id === user?.id,
   })) : []
   const friendEntries: Entry[] = friends.filter(f => f.score > 0 || f.is_me).map((f, i) => ({
