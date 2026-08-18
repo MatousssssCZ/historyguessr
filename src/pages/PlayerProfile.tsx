@@ -59,9 +59,9 @@ export default function PlayerProfilePage() {
 
           {/* Metriky */}
           <div className="rgrid rgrid-4" style={{ marginBottom: 18 }}>
-            <StatTile label={t('lb.title')} value={`#${profile.world_rank.toLocaleString(loc)}`}/>
-            <StatTile label={t('pp.pointsRounds')} value={profile.sum_round_score.toLocaleString(loc)}/>
-            <StatTile label={t('pp.xp')} value={profile.xp.toLocaleString(loc)}/>
+            <StatTile label={t('pp.rank')} value={`#${profile.world_rank.toLocaleString(loc)}`}/>
+            <StatTile label={t('pp.pointsRounds')} value={profile.sum_round_score.toLocaleString(loc)} hint={t('pp.pointsRoundsHint')}/>
+            <StatTile label={t('pp.xp')} value={profile.xp.toLocaleString(loc)} hint={t('pp.xpHint')}/>
             <StatTile label={t('pp.streak')} value={t('pp.days', { count: profile.streak })}/>
             <StatTile label={t('pp.avgRound')} value={`${avgRound}`} hint={t('pp.outOf1000')}/>
             <StatTile label={t('pp.rounds')} value={profile.rounds_played.toLocaleString(loc)}/>
