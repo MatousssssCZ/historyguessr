@@ -16,6 +16,7 @@ export default function ChallengePage() {
   const [sp] = useSearchParams()
   const target = Math.max(0, Math.min(1000, parseInt(sp.get('s') || '0', 10) || 0))
   const by = (sp.get('by') || '').slice(0, 24)
+  const isDaily = sp.get('daily') === '1'
   const { user, loading } = useAuth()
 
   const [event, setEvent] = useState<Event | null>(null)
@@ -45,11 +46,20 @@ export default function ChallengePage() {
   }, [loading, user, captcha])
 
   function accept() {
-    if (!event || !user) return
+    if (!user) return
+    if (isDaily) {
+      // Míří do denní výzvy — ta si sama řeší „už odehráno" i vlastní událost.
+      const q = new URLSearchParams()
+      if (target > 0) q.set('ch', String(target))
+      if (by) q.set('by', by)
+      navigate(`/daily${q.toString() ? `?${q}` : ''}`)
+      return
+    }
+    if (!event) return
     navigate('/game', { state: { events: [event], rounds: 1, challenge: target > 0 ? { target, by } : undefined } })
   }
 
-  const ready = !!event && !!user
+  const ready = isDaily ? !!user : (!!event && !!user)
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)', padding: 24 }}>
@@ -67,7 +77,7 @@ export default function ChallengePage() {
         </div>
 
         <div style={{ padding: '22px 24px 24px', textAlign: 'center' }}>
-          {notFound || authErr ? (
+          {(notFound && !isDaily) || authErr ? (
             <>
               <p style={{ fontSize: 15, color: 'var(--ink-2)', margin: '4px 0 18px' }}>{authErr ? t('challenge.authErr') : t('challenge.notFound')}</p>
               <button className="btn btn-accent" onClick={() => navigate('/auth')}>{t('menu.trialLogin')}</button>

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, type CSSProperties } from 're
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription } from '@/lib/eventLocale'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
 import {
@@ -48,6 +48,10 @@ export default function DailyChallengePage() {
   const { t } = useTranslation()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const chParam = searchParams.get('ch')
+  const challengeTarget = chParam ? Math.max(0, Math.min(1000, parseInt(chParam, 10) || 0)) : null
+  const challengeBy = (searchParams.get('by') || '').slice(0, 24)
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [event, setEvent] = useState<Event | null>(null)
@@ -329,6 +333,7 @@ export default function DailyChallengePage() {
         makeupCount={makeupStatus.balance}
         onMakeup={makeupStatus.missed.length > 0 ? () => setShowMakeup(true) : undefined}
         streakBadges={streakBadges}
+        challengeTarget={challengeTarget} challengeBy={challengeBy}
         onMenu={() => navigate('/menu')}
       />
       {showMakeup && <MakeupSheet status={makeupStatus} onPick={startMakeup} onClose={() => setShowMakeup(false)}/>}
@@ -613,11 +618,12 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 // Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
 
 // ── Výsledek denní výzvy (redesign 17e) ───────────────────
-function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, onMenu }: {
+function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, challengeTarget, challengeBy, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number
   leaderboard: DailyLeaderRow[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
   makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
+  challengeTarget?: number | null; challengeBy?: string
 }) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
@@ -659,6 +665,18 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const story = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
   const xpSection = (!alreadyPlayed && userId) ? <GameEvaluation userId={userId} gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)} gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}} extraUnlocked={streakBadges}/> : null
 
+  // Srovnání s kamarádovou výzvou (fixní pilulka nad výsledkem — vidí ji i „už odehráno")
+  const challengeBanner = (challengeTarget != null) ? (() => {
+    const won = result.totalScore > challengeTarget, tie = result.totalScore === challengeTarget
+    const byName = challengeBy || t('challenge.kicker')
+    return (
+      <div style={{ position: 'fixed', top: 'calc(env(safe-area-inset-top,0px) + 10px)', left: '50%', transform: 'translateX(-50%)', zIndex: 130, maxWidth: '92vw', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 999, background: won ? 'rgba(76,122,80,.95)' : 'rgba(28,24,18,.92)', color: '#fff', backdropFilter: 'blur(8px)', boxShadow: '0 8px 24px rgba(0,0,0,.3)', fontFamily: 'var(--font-sans)', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <Icon name="swords" size={14}/>
+        <span>{(tie ? t('challenge.tie') : won ? t('challenge.youWonNoName') : t('challenge.youLostNoName'))} · {t('challenge.vsLine', { you: result.totalScore.toLocaleString(loc), by: byName, them: challengeTarget.toLocaleString(loc) })}</span>
+      </div>
+    )
+  })() : null
+
   // Mezikrok: nejdřív popis události + hodnocení, pak skóre
   if (!scoreShown) {
     return (<>
@@ -687,6 +705,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         ctaLabel={t('daily.menu')} onCta={onMenu}
       />
       {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
+      {challengeBanner}
     </>)
   }
 
@@ -707,7 +726,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const secondary = isMakeup ? null : (<>
     <button onClick={() => setShowShare(true)} style={ghost}><Icon name="share" size={14}/> {t('daily.share')}</button>
     <button onClick={async () => {
-      const url = buildChallengeUrl(event.id, result.totalScore, profile?.username)
+      const url = buildChallengeUrl(event.id, result.totalScore, profile?.username, { daily: true })
       const r = await shareChallenge(url, t('challenge.shareText', { score: result.totalScore }))
       if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
     }} style={ghost}>{chCopied ? <>✓ {t('challenge.linkCopied')}</> : <><Icon name="swords" size={14}/> {t('challenge.friendBtn')}</>}</button>
@@ -725,5 +744,6 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
       ctaLabel={t('daily.menu')} onCta={onMenu}
       secondaryActions={secondary}    />
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
+    {challengeBanner}
   </>)
 }

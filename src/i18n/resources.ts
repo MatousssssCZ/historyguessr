@@ -160,6 +160,7 @@ export const resources = {
       reportProblem: 'Nahlásit problém', crashPlaceholder: 'Co jsi dělal(a), když to spadlo? (nepovinné)',
       kind: { bug: '🐞 Chyba', idea: '💡 Nápad', other: '💬 Jiné' } },
     setup: {
+      welcomeTitle: 'Vítej!', welcomeSub: 'Chceš rychlé intro, nebo rovnou do hry?', playNow: 'Rovnou hrát', showHow: 'Nejdřív mi ukaž, jak se hraje',
       title: 'Zvol si přezdívku', sub: 'Pod tímhle jménem tě uvidí ostatní hráči.', creating: 'Vytvářím tvůj účet…',
       placeholder: 'Tvoje přezdívka', confirm: 'Pokračovat', hint: 'Min. 3 znaky. Změnit ji můžeš později v účtu.',
       guestNote: 'Hraješ bez registrace. Účty nečinné 30 dní se automaticky mažou — vytvoř si účet a postup si udržíš natrvalo.',
@@ -463,6 +464,7 @@ export const resources = {
       reportProblem: 'Report a problem', crashPlaceholder: 'What were you doing when it crashed? (optional)',
       kind: { bug: '🐞 Bug', idea: '💡 Idea', other: '💬 Other' } },
     setup: {
+      welcomeTitle: 'Welcome!', welcomeSub: 'Want a quick intro, or jump right in?', playNow: 'Play now', showHow: 'Show me how it works',
       title: 'Choose a nickname', sub: 'Other players will see you under this name.', creating: 'Creating your account…',
       placeholder: 'Your nickname', confirm: 'Continue', hint: 'Min. 3 characters. You can change it later in your account.',
       guestNote: 'You are playing without an account. Accounts inactive for 30 days are deleted automatically — create an account to keep your progress for good.',
@@ -766,6 +768,7 @@ export const resources = {
       reportProblem: 'Problem melden', crashPlaceholder: 'Was hast du gemacht, als es abstürzte? (optional)',
       kind: { bug: '🐞 Fehler', idea: '💡 Idee', other: '💬 Sonstiges' } },
     setup: {
+      welcomeTitle: 'Willkommen!', welcomeSub: 'Kurze Einführung oder direkt losspielen?', playNow: 'Sofort spielen', showHow: 'Zeig mir, wie es geht',
       title: 'Wähle einen Spitznamen', sub: 'Unter diesem Namen sehen dich andere Spieler.', creating: 'Dein Konto wird erstellt…',
       placeholder: 'Dein Spitzname', confirm: 'Weiter', hint: 'Min. 3 Zeichen. Du kannst ihn später im Konto ändern.',
       guestNote: 'Du spielst ohne Konto. Konten, die 30 Tage inaktiv sind, werden automatisch gelöscht — erstelle ein Konto, um deinen Fortschritt dauerhaft zu behalten.',

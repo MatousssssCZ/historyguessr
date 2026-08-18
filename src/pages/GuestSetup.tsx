@@ -26,7 +26,7 @@ export default function GuestSetupPage() {
 
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const [captchaKey, setCaptchaKey] = useState(0)
-  const [phase, setPhase] = useState<'creating' | 'howto' | 'error'>('creating')
+  const [phase, setPhase] = useState<'creating' | 'choice' | 'howto' | 'error'>('creating')
   const [errMsg, setErrMsg] = useState('')
   const started = useRef(false)
 
@@ -40,7 +40,7 @@ export default function GuestSetupPage() {
       const { error } = await assignGuestUsername(res.userId)
       if (error) { setErrMsg(t('setup.error')); setPhase('error'); return }
       track('sign_up', { converted: false, guest: true }, res.userId)
-      setPhase('howto')
+      setPhase('choice')
     })()
   }, [captcha, t])
 
@@ -50,8 +50,21 @@ export default function GuestSetupPage() {
     setCaptcha(CAPTCHA_ENABLED ? null : ''); setCaptchaKey(k => k + 1)
   }
 
-  // Po vytvoření hosta → „Jak hrát" na celou obrazovku, pak reload na menu.
+  // Po vytvoření hosta → volba: projít intro, nebo rovnou hrát.
   if (phase === 'howto') return <HowToPlay onClose={() => window.location.assign('/menu')} />
+  if (phase === 'choice') return (
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)', padding: 24 }}>
+      <div className="card" style={{ width: '100%', maxWidth: 400, padding: 32, textAlign: 'center' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, margin: '0 0 6px', letterSpacing: '-0.01em' }}>{t('setup.welcomeTitle')}</h1>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '0 0 22px', lineHeight: 1.5 }}>{t('setup.welcomeSub')}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button className="btn btn-accent" style={{ width: '100%', padding: '14px 0', fontSize: 15.5, borderRadius: 13 }} onClick={() => window.location.assign('/menu')}>{t('setup.playNow')} →</button>
+          <button className="btn btn-ghost" style={{ width: '100%', padding: '13px 0', fontSize: 14.5, borderRadius: 13 }} onClick={() => setPhase('howto')}>{t('setup.showHow')}</button>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)', padding: 24 }}>
