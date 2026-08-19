@@ -565,7 +565,7 @@ export async function getFriendsWeekScores(): Promise<FriendWeekScore[]> {
 
 // ─── Reporting (admin) ────────────────────────────────────
 
-export interface DailySeriesRow { day: string; new_users: number; active_users: number; games: number }
+export interface DailySeriesRow { day: string; new_users: number; active_users: number; rounds: number }
 export interface CategoryRow { category: string; plays: number }
 export interface RankedEvent { id: string; title: string; category: string | null; play_count: number }
 export interface DailyChallengeRow { day: string; players: number; avg_score: number | null }

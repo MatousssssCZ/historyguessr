@@ -69,7 +69,7 @@ export default function AdminReportsPage() {
             <Kpi label="Aktivní dnes" value={overview.active_today} hl/>
             <Kpi label="Aktivní 7 dní" value={overview.active_7d}/>
             <Kpi label="Aktivní 30 dní" value={overview.active_30d}/>
-            <Kpi label="Odehraných her celkem" value={overview.games_total}/>
+            <Kpi label="Odehraných kol celkem" value={overview.rounds_total}/>
           </Grid>
         </Section>
 
@@ -178,7 +178,7 @@ function EventList({ rows }: { rows: RankedEvent[] }) {
 // Jednoduchý sloupcový graf — aktivní hráči + hry/den
 function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
   if (rows.length === 0) return <Empty/>
-  const max = Math.max(1, ...rows.map(r => Math.max(r.active_users, r.games, r.new_users)))
+  const max = Math.max(1, ...rows.map(r => Math.max(r.active_users, r.rounds, r.new_users)))
   const W = 1000, H = 160, pad = 10
   const bw = (W - pad * 2) / rows.length
   const y = (v: number) => H - pad - (v / max) * (H - pad * 2)
@@ -188,17 +188,17 @@ function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: 16 }}>
       <div style={{ display: 'flex', gap: 16, marginBottom: 10, fontSize: 12 }}>
         <Legend color="var(--accent)" label="Aktivní hráči"/>
-        <Legend color="#5b7fa6" label="Hry"/>
+        <Legend color="#5b7fa6" label="Kola"/>
         <Legend color="#1d6b3a" label="Noví uživatelé"/>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 160, display: 'block' }}>
         <polyline points={line('active_users', '')} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round"/>
-        <polyline points={line('games', '')} fill="none" stroke="#5b7fa6" strokeWidth="2" strokeLinejoin="round"/>
+        <polyline points={line('rounds', '')} fill="none" stroke="#5b7fa6" strokeWidth="2" strokeLinejoin="round"/>
         <polyline points={line('new_users', '')} fill="none" stroke="#1d6b3a" strokeWidth="2" strokeDasharray="4 4" strokeLinejoin="round"/>
         {/* Neviditelné sloupce — hover kdekoli ve dni ukáže hodnoty */}
         {rows.map((r, i) => (
           <rect key={`h${i}`} x={pad + i * bw} y={0} width={bw} height={H} fill="transparent">
-            <title>{`${r.day}\nAktivní hráči: ${r.active_users}\nHry: ${r.games}\nNoví uživatelé: ${r.new_users}`}</title>
+            <title>{`${r.day}\nAktivní hráči: ${r.active_users}\nKola: \nNoví uživatelé: ${r.new_users}`}</title>
           </rect>
         ))}
       </svg>

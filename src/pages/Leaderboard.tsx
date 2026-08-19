@@ -43,18 +43,18 @@ export default function LeaderboardPage() {
   const worldEntries: Entry[] = world.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
-    score: r.total_score, isMe: r.user_id === user?.id,
+    score: r.xp, isMe: r.user_id === user?.id,
   }))
   const inTop = world.some(r => r.user_id === user?.id)
   const sliceEntries: Entry[] = (!inTop && slice.length) ? slice.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
-    score: r.total_score, isMe: r.user_id === user?.id,
+    score: r.xp, isMe: r.user_id === user?.id,
   })) : []
   const friendEntries: Entry[] = friends.map(r => ({
     rank: r.rank, id: r.user_id, name: r.user_id === user?.id ? t('round.you') : (r.username ?? '—'),
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
-    score: r.total_score, isMe: r.user_id === user?.id,
+    score: r.xp, isMe: r.user_id === user?.id,
   }))
 
   const entries = tab === 'world' ? worldEntries : friendEntries
@@ -116,7 +116,7 @@ function Row({ e, loc, onOpen }: { e: Entry; loc: string; onOpen?: () => void })
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</div>
         {e.sub && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>{e.sub}</div>}
       </div>
-      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: e.isMe ? 'var(--accent)' : 'var(--ink)' }}>{e.score.toLocaleString(loc)}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: e.isMe ? 'var(--accent)' : 'var(--ink)' }}>{e.score.toLocaleString(loc)} <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>XP</span></span>
       {onOpen && <span style={{ color: 'var(--ink-3)', fontSize: 16, flexShrink: 0 }}>›</span>}
     </div>
   )

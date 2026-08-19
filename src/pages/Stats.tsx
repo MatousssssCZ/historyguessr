@@ -23,7 +23,6 @@ const RARITY: Record<RewardRarity, { border: string; bg: string; key: string }> 
 const PERFECT_ROUND = 1000  // plné skóre kola (500 poloha + 500 rok)
 
 interface Stats {
-  games: number
   roundsPlayed: number       // odehraná kola (solo + denní výzvy)
   totalScore: number
   avgScore: number
@@ -38,7 +37,7 @@ interface Stats {
   trendPct: number           // % změna (2. půlka vs 1. půlka)
 }
 
-function computeStats(sessions: SessionRow[], daily: { score: number; date: string }[], profileGames: number, profileScore: number): Stats {
+function computeStats(sessions: SessionRow[], daily: { score: number; date: string }[], profileScore: number): Stats {
   const rounds: RoundResult[] = sessions.flatMap(s => Array.isArray(s.rounds) ? s.rounds : [])
   const nR = rounds.length || 1
   const bullseyes = rounds.filter(r => (r.round_score ?? 0) >= PERFECT_ROUND).length
@@ -67,14 +66,15 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
   if (!days.has(iso(d))) d.setDate(d.getDate() - 1) // pokud dnes nehrál, počítej od včera
   while (days.has(iso(d))) { dailyStreak++; d.setDate(d.getDate() - 1) }
 
-  const games = profileGames || sessions.length
   const totalScore = profileScore || gameScores.reduce((a, b) => a + b, 0)
+  // Průměr na KOLO ze surových kolových skóre (sólo + denní), ne na hru
+  const roundsPlayed = rounds.length + daily.length
+  const roundPoints = rounds.reduce((a, r) => a + (r.round_score ?? 0), 0) + daily.reduce((a, d) => a + (d.score ?? 0), 0)
 
   return {
-    games,
-    roundsPlayed: rounds.length + daily.length,   // solo kola + denní výzvy
+    roundsPlayed,
     totalScore,
-    avgScore: games > 0 ? Math.round(totalScore / games) : 0,
+    avgScore: roundsPlayed > 0 ? Math.round(roundPoints / roundsPlayed) : 0,
     bullseyes,
     avgDistance: Math.round(avgDistance),
     avgYearDiff: Math.round(avgYearDiff),
@@ -102,14 +102,14 @@ export default function StatsPage() {
     let alive = true
     Promise.all([getUserSessions(user.id), getUserDailyResults(user.id), getCategoryHits(user.id), getMyRewards().catch(() => [])]).then(([sessions, daily, hits, rw]) => {
       if (!alive) return
-      setStats(computeStats(sessions, daily, profile?.games_played ?? 0, profile?.total_score ?? 0))
+      setStats(computeStats(sessions, daily, profile?.total_score ?? 0))
       setCatHits(hits)
       setDailyDates(new Set(daily.map(d => d.date)))
       setRewards(rw as EarnedReward[])
       setLoading(false)
     }).catch(() => { if (alive) setLoading(false) })
     return () => { alive = false }
-  }, [user?.id, profile?.games_played, profile?.total_score])
+  }, [user?.id, profile?.total_score])
 
   const lvl = levelFromXp(profile?.xp ?? 0)
   const n = (v: number) => v.toLocaleString(currentLocale())
@@ -131,7 +131,7 @@ export default function StatsPage() {
           <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
         ) : (
           <>
-            {stats.games === 0 && stats.dailyCount === 0 && (
+            {stats.roundsPlayed === 0 && (
               <div style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: 26 }}>🗺️</div>
                 <div style={{ flex: 1 }}>
