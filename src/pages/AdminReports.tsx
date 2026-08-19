@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
@@ -175,33 +175,63 @@ function EventList({ rows }: { rows: RankedEvent[] }) {
   )
 }
 
-// Jednoduchý sloupcový graf — aktivní hráči + hry/den
+// Interaktivní graf — aktivní hráči + kola + noví uživatelé, okamžitý tooltip.
+const SERIES = [
+  { key: 'active_users' as const, color: 'var(--accent)', label: 'Aktivní hráči' },
+  { key: 'rounds' as const, color: '#5b7fa6', label: 'Kola' },
+  { key: 'new_users' as const, color: '#1d6b3a', label: 'Noví uživatelé' },
+]
 function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
+  const [hover, setHover] = useState<number | null>(null)
   if (rows.length === 0) return <Empty/>
   const max = Math.max(1, ...rows.map(r => Math.max(r.active_users, r.rounds, r.new_users)))
   const W = 1000, H = 160, pad = 10
   const bw = (W - pad * 2) / rows.length
+  const cx = (i: number) => pad + i * bw + bw / 2
   const y = (v: number) => H - pad - (v / max) * (H - pad * 2)
-  const line = (key: keyof DailySeriesRow, _color: string) =>
-    rows.map((r, i) => `${pad + i * bw + bw / 2},${y(r[key] as number)}`).join(' ')
+  const line = (key: 'active_users' | 'rounds' | 'new_users') => rows.map((r, i) => `${cx(i)},${y(r[key])}`).join(' ')
+
+  const onMove = (e: MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relX = (e.clientX - rect.left) / rect.width * W
+    const i = Math.min(rows.length - 1, Math.max(0, Math.round((relX - pad - bw / 2) / bw)))
+    setHover(i)
+  }
+  const h = hover != null ? rows[hover] : null
+  const leftPct = hover != null ? (cx(hover) / W) * 100 : 0
+  const tx = hover == null ? '-50%' : leftPct < 18 ? '0%' : leftPct > 82 ? '-100%' : '-50%'
+
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: 16 }}>
       <div style={{ display: 'flex', gap: 16, marginBottom: 10, fontSize: 12 }}>
-        <Legend color="var(--accent)" label="Aktivní hráči"/>
-        <Legend color="#5b7fa6" label="Kola"/>
-        <Legend color="#1d6b3a" label="Noví uživatelé"/>
+        {SERIES.map(s => <Legend key={s.key} color={s.color} label={s.label}/>)}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 160, display: 'block' }}>
-        <polyline points={line('active_users', '')} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round"/>
-        <polyline points={line('rounds', '')} fill="none" stroke="#5b7fa6" strokeWidth="2" strokeLinejoin="round"/>
-        <polyline points={line('new_users', '')} fill="none" stroke="#1d6b3a" strokeWidth="2" strokeDasharray="4 4" strokeLinejoin="round"/>
-        {/* Neviditelné sloupce — hover kdekoli ve dni ukáže hodnoty */}
-        {rows.map((r, i) => (
-          <rect key={`h${i}`} x={pad + i * bw} y={0} width={bw} height={H} fill="transparent">
-            <title>{`${r.day}\nAktivní hráči: ${r.active_users}\nKola: \nNoví uživatelé: ${r.new_users}`}</title>
-          </rect>
-        ))}
-      </svg>
+      <div style={{ position: 'relative' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 160, display: 'block', cursor: 'crosshair' }}
+          onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+          {hover != null && <line x1={cx(hover)} x2={cx(hover)} y1={pad} y2={H - pad} stroke="var(--line-strong)" strokeWidth="1.2"/>}
+          {SERIES.map(s => (
+            <polyline key={s.key} points={line(s.key)} fill="none" stroke={s.color} strokeWidth={s.key === 'active_users' ? 2.5 : 2}
+              strokeLinejoin="round" strokeDasharray={s.key === 'new_users' ? '4 4' : undefined} vectorEffect="non-scaling-stroke"/>
+          ))}
+          {hover != null && SERIES.map(s => (
+            <circle key={`d${s.key}`} cx={cx(hover)} cy={y(rows[hover][s.key])} r="4" fill={s.color} stroke="var(--surface)" strokeWidth="1.5"/>
+          ))}
+        </svg>
+        {h && (
+          <div style={{ position: 'absolute', top: -6, left: `${leftPct}%`, transform: `translate(${tx}, -100%)`, pointerEvents: 'none', zIndex: 5,
+            background: 'var(--ink)', color: 'var(--paper-50)', borderRadius: 10, padding: '8px 11px', boxShadow: '0 8px 24px rgba(0,0,0,0.28)', whiteSpace: 'nowrap' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.7, marginBottom: 5 }}>{h.day}</div>
+            {SERIES.map(s => (
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, lineHeight: 1.6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }}/>
+                <span style={{ flex: 1 }}>{s.label}</span>
+                <b style={{ fontFamily: 'var(--font-mono)' }}>{h[s.key]}</b>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 6 }}>
         <span>{rows[0]?.day}</span><span>{rows[rows.length - 1]?.day}</span>
       </div>
