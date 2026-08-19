@@ -273,10 +273,12 @@ export default function MenuPage() {
               <DailyHero {...dailyProps} tall/>
 
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', margin: '18px 0 13px' }}>{t('menu.newGame').toUpperCase()}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
-                <ModeTile icon="bolt" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
-                <ModeTile icon="sliders" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic}/>
-                <ModeTile icon="swords" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP}/>
+              <div style={{ background: 'rgba(217,119,87,0.06)', border: '1px solid rgba(217,119,87,0.16)', borderRadius: 18, padding: 12, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  <ModeTile icon="bolt" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
+                  <ModeTile icon="sliders" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic} iconBg="rgba(55,101,138,0.12)" iconColor="#37658A"/>
+                  <ModeTile icon="swords" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP} iconBg="rgba(78,122,80,0.14)" iconColor="#4E7A50"/>
+                </div>
               </div>
 
               {resume && <div style={{ marginBottom: 16 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
@@ -689,21 +691,20 @@ function RoadmapTile({ onClick }: { onClick: () => void }) {
 }
 
 // ─── Dlaždice režimu (desktop / sheet řádek) ──────────────
-function ModeTile({ icon, title, sub, onClick, recommended }: { icon: IconName; title: string; sub: string; onClick: () => void; recommended?: boolean }) {
+function ModeTile({ icon, title, sub, onClick, recommended, iconBg, iconColor }: { icon: IconName; title: string; sub: string; onClick: () => void; recommended?: boolean; iconBg?: string; iconColor?: string }) {
   const { t } = useTranslation()
   return (
     <button onClick={onClick} style={{
       textAlign: 'left', cursor: 'pointer', width: '100%',
-      background: recommended ? 'rgba(217,119,87,0.08)' : 'var(--paper-100)',
-      border: `1px solid ${recommended ? 'var(--accent)' : 'var(--line)'}`,
-      borderRadius: 16, padding: 15,
+      background: 'var(--surface)', border: '1px solid var(--line)',
+      borderRadius: 14, padding: 15,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, background: recommended ? ACCENT_GRAD : 'var(--paper-300)', color: recommended ? '#fff' : 'var(--accent)' }}><Icon name={icon} size={20}/></div>
+        <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: iconBg ?? (recommended ? ACCENT_GRAD : 'var(--paper-300)'), color: iconColor ?? (recommended ? '#fff' : 'var(--accent)') }}><Icon name={icon} size={21}/></div>
         {recommended && <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, padding: '2px 6px', borderRadius: 20 }}>{t('menu.recommended').toUpperCase()}</span>}
       </div>
-      <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{title}</div>
-      <div style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 3 }}>{sub}</div>
+      <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{title}</div>
+      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{sub}</div>
     </button>
   )
 }
