@@ -84,7 +84,12 @@ export default async function handler(req: any, res: any) {
     `Návrhy uspořádej do tematických SÉRIÍ / kampaní (např. „Velké objevné plavby", „Vědecká revoluce", „Cesta k měsíci"). ` +
     `Každá série má typicky PŘESNĚ 5 událostí, které spolu tematicky a chronologicky navazují, aby z nich šla poskládat postupná kampaň. ` +
     `Pokud počet návrhů není dělitelný 5, zbytek může tvořit menší sérii nebo samostatné události (series = null). ` +
-    `category je jedno z: ${CATEGORIES.join(', ')}.`
+    `category je jedno z: ${CATEGORIES.join(', ')}. ` +
+    `Vodítka pro category: "places" = objevení, dosažení, dobytí či pokoření nějakého MÍSTA lidskými silami ` +
+    `(první výstup na horu, dosažení pólu, objevení kontinentu/ostrova/řeky, první přistání na Měsíci, dobytí/založení města jako zeměpisný milník) — ` +
+    `pokud jde v jádru o „člověk poprvé dosáhl/objevil/pokořil místo", je to VŽDY "places", nikoli "moments"; ` +
+    `"war" = bitvy a války; "moments" = ostatní dějinné/politické okamžiky bez objevu místa; ` +
+    `"inventions" = vynálezy; "art" = umění; "sports" = sport; "mysteries" = záhady; "disasters" = katastrofy.`
 
   const dailyHint = upcomingMissing.length > 0
     ? `DENNÍ VÝZVA — tyto NADCHÁZEJÍCÍ dny zatím NEMAJÍ přiřazenou událost: ${upcomingMissing.join(', ')}.\n` +

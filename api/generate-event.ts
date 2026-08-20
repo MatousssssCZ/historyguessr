@@ -38,7 +38,15 @@ export default async function handler(req: any, res: any) {
     `Popisy piš populárně-naučným stylem (čtivě, poutavě, ale fakticky přesně), každý popis cca 80 slov, bez markdownu. ` +
     `event_date jen pro n. l. (formát YYYY-MM-DD); pokud je rok př. n. l. nebo datum neznámé, vrať null. ` +
     `year_from/year_to celá čísla (záporná = př. n. l.); u přesné události oba stejné, u nejisté/víceleté rozsah. ` +
-    `category jedno z: ${CATEGORIES.join(', ')} nebo null.`
+    `category jedno z: ${CATEGORIES.join(', ')} nebo null. ` +
+    `Vodítka pro category: ` +
+    `"places" = objevení, dosažení, dobytí či pokoření nějakého MÍSTA lidskými silami ` +
+    `(první výstup na horu, dosažení pólu, objevení kontinentu/ostrova/řeky, první přistání na Měsíci, ` +
+    `dobytí/založení města jako zeměpisný milník) — pokud jde v jádru o „člověk poprvé dosáhl/objevil/pokořil místo", je to VŽDY "places", nikoli "moments"; ` +
+    `"war" = bitvy, války, vojenské tažení a obléhání; ` +
+    `"moments" = ostatní dějinné/politické/společenské okamžiky bez objevu místa (podpis smlouvy, revoluce, korunovace, projev); ` +
+    `"inventions" = vynálezy a technický pokrok; "art" = umění a kultura; "sports" = sport; ` +
+    `"mysteries" = záhady; "disasters" = katastrofy a neštěstí.`
 
   const userMsg = `Událost: "${title}"${year != null && year !== '' ? `, přibližný rok: ${year}` : ''}.\n` +
     `Vrať JSON s klíči: title_cs, title_en, title_de, description_cs, description_en, description_de, ` +
