@@ -37,6 +37,18 @@ const UI = {
     allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
     explore_word: 'událostí', playCta: 'Prozkoumat', backToList: 'Zpět na výpis',
     catMetaPrefix: 'Historické události v kategorii',
+    homeKicker: 'Vzdělávací hra', homePlay: 'Hrát',
+    homeH1: 'Stůj tam, kde se psaly dějiny',
+    homeSub: 'Ocitneš se v 360° panoramatu historického místa. Uhodneš, kde na světě jsi a v jakém roce se to stalo?',
+    homeMeta: 'Historyguesser je vzdělávací hra jako GeoGuessr, ale pro historii. Stojíš v 360° panoramatu historického místa a hádáš, kde a kdy se událost stala.',
+    homeBrowse: 'k prozkoumání',
+    howTitle: 'Jak to funguje',
+    steps: [
+      ['Rozhlédni se', 'Prozkoumej 360° panorama — architektura, krajina, oblečení. Vodítka jsou všude.'],
+      ['Urči místo a rok', 'Klepni do mapy, kde na světě to je, a posuvníkem odhadni rok události.'],
+      ['Získej body', 'Čím blíž skutečnému místu a roku, tím víc bodů, úrovní a odznaků.'],
+    ],
+    featuredTitle: 'Vybrané okamžiky',
   },
   en: {
     home: 'Home', explore: 'Explore history',
@@ -52,6 +64,18 @@ const UI = {
     allEvents: 'All events', allCats: 'All', filterBy: 'Category',
     explore_word: 'events', playCta: 'Explore', backToList: 'Back to list',
     catMetaPrefix: 'Historical events in category',
+    homeKicker: 'Educational game', homePlay: 'Play',
+    homeH1: 'Stand where history happened',
+    homeSub: 'You wake up in a 360° panorama of a historical place. Can you guess where in the world you are — and in what year it happened?',
+    homeMeta: 'Historyguesser is an educational game like GeoGuessr, but for history. You stand in a 360° panorama of a historical place and guess where and when the event happened.',
+    homeBrowse: 'to explore',
+    howTitle: 'How it works',
+    steps: [
+      ['Look around', 'Explore the 360° panorama — architecture, landscape, clothing. Clues are everywhere.'],
+      ['Place it in space and time', 'Tap the map for where in the world it is, and use the slider to guess the year.'],
+      ['Earn points', 'The closer to the real place and year, the more points, levels and badges you earn.'],
+    ],
+    featuredTitle: 'Featured moments',
   },
   de: {
     home: 'Start', explore: 'Geschichte entdecken',
@@ -67,6 +91,18 @@ const UI = {
     allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
     explore_word: 'Ereignisse', playCta: 'Entdecken', backToList: 'Zur Übersicht',
     catMetaPrefix: 'Historische Ereignisse in der Kategorie',
+    homeKicker: 'Lernspiel', homePlay: 'Spielen',
+    homeH1: 'Steh dort, wo Geschichte geschah',
+    homeSub: 'Du erwachst in einem 360°-Panorama eines historischen Ortes. Errätst du, wo auf der Welt du bist — und in welchem Jahr es geschah?',
+    homeMeta: 'Historyguesser ist ein Lernspiel wie GeoGuessr, aber für Geschichte. Du stehst in einem 360°-Panorama eines historischen Ortes und errätst, wo und wann das Ereignis geschah.',
+    homeBrowse: 'zu entdecken',
+    howTitle: 'So funktioniert es',
+    steps: [
+      ['Sieh dich um', 'Erkunde das 360°-Panorama — Architektur, Landschaft, Kleidung. Überall sind Hinweise.'],
+      ['Ort und Zeit bestimmen', 'Tippe auf die Karte für den Ort und stelle mit dem Regler das Jahr ein.'],
+      ['Punkte sammeln', 'Je näher am echten Ort und Jahr, desto mehr Punkte, Level und Abzeichen.'],
+    ],
+    featuredTitle: 'Ausgewählte Momente',
   },
 }
 
@@ -427,6 +463,111 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
 `
 }
 
+// ── Veřejná homepage (panorama na pozadí + rozcestník) ──────────────────────
+function renderHome(locale, all) {
+  const t = UI[locale]
+  const canonical = abs(`/${locale}`)
+  const withImg = all.filter((e) => imgFor(e))
+  const heroEv = withImg[0] || all[0]
+  const heroImg = heroEv ? (heroEv.panorama_url || imgFor(heroEv)) : ''
+  const featured = withImg.slice(0, 3)
+
+  const alternates = LOCALES.map((l) => ({ l, href: abs(`/${l}`) }))
+  const metaTitle = `${t.metaSuffix} — ${t.tagline}`
+
+  const ld = [{
+    '@context': 'https://schema.org', '@type': 'WebSite',
+    name: 'Historyguesser', url: canonical, inLanguage: locale,
+    description: t.homeMeta,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${abs(exploreListPath(locale))}?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  }]
+
+  const steps = t.steps.map(([h, d], i) => `
+          <div class="how-step">
+            <span class="how-num">${String(i + 1).padStart(2, '0')}</span>
+            <h3>${escapeHtml(h)}</h3>
+            <p>${escapeHtml(d)}</p>
+          </div>`).join('')
+
+  const cards = featured.map((e) => renderCard(e, locale, t)).join('')
+
+  return `<!doctype html>
+<html lang="${locale}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>${escapeHtml(metaTitle)}</title>
+  <meta name="description" content="${escapeHtml(t.homeMeta)}" />
+  <link rel="canonical" href="${canonical}" />
+  ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
+  <link rel="alternate" hreflang="x-default" href="${abs('/cs')}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(metaTitle)}" />
+  <meta property="og:description" content="${escapeHtml(t.homeSub)}" />
+  <meta property="og:url" content="${canonical}" />
+  ${heroImg ? `<meta property="og:image" content="${escapeHtml(heroImg)}" />` : ''}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/explore.css" />
+  <script type="application/ld+json">
+${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
+  </script>
+</head>
+<body class="xp">
+  <header class="xp-home-hero">
+    ${heroImg ? `<img class="xp-pan" src="${escapeHtml(heroImg)}" alt="" aria-hidden="true">` : ''}
+    <div class="xp-hero-scrim"></div>
+    <nav class="xp-topbar" aria-label="Historyguesser">
+      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <div class="xp-nav-right">
+        <a class="xp-btn-ghost" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
+        <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.homePlay)}</a>
+      </div>
+    </nav>
+    <div class="xp-home-inner">
+      <span class="xp-kicker">${escapeHtml(t.homeKicker)}</span>
+      <h1>${escapeHtml(t.homeH1)}</h1>
+      <p class="xp-home-sub">${escapeHtml(t.homeSub)}</p>
+      <div class="xp-cta-row">
+        <a class="xp-btn-primary" href="/menu">${escapeHtml(t.homePlay)}</a>
+        <a class="xp-btn-ghost" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
+      </div>
+    </div>
+    <a class="xp-home-strip" href="${exploreListPath(locale)}">↓ ${all.length} ${escapeHtml(t.explore_word)} ${escapeHtml(t.homeBrowse)}</a>
+  </header>
+
+  <section class="xp-section">
+    <div class="xp-section-inner">
+      <h2>${escapeHtml(t.howTitle)}</h2>
+      <div class="how-grid">${steps}
+      </div>
+    </div>
+  </section>
+
+  <section class="xp-section xp-section-sunk">
+    <div class="xp-section-inner">
+      <div class="xp-section-head">
+        <h2>${escapeHtml(t.featuredTitle)}</h2>
+        <a class="xp-more-link" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)} →</a>
+      </div>
+      <div class="ev-grid">${cards}
+      </div>
+    </div>
+  </section>
+
+  <footer class="xp-footer">
+    <a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}
+  </footer>
+</body>
+</html>
+`
+}
+
 // ── Běh ─────────────────────────────────────────────────────────────────────
 if (!existsSync(dist)) {
   console.error('[explore] dist/ nenalezen — spusť po `vite build`.')
@@ -454,6 +595,14 @@ for (const ev of events) {
     sitemap.push({ loc: abs(eventPath(locale, slug)), lastmod: new Date().toISOString().slice(0, 10) })
     count++
   }
+}
+
+// Veřejná homepage per jazyk (/cs, /en, /de) — nahrazuje i18n shelly bohatým obsahem
+for (const locale of LOCALES) {
+  const homeDir = resolve(dist, locale)
+  mkdirSync(homeDir, { recursive: true })
+  writeFileSync(resolve(homeDir, 'index.html'), renderHome(locale, events), 'utf8')
+  sitemap.push({ loc: abs(`/${locale}`), lastmod: new Date().toISOString().slice(0, 10) })
 }
 
 // Výpis + kategorie (indexovatelné rozcestníky)

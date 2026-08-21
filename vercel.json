@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/cs", "destination": "/cs/index.html" },
     { "source": "/en", "destination": "/en/index.html" },
     { "source": "/de", "destination": "/de/index.html" },
     { "source": "/:lang(cs|en|de)/:seg(udalosti|events|ereignisse)/:slug", "destination": "/:lang/:seg/:slug/index.html" },
