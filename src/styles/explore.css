@@ -220,9 +220,21 @@ body.xp a { color: inherit; }
 .ev-title { font-family: var(--hg-display); font-size: 18px; line-height: 1.2; color: var(--hg-ink-700); }
 .ev-more { margin-top: 4px; font-weight: 600; font-size: 12.5px; color: var(--hg-brand-text); }
 
+/* ── Doc stránky (O projektu, Jak hrát) ────────────────────────────────── */
+.xp-hero-doc { min-height: 240px; }
+.xp-doc-main { max-width: 760px; margin: 0 auto; padding: 44px 26px 64px; }
+.xp-doc-lead { font-family: var(--hg-display); font-size: clamp(19px, 2.4vw, 23px); line-height: 1.4; color: var(--hg-ink-700); margin: 0 0 28px; }
+.xp-doc-main .xp-prose h2 { font-family: var(--hg-display); font-weight: 400; font-size: clamp(22px, 2.8vw, 28px); letter-spacing: -.02em; color: var(--hg-ink-700); margin: 32px 0 12px; }
+.xp-doc-main .xp-prose p { margin: 0 0 14px; }
+
 /* ── Footer (tmavý uzávěr) ─────────────────────────────────────────────── */
-.xp-footer { background: var(--hg-ink-800); color: rgba(251,247,240,.7); text-align: center; padding: 32px 26px; font-size: 13px; }
-.xp-footer a { color: var(--hg-paper); text-decoration: none; font-family: var(--hg-display); }
+.xp-footer { background: var(--hg-ink-800); color: rgba(251,247,240,.7); text-align: center; padding: 36px 26px; font-size: 13px; }
+.xp-footer a { color: var(--hg-paper); text-decoration: none; }
+.xp-footer-links { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 16px; }
+.xp-footer-links a { font-weight: 600; font-size: 13px; }
+.xp-footer-links a:hover { color: var(--hg-brand-light); }
+.xp-footer-brand { color: rgba(251,247,240,.55); }
+.xp-footer-brand a { font-family: var(--hg-display); }
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {

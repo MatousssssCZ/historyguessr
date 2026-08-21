@@ -106,6 +106,84 @@ const UI = {
   },
 }
 
+// ── Statické stránky (O projektu, Jak hrát) ─────────────────────────────────
+// Kontakt je záměrně placeholder — e-mail doplní provozovatel (osobní údaj).
+const CONTACT_PLACEHOLDER = '[doplň kontaktní e-mail]'
+const STATIC = {
+  cs: {
+    about: {
+      slug: 'o-projektu', title: 'O projektu',
+      lead: 'Historyguesser je vzdělávací hra inspirovaná GeoGuessrem, ale zaměřená na historii. Postavíme tě do 360° panoramatu historického místa a ty hádáš, kde na světě jsi a v jakém roce se událost odehrála.',
+      sections: [
+        ['Proč to vzniklo', ['Historie se špatně učí z dat a jmen. Když ale stojíš přímo na místě, kde se něco stalo, a musíš odhadnout kde a kdy to bylo, zapamatuješ si to jinak. Historyguesser propojuje zeměpis, dějiny a hru do jednoho — poznávání skrze zvědavost, ne memorování.']],
+        ['Jak vznikají panoramata', ['Většina panoramat jsou historicky pravděpodobné rekonstrukce vytvořené pomocí umělé inteligence na základě dostupných historických podkladů. Nejde o dobové fotografie — u většiny událostí žádné neexistují. Snažíme se, aby rekonstrukce odpovídala tomu, jak místo v dané době pravděpodobně vypadalo, ale je to interpretace, ne důkaz. U každého panoramatu je toto přiznáno.']],
+        ['Historická přesnost', ['Data o událostech (místo, rok, popis) čerpáme z obecně dostupných a nesporných historických zdrojů. U nejistých nebo sporných výkladů se to snažíme uvést. Když najdeš chybu, dej nám vědět — bereme přesnost vážně a texty průběžně opravujeme.']],
+        ['Vzdělávací účel', ['Hra je zdarma a míří na kohokoli, kdo má rád historii — od žáků po dospělé. Cílem není nahradit učebnici, ale vzbudit zvědavost a chuť dozvědět se víc o místech a okamžicích, které utvářely náš svět.']],
+        ['Kontakt', [`Zpětnou vazbu, opravy i návrhy na nové události uvítáme na ${CONTACT_PLACEHOLDER}.`]],
+      ],
+    },
+    howto: {
+      slug: 'jak-hrat', title: 'Jak hrát',
+      lead: 'Každé kolo tě postaví do panoramatu jednoho historického místa. Tvým úkolem je určit, kde na světě to je, a v jakém roce se událost stala.',
+      sections: [
+        ['1. Rozhlédni se', ['Panorama si můžeš otočit dokola. Hledej vodítka — architektura, krajina, oblečení lidí, technika. Každý detail může napovědět, na jakém kontinentu a v jaké době se nacházíš.']],
+        ['2. Urči místo', ['Klepni do mapy tam, kde myslíš, že se událost odehrála. Čím blíž skutečnému místu, tím víc bodů za polohu.']],
+        ['3. Odhadni rok', ['Posuvníkem nastav rok. Modrá znamená před naším letopočtem, oranžová náš letopočet. Čím blíž skutečnému roku, tím víc bodů za čas.']],
+        ['Jak se počítají body', ['Za každé kolo můžeš získat až 1000 bodů — 500 za polohu a 500 za rok. Body klesají s tím, jak daleko jsi od skutečného místa a roku. Za přesné trefy se sbírají zkušenosti, úrovně a odznaky.']],
+        ['Herní režimy', ['Sólo hra pro klasické kolo, denní výzva „Tento den v historii" (jedno kolo, jeden pokus denně), tematické kampaně a multiplayer až pro 12 hráčů, kde soutěžíte ve stejných kolech.']],
+      ],
+    },
+  },
+  en: {
+    about: {
+      slug: 'about', title: 'About',
+      lead: 'Historyguesser is an educational game inspired by GeoGuessr, but focused on history. It drops you into a 360° panorama of a historical place and asks you to guess where in the world you are and in what year the event happened.',
+      sections: [
+        ['Why it exists', ['History is hard to learn from dates and names alone. But when you stand where something happened and have to guess where and when, it sticks differently. Historyguesser blends geography, history and play into one — learning through curiosity, not memorisation.']],
+        ['How the panoramas are made', ['Most panoramas are historically plausible reconstructions created with artificial intelligence, based on available historical sources. They are not period photographs — for most events none exist. We aim for the reconstruction to match how the place likely looked at the time, but it is an interpretation, not proof. This is disclosed on every panorama.']],
+        ['Historical accuracy', ['Event data (place, year, description) is drawn from widely available and uncontested historical sources. Where an interpretation is uncertain or disputed, we try to say so. If you spot an error, let us know — we take accuracy seriously and correct texts continuously.']],
+        ['Educational purpose', ['The game is free and aimed at anyone who enjoys history — from pupils to adults. The goal is not to replace a textbook, but to spark curiosity about the places and moments that shaped our world.']],
+        ['Contact', [`We welcome feedback, corrections and suggestions for new events at ${CONTACT_PLACEHOLDER}.`]],
+      ],
+    },
+    howto: {
+      slug: 'how-to-play', title: 'How to play',
+      lead: 'Each round places you inside a panorama of one historical place. Your task is to work out where in the world it is and in what year the event happened.',
+      sections: [
+        ['1. Look around', ['You can turn the panorama all the way around. Look for clues — architecture, landscape, clothing, technology. Every detail can hint at the continent and the era.']],
+        ['2. Place it', ['Tap the map where you think the event happened. The closer to the real place, the more location points you earn.']],
+        ['3. Guess the year', ['Use the slider to set the year. Blue means BC, orange means AD. The closer to the real year, the more time points you earn.']],
+        ['How scoring works', ['Each round is worth up to 1000 points — 500 for location and 500 for the year. Points fall off the further you are from the real place and year. Accurate guesses earn experience, levels and badges.']],
+        ['Game modes', ['Solo play for a classic round, the daily "This day in history" challenge (one round, one attempt per day), themed campaigns, and multiplayer for up to 12 players competing on the same rounds.']],
+      ],
+    },
+  },
+  de: {
+    about: {
+      slug: 'ueber-uns', title: 'Über das Projekt',
+      lead: 'Historyguesser ist ein Lernspiel, inspiriert von GeoGuessr, aber mit Fokus auf Geschichte. Es versetzt dich in ein 360°-Panorama eines historischen Ortes und fragt, wo auf der Welt du bist und in welchem Jahr das Ereignis geschah.',
+      sections: [
+        ['Warum es entstand', ['Geschichte lässt sich aus Daten und Namen schwer lernen. Doch wenn du dort stehst, wo etwas geschah, und erraten musst, wo und wann, bleibt es anders hängen. Historyguesser verbindet Geografie, Geschichte und Spiel — Lernen durch Neugier, nicht durch Auswendiglernen.']],
+        ['Wie die Panoramen entstehen', ['Die meisten Panoramen sind historisch plausible Rekonstruktionen, die mit künstlicher Intelligenz auf Basis verfügbarer historischer Quellen erstellt wurden. Es sind keine zeitgenössischen Fotografien — für die meisten Ereignisse gibt es keine. Wir bemühen uns, dass die Rekonstruktion dem wahrscheinlichen damaligen Aussehen entspricht, doch es ist eine Interpretation, kein Beweis. Dies wird bei jedem Panorama offengelegt.']],
+        ['Historische Genauigkeit', ['Die Ereignisdaten (Ort, Jahr, Beschreibung) stammen aus allgemein verfügbaren und unstrittigen historischen Quellen. Bei unsicheren oder umstrittenen Deutungen versuchen wir, dies anzumerken. Wenn du einen Fehler findest, sag uns Bescheid — wir nehmen Genauigkeit ernst und korrigieren die Texte laufend.']],
+        ['Bildungszweck', ['Das Spiel ist kostenlos und richtet sich an alle, die Geschichte mögen — von Schülern bis Erwachsenen. Ziel ist nicht, ein Lehrbuch zu ersetzen, sondern Neugier auf die Orte und Momente zu wecken, die unsere Welt prägten.']],
+        ['Kontakt', [`Feedback, Korrekturen und Vorschläge für neue Ereignisse sind willkommen unter ${CONTACT_PLACEHOLDER}.`]],
+      ],
+    },
+    howto: {
+      slug: 'spielanleitung', title: 'Spielanleitung',
+      lead: 'Jede Runde versetzt dich in ein Panorama eines historischen Ortes. Deine Aufgabe ist herauszufinden, wo auf der Welt es ist und in welchem Jahr das Ereignis geschah.',
+      sections: [
+        ['1. Sieh dich um', ['Du kannst das Panorama ganz herumdrehen. Suche nach Hinweisen — Architektur, Landschaft, Kleidung, Technik. Jedes Detail kann auf Kontinent und Epoche hindeuten.']],
+        ['2. Ort bestimmen', ['Tippe auf die Karte, wo das Ereignis deiner Meinung nach geschah. Je näher am echten Ort, desto mehr Ortspunkte.']],
+        ['3. Jahr schätzen', ['Stelle mit dem Regler das Jahr ein. Blau bedeutet v. Chr., Orange n. Chr. Je näher am echten Jahr, desto mehr Zeitpunkte.']],
+        ['Wie die Punkte zählen', ['Jede Runde bringt bis zu 1000 Punkte — 500 für den Ort und 500 für das Jahr. Die Punkte sinken, je weiter du vom echten Ort und Jahr entfernt bist. Genaue Schätzungen bringen Erfahrung, Level und Abzeichen.']],
+        ['Spielmodi', ['Solospiel für eine klassische Runde, die tägliche Herausforderung „Dieser Tag in der Geschichte" (eine Runde, ein Versuch pro Tag), thematische Kampagnen und Mehrspieler für bis zu 12 Spieler auf denselben Runden.']],
+      ],
+    },
+  },
+}
+
 const BASE_COLS = [
   'id', 'seq', 'title', 'title_en', 'title_de', 'description', 'description_en', 'description_de',
   'year', 'year_from', 'year_to', 'event_date', 'lat', 'lng',
@@ -331,9 +409,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     </aside>
   </main>
 
-  <footer class="xp-footer">
-    <a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}
-  </footer>
+${footerHtml(locale)}
 </body>
 </html>
 `
@@ -455,9 +531,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     </div>
   </main>
 
-  <footer class="xp-footer">
-    <a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}
-  </footer>
+${footerHtml(locale)}
 </body>
 </html>
 `
@@ -560,9 +634,98 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     </div>
   </section>
 
-  <footer class="xp-footer">
-    <a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}
-  </footer>
+${footerHtml(locale)}
+</body>
+</html>
+`
+}
+
+// ── Statická stránka (O projektu / Jak hrát) ────────────────────────────────
+function staticPath(locale, pageKey) {
+  return `/${locale}/${STATIC[locale][pageKey].slug}`
+}
+
+// Sdílená patička se stejnými odkazy na všech stránkách (prolinkování).
+function footerHtml(locale) {
+  const t = UI[locale]
+  return `  <footer class="xp-footer">
+    <nav class="xp-footer-links" aria-label="footer">
+      <a href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
+      <a href="${staticPath(locale, 'howto')}">${escapeHtml(STATIC[locale].howto.title)}</a>
+      <a href="${staticPath(locale, 'about')}">${escapeHtml(STATIC[locale].about.title)}</a>
+    </nav>
+    <div class="xp-footer-brand"><a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}</div>
+  </footer>`
+}
+
+function renderStaticPage(locale, pageKey) {
+  const t = UI[locale]
+  const page = STATIC[locale][pageKey]
+  const path = staticPath(locale, pageKey)
+  const canonical = abs(path)
+  const metaTitle = `${page.title} — ${t.metaSuffix}`
+  const metaDesc = page.lead.slice(0, 300)
+
+  const alternates = LOCALES.map((l) => ({ l, href: abs(staticPath(l, pageKey)) }))
+  const crumbs = [
+    { name: t.home, path: `/${locale}` },
+    { name: page.title, path },
+  ]
+  const body = page.sections.map(([h, paras]) => `
+        <h2>${escapeHtml(h)}</h2>
+        ${paras.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n        ')}`).join('\n')
+
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'AboutPage', name: page.title, url: canonical, inLanguage: locale, description: metaDesc },
+    breadcrumbLd(crumbs),
+  ]
+
+  return `<!doctype html>
+<html lang="${locale}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>${escapeHtml(metaTitle)}</title>
+  <meta name="description" content="${escapeHtml(metaDesc)}" />
+  <link rel="canonical" href="${canonical}" />
+  ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
+  <link rel="alternate" hreflang="x-default" href="${abs(staticPath('cs', pageKey))}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="${escapeHtml(page.title)}" />
+  <meta property="og:description" content="${escapeHtml(metaDesc)}" />
+  <meta property="og:url" content="${canonical}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/explore.css" />
+  <script type="application/ld+json">
+${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
+  </script>
+</head>
+<body class="xp">
+  <header class="xp-hero xp-hero-doc">
+    <div class="xp-hero-scrim"></div>
+    <nav class="xp-topbar" aria-label="Historyguesser">
+      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.homePlay)}</a>
+    </nav>
+    <div class="xp-hero-inner">
+      <nav class="xp-breadcrumb" aria-label="breadcrumb">
+        ${crumbs.map((c, i) => i < crumbs.length - 1
+          ? `<a href="${c.path}">${escapeHtml(c.name)}</a><span aria-hidden="true">/</span>`
+          : `<span aria-current="page">${escapeHtml(c.name)}</span>`).join('\n        ')}
+      </nav>
+      <h1>${escapeHtml(page.title)}</h1>
+    </div>
+  </header>
+
+  <main class="xp-doc-main">
+    <p class="xp-doc-lead">${escapeHtml(page.lead)}</p>
+    <div class="xp-prose">${body}
+    </div>
+  </main>
+
+${footerHtml(locale)}
 </body>
 </html>
 `
@@ -603,6 +766,18 @@ for (const locale of LOCALES) {
   mkdirSync(homeDir, { recursive: true })
   writeFileSync(resolve(homeDir, 'index.html'), renderHome(locale, events), 'utf8')
   sitemap.push({ loc: abs(`/${locale}`), lastmod: new Date().toISOString().slice(0, 10) })
+}
+
+// Statické stránky (O projektu, Jak hrát)
+let staticCount = 0
+for (const locale of LOCALES) {
+  for (const pageKey of ['about', 'howto']) {
+    const dir = resolve(dist, locale, STATIC[locale][pageKey].slug)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(resolve(dir, 'index.html'), renderStaticPage(locale, pageKey), 'utf8')
+    sitemap.push({ loc: abs(staticPath(locale, pageKey)), lastmod: new Date().toISOString().slice(0, 10) })
+    staticCount++
+  }
 }
 
 // Výpis + kategorie (indexovatelné rozcestníky)
