@@ -31,6 +31,12 @@ const UI = {
     view360: 'Prohlédnout ve 360°', explore_cta: 'Objevit historii',
     reconstruction: 'Panorama je historicky pravděpodobná rekonstrukce vytvořená pomocí AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr pro historii',
+    listH1: 'Okamžiky, které utvořily náš svět',
+    listSub: 'Prozkoumej historické události z celého světa — každou si můžeš i zahrát.',
+    listMeta: 'Objevuj stovky historických okamžiků na Historyguesser: kde se staly a v jakém roce.',
+    allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
+    explore_word: 'událostí', playCta: 'Prozkoumat', backToList: 'Zpět na výpis',
+    catMetaPrefix: 'Historické události v kategorii',
   },
   en: {
     home: 'Home', explore: 'Explore history',
@@ -40,6 +46,12 @@ const UI = {
     view360: 'View in 360°', explore_cta: 'Explore history',
     reconstruction: 'The panorama is a historically plausible reconstruction created with AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr for history',
+    listH1: 'Moments that shaped our world',
+    listSub: 'Explore historical events from around the world — and play any of them.',
+    listMeta: 'Explore hundreds of historical moments on Historyguesser: where they happened and in what year.',
+    allEvents: 'All events', allCats: 'All', filterBy: 'Category',
+    explore_word: 'events', playCta: 'Explore', backToList: 'Back to list',
+    catMetaPrefix: 'Historical events in category',
   },
   de: {
     home: 'Start', explore: 'Geschichte entdecken',
@@ -49,6 +61,12 @@ const UI = {
     view360: 'In 360° ansehen', explore_cta: 'Geschichte entdecken',
     reconstruction: 'Das Panorama ist eine historisch plausible, mit KI erstellte Rekonstruktion.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr für Geschichte',
+    listH1: 'Momente, die unsere Welt prägten',
+    listSub: 'Entdecke historische Ereignisse aus aller Welt — und spiele jedes davon.',
+    listMeta: 'Entdecke Hunderte historischer Momente auf Historyguesser: wo sie geschahen und in welchem Jahr.',
+    allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
+    explore_word: 'Ereignisse', playCta: 'Entdecken', backToList: 'Zur Übersicht',
+    catMetaPrefix: 'Historische Ereignisse in der Kategorie',
   },
 }
 
@@ -285,6 +303,130 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
 `
 }
 
+// ── Výpis (Objevuj historii) + kategorie ────────────────────────────────────
+function renderCard(ev, locale, t) {
+  const slug = eventSlugFor(ev, locale)
+  const img = imgFor(ev)
+  const catKey = CATEGORY_KEYS.includes(ev.category) ? ev.category : null
+  const cat = catKey ? CATEGORIES[catKey][locale] : null
+  return `
+        <a class="ev-card" href="${eventPath(locale, slug)}">
+          <div class="ev-thumb">${img ? `<img loading="lazy" src="${escapeHtml(img)}" alt="">` : ''}</div>
+          <div class="ev-body">
+            <span class="ev-meta">${escapeHtml(formatYear(ev.year, locale))}${cat ? ` · ${escapeHtml(cat.label)}` : ''}</span>
+            <span class="ev-title">${escapeHtml(eventTitleFor(ev, locale))}</span>
+            <span class="ev-more">${escapeHtml(t.playCta)} →</span>
+          </div>
+        </a>`
+}
+
+function renderListing(locale, all, catKey) {
+  const t = UI[locale]
+  const cat = catKey ? CATEGORIES[catKey][locale] : null
+  const path = catKey ? categoryPath(locale, catKey) : exploreListPath(locale)
+  const canonical = abs(path)
+  const list = catKey ? all.filter((e) => e.category === catKey) : all
+  const h1 = cat ? cat.label : t.listH1
+  const metaTitle = `${h1} — ${t.metaSuffix}`
+  const metaDesc = cat ? `${t.catMetaPrefix} ${cat.label}. ${t.listSub}` : t.listMeta
+
+  // hreflang varianty téže stránky
+  const alternates = LOCALES.map((l) => ({
+    l, href: abs(catKey ? categoryPath(l, catKey) : exploreListPath(l)),
+  }))
+
+  const crumbs = [
+    { name: t.home, path: `/${locale}` },
+    { name: t.explore, path: exploreListPath(locale) },
+    ...(cat ? [{ name: cat.label, path }] : []),
+  ]
+
+  // Filtr = odkazy na kategorie (indexovatelné). Aktivní = aktuální.
+  const counts = {}
+  for (const e of all) if (CATEGORY_KEYS.includes(e.category)) counts[e.category] = (counts[e.category] || 0) + 1
+  const chips = [
+    `<a class="chip${!catKey ? ' is-active' : ''}" href="${exploreListPath(locale)}">${escapeHtml(t.allCats)} <span>${all.length}</span></a>`,
+    ...CATEGORY_KEYS.filter((k) => counts[k]).map((k) =>
+      `<a class="chip${catKey === k ? ' is-active' : ''}" href="${categoryPath(locale, k)}">${escapeHtml(CATEGORIES[k][locale].label)} <span>${counts[k]}</span></a>`),
+  ].join('\n          ')
+
+  const cards = list.map((e) => renderCard(e, locale, t)).join('')
+
+  const ld = [
+    {
+      '@context': 'https://schema.org', '@type': 'CollectionPage',
+      name: h1, url: canonical, description: metaDesc,
+      inLanguage: locale,
+    },
+    breadcrumbLd(crumbs),
+    {
+      '@context': 'https://schema.org', '@type': 'ItemList',
+      numberOfItems: list.length,
+      itemListElement: list.slice(0, 100).map((e, i) => ({
+        '@type': 'ListItem', position: i + 1,
+        url: abs(eventPath(locale, eventSlugFor(e, locale))),
+        name: eventTitleFor(e, locale),
+      })),
+    },
+  ]
+
+  return `<!doctype html>
+<html lang="${locale}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>${escapeHtml(metaTitle)}</title>
+  <meta name="description" content="${escapeHtml(metaDesc)}" />
+  <link rel="canonical" href="${canonical}" />
+  ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
+  <link rel="alternate" hreflang="x-default" href="${abs(catKey ? categoryPath('cs', catKey) : exploreListPath('cs'))}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(h1)}" />
+  <meta property="og:description" content="${escapeHtml(metaDesc)}" />
+  <meta property="og:url" content="${canonical}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/explore.css" />
+  <script type="application/ld+json">
+${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
+  </script>
+</head>
+<body class="xp">
+  <header class="xp-hero xp-hero-list">
+    <div class="xp-hero-scrim"></div>
+    <nav class="xp-topbar" aria-label="${escapeHtml(t.explore)}">
+      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-btn-ghost" href="/${locale}">${escapeHtml(t.home)}</a>
+    </nav>
+    <div class="xp-hero-inner">
+      <nav class="xp-breadcrumb" aria-label="breadcrumb">
+        ${crumbs.map((c, i) => i < crumbs.length - 1
+          ? `<a href="${c.path}">${escapeHtml(c.name)}</a><span aria-hidden="true">/</span>`
+          : `<span aria-current="page">${escapeHtml(c.name)}</span>`).join('\n        ')}
+      </nav>
+      <h1>${escapeHtml(h1)}</h1>
+      <p class="xp-hero-sub">${escapeHtml(cat ? t.listSub : t.listSub)}</p>
+    </div>
+  </header>
+
+  <main class="xp-list-main">
+    <nav class="xp-filters" aria-label="${escapeHtml(t.filterBy)}">
+      ${chips}
+    </nav>
+    <div class="xp-count">${list.length} ${escapeHtml(t.explore_word)}</div>
+    <div class="ev-grid">${cards}
+    </div>
+  </main>
+
+  <footer class="xp-footer">
+    <a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}
+  </footer>
+</body>
+</html>
+`
+}
+
 // ── Běh ─────────────────────────────────────────────────────────────────────
 if (!existsSync(dist)) {
   console.error('[explore] dist/ nenalezen — spusť po `vite build`.')
@@ -314,6 +456,27 @@ for (const ev of events) {
   }
 }
 
+// Výpis + kategorie (indexovatelné rozcestníky)
+const usedCats = new Set(events.map((e) => e.category).filter((c) => CATEGORY_KEYS.includes(c)))
+let listCount = 0
+for (const locale of LOCALES) {
+  // hlavní výpis
+  const listDir = resolve(dist, locale, PATH_SEG[locale].explore)
+  mkdirSync(listDir, { recursive: true })
+  writeFileSync(resolve(listDir, 'index.html'), renderListing(locale, events, null), 'utf8')
+  sitemap.push({ loc: abs(exploreListPath(locale)), lastmod: new Date().toISOString().slice(0, 10) })
+  listCount++
+  // kategorie
+  for (const key of CATEGORY_KEYS) {
+    if (!usedCats.has(key)) continue
+    const catDir = resolve(dist, locale, PATH_SEG[locale].explore, CATEGORIES[key][locale].slug)
+    mkdirSync(catDir, { recursive: true })
+    writeFileSync(resolve(catDir, 'index.html'), renderListing(locale, events, key), 'utf8')
+    sitemap.push({ loc: abs(categoryPath(locale, key)), lastmod: new Date().toISOString().slice(0, 10) })
+    listCount++
+  }
+}
+
 // explore.css → dist (statické stránky ho linkují z /explore.css)
 const cssSrc = resolve(root, 'src/styles/explore.css')
 if (existsSync(cssSrc)) copyFileSync(cssSrc, resolve(dist, 'explore.css'))
@@ -333,4 +496,5 @@ if (!robots.includes('Sitemap:')) robots += `Sitemap: ${SITE_ORIGIN}/sitemap.xml
 writeFileSync(robotsPath, robots, 'utf8')
 
 console.log(`[explore] ✓ ${events.length} událostí × ${LOCALES.length} jazyky = ${count} stránek`)
+console.log(`[explore] ✓ výpis + kategorie = ${listCount} stránek`)
 console.log(`[explore] ✓ sitemap.xml (${sitemap.length} URL), robots.txt`)
