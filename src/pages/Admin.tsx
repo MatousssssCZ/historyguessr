@@ -6,8 +6,8 @@ import { compressPanorama, compressIllustration, generatePreview, generatePrevie
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, getEventFileSizes, track } from '@/lib/supabase'
 import { formatYear } from '@/lib/scoring'
 import { encodePanoramaUrl } from '@/lib/panorama'
-import { generateEventDraft, generatePanorama, generateIllustration } from '@/lib/ai'
-import type { Event } from '@/types/database'
+import { generateEventDraft, generatePanorama, generateIllustration, generateStory } from '@/lib/ai'
+import type { Event, EventStory } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
 type Panel = 'list' | 'new' | 'edit'
@@ -575,6 +575,32 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
     }
   }
 
+  // ── Delší čtenářský příběh pro Explore/SEO stránky ──
+  const [storyCs, setStoryCs] = useState<EventStory | null>(event?.story_cs ?? null)
+  const [storyEn, setStoryEn] = useState<EventStory | null>(event?.story_en ?? null)
+  const [storyDe, setStoryDe] = useState<EventStory | null>(event?.story_de ?? null)
+  const [storyLoading, setStoryLoading] = useState(false)
+  const [storyError, setStoryError] = useState<string | null>(null)
+
+  async function handleGenerateStory() {
+    if (!form.title.trim()) { setStoryError('Nejdřív vyplň název události.'); return }
+    setStoryError(null); setStoryLoading(true)
+    try {
+      const { cs, en, de } = await generateStory({
+        title: form.title.trim(),
+        year: form.year_from,
+        event_date: form.event_date.trim() || null,
+        category: form.category || null,
+        facts: form.description.trim() || null,
+      })
+      setStoryCs(cs); setStoryEn(en); setStoryDe(de)
+    } catch (e: any) {
+      setStoryError(e?.message || 'Generování příběhu selhalo.')
+    } finally {
+      setStoryLoading(false)
+    }
+  }
+
   // ── AI generování panoramatu ──
   const [panoModel, setPanoModel] = useState<'gpt-image-1' | 'gpt-image-2'>('gpt-image-2')
   const [panoLoading, setPanoLoading] = useState(false)
@@ -676,6 +702,9 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
         panorama_url: event?.panorama_url ?? '',
         event_image_url: event?.event_image_url ?? null,
         created_by: user.id,
+        story_cs: storyCs,
+        story_en: storyEn,
+        story_de: storyDe,
       }
 
       let savedId = event?.id
@@ -860,6 +889,52 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
                 </div>
               </div>
             </details>
+
+            <details style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--paper-100)' }}>
+              <summary style={{ cursor: 'pointer', padding: '12px 14px', fontWeight: 600, fontSize: 14 }}>
+                📖 Delší text pro web (Explore / SEO)
+              </summary>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 14px 16px' }}>
+                <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
+                  Čtenářský text „Co se tady stalo" na veřejné stránce události. Když zůstane prázdný,
+                  web použije krátký popis výše. Generuje se z názvu, data, kategorie a popisu.
+                </p>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-secondary" onClick={handleGenerateStory} disabled={storyLoading}>
+                    {storyLoading ? 'Generuji…' : (storyCs ? '↻ Přegenerovat příběh' : '✨ Vygenerovat příběh')}
+                  </button>
+                  {storyCs && (
+                    <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                      EN: {storyEn ? '✓' : '—'} · DE: {storyDe ? '✓' : '—'}
+                    </span>
+                  )}
+                </div>
+                {storyError && <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{storyError}</p>}
+                {storyCs && (
+                  <>
+                    <div>
+                      <label className="label">Titulek (CZ)</label>
+                      <input className="input" value={storyCs.titulek}
+                        onChange={e => setStoryCs({ ...storyCs, titulek: e.target.value })}
+                        placeholder="Krátký, konkrétní titulek…"/>
+                    </div>
+                    <div>
+                      <label className="label">Odstavce (CZ) — oddělené prázdným řádkem</label>
+                      <textarea className="input" rows={8} style={{ resize: 'vertical' }}
+                        value={storyCs.odstavce.join('\n\n')}
+                        onChange={e => setStoryCs({
+                          ...storyCs,
+                          odstavce: e.target.value.split(/\n{2,}/).map(p => p.trim()).filter(Boolean),
+                        })}/>
+                    </div>
+                    <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>
+                      EN/DE se generují automaticky z CZ. Změny se projeví po uložení a přegenerování webu.
+                    </p>
+                  </>
+                )}
+              </div>
+            </details>
+
             <div className="rgrid rgrid-3">
               <div>
                 <label className="label">Kategorie</label>

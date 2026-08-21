@@ -155,6 +155,18 @@ export interface Event {
   score_sum: number
   score_loc_sum: number
   score_year_sum: number
+  slug: string | null
+  slug_en: string | null
+  slug_de: string | null
+  story_cs: EventStory | null
+  story_en: EventStory | null
+  story_de: EventStory | null
+}
+
+/** Delší čtenářský text pro Explore/SEO stránky (sekce „Co se tady stalo"). */
+export interface EventStory {
+  titulek: string
+  odstavce: string[]
 }
 
 export interface EventInsert {
@@ -181,6 +193,12 @@ export interface EventInsert {
   location_radius_km?: number
   year_range?: number
   hfov?: number
+  slug?: string | null
+  slug_en?: string | null
+  slug_de?: string | null
+  story_cs?: EventStory | null
+  story_en?: EventStory | null
+  story_de?: EventStory | null
 }
 
 export interface EventUpdate {
@@ -208,6 +226,12 @@ export interface EventUpdate {
   location_radius_km?: number
   year_range?: number
   hfov?: number
+  slug?: string | null
+  slug_en?: string | null
+  slug_de?: string | null
+  story_cs?: EventStory | null
+  story_en?: EventStory | null
+  story_de?: EventStory | null
 }
 
 export interface GameSession {

@@ -116,6 +116,40 @@ function dataUrlToFile(image: string, baseName: string): File {
   return new File([blob], `${baseName}.${ext}`, { type: mime })
 }
 
+export type EventStory = { titulek: string; odstavce: string[] }
+export type EventStoryParams = {
+  title: string
+  year?: number | string | null
+  event_date?: string | null
+  place?: string | null
+  category?: string | null
+  facts?: string | null
+}
+
+/**
+ * Vygeneruje delší čtenářský „příběh" události (sekce „Co se tady stalo" na Explore
+ * stránkách) — CZ dle promptu + překlad do EN/DE. EN/DE mohou být null (best-effort).
+ */
+export async function generateStory(params: EventStoryParams): Promise<{ cs: EventStory; en: EventStory | null; de: EventStory | null }> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Nejsi přihlášený.')
+
+  const res = await fetch('/api/generate-story', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(params),
+  })
+  if (!res.ok) {
+    let detail = ''
+    try { const j = await res.json(); detail = j.detail || j.error || '' } catch { /* ignore */ }
+    if (res.status === 403) throw new Error('Přístup jen pro administrátory.')
+    if (res.status === 500 && detail === 'missing_openai_key') throw new Error('Na serveru chybí OPENAI_API_KEY.')
+    throw new Error(`Generování příběhu selhalo (${res.status}). ${detail}`)
+  }
+  return res.json()
+}
+
 /** Vygeneruje ilustrační obrázek události (běžný obrázek, ne 360°). */
 export async function generateIllustration(params: PanoramaParams): Promise<File> {
   const { data: { session } } = await supabase.auth.getSession()
