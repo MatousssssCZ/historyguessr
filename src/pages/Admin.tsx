@@ -564,6 +564,12 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
         lng: d.lng != null ? d.lng.toFixed(6) : f.lng,
         category: d.category ?? f.category,
       }))
+      // Předvyplněný popis rovnou seedni do editoru textu (jediný zdroj).
+      // Je to jen výchozí bod — pro pořádný web text pak „Vygenerovat text (AI)".
+      const mk = (t: string | null | undefined) => (t && t.trim() ? { titulek: '', odstavce: [t.trim()] } : null)
+      if (d.description_cs) setStoryCs(mk(d.description_cs))
+      if (d.description_en) setStoryEn(mk(d.description_en))
+      if (d.description_de) setStoryDe(mk(d.description_de))
       const gpsWarn = (d.lat == null || d.lng == null)
         ? '⚠️ GPS se nepodařilo spolehlivě určit — souřadnice zadej ručně kliknutím do mapy. '
         : ''
@@ -575,12 +581,27 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
     }
   }
 
-  // ── Delší čtenářský příběh pro Explore/SEO stránky ──
-  const [storyCs, setStoryCs] = useState<EventStory | null>(event?.story_cs ?? null)
-  const [storyEn, setStoryEn] = useState<EventStory | null>(event?.story_en ?? null)
-  const [storyDe, setStoryDe] = useState<EventStory | null>(event?.story_de ?? null)
+  // ── Text události (jediný zdroj: příběh; krátký popis se z něj odvodí) ──
+  // Staré události bez příběhu se předvyplní z jejich popisu, aby admin viděl JEDEN text.
+  const seedStory = (s: EventStory | null | undefined, desc: string | null | undefined): EventStory | null =>
+    s ?? (desc && desc.trim()
+      ? { titulek: '', odstavce: desc.split(/\n{2,}/).map(p => p.trim()).filter(Boolean) }
+      : null)
+  const [storyCs, setStoryCs] = useState<EventStory | null>(seedStory(event?.story_cs, event?.description))
+  const [storyEn, setStoryEn] = useState<EventStory | null>(seedStory(event?.story_en, event?.description_en))
+  const [storyDe, setStoryDe] = useState<EventStory | null>(seedStory(event?.story_de, event?.description_de))
   const [storyLoading, setStoryLoading] = useState(false)
   const [storyError, setStoryError] = useState<string | null>(null)
+
+  // Editace odstavců jednoho jazyka z jednoho textarea (odděleno prázdným řádkem).
+  function setParas(cur: EventStory | null, text: string): EventStory | null {
+    const odstavce = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
+    if (!odstavce.length) return cur ? { ...cur, odstavce: [] } : null
+    return { titulek: cur?.titulek ?? '', odstavce }
+  }
+  // Krátký popis pro hru = 1. odstavec příběhu (fallback na dřívější popis).
+  const deriveDesc = (s: EventStory | null, fallback: string) =>
+    (s && s.odstavce.length ? s.odstavce[0] : fallback)
 
   async function handleGenerateStory() {
     if (!form.title.trim()) { setStoryError('Nejdřív vyplň název události.'); return }
@@ -681,13 +702,18 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
       const yearTo = parseInt(form.year_to) || 1900
       if (yearFrom > yearTo) { setError('Rok od musí být ≤ roku do.'); setSaving(false); setSavingNext(false); return }
       const yearMid = Math.round((yearFrom + yearTo) / 2)
+      // Krátký popis (pro hru) se odvodí z 1. odstavce příběhu; příběh je zdroj.
+      const descCs = deriveDesc(storyCs, form.description).trim()
+      if (!descCs) { setError('Vyplň text události (co se tady stalo).'); setSaving(false); setSavingNext(false); return }
+      const descEn = (storyEn ? storyEn.odstavce[0] : form.description_en).trim()
+      const descDe = (storyDe ? storyDe.odstavce[0] : form.description_de).trim()
       const payload = {
         title: form.title,
-        description: form.description,
+        description: descCs,
         title_en: form.title_en.trim() || null,
-        description_en: form.description_en.trim() || null,
+        description_en: descEn || null,
         title_de: form.title_de.trim() || null,
-        description_de: form.description_de.trim() || null,
+        description_de: descDe || null,
         year: yearMid,
         year_from: yearFrom,
         year_to: yearTo,
@@ -853,87 +879,64 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
               <label className="label">Název události *</label>
               <input className="input" value={form.title} onChange={set('title')} required placeholder="např. Bitva na Bílé hoře"/>
             </div>
-            <div>
-              <label className="label">Popis (zobrazí se po odeslání tipu) *</label>
-              <textarea
-                className="input" value={form.description}
-                onChange={set('description') as React.ChangeEventHandler<HTMLTextAreaElement>}
-                required rows={4} placeholder="Krátký popis události…" style={{ resize: 'vertical' }}
-              />
+            {/* Text události — JEDINÝ zdroj. Web ukazuje celý text, hra 1. odstavec. */}
+            <div style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--paper-100)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <label className="label" style={{ margin: 0 }}>📖 Text události — co se tady stalo *</label>
+                <button type="button" className="btn btn-secondary" onClick={handleGenerateStory} disabled={storyLoading}>
+                  {storyLoading ? 'Generuji…' : (storyCs ? '↻ Přegenerovat text (AI)' : '✨ Vygenerovat text (AI)')}
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
+                Jeden čtenářský text (2 odstavce). Web ho ukáže celý na stránce události, hra po tipu
+                ukáže jeho 1. odstavec. Odstavce oddělíš prázdným řádkem.
+              </p>
+              {storyError && <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{storyError}</p>}
+              <div>
+                <label className="label">Titulek pro web (volitelný)</label>
+                <input className="input" value={storyCs?.titulek ?? ''}
+                  onChange={e => setStoryCs({ titulek: e.target.value, odstavce: storyCs?.odstavce ?? [] })}
+                  placeholder="Krátký, konkrétní titulek — bez názvu události a roku…"/>
+              </div>
+              <div>
+                <label className="label">Text (CZ) — odstavce oddělené prázdným řádkem</label>
+                <textarea className="input" rows={8} style={{ resize: 'vertical' }} required
+                  value={storyCs?.odstavce.join('\n\n') ?? ''}
+                  onChange={e => setStoryCs(setParas(storyCs, e.target.value))}
+                  placeholder="Otevři konkrétní scénou (čas, místo, číslo)…&#10;&#10;Druhý odstavec: jak to skončilo a co to změnilo."/>
+              </div>
+
+              <details style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+                <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}>
+                  🌐 Překlady (EN / DE) — volitelné {storyEn ? '· EN ✓' : ''} {storyDe ? '· DE ✓' : ''}
+                </summary>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '10px 0 4px' }}>
+                  <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
+                    Prázdné = web/hra použijí český text. AI je vyplní automaticky při generování.
+                  </p>
+                  <div>
+                    <label className="label">🇬🇧 Název (EN)</label>
+                    <input className="input" value={form.title_en} onChange={set('title_en')} placeholder="e.g. Battle of White Mountain"/>
+                  </div>
+                  <div>
+                    <label className="label">🇬🇧 Text (EN)</label>
+                    <textarea className="input" rows={5} style={{ resize: 'vertical' }}
+                      value={storyEn?.odstavce.join('\n\n') ?? ''}
+                      onChange={e => setStoryEn(setParas(storyEn, e.target.value))} placeholder="Reader text in English…"/>
+                  </div>
+                  <div>
+                    <label className="label">🇩🇪 Název (DE)</label>
+                    <input className="input" value={form.title_de} onChange={set('title_de')} placeholder="z. B. Schlacht am Weißen Berg"/>
+                  </div>
+                  <div>
+                    <label className="label">🇩🇪 Text (DE)</label>
+                    <textarea className="input" rows={5} style={{ resize: 'vertical' }}
+                      value={storyDe?.odstavce.join('\n\n') ?? ''}
+                      onChange={e => setStoryDe(setParas(storyDe, e.target.value))} placeholder="Lesetext auf Deutsch…"/>
+                  </div>
+                </div>
+              </details>
             </div>
-
-            {/* Překlady — volitelné. Prázdné = hra zobrazí český text jako fallback. */}
-            <details style={{ border: '1px solid var(--line)', borderRadius: 8 }}>
-              <summary style={{ cursor: 'pointer', padding: '10px 14px', fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}>
-                🌐 Překlady (EN / DE) — volitelné
-              </summary>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 14px 16px' }}>
-                <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
-                  Když pole necháš prázdné, hra v daném jazyce zobrazí český text.
-                </p>
-                <div>
-                  <label className="label">🇬🇧 Název (EN)</label>
-                  <input className="input" value={form.title_en} onChange={set('title_en')} placeholder="e.g. Battle of White Mountain"/>
-                </div>
-                <div>
-                  <label className="label">🇬🇧 Popis (EN)</label>
-                  <textarea className="input" value={form.description_en} onChange={set('description_en') as React.ChangeEventHandler<HTMLTextAreaElement>} rows={4} style={{ resize: 'vertical' }} placeholder="Short event description…"/>
-                </div>
-                <div>
-                  <label className="label">🇩🇪 Název (DE)</label>
-                  <input className="input" value={form.title_de} onChange={set('title_de')} placeholder="z. B. Schlacht am Weißen Berg"/>
-                </div>
-                <div>
-                  <label className="label">🇩🇪 Popis (DE)</label>
-                  <textarea className="input" value={form.description_de} onChange={set('description_de') as React.ChangeEventHandler<HTMLTextAreaElement>} rows={4} style={{ resize: 'vertical' }} placeholder="Kurze Beschreibung des Ereignisses…"/>
-                </div>
-              </div>
-            </details>
-
-            <details style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--paper-100)' }}>
-              <summary style={{ cursor: 'pointer', padding: '12px 14px', fontWeight: 600, fontSize: 14 }}>
-                📖 Delší text pro web (Explore / SEO)
-              </summary>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 14px 16px' }}>
-                <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
-                  Čtenářský text „Co se tady stalo" na veřejné stránce události. Když zůstane prázdný,
-                  web použije krátký popis výše. Generuje se z názvu, data, kategorie a popisu.
-                </p>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <button type="button" className="btn btn-secondary" onClick={handleGenerateStory} disabled={storyLoading}>
-                    {storyLoading ? 'Generuji…' : (storyCs ? '↻ Přegenerovat příběh' : '✨ Vygenerovat příběh')}
-                  </button>
-                  {storyCs && (
-                    <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                      EN: {storyEn ? '✓' : '—'} · DE: {storyDe ? '✓' : '—'}
-                    </span>
-                  )}
-                </div>
-                {storyError && <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{storyError}</p>}
-                {storyCs && (
-                  <>
-                    <div>
-                      <label className="label">Titulek (CZ)</label>
-                      <input className="input" value={storyCs.titulek}
-                        onChange={e => setStoryCs({ ...storyCs, titulek: e.target.value })}
-                        placeholder="Krátký, konkrétní titulek…"/>
-                    </div>
-                    <div>
-                      <label className="label">Odstavce (CZ) — oddělené prázdným řádkem</label>
-                      <textarea className="input" rows={8} style={{ resize: 'vertical' }}
-                        value={storyCs.odstavce.join('\n\n')}
-                        onChange={e => setStoryCs({
-                          ...storyCs,
-                          odstavce: e.target.value.split(/\n{2,}/).map(p => p.trim()).filter(Boolean),
-                        })}/>
-                    </div>
-                    <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>
-                      EN/DE se generují automaticky z CZ. Změny se projeví po uložení a přegenerování webu.
-                    </p>
-                  </>
-                )}
-              </div>
-            </details>
 
             <div className="rgrid rgrid-3">
               <div>
