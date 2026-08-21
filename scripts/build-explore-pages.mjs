@@ -114,7 +114,7 @@ const UI = {
 
 // ── Statické stránky (O projektu, Jak hrát) ─────────────────────────────────
 // Kontakt je záměrně placeholder — e-mail doplní provozovatel (osobní údaj).
-const CONTACT_PLACEHOLDER = '[doplň kontaktní e-mail]'
+const CONTACT_PLACEHOLDER = 'historyguesser.net@gmail.com'
 const STATIC = {
   cs: {
     about: {
