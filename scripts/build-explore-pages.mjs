@@ -8,7 +8,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   SITE_ORIGIN, LOCALES, PATH_SEG, CATEGORIES, CATEGORY_KEYS,
-  eventPath, categoryPath, exploreListPath, abs, playEventPath,
+  eventPath, categoryPath, exploreListPath, campaignPath, abs, playEventPath,
   eventSlugFor, eventTitleFor, eventDescriptionFor, eventStoryFor,
   escapeHtml, formatYear, slugify,
 } from './explore-shared.mjs'
@@ -49,6 +49,8 @@ const UI = {
       ['Získej body', 'Čím blíž skutečnému místu a roku, tím víc bodů, úrovní a odznaků.'],
     ],
     featuredTitle: 'Vybrané okamžiky',
+    campKicker: 'Kampaň', campRounds: 'kol', campPlay: 'Hrát kampaň',
+    campTimeline: 'Kola kampaně', campaignsTitle: 'Kampaně',
   },
   en: {
     home: 'Home', explore: 'Explore history',
@@ -76,6 +78,8 @@ const UI = {
       ['Earn points', 'The closer to the real place and year, the more points, levels and badges you earn.'],
     ],
     featuredTitle: 'Featured moments',
+    campKicker: 'Campaign', campRounds: 'rounds', campPlay: 'Play campaign',
+    campTimeline: 'Campaign rounds', campaignsTitle: 'Campaigns',
   },
   de: {
     home: 'Start', explore: 'Geschichte entdecken',
@@ -103,6 +107,8 @@ const UI = {
       ['Punkte sammeln', 'Je näher am echten Ort und Jahr, desto mehr Punkte, Level und Abzeichen.'],
     ],
     featuredTitle: 'Ausgewählte Momente',
+    campKicker: 'Kampagne', campRounds: 'Runden', campPlay: 'Kampagne spielen',
+    campTimeline: 'Kampagnen-Runden', campaignsTitle: 'Kampagnen',
   },
 }
 
@@ -212,6 +218,30 @@ async function fetchEvents() {
   }
   if (!res.ok) throw new Error(`Supabase fetch ${res.status}: ${await res.text()}`)
   return res.json()
+}
+
+/** Publikované kampaně + jejich kola. Vrací [] když anon nemá přístup (před migrací 20260821140000). */
+async function fetchCampaigns(eventsById) {
+  const H = { apikey: ANON, Authorization: `Bearer ${ANON}` }
+  const cRes = await fetch(`${SUPA}/rest/v1/campaigns?select=id,slug,title,title_en,title_de,description,description_en,description_de,visual_url,rounds_count,status&status=eq.published&order=seq.asc`, { headers: H })
+  if (!cRes.ok) { console.warn(`[explore] Kampaně nedostupné (${cRes.status}) — přeskakuji. Aplikuj migraci 20260821140000.`); return [] }
+  const campaigns = await cRes.json()
+  if (!campaigns.length) return []
+  const eRes = await fetch(`${SUPA}/rest/v1/campaign_events?select=campaign_id,position,event_id,is_active&order=position.asc`, { headers: H })
+  const links = eRes.ok ? await eRes.json() : []
+  const byCamp = new Map()
+  for (const l of links) {
+    if (!l.is_active) continue
+    const ev = eventsById.get(l.event_id)
+    if (!ev) continue // jen publikované události (mají detail stránku)
+    if (!byCamp.has(l.campaign_id)) byCamp.set(l.campaign_id, [])
+    byCamp.get(l.campaign_id).push(ev)
+  }
+  for (const c of campaigns) {
+    c.slug = c.slug || slugify(c.title) || `kampan-${c.id.slice(0, 8)}`
+    c.events = byCamp.get(c.id) || []
+  }
+  return campaigns.filter((c) => c.events.length) // bez kol nemá smysl generovat
 }
 
 /** Doplní chybějící slugy lokálně (kdyby migrace ještě neproběhla), aby build nepadal. */
@@ -731,6 +761,129 @@ ${footerHtml(locale)}
 `
 }
 
+// ── Detail kampaně ──────────────────────────────────────────────────────────
+function campTitleFor(c, locale) {
+  if (locale === 'en') return c.title_en || c.title
+  if (locale === 'de') return c.title_de || c.title
+  return c.title
+}
+function campDescFor(c, locale) {
+  if (locale === 'en') return c.description_en || c.description || ''
+  if (locale === 'de') return c.description_de || c.description || ''
+  return c.description || ''
+}
+
+function renderCampaign(locale, c, all) {
+  const t = UI[locale]
+  const seg = PATH_SEG[locale]
+  const title = campTitleFor(c, locale)
+  const desc = campDescFor(c, locale)
+  const path = campaignPath(locale, c.slug)
+  const canonical = abs(path)
+  const img = c.visual_url || (c.events[0] ? imgFor(c.events[0]) : '')
+  const metaTitle = `${title} — ${t.metaSuffix}`
+  const metaDesc = (desc || `${title}. ${t.tagline}.`).slice(0, 300)
+
+  const alternates = LOCALES.map((l) => ({ l, href: abs(campaignPath(l, c.slug)) }))
+  const crumbs = [
+    { name: t.home, path: `/${locale}` },
+    { name: t.campaignsTitle, path: exploreListPath(locale) },
+    { name: title, path },
+  ]
+
+  const timeline = c.events.map((ev, i) => {
+    const slug = eventSlugFor(ev, locale)
+    const evImg = imgFor(ev)
+    return `
+          <a class="camp-round" href="${eventPath(locale, slug)}">
+            <span class="camp-round-num">${String(i + 1).padStart(2, '0')}</span>
+            <div class="camp-round-thumb">${evImg ? `<img loading="lazy" src="${escapeHtml(evImg)}" alt="">` : ''}</div>
+            <div class="camp-round-body">
+              <span class="camp-round-meta">${escapeHtml(formatYear(ev.year, locale))}</span>
+              <span class="camp-round-title">${escapeHtml(eventTitleFor(ev, locale))}</span>
+              <span class="camp-round-more">${escapeHtml(t.playCta)} →</span>
+            </div>
+          </a>`
+  }).join('')
+
+  const prose = desc.trim()
+    ? desc.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p.trim())}</p>`).join('\n        ')
+    : ''
+
+  const ld = [
+    {
+      '@context': 'https://schema.org', '@type': 'Course',
+      name: title, description: metaDesc, url: canonical, inLanguage: locale,
+      provider: { '@type': 'Organization', name: 'Historyguesser' },
+    },
+    breadcrumbLd(crumbs),
+    {
+      '@context': 'https://schema.org', '@type': 'ItemList',
+      numberOfItems: c.events.length,
+      itemListElement: c.events.map((ev, i) => ({
+        '@type': 'ListItem', position: i + 1,
+        url: abs(eventPath(locale, eventSlugFor(ev, locale))),
+        name: eventTitleFor(ev, locale),
+      })),
+    },
+  ]
+
+  return `<!doctype html>
+<html lang="${locale}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>${escapeHtml(metaTitle)}</title>
+  <meta name="description" content="${escapeHtml(metaDesc)}" />
+  <link rel="canonical" href="${canonical}" />
+  ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
+  <link rel="alternate" hreflang="x-default" href="${abs(campaignPath('cs', c.slug))}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:description" content="${escapeHtml(metaDesc)}" />
+  <meta property="og:url" content="${canonical}" />
+  ${img ? `<meta property="og:image" content="${escapeHtml(img)}" />` : ''}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/explore.css" />
+  <script type="application/ld+json">
+${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
+  </script>
+</head>
+<body class="xp">
+  <header class="xp-hero" ${img ? `style="--hero-img:url('${escapeHtml(img)}')"` : ''}>
+    <div class="xp-hero-scrim"></div>
+    <nav class="xp-topbar" aria-label="Historyguesser">
+      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.campPlay)}</a>
+    </nav>
+    <div class="xp-hero-inner">
+      <nav class="xp-breadcrumb" aria-label="breadcrumb">
+        ${crumbs.map((cc, i) => i < crumbs.length - 1
+          ? `<a href="${cc.path}">${escapeHtml(cc.name)}</a><span aria-hidden="true">/</span>`
+          : `<span aria-current="page">${escapeHtml(cc.name)}</span>`).join('\n        ')}
+      </nav>
+      <span class="xp-kicker">${escapeHtml(t.campKicker)}</span>
+      <h1>${escapeHtml(title)}</h1>
+      <div class="xp-hero-meta"><span>${c.events.length} ${escapeHtml(t.campRounds)}</span></div>
+    </div>
+  </header>
+
+  <main class="xp-doc-main">
+    ${prose ? `<div class="xp-prose">\n        ${prose}\n    </div>` : ''}
+    <h2 class="camp-timeline-title">${escapeHtml(t.campTimeline)}</h2>
+    <div class="camp-timeline">${timeline}
+    </div>
+    <div class="camp-cta"><a class="xp-btn-primary" href="/menu">${escapeHtml(t.campPlay)}</a></div>
+  </main>
+
+${footerHtml(locale)}
+</body>
+</html>
+`
+}
+
 // ── Běh ─────────────────────────────────────────────────────────────────────
 if (!existsSync(dist)) {
   console.error('[explore] dist/ nenalezen — spusť po `vite build`.')
@@ -766,6 +919,31 @@ for (const locale of LOCALES) {
   mkdirSync(homeDir, { recursive: true })
   writeFileSync(resolve(homeDir, 'index.html'), renderHome(locale, events), 'utf8')
   sitemap.push({ loc: abs(`/${locale}`), lastmod: new Date().toISOString().slice(0, 10) })
+}
+
+// Kampaně (vyžadují migraci 20260821140000 — jinak fetchCampaigns vrátí [])
+const eventsById = new Map(events.map((e) => [e.id, e]))
+let campaigns = []
+try { campaigns = await fetchCampaigns(eventsById) } catch (err) { console.warn(`[explore] Kampaně: ${err.message}`) }
+// Dev-only náhled šablony kampaně bez přístupu k datům: EXPLORE_MOCK_CAMPAIGN=1
+if (!campaigns.length && process.env.EXPLORE_MOCK_CAMPAIGN) {
+  campaigns = [{
+    id: 'mock', slug: 'ukazkova-kampan',
+    title: 'Vzestup a pád Napoleona', title_en: 'Rise and Fall of Napoleon', title_de: 'Aufstieg und Fall Napoleons',
+    description: 'Od dělostřeleckého důstojníka k císaři a zpět do exilu. Pět okamžiků, které vystihují jednu z nejrychlejších politických drah v dějinách Evropy.\n\nKaždé kolo tě postaví na jedno z míst Napoleonova příběhu — od bitev po podepsané smlouvy.',
+    events: events.slice(0, 5),
+  }]
+  console.warn('[explore] MOCK kampaň vygenerována (jen pro náhled šablony).')
+}
+let campCount = 0
+for (const c of campaigns) {
+  for (const locale of LOCALES) {
+    const dir = resolve(dist, locale, PATH_SEG[locale].campaigns, c.slug)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(resolve(dir, 'index.html'), renderCampaign(locale, c, events), 'utf8')
+    sitemap.push({ loc: abs(campaignPath(locale, c.slug)), lastmod: new Date().toISOString().slice(0, 10) })
+    campCount++
+  }
 }
 
 // Statické stránky (O projektu, Jak hrát)
@@ -821,4 +999,5 @@ writeFileSync(robotsPath, robots, 'utf8')
 
 console.log(`[explore] ✓ ${events.length} událostí × ${LOCALES.length} jazyky = ${count} stránek`)
 console.log(`[explore] ✓ výpis + kategorie = ${listCount} stránek`)
+if (campCount) console.log(`[explore] ✓ kampaně = ${campCount} stránek (${campaigns.length} × ${LOCALES.length})`)
 console.log(`[explore] ✓ sitemap.xml (${sitemap.length} URL), robots.txt`)

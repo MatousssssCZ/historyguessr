@@ -73,6 +73,7 @@ export function slugify(input) {
 export const exploreListPath = (l) => `/${l}/${PATH_SEG[l].explore}`
 export const categoryPath = (l, key) => `/${l}/${PATH_SEG[l].explore}/${CATEGORIES[key][l].slug}`
 export const eventPath = (l, slug) => `/${l}/${PATH_SEG[l].events}/${slug}`
+export const campaignPath = (l, slug) => `/${l}/${PATH_SEG[l].campaigns}/${slug}`
 export const abs = (p) => `${SITE_ORIGIN}${p}`
 export const playEventPath = (id) => `/play?event=${encodeURIComponent(id)}`
 

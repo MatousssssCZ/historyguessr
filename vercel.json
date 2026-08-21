@@ -4,6 +4,7 @@
     { "source": "/en", "destination": "/en/index.html" },
     { "source": "/de", "destination": "/de/index.html" },
     { "source": "/:lang(cs|en|de)/:seg(udalosti|events|ereignisse)/:slug", "destination": "/:lang/:seg/:slug/index.html" },
+    { "source": "/:lang(cs|en|de)/:seg(kampane|campaigns|kampagnen)/:slug", "destination": "/:lang/:seg/:slug/index.html" },
     { "source": "/:lang(cs|en|de)/:seg(objevuj|explore|entdecken)", "destination": "/:lang/:seg/index.html" },
     { "source": "/:lang(cs|en|de)/:seg(o-projektu|about|ueber-uns|jak-hrat|how-to-play|spielanleitung)", "destination": "/:lang/:seg/index.html" },
     { "source": "/:lang(cs|en|de)/:seg(objevuj|explore|entdecken)/:cat", "destination": "/:lang/:seg/:cat/index.html" },
