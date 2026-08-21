@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/en", "destination": "/en/index.html" },
     { "source": "/de", "destination": "/de/index.html" },
+    { "source": "/:lang(cs|en|de)/:seg(udalosti|events|ereignisse)/:slug", "destination": "/:lang/:seg/:slug/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

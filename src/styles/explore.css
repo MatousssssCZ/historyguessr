@@ -1,0 +1,135 @@
+/* Historyguesser — Explore (veřejné SEO stránky). Design dle handoffu Claude Design.
+   Samostatná vrstva: NEsdílí se s herní SPA appkou. Dvě poloviny — tmavý hero
+   (hra) → světlá čtenářská sekce. */
+
+:root {
+  /* Tmavá vrstva */
+  --hg-ink-900: #14110D;
+  --hg-ink-800: #1C1813;
+  --hg-ink-700: #1F1B16;
+  /* Světlá čtenářská vrstva */
+  --hg-paper: #FBF7F0;
+  --hg-paper-sunk: #F3EDE2;
+  --hg-body: #3E362C;
+  --hg-body-soft: #5C5347;
+  --hg-muted: #6F6455; /* nejsvětlejší povolený text (5.4:1) */
+  /* Značka */
+  --hg-brand: #BE6240;      /* CTA výplň */
+  --hg-brand-text: #A34E30; /* oranžová jako text na papíru (4.9:1) */
+  --hg-brand-light: #E9A183;
+  --hg-gold: #E8C88A;
+  /* Sklo nad panoramatem */
+  --hg-glass-bg: rgba(28,24,19,.5);
+  --hg-glass-bd: rgba(251,247,240,.16);
+  --hg-scrim: linear-gradient(180deg, rgba(16,13,10,.72) 0%, rgba(16,13,10,.38) 45%, rgba(16,13,10,.94) 100%);
+  /* Rádiusy / stíny */
+  --hg-r-md: 12px; --hg-r-lg: 16px; --hg-r-xl: 19px; --hg-r-pill: 999px;
+  --hg-shadow-cta: 0 22px 46px -20px rgba(190,98,64,.95);
+  --hg-shadow-soft: 0 2px 10px -4px rgba(31,27,22,.12);
+  /* Fonty */
+  --hg-display: 'Newsreader', Georgia, serif;
+  --hg-ui: 'Hanken Grotesk', system-ui, sans-serif;
+  --hg-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body.xp {
+  font-family: var(--hg-ui);
+  color: var(--hg-body);
+  background: var(--hg-paper);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+body.xp a { color: inherit; }
+
+/* ── Hero (tmavý, nad panoramatem) ─────────────────────────────────────── */
+.xp-hero {
+  position: relative;
+  min-height: 420px;
+  background-color: var(--hg-ink-900);
+  background-image: var(--hero-img);
+  background-size: cover;
+  background-position: center;
+  color: var(--hg-paper);
+  display: flex;
+  flex-direction: column;
+  padding: max(env(safe-area-inset-top), 0px) 0 0;
+}
+.xp-hero-scrim { position: absolute; inset: 0; background: var(--hg-scrim); pointer-events: none; }
+.xp-topbar {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 74px; padding: 0 26px; gap: 16px;
+}
+.xp-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--hg-display); font-size: 19px; text-decoration: none; color: var(--hg-paper); }
+.xp-logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--hg-brand); display: inline-block; }
+.xp-hero-inner { position: relative; z-index: 1; margin-top: auto; padding: 26px; max-width: 1120px; width: 100%; margin-left: auto; margin-right: auto; }
+.xp-breadcrumb { font-family: var(--hg-mono); font-size: 11px; letter-spacing: .04em; color: rgba(251,247,240,.72); display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.xp-breadcrumb a { color: rgba(251,247,240,.72); text-decoration: none; }
+.xp-breadcrumb a:hover { color: var(--hg-paper); text-decoration: underline; }
+.xp-breadcrumb [aria-current] { color: var(--hg-paper); }
+.xp-hero h1 { font-family: var(--hg-display); font-weight: 400; font-size: clamp(32px, 5vw, 56px); line-height: 1.06; letter-spacing: -.03em; margin: 0 0 14px; max-width: 900px; }
+.xp-hero-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-family: var(--hg-mono); font-size: 12px; letter-spacing: .08em; color: var(--hg-gold); }
+.xp-cat { padding: 4px 9px; border-radius: 6px; background: rgba(190,98,64,.22); border: 1px solid rgba(233,161,131,.4); color: var(--hg-brand-light); font-weight: 600; }
+
+/* ── Hlavní grid (světlá čtenářská sekce) ──────────────────────────────── */
+.xp-main {
+  max-width: 1120px; margin: 0 auto; padding: 48px 26px 64px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 48px;
+}
+.xp-article { min-width: 0; }
+.xp-article h2 { font-family: var(--hg-display); font-weight: 400; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.025em; color: var(--hg-ink-700); margin: 0 0 18px; }
+.xp-related h2 { margin-top: 44px; }
+.xp-prose { max-width: 720px; font-size: 15px; line-height: 1.72; color: var(--hg-body); text-wrap: pretty; }
+.xp-prose p { margin: 0 0 16px; }
+.xp-prose .lede { font-family: var(--hg-display); font-size: 20px; line-height: 1.4; color: var(--hg-ink-700); margin-bottom: 20px; }
+
+/* Související karty */
+.rel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.rel-card { background: var(--hg-paper); border: 1px solid rgba(31,27,22,.1); border-radius: 14px; overflow: hidden; text-decoration: none; display: block; transition: box-shadow .15s, transform .15s; }
+.rel-card:hover { box-shadow: var(--hg-shadow-soft); transform: translateY(-2px); }
+.rel-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: var(--hg-paper-sunk); }
+.rel-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; }
+.rel-year { font-family: var(--hg-mono); font-size: 10px; letter-spacing: .1em; color: var(--hg-muted); }
+.rel-title { font-family: var(--hg-display); font-size: 17px; line-height: 1.2; color: var(--hg-ink-700); }
+
+/* ── Sticky panel faktů ────────────────────────────────────────────────── */
+.xp-side { min-width: 0; }
+.xp-facts { position: sticky; top: 24px; background: var(--hg-paper-sunk); border: 1px solid rgba(31,27,22,.09); border-radius: var(--hg-r-lg); padding: 20px; }
+.xp-facts-title { font-family: var(--hg-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--hg-muted); margin-bottom: 14px; }
+.xp-facts dl { margin: 0 0 18px; display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; }
+.xp-facts dt { font-family: var(--hg-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--hg-muted); text-transform: uppercase; align-self: center; }
+.xp-facts dd { margin: 0; font-size: 14px; color: var(--hg-body); }
+.xp-recon { font-family: var(--hg-mono); font-size: 10px; line-height: 1.5; color: var(--hg-muted); margin: 14px 0 0; }
+
+/* ── Tlačítka ──────────────────────────────────────────────────────────── */
+.xp-btn-primary {
+  display: flex; align-items: center; justify-content: center;
+  padding: 15px 22px; border-radius: 15px; background: var(--hg-brand);
+  box-shadow: var(--hg-shadow-cta); color: var(--hg-paper);
+  font-weight: 700; font-size: 15px; text-decoration: none; text-align: center;
+}
+.xp-btn-primary:hover { filter: brightness(1.05); }
+.xp-btn-ghost {
+  padding: 10px 18px; border-radius: 13px;
+  background: rgba(251,247,240,.12); backdrop-filter: blur(14px);
+  border: 1px solid rgba(251,247,240,.3); color: var(--hg-paper);
+  font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap;
+}
+.xp-btn-ghost:hover { background: rgba(251,247,240,.2); }
+
+/* ── Footer (tmavý uzávěr) ─────────────────────────────────────────────── */
+.xp-footer { background: var(--hg-ink-800); color: rgba(251,247,240,.7); text-align: center; padding: 32px 26px; font-size: 13px; }
+.xp-footer a { color: var(--hg-paper); text-decoration: none; font-family: var(--hg-display); }
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .xp-main { grid-template-columns: 1fr; gap: 32px; }
+  .xp-facts { position: static; }
+  .xp-hero { min-height: 340px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rel-card { transition: none; }
+}
