@@ -2,7 +2,7 @@
   "name": "HistoryGuesser",
   "short_name": "HistoryGuesser",
   "description": "Uhádni místo a rok historické události",
-  "start_url": "/",
+  "start_url": "/menu",
   "display": "standalone",
   "background_color": "#f5f1e8",
   "theme_color": "#2a1f17",
