@@ -64,6 +64,12 @@ body.xp a { color: inherit; }
 }
 .xp-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--hg-display); font-size: 19px; text-decoration: none; color: var(--hg-paper); }
 .xp-logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--hg-brand); display: inline-block; }
+/* Horní navigační pilulka (jako v appce) */
+.xp-nav { display: flex; gap: 3px; padding: 5px; background: rgba(24,20,15,.5); border: 1px solid rgba(251,247,240,.16); border-radius: 15px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.xp-nav::-webkit-scrollbar { display: none; }
+.xp-nav-link { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 11px; font-family: var(--hg-ui); font-weight: 600; font-size: 13px; text-decoration: none; color: rgba(251,247,240,.8); white-space: nowrap; transition: background .15s, color .15s; }
+.xp-nav-link:hover { color: var(--hg-paper); background: rgba(251,247,240,.1); }
+.xp-nav-link.is-active { background: var(--hg-paper); color: #26211c; font-weight: 700; }
 .xp-hero-inner { position: relative; z-index: 1; margin-top: auto; padding: 26px; max-width: 1120px; width: 100%; margin-left: auto; margin-right: auto; }
 .xp-back {
   display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;

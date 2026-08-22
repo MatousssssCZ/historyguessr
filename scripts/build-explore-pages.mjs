@@ -28,6 +28,7 @@ const UI = {
     whatHappened: 'Co se tady stalo?', whyImportant: 'Proč to bylo důležité?',
     related: 'Související události', facts: 'Fakta', dateL: 'Datum', placeL: 'Místo',
     periodL: 'Období', yearL: 'Rok', back: 'Zpět', categoryL: 'Kategorie', play: 'Zahrát tuto událost',
+    navBadges: 'Odznaky', navFriends: 'Přátelé', navExplore: 'Objevuj',
     view360: 'Prohlédnout ve 360°', explore_cta: 'Objevit historii',
     reconstruction: 'Panorama je historicky pravděpodobná rekonstrukce vytvořená pomocí AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr pro historii',
@@ -57,6 +58,7 @@ const UI = {
     whatHappened: 'What happened here?', whyImportant: 'Why did it matter?',
     related: 'Related events', facts: 'Facts', dateL: 'Date', placeL: 'Place',
     periodL: 'Period', yearL: 'Year', back: 'Back', categoryL: 'Category', play: 'Play this event',
+    navBadges: 'Badges', navFriends: 'Friends', navExplore: 'Explore',
     view360: 'View in 360°', explore_cta: 'Explore history',
     reconstruction: 'The panorama is a historically plausible reconstruction created with AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr for history',
@@ -86,6 +88,7 @@ const UI = {
     whatHappened: 'Was geschah hier?', whyImportant: 'Warum war es wichtig?',
     related: 'Verwandte Ereignisse', facts: 'Fakten', dateL: 'Datum', placeL: 'Ort',
     periodL: 'Epoche', yearL: 'Jahr', back: 'Zurück', categoryL: 'Kategorie', play: 'Dieses Ereignis spielen',
+    navBadges: 'Abzeichen', navFriends: 'Freunde', navExplore: 'Entdecken',
     view360: 'In 360° ansehen', explore_cta: 'Geschichte entdecken',
     reconstruction: 'Das Panorama ist eine historisch plausible, mit KI erstellte Rekonstruktion.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr für Geschichte',
@@ -292,6 +295,21 @@ function storyHtml(story, desc, t) {
   return text.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p.trim())}</p>`).join('\n        ')
 }
 
+// Horní navigační pilulka (jako v appce) — statické odkazy do sekcí appky.
+// active: 'home' | 'campaigns' | 'badges' | 'friends' | 'explore' | '' (nic).
+function navPill(locale, active) {
+  const t = UI[locale]
+  const items = [
+    { k: 'home', label: t.home, href: '/menu' },
+    { k: 'campaigns', label: t.campaignsTitle, href: '/campaigns' },
+    { k: 'badges', label: t.navBadges, href: '/stats' },
+    { k: 'friends', label: t.navFriends, href: '/friends' },
+    { k: 'explore', label: t.navExplore, href: exploreListPath(locale) },
+  ]
+  return `<nav class="xp-nav" aria-label="${escapeHtml(t.explore)}">${items.map((i) =>
+    `<a class="xp-nav-link${i.k === active ? ' is-active' : ''}" href="${i.href}">${escapeHtml(i.label)}</a>`).join('')}</nav>`
+}
+
 function jsonLd(ev, locale, canonicalUrl, cat) {
   const graph = [{
     '@type': ev.category === 'places' ? 'Place' : 'Event',
@@ -395,7 +413,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="${escapeHtml(t.explore)}">
       <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
-      <a class="xp-btn-ghost" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
+      ${navPill(locale, 'explore')}
     </nav>
     <div class="xp-hero-inner">
       <a class="xp-back" href="${cat ? categoryPath(locale, catKey) : exploreListPath(locale)}" onclick="if(history.length>1){history.back();return false}">← ${escapeHtml(t.back)}</a>
@@ -539,7 +557,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="${escapeHtml(t.explore)}">
       <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
-      <a class="xp-btn-ghost" href="/menu">${escapeHtml(t.home)}</a>
+      ${navPill(locale, 'explore')}
     </nav>
     <div class="xp-hero-inner">
       <nav class="xp-breadcrumb" aria-label="breadcrumb">
@@ -634,7 +652,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="Historyguesser">
       <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
-      <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.homePlay)}</a>
+      ${navPill(locale, '')}
     </nav>
     <div class="xp-hero-inner">
       <nav class="xp-breadcrumb" aria-label="breadcrumb">
@@ -753,7 +771,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="Historyguesser">
       <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
-      <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.campPlay)}</a>
+      ${navPill(locale, 'campaigns')}
     </nav>
     <div class="xp-hero-inner">
       <nav class="xp-breadcrumb" aria-label="breadcrumb">
