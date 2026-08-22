@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getFriendsWeekScores, type DailyResult, type FriendWeekScore } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, type DailyResult } from '@/lib/supabase'
 import { isPremiumUser } from '@/lib/entitlements'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import MobileNav from '@/components/MobileNav'
-import DesktopSidebar from '@/components/DesktopSidebar'
 import Icon, { type IconName } from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
@@ -59,7 +58,6 @@ export default function MenuPage() {
   const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
   const [countdown, setCountdown] = useState('')
   const [friendReqs, setFriendReqs] = useState(0)
-  const [friendsWeek, setFriendsWeek] = useState<FriendWeekScore[]>([])
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
@@ -208,14 +206,6 @@ export default function MenuPage() {
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
 
-  // „Přátelé dnes" — jen registrovaní; host nemá přátele
-  useEffect(() => {
-    if (isAnonymous) { setFriendsWeek([]); return }
-    let alive = true
-    getFriendsWeekScores().then(r => { if (alive) setFriendsWeek(r) }).catch(() => {})
-    return () => { alive = false }
-  }, [isAnonymous])
-
   const hour = new Date().getHours()
   const greet = t(hour < 11 ? 'menu.greetMorning' : hour < 18 ? 'menu.greetAfternoon' : 'menu.greetEvening')
   const dateStr = new Date().toLocaleDateString(currentLocale(), { weekday: 'short', day: 'numeric', month: 'long' }).toUpperCase()
@@ -227,6 +217,17 @@ export default function MenuPage() {
   const goResume = () => navigate('/game', { state: { resume: true } })
 
   const dailyProps = { heroImgs, dailyState, countdown, streak: dailyStreak, week: dailyWeek, onPlay: goDaily }
+
+  // Nejbližší odznak (napříč kategoriemi) — pro kartu Level na desktopu
+  let nearest: { name: string; icon: string; have: number; need: number } | null = null
+  for (const cat of ACHIEVEMENTS) {
+    if (cat.id === 'streak') continue
+    const hits = catHits[cat.id] ?? 0
+    const { next } = tierProgress(cat.tiers, hits)
+    if (next && (!nearest || (next.count - hits) < (nearest.need - nearest.have))) {
+      nearest = { name: next.name, icon: next.icon, have: hits, need: next.count }
+    }
+  }
 
   // Poslední dlaždice: „Přidat na plochu". Zmizí, když už app běží nainstalovaná
   // nebo si ji hráč odklikl v průvodci.
@@ -249,55 +250,140 @@ export default function MenuPage() {
 
   // ═══════════════════ DESKTOP ═══════════════════
   if (!isMobile) {
+    const loc = currentLocale()
+    const dot = (on: boolean) => ({ width: 7, height: 7, borderRadius: '50%', background: on ? '#E8C88A' : 'rgba(251,247,240,.28)' })
+    const nav: { label: string; onClick?: () => void; href?: string; active?: boolean }[] = [
+      { label: t('menu.navHome'), onClick: () => {}, active: true },
+      { label: t('menu.campaigns'), onClick: () => navigate('/campaigns') },
+      { label: t('menu.navBadges'), onClick: () => navigate('/stats') },
+      { label: t('menu.navFriends'), onClick: () => navigate('/friends') },
+      { label: t('menu.navExplore'), href: `/${loc}/${loc === 'en' ? 'explore' : loc === 'de' ? 'entdecken' : 'objevuj'}` },
+    ]
+    const modes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
+      { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick, primary: true },
+      { icon: 'sliders', title: t('menu.classicGame'), sub: t('menu.classicGameSubShort'), onClick: goClassic },
+      { icon: 'swords', title: t('menu.multiplayer'), sub: t('menu.multiplayerSub'), onClick: goMP },
+    ]
+    const GLASS = { background: 'rgba(20,16,12,.55)', backdropFilter: 'blur(18px) saturate(140%)', WebkitBackdropFilter: 'blur(18px) saturate(140%)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 20 } as const
+    const cardLabel = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: 'rgba(251,247,240,.5)' }
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex' }}>
-        <DesktopSidebar streak={dailyStreak}/>
-        <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '30px 40px 48px' }}>
-            {/* Header (přes celou šířku) */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--accent-deep)', marginBottom: 8 }}>{dateStr}</div>
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, color: 'var(--ink)', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{greet}, {name}</h1>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <HelpButton onClick={() => setShowHowTo(true)}/>
-                <LanguageSwitcher/>
-                <ThemeToggle variant="light"/>
+      <div style={{ position: 'relative', minHeight: '100dvh', background: '#14110D', color: '#FBF7F0', overflow: 'hidden' }}>
+        {/* Panorama na pozadí */}
+        <div style={{ position: 'absolute', inset: 0 }}>
+          {heroImgs.length > 0
+            ? <HeroSlideshow urls={heroImgs} scrimDark/>
+            : <div className="skeleton" style={{ position: 'absolute', inset: 0 }}/>}
+        </div>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(16,13,10,.78) 0%, rgba(16,13,10,.32) 42%, rgba(16,13,10,.93) 100%)', pointerEvents: 'none' }}/>
+
+        {/* Obsah */}
+        <div style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', display: 'flex', flexDirection: 'column', maxWidth: 1320, margin: '0 auto', padding: '0 32px', paddingTop: 'var(--safe-top)' }}>
+          {/* Topbar */}
+          <header style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', height: 74, gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 9, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Icon name="globe" size={17}/></span>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em' }}>Historyguesser</span>
+            </div>
+            <nav style={{ display: 'flex', gap: 3, padding: 5, background: 'rgba(24,20,15,.5)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 15 }}>
+              {nav.map((n) => {
+                const st: React.CSSProperties = { display: 'flex', alignItems: 'center', height: 36, padding: '0 16px', borderRadius: 11, fontFamily: 'var(--font-sans)', fontWeight: n.active ? 700 : 600, fontSize: 13, cursor: 'pointer', textDecoration: 'none', color: n.active ? '#26211C' : 'rgba(251,247,240,.75)', background: n.active ? '#FBF7F0' : 'transparent', border: 'none' }
+                return n.href
+                  ? <a key={n.label} href={n.href} style={st}>{n.label}</a>
+                  : <button key={n.label} onClick={n.onClick} style={st}>{n.label}</button>
+              })}
+            </nav>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#E8C88A' }}>🔥 {dailyStreak}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'rgba(251,247,240,.8)' }}>{t('menu.level').toUpperCase()} {lvl.level}</span>
+              <button onClick={() => navigate('/account')} style={{ width: 38, height: 38, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{name.charAt(0).toUpperCase()}</button>
+            </div>
+          </header>
+
+          {/* Hero tělo */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 372px', gap: 44, alignItems: 'end', padding: '32px 0' }}>
+            {/* Levý sloupec */}
+            <div style={{ maxWidth: 620 }}>
+              <div style={{ ...cardLabel, color: '#E9A183', marginBottom: 16 }}><span style={{ display: 'inline-flex', width: 6, height: 6, borderRadius: '50%', background: '#BE6240', marginRight: 8, verticalAlign: 'middle' }}/>{t('menu.dailyLabel').toUpperCase()} · {dateStr}</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: 15, color: 'rgba(251,247,240,.75)', marginBottom: 10 }}>{greet}, {name}</div>
+              <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(40px, 4.6vw, 60px)', lineHeight: 1.05, letterSpacing: '-0.03em', margin: '0 0 28px' }}>{t('menu.heroQuestion')}</h1>
+              <button onClick={goDaily} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 28px', borderRadius: 15, border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, boxShadow: '0 22px 46px -20px rgba(190,98,64,.95)' }}>
+                <Icon name="bolt" size={18}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { count: dailyStreak })}</span>
+                <span style={{ display: 'flex', gap: 5 }}>{(dailyWeek.length ? dailyWeek : Array.from({ length: 7 }, () => ({ played: false }))).slice(0, 7).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
-            {/* ── Hlavní sloupec ── */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <DailyHero {...dailyProps} tall/>
-
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', margin: '18px 0 13px' }}>{t('menu.newGame').toUpperCase()}</div>
-              <div style={{ background: 'rgba(217,119,87,0.06)', border: '1px solid rgba(217,119,87,0.16)', borderRadius: 18, padding: 12, marginBottom: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                  <ModeTile icon="bolt" title={t('menu.quickGame')} sub={t('menu.quickGameSubShort')} onClick={goQuick} recommended/>
-                  <ModeTile icon="sliders" title={t('menu.classicGame')} sub={t('menu.classicGameSubShort')} onClick={goClassic} iconBg="rgba(55,101,138,0.12)" iconColor="#37658A"/>
-                  <ModeTile icon="swords" title={t('menu.multiplayer')} sub={t('menu.multiplayerSub')} onClick={goMP} iconBg="rgba(78,122,80,0.14)" iconColor="#4E7A50"/>
+            {/* Pravý sloupec — karty */}
+            <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'stretch', justifyContent: 'center' }}>
+              {/* Nová hra */}
+              <div style={{ ...GLASS, padding: 16 }}>
+                <div style={{ ...cardLabel, marginBottom: 12 }}>{t('menu.newGame')}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {modes.map((m) => (
+                    <button key={m.title} onClick={m.onClick} style={{
+                      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+                      padding: '12px 14px', borderRadius: 14,
+                      background: m.primary ? 'rgba(190,98,64,.9)' : 'rgba(251,247,240,.05)',
+                      border: `1px solid ${m.primary ? 'rgba(233,161,131,.5)' : 'rgba(251,247,240,.1)'}`,
+                    }}>
+                      <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.primary ? 'rgba(251,247,240,.16)' : 'rgba(251,247,240,.08)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: '#FBF7F0' }}>{m.title}</span>
+                        <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.6)', marginTop: 1 }}>{m.sub}</span>
+                      </span>
+                      <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {resume && <div style={{ marginBottom: 16 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
+              {/* Level / XP */}
+              <button onClick={() => navigate('/leaderboard')} style={{ ...GLASS, padding: 18, textAlign: 'left', cursor: 'pointer', color: '#FBF7F0' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em' }}>{t('menu.level')} {lvl.level}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.6)' }}>{lvl.into.toLocaleString(loc)} / {lvl.need.toLocaleString(loc)} XP</span>
+                </div>
+                <div style={{ height: 7, borderRadius: 999, background: 'rgba(251,247,240,.12)', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ width: `${Math.round(lvl.pct * 100)}%`, height: '100%', background: ACCENT_GRAD, borderRadius: 999 }}/>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={cardLabel}>{t('menu.worldRank')}</div>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: '#E9A183', marginTop: 3 }}>{world ? `#${world.rank.toLocaleString(loc)}` : '—'}</div>
+                  </div>
+                  {nearest && (
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={cardLabel}>{t('menu.nearestBadges')}</div>
+                      <div style={{ fontSize: 13, color: '#FBF7F0', marginTop: 5 }}>{nearest.icon} {nearest.name} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.6)' }}>{nearest.have}/{nearest.need}</span></div>
+                    </div>
+                  )}
+                </div>
+              </button>
 
-              {isPremium
-                ? <RoadmapTile onClick={() => navigate('/roadmap')}/>
-                : isAnonymous
-                  ? <SaveProgressBanner onClick={() => navigate('/auth', { state: { mode: 'register' } })}/>
-                  : <PremiumBanner onClick={() => navigate('/premium')}/>}
-
-              {installTile && <div style={{ marginTop: 16 }}>{installTile}</div>}
-            </div>
-
-            {/* ── Pravý rail ── */}
-            <aside style={{ width: 300, flex: 'none', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'} onOpen={() => navigate('/leaderboard')}/>
-              <NearestBadges catHits={catHits} navigate={navigate}/>
-              {!isAnonymous && <FriendsWeek data={friendsWeek} navigate={navigate}/>}
+              {/* Pokračuj v kampani */}
+              <button onClick={() => navigate('/campaigns')} style={{ ...GLASS, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13, cursor: 'pointer', textAlign: 'left', color: '#FBF7F0' }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.08)', color: '#E9A183' }}><Icon name="swords" size={19}/></span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ ...cardLabel, display: 'block' }}>{t('menu.contCampaign')}</span>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, marginTop: 3 }}>{t('menu.campaigns')}</span>
+                </span>
+                <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18 }}>→</span>
+              </button>
             </aside>
+          </div>
+
+          {/* Spodní pruh */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, borderTop: '1px solid rgba(251,247,240,.14)', padding: '20px 0 calc(20px + var(--safe-bottom))' }}>
+            <a href={nav[4].href} style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: '#FBF7F0', fontFamily: 'var(--font-mono)', fontSize: 'clamp(18px, 2.2vw, 30px)', letterSpacing: '0.06em' }}>
+              <span style={{ fontSize: '1.1em' }}>↓</span> {t('menu.exploreHistory').toUpperCase()}
+            </a>
+            <div style={{ display: 'flex', gap: 22 }}>
+              <button onClick={() => setShowHowTo(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.howShort')}</button>
+              <a href={`/${loc}/${loc === 'en' ? 'about' : loc === 'de' ? 'ueber-uns' : 'o-projektu'}`} style={{ textDecoration: 'none', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.aboutShort')}</a>
+              <LanguageSwitcher/>
+              <ThemeToggle variant="dark"/>
             </div>
           </div>
         </div>
@@ -460,37 +546,6 @@ function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>;
 }
 
 // ─── Přátelé dnes (skóre za dnešek napříč režimy) ─────────
-function FriendsWeek({ data, navigate }: { data: FriendWeekScore[]; navigate: ReturnType<typeof useNavigate> }) {
-  const { t } = useTranslation()
-  const loc = currentLocale()
-  const rows = data.filter(r => r.score > 0 || r.is_me).slice(0, 6)
-
-  return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '15px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('menu.friendsWeek')}</span>
-        <button onClick={() => navigate('/friends')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.seeAll')}</button>
-      </div>
-      {rows.length === 0 ? (
-        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{t('menu.friendsWeekEmpty')}</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          {rows.map(r => {
-            const mono = (r.username || '?').trim().charAt(0).toUpperCase() || '?'
-            return (
-              <div key={r.user_id} style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                <span style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: r.is_me ? '#fff' : 'var(--ink-2)', background: r.is_me ? ACCENT_GRAD : 'var(--paper-300)' }}>{mono}</span>
-                <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sans)', fontWeight: r.is_me ? 700 : 500, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.is_me ? t('round.you') : r.username}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: r.is_me ? 700 : 500, fontSize: 13, color: r.is_me ? 'var(--accent)' : 'var(--ink)' }}>{r.score.toLocaleString(loc)}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // „?" tlačítko → onboarding
 function HelpButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation()
@@ -691,24 +746,6 @@ function RoadmapTile({ onClick }: { onClick: () => void }) {
 }
 
 // ─── Dlaždice režimu (desktop / sheet řádek) ──────────────
-function ModeTile({ icon, title, sub, onClick, recommended, iconBg, iconColor }: { icon: IconName; title: string; sub: string; onClick: () => void; recommended?: boolean; iconBg?: string; iconColor?: string }) {
-  const { t } = useTranslation()
-  return (
-    <button onClick={onClick} style={{
-      textAlign: 'left', cursor: 'pointer', width: '100%',
-      background: 'var(--surface)', border: '1px solid var(--line)',
-      borderRadius: 14, padding: 15,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-        <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: iconBg ?? (recommended ? ACCENT_GRAD : 'var(--paper-300)'), color: iconColor ?? (recommended ? '#fff' : 'var(--accent)') }}><Icon name={icon} size={21}/></div>
-        {recommended && <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, padding: '2px 6px', borderRadius: 20 }}>{t('menu.recommended').toUpperCase()}</span>}
-      </div>
-      <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{title}</div>
-      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{sub}</div>
-    </button>
-  )
-}
-
 // ─── Slideshow ilustračních obrázků (Ken Burns + prolínání) ──
 function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean }) {
   const [idx, setIdx] = useState(0)
