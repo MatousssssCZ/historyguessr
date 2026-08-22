@@ -686,16 +686,18 @@ function NavPill({ items }: { items: NavItem[] }) {
     if (el) { setPos({ left: el.offsetLeft, width: el.offsetWidth, on: true }); setLitIdx(i) }
   }
   useLayoutEffect(() => { moveTo(activeIndex) }, [activeIndex, items.length])
+  // Pozn.: slide na hover byl zatím odebrán (doladíme později) — indikátor jen
+  // sedí na aktivní položce.
   return (
-    <nav onMouseLeave={() => moveTo(activeIndex)} style={{ position: 'relative', display: 'flex', gap: 3, padding: 5, background: 'rgba(24,20,15,.5)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 15 }}>
+    <nav style={{ position: 'relative', display: 'flex', gap: 3, padding: 5, background: 'rgba(24,20,15,.5)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 15 }}>
       <span aria-hidden="true" style={{ position: 'absolute', top: 5, bottom: 5, left: pos.left, width: pos.width, background: '#FBF7F0', borderRadius: 11, opacity: pos.on ? 1 : 0, transition: 'left .3s cubic-bezier(.34,1.35,.5,1), width .3s cubic-bezier(.34,1.35,.5,1)', pointerEvents: 'none' }}/>
       {items.map((n, i) => {
         const lit = i === litIdx
         const st: React.CSSProperties = { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', height: 36, padding: '0 16px', borderRadius: 11, fontFamily: 'var(--font-sans)', fontWeight: lit ? 700 : 600, fontSize: 13, cursor: 'pointer', textDecoration: 'none', color: lit ? '#26211C' : 'rgba(251,247,240,.78)', background: 'transparent', border: 'none', transition: 'color .2s', whiteSpace: 'nowrap' }
         const setRef = (el: HTMLElement | null) => { refs.current[i] = el }
         return n.href
-          ? <a key={n.label} ref={setRef as (el: HTMLAnchorElement | null) => void} href={n.href} style={st} onMouseEnter={() => moveTo(i)}>{n.label}</a>
-          : <button key={n.label} ref={setRef as (el: HTMLButtonElement | null) => void} onClick={n.onClick} style={st} onMouseEnter={() => moveTo(i)}>{n.label}</button>
+          ? <a key={n.label} ref={setRef as (el: HTMLAnchorElement | null) => void} href={n.href} style={st}>{n.label}</a>
+          : <button key={n.label} ref={setRef as (el: HTMLButtonElement | null) => void} onClick={n.onClick} style={st}>{n.label}</button>
       })}
     </nav>
   )
