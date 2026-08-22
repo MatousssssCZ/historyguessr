@@ -886,6 +886,54 @@ let robots = existsSync(robotsPath) ? readFileSync(robotsPath, 'utf8') : 'User-a
 if (!robots.includes('Sitemap:')) robots += `Sitemap: ${SITE_ORIGIN}/sitemap.xml\n`
 writeFileSync(robotsPath, robots, 'utf8')
 
+// llms.txt — kurátorský index pro LLM/AI (GEO/LLM-SEO). Odkazuje na skutečný
+// vzdělávací obsah (výpis, kategorie, kampaně), ať ho AI umí najít a citovat.
+{
+  const catCounts = {}
+  for (const e of events) if (CATEGORY_KEYS.includes(e.category)) catCounts[e.category] = (catCounts[e.category] || 0) + 1
+  const L = []
+  L.push('# HistoryGuesser')
+  L.push('')
+  L.push('> HistoryGuesser je vzdělávací historická hra inspirovaná principem GeoGuessru. Hráč se ocitne uprostřed historické události v interaktivním 360° panoramatu, hledá stopy a určuje, kde na světě se nachází a v jakém roce se událost odehrála. Ke každé události patří i veřejná stránka s historickým popisem, mapou a souvislostmi — čitelná i bez hraní. Zdarma; volitelné Premium. Jazyky: čeština, angličtina, němčina.')
+  L.push('')
+  L.push('## Co to je')
+  L.push('- **Kategorie:** vzdělávací hra, geolokační hádání (GeoGuessr-style), historie')
+  L.push('- **Jak se hraje:** rozhlédni se po 360° panoramatu → klepnutím na mapu urči místo → posuvníkem odhadni rok')
+  L.push('- **Režimy:** sólo hra, denní výzva „Tento den v historii", historické kampaně, multiplayer až 12 hráčů')
+  L.push('- **Odlišnost od GeoGuessru:** kromě místa se hádá i rok historické události; obsah je vzdělávací')
+  L.push('')
+  L.push(`## Objevuj historii — veřejný vzdělávací obsah (${events.length} událostí)`)
+  L.push(`Katalog historických okamžiků s popisem, mapou a rokem. Každá událost má vlastní stránku (${LOCALES.join(', ')}).`)
+  L.push(`- Všechny události: ${abs(exploreListPath('cs'))}  (EN: ${abs(exploreListPath('en'))} · DE: ${abs(exploreListPath('de'))})`)
+  L.push('')
+  L.push('### Kategorie')
+  for (const k of CATEGORY_KEYS) {
+    if (!catCounts[k]) continue
+    L.push(`- ${CATEGORIES[k].cs.label} (${catCounts[k]}): ${abs(categoryPath('cs', k))}`)
+  }
+  L.push('')
+  if (campaigns.length) {
+    L.push('### Kampaně — série souvisejících událostí')
+    for (const c of campaigns) L.push(`- ${c.title}: ${abs(campaignPath('cs', c.slug))}`)
+    L.push('')
+  }
+  L.push('## Jak to funguje a o projektu')
+  L.push(`- Jak hrát: ${abs('/cs/jak-hrat')}`)
+  L.push(`- O projektu: ${abs('/cs/o-projektu')}`)
+  L.push('')
+  L.push('## Odkazy')
+  L.push(`- Web: ${SITE_ORIGIN}/`)
+  L.push(`- Kompletní mapa stránek (sitemap): ${SITE_ORIGIN}/sitemap.xml`)
+  L.push(`- Zásady ochrany údajů: ${SITE_ORIGIN}/privacy`)
+  L.push(`- Podmínky použití: ${SITE_ORIGIN}/terms`)
+  L.push('')
+  L.push('## Provozovatel')
+  L.push('- Nezávislý vzdělávací projekt, Česká republika')
+  L.push('- Kontakt: historyguesser.net@gmail.com')
+  L.push('')
+  writeFileSync(resolve(dist, 'llms.txt'), L.join('\n'), 'utf8')
+}
+
 console.log(`[explore] ✓ ${events.length} událostí × ${LOCALES.length} jazyky = ${count} stránek`)
 console.log(`[explore] ✓ výpis + kategorie = ${listCount} stránek`)
 if (campCount) console.log(`[explore] ✓ kampaně = ${campCount} stránek (${campaigns.length} × ${LOCALES.length})`)
