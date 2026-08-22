@@ -1,7 +1,4 @@
 {
-  "redirects": [
-    { "source": "/", "destination": "/cs", "permanent": false }
-  ],
   "rewrites": [
     { "source": "/cs", "destination": "/cs/index.html" },
     { "source": "/en", "destination": "/en/index.html" },
