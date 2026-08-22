@@ -25,8 +25,8 @@ import { GuessMap, ResultMap } from '@/components/GameMap'
 import { invalidateMenuCache } from '@/pages/Menu'
 import ShareResult from '@/components/ShareResult'
 import EraToggle from '@/components/EraToggle'
-import RoundResult, { type DetailTab } from '@/components/round/RoundResult'
-import RoundDetail, { type LeaderEntry, type Distribution } from '@/components/round/RoundDetail'
+import { C, F, SHADOW_CTA } from '@/components/round/RoundResult'
+import { type LeaderEntry, type Distribution, LeaderRow, DistributionCard } from '@/components/round/RoundDetail'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
 import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
@@ -627,7 +627,6 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
 }) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
-  const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
   const [showShare, setShowShare] = useState(false)
   // Mezikrok: popis události + hodnocení → skóre. Znovunavštívení (už odehráno) ho přeskočí.
   const [scoreShown, setScoreShown] = useState(alreadyPlayed)
@@ -721,19 +720,6 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
     </>)
   }
 
-  if (detailTab) {
-    return (
-      <RoundDetail
-        initialTab={detailTab}
-        title={eventTitle(event)}
-        subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
-        leaderboard={shown} playersToday={entries.length} distribution={distribution}
-        panorama={panorama} story={story} xpSection={xpSection}
-        onBack={() => setDetailTab(null)} ctaLabel={t('daily.menu')} onCta={onMenu}
-      />
-    )
-  }
-
   const ghost: CSSProperties = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }
   const secondary = isMakeup ? null : (<>
     <button onClick={() => setShowShare(true)} style={ghost}><Icon name="share" size={14}/> {t('daily.share')}</button>
@@ -745,17 +731,52 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
     {makeupCount > 0 && onMakeup && <button onClick={onMakeup} style={ghost}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
   </>)
 
+  // ── Mobil: sloučená výsledkovka — skóre + o události + žebříček + rozložení v jednom scrollu ──
+  const metric = (label: string, points: number, pct: number, color: string) => (
+    <div style={{ flex: 1, padding: '9px 11px', borderRadius: 13, background: C.bg }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ font: `600 10px ${F.ui}`, color: C.muted }}>{label}</span>
+        <span style={{ font: `600 10px ${F.mono}`, color: C.ink }}>{points}</span>
+      </div>
+      <div style={{ height: 4, borderRadius: 2, background: C.lineStrong, overflow: 'hidden' }}>
+        <div style={{ width: `${Math.round(Math.min(1, Math.max(0, pct)) * 100)}%`, height: '100%', borderRadius: 2, background: color }}/>
+      </div>
+    </div>
+  )
+  const secLabel = (txt: string) => <div style={{ font: `500 9.5px ${F.mono}`, letterSpacing: '.14em', color: C.muted, textTransform: 'uppercase' as const, margin: '20px 0 10px' }}>{txt}</div>
+
   return (<>
-    <RoundResult
-      map={map} roundLabel={null}
-      eventTitle={eventTitle(event)} eventYear={event.year}
-      scoreTotal={result.totalScore} scoreMax={1000}
-      distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
-      yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
-      praise={praise}
-      showDetail onOpenDetail={setDetailTab}
-      ctaLabel={t('daily.menu')} onCta={onMenu}
-      secondaryActions={secondary}    />
+    <div style={{ minHeight: '100dvh', background: C.bg, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      {/* Mapa (hero) */}
+      <div style={{ position: 'relative', height: 240 }}>{map}</div>
+      {/* Sloučený obsah */}
+      <div style={{ position: 'relative', marginTop: -22, background: C.surface, borderRadius: '24px 24px 0 0', borderTop: `1px solid ${C.line}`, padding: '18px 18px calc(env(safe-area-inset-bottom,0px) + 22px)', maxWidth: 520, marginInline: 'auto' }}>
+        <div style={{ marginBottom: 5, font: `500 9.5px ${F.mono}`, letterSpacing: '.14em', color: C.accent }}>{t('round.correctAnswer')}</div>
+        <h2 style={{ margin: '0 0 4px', font: `400 22px/1.22 ${F.display}`, color: C.ink }}>{eventTitle(event)} <span style={{ color: C.muted2 }}>· {formatYear(event.year)}</span></h2>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: praise ? 4 : 13 }}>
+          <span style={{ font: `400 34px ${F.display}`, letterSpacing: '-.02em', color: C.accent }}>{result.totalScore.toLocaleString(loc)}</span>
+          <span style={{ font: `500 12px ${F.ui}`, color: C.muted2 }}>/ 1000</span>
+        </div>
+        {praise && <div style={{ font: `700 14px ${F.ui}`, color: C.ink, marginBottom: 13 }}>{praise}</div>}
+        <div style={{ display: 'flex', gap: 9 }}>
+          {metric(t('round.kmOff', { d: formatDistance(result.distKm) }), result.locScore, result.locScore / 500, C.accent)}
+          {metric(t('round.yearsOff', { n: result.yrDiff }), result.yrScore, result.yrScore / 500, C.good)}
+        </div>
+
+        {secLabel(t('round.tabStory'))}
+        {story}
+
+        {secLabel(t('round.tabLeaderboard'))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {shown.map((e, i) => <LeaderRow key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
+        </div>
+        <div style={{ marginTop: 10 }}><DistributionCard dist={distribution} t={t}/></div>
+        {xpSection && <div style={{ marginTop: 12 }}>{xpSection}</div>}
+
+        <button type="button" onClick={onMenu} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer', marginTop: 18 }}>{t('daily.menu')} <span style={{ fontSize: 15 }}>→</span></button>
+        {secondary && <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>{secondary}</div>}
+      </div>
+    </div>
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     {challengeBanner}
   </>)
