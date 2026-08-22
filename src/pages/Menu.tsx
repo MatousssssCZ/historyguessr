@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, type DailyResult } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getHomeTeaser, type DailyResult, type TeaserEvent, type TeaserCampaign } from '@/lib/supabase'
+import { slugify } from '@/lib/slugify'
+import { eventTitle, eventDescription, localizedTitle } from '@/lib/eventLocale'
+import { eventPath, campaignPath, CATEGORIES, isCategoryKey, type ExploreLocale } from '@/lib/exploreUrls'
+import { formatYear } from '@/lib/scoring'
 import { isPremiumUser } from '@/lib/entitlements'
 import { levelFromXp, type LevelInfo } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
@@ -67,6 +71,7 @@ export default function MenuPage() {
   const [showInstall, setShowInstall] = useState(false)
   const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
   const [isPremium, setIsPremium] = useState(false)
+  const [teaser, setTeaser] = useState<{ events: TeaserEvent[]; campaigns: TeaserCampaign[] } | null>(null)
   useEffect(() => { getMyEntitlements().then(e => setIsPremium(isPremiumUser(e))).catch(() => {}) }, [])
 
   // „Jak hrát" se NEZOBRAZUJE automaticky — jen ručně přes „?" tlačítko
@@ -206,6 +211,13 @@ export default function MenuPage() {
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
 
+  // Teaser obsahu pod záhybem (načte se jednou; sekce se ukáže až po scrollu)
+  useEffect(() => {
+    let alive = true
+    getHomeTeaser(6).then(r => { if (alive) setTeaser(r) }).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
   const hour = new Date().getHours()
   const greet = t(hour < 11 ? 'menu.greetMorning' : hour < 18 ? 'menu.greetAfternoon' : 'menu.greetEvening')
   const dateStr = new Date().toLocaleDateString(currentLocale(), { weekday: 'short', day: 'numeric', month: 'long' }).toUpperCase()
@@ -267,7 +279,8 @@ export default function MenuPage() {
     const GLASS = { background: 'rgba(20,16,12,.55)', backdropFilter: 'blur(18px) saturate(140%)', WebkitBackdropFilter: 'blur(18px) saturate(140%)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 20 } as const
     const cardLabel = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: 'rgba(251,247,240,.5)' }
     return (
-      <div style={{ position: 'relative', minHeight: '100dvh', background: '#14110D', color: '#FBF7F0', overflow: 'hidden' }}>
+      <div style={{ background: '#14110D' }}>
+        <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden', background: '#14110D', color: '#FBF7F0' }}>
         {/* Panorama na pozadí */}
         <div style={{ position: 'absolute', inset: 0 }}>
           {heroImgs.length > 0
@@ -387,6 +400,137 @@ export default function MenuPage() {
             </div>
           </div>
         </div>
+        </section>
+
+        {/* ═══ Pod záhybem: obsahová vrstva (světlá) ═══ */}
+        {(() => {
+          const eloc = loc as ExploreLocale
+          const seg = { cs: { ex: 'objevuj', jk: 'jak-hrat', ab: 'o-projektu' }, en: { ex: 'explore', jk: 'how-to-play', ab: 'about' }, de: { ex: 'entdecken', jk: 'spielanleitung', ab: 'ueber-uns' } }[eloc] || { ex: 'objevuj', jk: 'jak-hrat', ab: 'o-projektu' }
+          const kicker = { fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#6F6455' }
+          const h2 = { fontFamily: 'var(--font-serif)', fontWeight: 400 as const, fontSize: 'clamp(28px, 3.2vw, 40px)', letterSpacing: '-0.03em', color: '#1F1B16', margin: '6px 0 0' }
+          const moreLink = { fontFamily: 'var(--font-sans)', fontWeight: 600 as const, fontSize: 13, color: '#A34E30', textDecoration: 'none', whiteSpace: 'nowrap' as const }
+          const steps = [
+            { icon: 'globe' as IconName, t: t('menu.s1t'), d: t('menu.s1d') },
+            { icon: 'pin' as IconName, t: t('menu.s2t'), d: t('menu.s2d') },
+            { icon: 'calendar' as IconName, t: t('menu.s3t'), d: t('menu.s3d') },
+            { icon: 'trophy' as IconName, t: t('menu.s4t'), d: t('menu.s4d') },
+          ]
+          return (
+            <main style={{ background: '#FBF7F0', color: '#3E362C' }}>
+              {/* Vybrané okamžiky */}
+              <section style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 32px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={kicker}>{t('menu.exploreHistory')}</div>
+                    <h2 style={h2}>{t('menu.teaserH2')}</h2>
+                  </div>
+                  <a href={`/${eloc}/${seg.ex}`} style={moreLink}>{t('menu.allEventsLink')} →</a>
+                </div>
+                <p style={{ maxWidth: 620, fontSize: 14.5, lineHeight: 1.7, color: '#5C5347', margin: '16px 0 32px' }}>{t('menu.teaserIntro')}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+                  {(teaser?.events ?? []).map((ev, i) => {
+                    const catKey = isCategoryKey(ev.category) ? ev.category : null
+                    return (
+                      <a key={i} href={eventPath(eloc, slugify(eventTitle(ev)))} style={{ background: '#FBF7F0', border: '1px solid rgba(31,27,22,.1)', borderRadius: 14, overflow: 'hidden', textDecoration: 'none', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 10px -4px rgba(31,27,22,.12)' }}>
+                        <div style={{ aspectRatio: '16/9', background: '#F3EDE2' }}>{ev.img && <img loading="lazy" src={ev.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>}</div>
+                        <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: '#6F6455', textTransform: 'uppercase' }}>
+                            <span style={{ color: '#A34E30' }}>{catKey ? CATEGORIES[catKey][eloc].label : ''}</span>
+                            <span>{formatYear(ev.year)}</span>
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 19, lineHeight: 1.15, color: '#1F1B16' }}>{eventTitle(ev)}</div>
+                          {eventDescription(ev) && <div style={{ fontSize: 12.5, lineHeight: 1.6, color: '#3E362C', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{eventDescription(ev)}</div>}
+                        </div>
+                      </a>
+                    )
+                  })}
+                </div>
+              </section>
+
+              {/* Jak to funguje */}
+              <section style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 32px 0' }}>
+                <div style={{ borderTop: '1px solid rgba(31,27,22,.1)', paddingTop: 40, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={kicker}>{t('menu.howShort')}</div>
+                    <h2 style={h2}>{t('menu.howH2')}</h2>
+                  </div>
+                  <a href={`/${eloc}/${seg.jk}`} style={moreLink}>{t('menu.howDetail')} →</a>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginTop: 28 }}>
+                  {steps.map((s, i) => (
+                    <div key={i} style={{ background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 16, padding: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <span style={{ color: '#A34E30' }}><Icon name={s.icon} size={20}/></span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#6F6455' }}>{String(i + 1).padStart(2, '0')}</span>
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: '#1F1B16', margin: '0 0 6px' }}>{s.t}</div>
+                      <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#5C5347' }}>{s.d}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Kampaně + O projektu */}
+              <section style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 32px 72px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+                  <div style={{ background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 18, padding: '24px 26px' }}>
+                    <div style={kicker}>{t('menu.campaigns')}</div>
+                    <h2 style={{ ...h2, fontSize: 'clamp(24px,2.6vw,30px)', margin: '6px 0 18px' }}>{t('menu.campH2')}</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {(teaser?.campaigns ?? []).map((c, i) => (
+                        <a key={i} href={c.slug ? campaignPath(eloc, c.slug) : `/${eloc}/${seg.ex}`} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#FBF7F0', border: '1px solid rgba(31,27,22,.1)', borderRadius: 12, padding: '14px 16px', textDecoration: 'none' }}>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, color: '#1F1B16' }}>{localizedTitle(c)}</span>
+                            <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#6F6455', marginTop: 3 }}>{c.yearFrom != null ? `${formatYear(c.yearFrom)}–${formatYear(c.yearTo ?? c.yearFrom)} · ` : ''}{c.count} {t('menu.roundsWord')}</span>
+                          </span>
+                          <span style={{ color: '#A34E30', fontSize: 18 }}>›</span>
+                        </a>
+                      ))}
+                      {(!teaser || teaser.campaigns.length === 0) && <div style={{ fontSize: 13, color: '#6F6455' }}>—</div>}
+                    </div>
+                  </div>
+                  <div style={{ background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 18, padding: '24px 26px' }}>
+                    <div style={kicker}>{t('menu.aboutShort')}</div>
+                    <h2 style={{ ...h2, fontSize: 'clamp(24px,2.6vw,30px)', margin: '6px 0 16px' }}>{t('menu.aboutH2')}</h2>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 12px' }}>{t('menu.aboutP1')}</p>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 16px' }}>{t('menu.aboutP2')}</p>
+                    <a href={`/${eloc}/${seg.ab}`} style={moreLink}>{t('menu.aboutMore')} →</a>
+                  </div>
+                </div>
+              </section>
+
+              {/* Tmavý footer */}
+              <footer style={{ background: '#1C1813', color: 'rgba(251,247,240,.7)' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 32px', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr', gap: 28 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <span style={{ width: 28, height: 28, borderRadius: 8, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Icon name="globe" size={15}/></span>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: '#FBF7F0' }}>Historyguesser</span>
+                    </div>
+                    <p style={{ fontSize: 13, lineHeight: 1.6, color: 'rgba(251,247,240,.55)', margin: 0 }}>{t('menu.ftTagline')}</p>
+                  </div>
+                  {[
+                    { h: t('menu.playShort'), items: [[t('menu.playShort'), '/play'], [t('menu.dailyLabel'), '/daily'], [t('menu.campaigns'), '/campaigns'], [t('menu.ftLeaderboard'), '/leaderboard']] as [string, string][] },
+                    { h: t('menu.ftColDiscover'), items: [[t('menu.exploreHistory'), `/${eloc}/${seg.ex}`], [t('menu.ftCategories'), `/${eloc}/${seg.ex}`]] as [string, string][] },
+                    { h: 'Historyguesser', items: [[t('menu.howShort'), `/${eloc}/${seg.jk}`], [t('menu.aboutShort'), `/${eloc}/${seg.ab}`], [t('menu.ftContact'), 'mailto:historyguesser.net@gmail.com']] as [string, string][] },
+                    { h: t('menu.ftColLegal'), items: [[t('menu.ftPrivacy'), '/privacy'], [t('menu.ftTerms'), '/terms']] as [string, string][] },
+                  ].map((col, ci) => (
+                    <div key={ci}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(251,247,240,.4)', marginBottom: 12 }}>{col.h}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                        {col.items.map(([label, href], ii) => (
+                          <a key={ii} href={href} style={{ fontSize: 13.5, color: 'rgba(251,247,240,.75)', textDecoration: 'none' }}>{label}</a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px 40px' }}><LanguageSwitcher/></div>
+              </footer>
+            </main>
+          )
+        })()}
+
         {showHowTo && <HowToPlay onClose={closeHowTo}/>}
         {showInstall && <InstallGuide showHideOption onClose={() => { setShowInstall(false); setInstallTileHidden(isInstallTileHidden()) }}/>}
       </div>

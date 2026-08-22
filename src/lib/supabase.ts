@@ -251,6 +251,67 @@ export async function getRandomPanoramas(n = 5): Promise<string[]> {
   return urls.slice(0, n)
 }
 
+// ── Teaser pro domovskou obrazovku (sekce pod záhybem) ──────────────────────
+export type TeaserEvent = {
+  title: string; title_en: string | null; title_de: string | null
+  description: string; description_en: string | null; description_de: string | null
+  category: string | null; year: number; img: string | null
+}
+export type TeaserCampaign = {
+  slug: string | null; title: string; title_en: string | null; title_de: string | null
+  count: number; yearFrom: number | null; yearTo: number | null
+}
+
+/** Náhodných N publikovaných událostí + první 3 publikované kampaně (pro homepage). */
+export async function getHomeTeaser(n = 6): Promise<{ events: TeaserEvent[]; campaigns: TeaserCampaign[] }> {
+  const [{ data: evs }, { data: camps }] = await Promise.all([
+    supabase.from('events')
+      .select('title, title_en, title_de, description, description_en, description_de, category, year, preview_url, event_image_url, panorama_url')
+      .eq('published', true).limit(60),
+    supabase.from('campaigns')
+      .select('id, slug, title, title_en, title_de, seq')
+      .eq('status', 'published').order('seq', { ascending: true }).limit(3),
+  ])
+
+  const pool = (evs ?? []) as Array<Record<string, unknown>>
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]] }
+  const events: TeaserEvent[] = pool.slice(0, n).map(r => ({
+    title: r.title as string, title_en: (r.title_en as string) ?? null, title_de: (r.title_de as string) ?? null,
+    description: (r.description as string) ?? '', description_en: (r.description_en as string) ?? null, description_de: (r.description_de as string) ?? null,
+    category: (r.category as string) ?? null, year: (r.year as number) ?? 0,
+    img: (r.preview_url as string) || (r.event_image_url as string) || (r.panorama_url as string) || null,
+  }))
+
+  const campaigns: TeaserCampaign[] = []
+  const campRows = (camps ?? []) as Array<{ id: string; slug: string | null; title: string; title_en: string | null; title_de: string | null }>
+  if (campRows.length) {
+    const ids = campRows.map(c => c.id)
+    const { data: links } = await supabase
+      .from('campaign_events')
+      .select('campaign_id, is_active, events(year)')
+      .in('campaign_id', ids)
+    const byCamp = new Map<string, number[]>()
+    type LinkRow = { campaign_id: string; is_active: boolean; events: { year: number } | { year: number }[] | null }
+    for (const l of (links ?? []) as unknown as LinkRow[]) {
+      if (!l.is_active || !l.events) continue
+      const yr = Array.isArray(l.events) ? l.events[0]?.year : l.events.year
+      if (yr == null) continue
+      if (!byCamp.has(l.campaign_id)) byCamp.set(l.campaign_id, [])
+      byCamp.get(l.campaign_id)!.push(yr)
+    }
+    for (const c of campRows) {
+      const years = byCamp.get(c.id) ?? []
+      campaigns.push({
+        slug: c.slug, title: c.title, title_en: c.title_en, title_de: c.title_de,
+        count: years.length,
+        yearFrom: years.length ? Math.min(...years) : null,
+        yearTo: years.length ? Math.max(...years) : null,
+      })
+    }
+  }
+  return { events, campaigns }
+}
+
 /**
  * Převede veřejnou Storage URL na zmenšenou (render/image) variantu — výrazně
  * menší přenos pro náhledy/hero. Pokud projekt transformace nepodporuje, render
