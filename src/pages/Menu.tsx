@@ -51,7 +51,7 @@ export function invalidateMenuCache() { menuCache = null }
 
 export default function MenuPage() {
   const { t } = useTranslation()
-  const { user, profile, isAnonymous } = useAuth()
+  const { user, profile, isAnonymous, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
 
@@ -239,6 +239,7 @@ export default function MenuPage() {
       { label: t('menu.navBadges'), onClick: () => navigate('/stats') },
       { label: t('menu.navFriends'), onClick: () => navigate('/friends') },
       { label: t('menu.navExplore'), href: `/${eloc}/${exSeg}` },
+      ...(isAdmin ? [{ label: t('menu.admin'), onClick: () => navigate('/admin') }] : []),
     ]
     const modes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
       { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick, primary: true },
@@ -524,6 +525,7 @@ export default function MenuPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 10, background: 'rgba(251,247,240,.1)', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#E8C88A' }}>🔥 {dailyStreak}</span>
+            {isAdmin && <button onClick={() => navigate('/admin')} aria-label={t('menu.admin')} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(251,247,240,.16)', cursor: 'pointer', background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="admin" size={16}/></button>}
             <LanguageSwitcher variant="glass"/>
             <button onClick={() => navigate('/account')} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13 }}>{name.charAt(0).toUpperCase()}</button>
           </div>
