@@ -45,6 +45,7 @@ interface Props {
   onCta: () => void
   secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
   rating?: React.ReactNode             // hodnocení události (kompaktní)
+  praise?: string | null               // chytrá pochvala dle skóre (jen denní výzva)
 }
 
 // Vektorové ikony (line, currentColor) — panorama / „i" v kroužku / pohár
@@ -90,10 +91,11 @@ export default function RoundResult(p: Props) {
         <h2 style={{ margin: '0 0 4px', font: `400 22px/1.22 ${F.display}`, color: C.ink, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {p.eventTitle} <span style={{ color: C.muted2 }}>· {formatYear(p.eventYear)}</span>
         </h2>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 13 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: p.praise ? 4 : 13 }}>
           <span style={{ font: `400 34px ${F.display}`, letterSpacing: '-.02em', color: C.accent }}>{p.scoreTotal.toLocaleString(loc)}</span>
           <span style={{ font: `500 12px ${F.ui}`, color: C.muted2 }}>/ {p.scoreMax.toLocaleString(loc)}</span>
         </div>
+        {p.praise && <div style={{ font: `700 14px ${F.ui}`, color: C.ink, marginBottom: 13 }}>{p.praise}</div>}
 
         <div style={{ display: 'flex', gap: 9, marginBottom: 13 }}>
           <Metric label={t('round.kmOff', { d: formatDistance(p.distanceKm) })} points={p.placePoints} pct={p.placePoints / p.placeMax} color={C.accent}/>

@@ -38,6 +38,7 @@ interface Props {
   enableSpaceKey?: boolean
   rating?: React.ReactNode             // hodnocení události
   secondaryActions?: React.ReactNode   // pod CTA (např. Vyzvi kamaráda)
+  praise?: string | null               // chytrá pochvala dle skóre (jen denní výzva)
 }
 
 type View = 'score' | 'leaderboard'
@@ -105,10 +106,11 @@ export default function RoundResultDesktop(p: Props) {
               <div style={{ marginBottom: 20 }}>{p.story}</div>
 
               {/* Skóre */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: p.praise ? 6 : 16 }}>
                 <span style={{ font: `400 52px ${F.display}`, letterSpacing: '-.02em', color: C.accent, lineHeight: 1 }}>{p.scoreTotal.toLocaleString(loc)}</span>
                 <span style={{ font: `500 13px ${F.ui}`, color: C.muted2 }}>/ {p.scoreMax.toLocaleString(loc)} {t('common.pts')}</span>
               </div>
+              {p.praise && <div style={{ font: `700 16px ${F.ui}`, color: C.ink, marginBottom: 16 }}>{p.praise}</div>}
 
               {/* Dlaždice km / rok */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>

@@ -635,6 +635,17 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const { profile } = useAuth()
   const loc = currentLocale()
 
+  // Chytrá pochvala dle skóre (0–1000) — jen denní výzva
+  const praise = (() => {
+    const s = result.totalScore
+    if (s >= 950) return t('daily.praise.perfect')
+    if (s >= 800) return t('daily.praise.great')
+    if (s >= 600) return t('daily.praise.good')
+    if (s >= 400) return t('daily.praise.ok')
+    if (s >= 200) return t('daily.praise.meh')
+    return t('daily.praise.low')
+  })()
+
   const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
   const betterThan = allScores.length >= 5 ? Math.round((allScores.filter(v => v < result.totalScore).length / (allScores.length - 1)) * 100) : null
   const dateLabel = new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long' })
@@ -699,6 +710,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         scoreTotal={result.totalScore} scoreMax={1000}
         distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
         yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+        praise={praise}
         leaderboard={shown} playersToday={entries.length} distribution={distribution}
         xpSection={xpSection}
         onShare={isMakeup ? null : () => setShowShare(true)}
@@ -740,6 +752,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
       scoreTotal={result.totalScore} scoreMax={1000}
       distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
       yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+      praise={praise}
       showDetail onOpenDetail={setDetailTab}
       ctaLabel={t('daily.menu')} onCta={onMenu}
       secondaryActions={secondary}    />
