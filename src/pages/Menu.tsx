@@ -263,13 +263,15 @@ export default function MenuPage() {
   // ═══════════════════ DESKTOP ═══════════════════
   if (!isMobile) {
     const loc = currentLocale()
+    const eloc: ExploreLocale = loc === 'en' ? 'en' : loc === 'de' ? 'de' : 'cs'
+    const exSeg = eloc === 'en' ? 'explore' : eloc === 'de' ? 'entdecken' : 'objevuj'
     const dot = (on: boolean) => ({ width: 7, height: 7, borderRadius: '50%', background: on ? '#E8C88A' : 'rgba(251,247,240,.28)' })
     const nav: { label: string; onClick?: () => void; href?: string; active?: boolean }[] = [
       { label: t('menu.navHome'), onClick: () => {}, active: true },
       { label: t('menu.campaigns'), onClick: () => navigate('/campaigns') },
       { label: t('menu.navBadges'), onClick: () => navigate('/stats') },
       { label: t('menu.navFriends'), onClick: () => navigate('/friends') },
-      { label: t('menu.navExplore'), href: `/${loc}/${loc === 'en' ? 'explore' : loc === 'de' ? 'entdecken' : 'objevuj'}` },
+      { label: t('menu.navExplore'), href: `/${eloc}/${exSeg}` },
     ]
     const modes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
       { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick, primary: true },
@@ -323,7 +325,7 @@ export default function MenuPage() {
                 <Icon name="bolt" size={18}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { count: dailyStreak })}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
                 <span style={{ display: 'flex', gap: 5 }}>{(dailyWeek.length ? dailyWeek : Array.from({ length: 7 }, () => ({ played: false }))).slice(0, 7).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
               </div>
             </div>
@@ -394,7 +396,7 @@ export default function MenuPage() {
             </a>
             <div style={{ display: 'flex', gap: 22 }}>
               <button onClick={() => setShowHowTo(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.howShort')}</button>
-              <a href={`/${loc}/${loc === 'en' ? 'about' : loc === 'de' ? 'ueber-uns' : 'o-projektu'}`} style={{ textDecoration: 'none', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.aboutShort')}</a>
+              <a href={`/${eloc}/${eloc === 'en' ? 'about' : eloc === 'de' ? 'ueber-uns' : 'o-projektu'}`} style={{ textDecoration: 'none', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.aboutShort')}</a>
               <LanguageSwitcher/>
               <ThemeToggle variant="dark"/>
             </div>
@@ -404,8 +406,7 @@ export default function MenuPage() {
 
         {/* ═══ Pod záhybem: obsahová vrstva (světlá) ═══ */}
         {(() => {
-          const eloc = loc as ExploreLocale
-          const seg = { cs: { ex: 'objevuj', jk: 'jak-hrat', ab: 'o-projektu' }, en: { ex: 'explore', jk: 'how-to-play', ab: 'about' }, de: { ex: 'entdecken', jk: 'spielanleitung', ab: 'ueber-uns' } }[eloc] || { ex: 'objevuj', jk: 'jak-hrat', ab: 'o-projektu' }
+          const seg = { cs: { ex: 'objevuj', jk: 'jak-hrat', ab: 'o-projektu' }, en: { ex: 'explore', jk: 'how-to-play', ab: 'about' }, de: { ex: 'entdecken', jk: 'spielanleitung', ab: 'ueber-uns' } }[eloc]
           const kicker = { fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#6F6455' }
           const h2 = { fontFamily: 'var(--font-serif)', fontWeight: 400 as const, fontSize: 'clamp(28px, 3.2vw, 40px)', letterSpacing: '-0.03em', color: '#1F1B16', margin: '6px 0 0' }
           const moreLink = { fontFamily: 'var(--font-sans)', fontWeight: 600 as const, fontSize: 13, color: '#A34E30', textDecoration: 'none', whiteSpace: 'nowrap' as const }
