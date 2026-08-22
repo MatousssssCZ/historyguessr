@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getTodayDailyResult, getUserDailyResults, getEventImages, transformedImageUrl, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getHomeTeaser, type DailyResult, type TeaserEvent, type TeaserCampaign } from '@/lib/supabase'
+import { getTodayDailyResult, getUserDailyResults, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getHomeTeaser, type DailyResult, type TeaserEvent, type TeaserCampaign } from '@/lib/supabase'
 import { slugify } from '@/lib/slugify'
 import { eventTitle, eventDescription, localizedTitle } from '@/lib/eventLocale'
 import { eventPath, campaignPath, CATEGORIES, isCategoryKey, type ExploreLocale } from '@/lib/exploreUrls'
@@ -11,6 +11,7 @@ import { isPremiumUser } from '@/lib/entitlements'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import { loadResume, RESUME_TTL, type ResumeState } from '@/lib/resume'
+import { getMenuHeroImages } from '@/lib/preload'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -82,25 +83,10 @@ export default function MenuPage() {
     if (user?.id) setResume(loadResume(user.id))
   }, [user?.id])
 
-  // Slideshow obrázků (session cache → cache hit prohlížeče)
+  // Hero obrázky menu (přednačtené už z App/Auth přes prefetchMenuHero → cache hit)
   useEffect(() => {
     let alive = true
-    const toShow = (urls: string[]) => urls.map(u => transformedImageUrl(u, { width: 1400, quality: 60 }))
-    try {
-      const cached = sessionStorage.getItem('heroImgs')
-      if (cached) {
-        const urls = JSON.parse(cached) as string[]
-        if (Array.isArray(urls) && urls.length) { setHeroImgs(toShow(urls)); return }
-      }
-    } catch { /* ignore */ }
-    getEventImages().then(imgs => {
-      if (!alive || imgs.length === 0) return
-      const pool = [...imgs]
-      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[pool[i], pool[j]] = [pool[j], pool[i]] }
-      const chosen = pool.slice(0, 5)
-      setHeroImgs(toShow(chosen))
-      try { sessionStorage.setItem('heroImgs', JSON.stringify(chosen)) } catch { /* ignore */ }
-    }).catch(() => {})
+    getMenuHeroImages().then(urls => { if (alive && urls.length) setHeroImgs(urls) }).catch(() => {})
     return () => { alive = false }
   }, [])
 
@@ -280,14 +266,7 @@ export default function MenuPage() {
               <span style={{ width: 30, height: 30, borderRadius: 9, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Icon name="globe" size={17}/></span>
               <span style={{ fontFamily: 'var(--font-serif)', fontSize: 19, letterSpacing: '-0.01em' }}>Historyguesser</span>
             </div>
-            <nav style={{ display: 'flex', gap: 3, padding: 5, background: 'rgba(24,20,15,.5)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 15 }}>
-              {nav.map((n) => {
-                const st: React.CSSProperties = { display: 'flex', alignItems: 'center', height: 36, padding: '0 16px', borderRadius: 11, fontFamily: 'var(--font-sans)', fontWeight: n.active ? 700 : 600, fontSize: 13, cursor: 'pointer', textDecoration: 'none', color: n.active ? '#26211C' : 'rgba(251,247,240,.75)', background: n.active ? '#FBF7F0' : 'transparent', border: 'none' }
-                return n.href
-                  ? <a key={n.label} href={n.href} style={st}>{n.label}</a>
-                  : <button key={n.label} onClick={n.onClick} style={st}>{n.label}</button>
-              })}
-            </nav>
+            <NavPill items={nav}/>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#E8C88A' }}>🔥 {dailyStreak}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'rgba(251,247,240,.8)' }}>{t('menu.level').toUpperCase()} {lvl.level}</span>
@@ -694,6 +673,34 @@ function ResumeBar({ resume, onResume }: { resume: ResumeState; onResume: () => 
 
 // ─── Dlaždice režimu (desktop / sheet řádek) ──────────────
 // ─── Slideshow ilustračních obrázků (Ken Burns + prolínání) ──
+// Horní navigační pilulka se „slide" indikátorem — bílý button přejíždí po liště
+// na vybranou/najetou položku (na mouseleave se vrátí na aktivní).
+type NavItem = { label: string; onClick?: () => void; href?: string; active?: boolean }
+function NavPill({ items }: { items: NavItem[] }) {
+  const activeIndex = Math.max(0, items.findIndex(i => i.active))
+  const refs = useRef<Array<HTMLElement | null>>([])
+  const [pos, setPos] = useState<{ left: number; width: number; on: boolean }>({ left: 0, width: 0, on: false })
+  const [litIdx, setLitIdx] = useState(activeIndex)
+  const moveTo = (i: number) => {
+    const el = refs.current[i]
+    if (el) { setPos({ left: el.offsetLeft, width: el.offsetWidth, on: true }); setLitIdx(i) }
+  }
+  useLayoutEffect(() => { moveTo(activeIndex) }, [activeIndex, items.length])
+  return (
+    <nav onMouseLeave={() => moveTo(activeIndex)} style={{ position: 'relative', display: 'flex', gap: 3, padding: 5, background: 'rgba(24,20,15,.5)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid rgba(251,247,240,.14)', borderRadius: 15 }}>
+      <span aria-hidden="true" style={{ position: 'absolute', top: 5, bottom: 5, left: pos.left, width: pos.width, background: '#FBF7F0', borderRadius: 11, opacity: pos.on ? 1 : 0, transition: 'left .3s cubic-bezier(.34,1.35,.5,1), width .3s cubic-bezier(.34,1.35,.5,1)', pointerEvents: 'none' }}/>
+      {items.map((n, i) => {
+        const lit = i === litIdx
+        const st: React.CSSProperties = { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', height: 36, padding: '0 16px', borderRadius: 11, fontFamily: 'var(--font-sans)', fontWeight: lit ? 700 : 600, fontSize: 13, cursor: 'pointer', textDecoration: 'none', color: lit ? '#26211C' : 'rgba(251,247,240,.78)', background: 'transparent', border: 'none', transition: 'color .2s', whiteSpace: 'nowrap' }
+        const setRef = (el: HTMLElement | null) => { refs.current[i] = el }
+        return n.href
+          ? <a key={n.label} ref={setRef as (el: HTMLAnchorElement | null) => void} href={n.href} style={st} onMouseEnter={() => moveTo(i)}>{n.label}</a>
+          : <button key={n.label} ref={setRef as (el: HTMLButtonElement | null) => void} onClick={n.onClick} style={st} onMouseEnter={() => moveTo(i)}>{n.label}</button>
+      })}
+    </nav>
+  )
+}
+
 function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean }) {
   const [idx, setIdx] = useState(0)
   // Než se první obrázek dekóduje, drží se shimmer podklad; pak celý slideshow

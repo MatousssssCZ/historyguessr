@@ -1,5 +1,6 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { prefetchMenuHero } from '@/lib/preload'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import UsernameSetup from '@/components/UsernameSetup'
@@ -100,6 +101,9 @@ function FullScreenSpinner() {
 
 // ── App ───────────────────────────────────────────────────
 export default function App() {
+  // Přednačti hero obrázky domovského menu co nejdřív (běží i na Auth/loadingu),
+  // ať je panorama menu připravené dřív, než se do menu vejde.
+  useEffect(() => { prefetchMenuHero() }, [])
   return (
     <ErrorBoundary>
       <AuthProvider>
