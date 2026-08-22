@@ -685,7 +685,15 @@ function NavPill({ items }: { items: NavItem[] }) {
     const el = refs.current[i]
     if (el) { setPos({ left: el.offsetLeft, width: el.offsetWidth, on: true }); setLitIdx(i) }
   }
-  useLayoutEffect(() => { moveTo(activeIndex) }, [activeIndex, items.length])
+  useLayoutEffect(() => {
+    moveTo(activeIndex)
+    let cancelled = false
+    const fonts = (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts
+    fonts?.ready.then(() => { if (!cancelled) moveTo(activeIndex) })
+    const onResize = () => moveTo(activeIndex)
+    window.addEventListener('resize', onResize)
+    return () => { cancelled = true; window.removeEventListener('resize', onResize) }
+  }, [activeIndex, items.length])
   // Pozn.: slide na hover byl zatím odebrán (doladíme později) — indikátor jen
   // sedí na aktivní položce.
   return (

@@ -9,7 +9,7 @@ import {
   FREE_EXPEDITIONS, type CampaignBundle,
 } from '@/lib/supabase'
 import MobileNav from '@/components/MobileNav'
-import DesktopSidebar from '@/components/DesktopSidebar'
+import AppHeader from '@/components/AppHeader'
 import { PageShell, PageHeader } from '@/components/ui/Page'
 import Icon from '@/components/Icon'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -52,12 +52,12 @@ export default function CampaignsPage() {
     return <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-200)' }}><CompassLoader size={60} light/></div>
   }
 
-  // Detail kategorie má vlastní barevnou hlavičku (bez horní lišty)
+  // Detail kategorie má vlastní barevnou hlavičku pod horní lištou
   if (categoryId) {
     return (
-      <div style={{ display: 'flex', minHeight: '100dvh', background: 'var(--paper-200)' }}>
-        <DesktopSidebar/>
-        <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 'var(--nav-space)' : 40 }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)' }}>
+        {!isMobile && <AppHeader/>}
+        <div style={{ minWidth: 0, paddingTop: isMobile ? 'var(--safe-top)' : 0, paddingBottom: isMobile ? 'var(--nav-space)' : 40 }}>
           <CategoryView bundle={bundle} categoryId={categoryId} isMobile={isMobile} userId={user?.id} onBack={() => navigate('/campaigns')} onReload={reload}/>
         </div>
         {isMobile && <MobileNav active="campaigns"/>}

@@ -16,6 +16,7 @@ import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
 import { Segmented, CategoryChips, CATEGORY_IDS as CAT_IDS } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { PageHeader } from '@/components/ui/Page'
+import AppHeader from '@/components/AppHeader'
 import type { GameOptions } from '@/hooks/useGame'
 
 const ROUND_OPTIONS = [3, 5, 10]
@@ -446,8 +447,9 @@ export default function PreGameLobbyPage() {
     }
 
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: 'var(--safe-top)', paddingBottom: 'max(28px, var(--safe-bottom))' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '30px 40px 0' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', paddingTop: isMobile ? 'var(--safe-top)' : 0, paddingBottom: 'max(28px, var(--safe-bottom))' }}>
+        {!isMobile && <AppHeader/>}
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: isMobile ? '14px 16px 0' : '30px 40px 0' }}>
           <PageHeader eyebrow={t('pregame.mode')} title={t('pregame.title')} onBack={() => navigate('/menu')}/>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,2.3fr) minmax(290px,1fr)', gap: 20, alignItems: 'start' }}>

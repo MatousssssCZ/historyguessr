@@ -1,11 +1,11 @@
 import React from 'react'
-import DesktopSidebar from '@/components/DesktopSidebar'
+import AppHeader from '@/components/AppHeader'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 // ── Sdílený design-kit „nabídkových" stránek (styl domovské obrazovky) ──
-// Dvousloupcový desktop se sidebarem, jednotná hlavička, karty. Responzivní:
-// na mobilu se sidebar skryje a padding se zmenší (spodní MobileNav si řeší
-// každá stránka sama). Barvy/fonty přes CSS proměnné → funguje i tmavý režim.
+// Desktop: tmavá horní lišta (AppHeader) sjednocená s menu + obsah pod ní.
+// Mobil: horní lištu skryje, padding se zmenší (spodní MobileNav si řeší každá
+// stránka sama). Barvy/fonty přes CSS proměnné → funguje i tmavý režim.
 
 const F = { serif: 'var(--font-serif)', sans: 'var(--font-sans)', mono: 'var(--font-mono)' }
 
@@ -14,9 +14,9 @@ export function PageShell({ children, maxWidth = 1180, sidebarStreak }: {
 }) {
   const isMobile = useIsMobile()
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex' }}>
-      <DesktopSidebar streak={sidebarStreak}/>
-      <div style={{ flex: 1, minWidth: 0, overflow: 'auto', paddingTop: isMobile ? 'var(--safe-top)' : 0, paddingBottom: isMobile ? 'var(--nav-space)' : 0 }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)' }}>
+      {!isMobile && <AppHeader streak={sidebarStreak}/>}
+      <div style={{ minWidth: 0, paddingTop: isMobile ? 'var(--safe-top)' : 0, paddingBottom: isMobile ? 'var(--nav-space)' : 0 }}>
         <div style={{ maxWidth, margin: '0 auto', padding: isMobile ? '14px 16px 20px' : '30px 40px 48px' }}>
           {children}
         </div>
