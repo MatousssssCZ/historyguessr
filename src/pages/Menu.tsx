@@ -275,7 +275,7 @@ export default function MenuPage() {
           </header>
 
           {/* Hero tělo */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 372px', gap: 44, alignItems: 'end', padding: '32px 0' }}>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 372px', gap: 44, alignItems: 'start', padding: '40px 0 32px' }}>
             {/* Levý sloupec */}
             <div style={{ maxWidth: 620 }}>
               <div style={{ ...cardLabel, color: '#E9A183', marginBottom: 16 }}><span style={{ display: 'inline-flex', width: 6, height: 6, borderRadius: '50%', background: '#BE6240', marginRight: 8, verticalAlign: 'middle' }}/>{t('menu.dailyLabel').toUpperCase()} · {dateStr}</div>
@@ -291,7 +291,7 @@ export default function MenuPage() {
             </div>
 
             {/* Pravý sloupec — karty */}
-            <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'stretch', justifyContent: 'center' }}>
+            <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'start' }}>
               {/* Nová hra */}
               <div style={{ ...GLASS, padding: 16 }}>
                 <div style={{ ...cardLabel, marginBottom: 12 }}>{t('menu.newGame')}</div>
