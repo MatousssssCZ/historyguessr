@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { currentLocale } from '@/i18n'
 import { levelFromXp } from '@/lib/leveling'
 import Icon from '@/components/Icon'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
@@ -84,6 +85,7 @@ export default function AppHeader({ streak }: { streak?: number }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, justifySelf: 'end' }}>
           {streak != null && <span style={{ display: 'flex', alignItems: 'center', gap: 5, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#E8C88A' }}>🔥 {streak}</span>}
           <span style={{ display: 'flex', alignItems: 'center', height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'rgba(251,247,240,.8)' }}>{t('menu.level').toUpperCase()} {lvl.level}</span>
+          <LanguageSwitcher variant="glass"/>
           <button onClick={() => navigate('/account')} aria-label={t('menu.navProfile')} style={{ width: 38, height: 38, borderRadius: '50%', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, border: onAccount ? '2px solid #FBF7F0' : '2px solid transparent', boxShadow: onAccount ? '0 0 0 2px rgba(217,119,87,.6)' : 'none' }}>{name.charAt(0).toUpperCase()}</button>
         </div>
       </div>

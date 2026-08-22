@@ -270,6 +270,7 @@ export default function MenuPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 12, color: '#E8C88A' }}>🔥 {dailyStreak}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 11, background: 'rgba(251,247,240,.08)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'rgba(251,247,240,.8)' }}>{t('menu.level').toUpperCase()} {lvl.level}</span>
+              <LanguageSwitcher variant="glass"/>
               <button onClick={() => navigate('/account')} style={{ width: 38, height: 38, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{name.charAt(0).toUpperCase()}</button>
             </div>
           </header>
@@ -357,7 +358,6 @@ export default function MenuPage() {
             <div style={{ display: 'flex', gap: 22 }}>
               <button onClick={() => setShowHowTo(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.howShort')}</button>
               <a href={`/${eloc}/${eloc === 'en' ? 'about' : eloc === 'de' ? 'ueber-uns' : 'o-projektu'}`} style={{ textDecoration: 'none', color: 'rgba(251,247,240,.7)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.aboutShort')}</a>
-              <LanguageSwitcher/>
               <ThemeToggle variant="dark"/>
             </div>
           </div>
@@ -524,6 +524,7 @@ export default function MenuPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 10, background: 'rgba(251,247,240,.1)', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#E8C88A' }}>🔥 {dailyStreak}</span>
+            <LanguageSwitcher variant="glass"/>
             <button onClick={() => navigate('/account')} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13 }}>{name.charAt(0).toUpperCase()}</button>
           </div>
         </div>
