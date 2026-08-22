@@ -8,7 +8,7 @@ import { eventTitle, eventDescription, localizedTitle } from '@/lib/eventLocale'
 import { eventPath, campaignPath, CATEGORIES, isCategoryKey, type ExploreLocale } from '@/lib/exploreUrls'
 import { formatYear } from '@/lib/scoring'
 import { isPremiumUser } from '@/lib/entitlements'
-import { levelFromXp, type LevelInfo } from '@/lib/leveling'
+import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import { loadResume, RESUME_TTL, type ResumeState } from '@/lib/resume'
 import { useTranslation } from 'react-i18next'
@@ -18,9 +18,7 @@ import MobileNav from '@/components/MobileNav'
 import Icon, { type IconName } from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
-import AdSlot from '@/components/AdSlot'
-import { isStandalone, isInstallTileHidden } from '@/lib/pwaInstall'
-import { DownloadIcon } from '@/components/BrowserIcons'
+import { isInstallTileHidden } from '@/lib/pwaInstall'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -60,17 +58,17 @@ export default function MenuPage() {
   const [, setDailyResult] = useState<DailyResult | null>(null)
   const [dailyStreak, setDailyStreak] = useState(0)
   const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
-  const [countdown, setCountdown] = useState('')
-  const [friendReqs, setFriendReqs] = useState(0)
+  const [, setCountdown] = useState('')
+  const [, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
-  const [rankDelta, setRankDelta] = useState(0)
+  const [, setRankDelta] = useState(0)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
   const [resume, setResume] = useState<ResumeState | null>(null)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
   const [showInstall, setShowInstall] = useState(false)
-  const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
-  const [isPremium, setIsPremium] = useState(false)
+  const [, setInstallTileHidden] = useState(() => isInstallTileHidden())
+  const [, setIsPremium] = useState(false)
   const [teaser, setTeaser] = useState<{ events: TeaserEvent[]; campaigns: TeaserCampaign[] } | null>(null)
   useEffect(() => { getMyEntitlements().then(e => setIsPremium(isPremiumUser(e))).catch(() => {}) }, [])
 
@@ -210,6 +208,10 @@ export default function MenuPage() {
   const name = profile?.username ?? t('common.defaultPlayer')
   const isMobile = windowWidth < 768
   const lvl = levelFromXp(profile?.xp ?? 0)
+  // Locale pro odkazy do veřejné Explore vrstvy (musí být cs/en/de, ne varianta)
+  const menuLoc = currentLocale()
+  const eloc: ExploreLocale = menuLoc === 'en' ? 'en' : menuLoc === 'de' ? 'de' : 'cs'
+  const exSeg = eloc === 'en' ? 'explore' : eloc === 'de' ? 'entdecken' : 'objevuj'
 
   // Teaser obsahu pod záhybem (načte se jednou; sekce se ukáže až po scrollu)
   useEffect(() => {
@@ -228,7 +230,6 @@ export default function MenuPage() {
   const goMP = () => navigate('/multiplayer/lobby')
   const goResume = () => navigate('/game', { state: { resume: true } })
 
-  const dailyProps = { heroImgs, dailyState, countdown, streak: dailyStreak, week: dailyWeek, onPlay: goDaily }
 
   // Nejbližší odznak (napříč kategoriemi) — pro kartu Level na desktopu
   let nearest: { name: string; icon: string; have: number; need: number } | null = null
@@ -241,30 +242,10 @@ export default function MenuPage() {
     }
   }
 
-  // Poslední dlaždice: „Přidat na plochu". Zmizí, když už app běží nainstalovaná
-  // nebo si ji hráč odklikl v průvodci.
-  const installTile = (!isStandalone() && !installTileHidden) ? (
-    <button onClick={() => setShowInstall(true)} style={{
-      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
-      background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
-    }}>
-      <span style={{
-        width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: ACCENT_GRAD,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-      }}><DownloadIcon size={21} color="#fff"/></span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('common.instTile')}</div>
-        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('common.instTileSub')}</div>
-      </div>
-      <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
-    </button>
-  ) : null
 
   // ═══════════════════ DESKTOP ═══════════════════
   if (!isMobile) {
-    const loc = currentLocale()
-    const eloc: ExploreLocale = loc === 'en' ? 'en' : loc === 'de' ? 'de' : 'cs'
-    const exSeg = eloc === 'en' ? 'explore' : eloc === 'de' ? 'entdecken' : 'objevuj'
+    const loc = menuLoc
     const dot = (on: boolean) => ({ width: 7, height: 7, borderRadius: '50%', background: on ? '#E8C88A' : 'rgba(251,247,240,.28)' })
     const nav: { label: string; onClick?: () => void; href?: string; active?: boolean }[] = [
       { label: t('menu.navHome'), onClick: () => {}, active: true },
@@ -538,60 +519,128 @@ export default function MenuPage() {
     )
   }
 
-  // ═══════════════════ MOBIL ═══════════════════
+  // ═══════════════════ MOBIL (27a) ═══════════════════
+  const mDot = (on: boolean) => ({ width: 7, height: 7, borderRadius: '50%', background: on ? '#E8C88A' : 'rgba(251,247,240,.28)' })
+  const mModes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
+    { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick, primary: true },
+    { icon: 'sliders', title: t('menu.classicGame'), sub: t('menu.classicGameSubShort'), onClick: goClassic },
+    { icon: 'swords', title: t('menu.multiplayer'), sub: t('menu.multiplayerSub'), onClick: goMP },
+  ]
+  const mSeg = { ex: exSeg, jk: eloc === 'en' ? 'how-to-play' : eloc === 'de' ? 'spielanleitung' : 'jak-hrat', ab: eloc === 'en' ? 'about' : eloc === 'de' ? 'ueber-uns' : 'o-projektu' }
+  const mKick = { fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#6F6455' }
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex', flexDirection: 'column', paddingTop: 'var(--safe-top)' }}>
-      {/* Top utility */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px 0' }}>
-        <Wordmark/>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <HelpButton onClick={() => setShowHowTo(true)}/>
-          <LanguageSwitcher/>
-          <ThemeToggle variant="light"/>
+    <div style={{ background: '#14110D' }}>
+      {/* Hero — tmavý panorama, ~ celá první obrazovka */}
+      <section style={{ position: 'relative', minHeight: '100dvh', overflow: 'hidden', background: '#14110D', color: '#FBF7F0', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          {heroImgs.length > 0 ? <HeroSlideshow urls={heroImgs} scrimDark/> : <div className="skeleton" style={{ position: 'absolute', inset: 0 }}/>}
         </div>
-      </div>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(16,13,10,.72) 0%, rgba(16,13,10,.35) 38%, rgba(16,13,10,.96) 100%)', pointerEvents: 'none' }}/>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '10px 18px 0', paddingBottom: 'var(--nav-space)' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', color: 'var(--accent-deep)', marginBottom: 5 }}>{dateStr}</div>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: 'var(--ink)', lineHeight: 1.05, margin: 0, letterSpacing: '-0.01em' }}>{greet}, {name}</h1>
+        {/* Top utility */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(12px + var(--safe-top)) 18px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Icon name="globe" size={15}/></span>
+            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 17 }}>Historyguesser</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 10, background: 'rgba(251,247,240,.1)', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#E8C88A' }}>🔥 {dailyStreak}</span>
+            <button onClick={() => navigate('/account')} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13 }}>{name.charAt(0).toUpperCase()}</button>
           </div>
         </div>
 
-        <DailyHero {...dailyProps}/>
-        <div style={{ height: 12 }}/>
-        {resume && <><ResumeBar resume={resume} onResume={goResume}/><div style={{ height: 12 }}/></>}
-        <ProgressCard lvl={lvl} world={world} delta={rankDelta} loading={dailyState === 'loading'} onOpen={() => navigate('/leaderboard')}/>
-        <div style={{ height: 12 }}/>
-        <NearestBadges catHits={catHits} navigate={navigate}/>
-        <div style={{ height: 12 }}/>
-        <button onClick={() => navigate('/friends')} style={{
-          display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
-          background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
-        }}>
-          <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="friends" size={21}/></span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('menu.friendsTitle')}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.friendsSub')}</div>
+        {/* Hero obsah (dole) */}
+        <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
+            <span style={{ display: 'flex', gap: 4 }}>{(dailyWeek.length ? dailyWeek : Array.from({ length: 7 }, () => ({ played: false }))).slice(0, 7).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
           </div>
-          {friendReqs > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 7px', borderRadius: 999 }}>{friendReqs}</span>}
-          <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
-        </button>
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(30px, 8vw, 40px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 18px' }}>{t('menu.heroQuestion')}</h1>
 
-        {isPremium
-          ? <><div style={{ height: 12 }}/><RoadmapTile onClick={() => navigate('/roadmap')}/></>
-          : isAnonymous
-            ? <><div style={{ height: 12 }}/><SaveProgressBanner onClick={() => navigate('/auth', { state: { mode: 'register' } })}/></>
-            : <><div style={{ height: 12 }}/><PremiumBanner onClick={() => navigate('/premium')}/></>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+            {mModes.map((m) => (
+              <button key={m.title} onClick={m.onClick} style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
+                padding: '12px 14px', borderRadius: 14,
+                background: m.primary ? 'rgba(190,98,64,.92)' : 'rgba(20,16,12,.5)',
+                backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+                border: `1px solid ${m.primary ? 'rgba(233,161,131,.5)' : 'rgba(251,247,240,.14)'}`,
+              }}>
+                <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.14)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, color: '#FBF7F0' }}>{m.title}</span>
+                  <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{m.sub}</span>
+                </span>
+                <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
+              </button>
+            ))}
+          </div>
 
-        {/* Poslední dlaždice — přidání na plochu */}
-        {installTile && <><div style={{ height: 12 }}/>{installTile}</>}
+          <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 16, borderRadius: 15, border: 'none', cursor: 'pointer', background: 'rgba(251,247,240,.12)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15 }}>
+            <Icon name="calendar" size={17}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
+          </button>
 
-        {/* Reklama (jen Free; zobrazí se až po zapnutí AdSense) */}
-        <AdSlot placement="overview_screen" label={t('ads.label')} />
-      </div>
+          {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
+        </div>
+
+        <a href={`/${eloc}/${mSeg.ex}`} style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid rgba(251,247,240,.14)', padding: '14px 20px', textDecoration: 'none', color: 'rgba(251,247,240,.8)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.1em' }}>
+          ↓ {t('menu.exploreHistory').toUpperCase()}
+        </a>
+      </section>
+
+      {/* Pod záhybem — světlá vrstva (jednosloupcově) */}
+      <main style={{ background: '#FBF7F0', color: '#3E362C', paddingBottom: 'var(--nav-space)' }}>
+        <section style={{ padding: '40px 18px 0' }}>
+          <div style={mKick}>{t('menu.exploreHistory')}</div>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', color: '#1F1B16', margin: '6px 0 4px' }}>{t('menu.teaserH2')}</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: '#5C5347', margin: '10px 0 18px' }}>{t('menu.teaserIntro')}</p>
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', scrollSnapType: 'x mandatory', margin: '0 -18px', padding: '0 18px 6px' }}>
+            {(teaser?.events ?? []).map((ev, i) => {
+              const catKey = isCategoryKey(ev.category) ? ev.category : null
+              return (
+                <a key={i} href={eventPath(eloc, slugify(eventTitle(ev)))} style={{ scrollSnapAlign: 'start', flex: '0 0 240px', background: '#FBF7F0', border: '1px solid rgba(31,27,22,.1)', borderRadius: 14, overflow: 'hidden', textDecoration: 'none', boxShadow: '0 2px 10px -4px rgba(31,27,22,.12)' }}>
+                  <div style={{ aspectRatio: '16/9', background: '#F3EDE2' }}>{ev.img && <img loading="lazy" src={ev.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>}</div>
+                  <div style={{ padding: '12px 14px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.08em', color: '#6F6455', textTransform: 'uppercase', marginBottom: 4 }}>
+                      <span style={{ color: '#A34E30' }}>{catKey ? CATEGORIES[catKey][eloc].label : ''}</span><span>{formatYear(ev.year)}</span>
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.15, color: '#1F1B16' }}>{eventTitle(ev)}</div>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
+          <a href={`/${eloc}/${mSeg.ex}`} style={{ display: 'inline-block', marginTop: 14, fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.allEventsLink')} →</a>
+        </section>
+
+        <section style={{ padding: '36px 18px 0' }}>
+          <div style={{ borderTop: '1px solid rgba(31,27,22,.1)', paddingTop: 28 }}>
+            <div style={mKick}>{t('menu.howShort')}</div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 24, letterSpacing: '-0.02em', color: '#1F1B16', margin: '6px 0 18px' }}>{t('menu.howH2')}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[['globe', t('menu.s1t'), t('menu.s1d')], ['pin', t('menu.s2t'), t('menu.s2d')], ['calendar', t('menu.s3t'), t('menu.s3d')], ['trophy', t('menu.s4t'), t('menu.s4d')]].map(([ic, ti, de], i) => (
+                <div key={i} style={{ display: 'flex', gap: 13, background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 14, padding: 16 }}>
+                  <span style={{ color: '#A34E30', flexShrink: 0 }}><Icon name={ic as IconName} size={20}/></span>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: '#1F1B16', marginBottom: 3 }}>{ti}</div>
+                    <div style={{ fontSize: 13, lineHeight: 1.55, color: '#5C5347' }}>{de}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section style={{ padding: '36px 18px 40px' }}>
+          <div style={{ borderTop: '1px solid rgba(31,27,22,.1)', paddingTop: 28, background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 18, padding: '22px 20px', marginTop: 0 }}>
+            <div style={mKick}>{t('menu.aboutShort')}</div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 22, letterSpacing: '-0.02em', color: '#1F1B16', margin: '6px 0 12px' }}>{t('menu.aboutH2')}</h2>
+            <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#3E362C', margin: '0 0 14px' }}>{t('menu.aboutP1')}</p>
+            <a href={`/${eloc}/${mSeg.ab}`} style={{ fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.aboutMore')} →</a>
+          </div>
+        </section>
+      </main>
 
       {/* Sdílená spodní lišta */}
       <MobileNav active="home"/>
@@ -640,255 +689,8 @@ function ResumeBar({ resume, onResume }: { resume: ResumeState; onResume: () => 
   )
 }
 
-// ─── Nejbližší odznaky (nejblíž dalšímu stupni) ───────────
-function NearestBadges({ catHits, navigate }: { catHits: Record<string, number>; navigate: ReturnType<typeof useNavigate> }) {
-  const { t } = useTranslation()
-  const items = ACHIEVEMENTS.map(cat => {
-    const hits = catHits[cat.id] ?? 0
-    const { next } = tierProgress(cat.tiers, hits)
-    if (!next) return null // vše odemčeno v kategorii
-    return { cat, hits, next, frac: hits / next.count }
-  }).filter(Boolean) as { cat: typeof ACHIEVEMENTS[number]; hits: number; next: { count: number; icon: string; name: string }; frac: number }[]
-
-  // Nejblíž dokončení první; při shodě méně zbývajících napřed
-  items.sort((a, b) => b.frac - a.frac || (a.next.count - a.hits) - (b.next.count - b.hits))
-  const top = items.slice(0, 3)
-  if (top.length === 0) return null
-
-  return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '15px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{t('menu.nearestBadges')}</span>
-        <button onClick={() => navigate('/stats')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13 }}>{t('menu.seeAll')}</button>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {top.map(it => {
-          const active = it.hits > 0
-          const pct = Math.max(0, Math.min(100, Math.round(it.frac * 100)))
-          return (
-            <div key={it.cat.id} style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: active ? 1 : 0.55 }}>
-              <span style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0, fontSize: 19,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: active ? ACCENT_GRAD : 'var(--paper-300)',
-                filter: active ? 'none' : 'grayscale(1)',
-              }}>{it.next.icon}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t('ach.' + it.cat.id + '.c' + it.next.count, it.next.name)}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', flexShrink: 0 }}>· {it.hits}/{it.next.count}</span>
-                </div>
-                <div style={{ height: 5, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{ width: `${pct}%`, height: '100%', background: ACCENT_GRAD, borderRadius: 999, transition: 'width 400ms' }}/>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 // ─── Přátelé dnes (skóre za dnešek napříč režimy) ─────────
-// „?" tlačítko → onboarding
-function HelpButton({ onClick }: { onClick: () => void }) {
-  const { t } = useTranslation()
-  return (
-    <button onClick={onClick} aria-label={t('menu.htHow')} style={{
-      width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', flexShrink: 0,
-      background: 'var(--surface)', border: '1px solid var(--line-strong)', color: 'var(--ink-2)',
-      fontFamily: 'var(--font-serif)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>?</button>
-  )
-}
-
 // ─── Avatar s odznakem série ──────────────────────────────
-
-// ✓/✕ za posledních 7 dní (jen ode dne registrace)
-function DailyMarks({ days }: { days: DayMark[] }) {
-  const { t } = useTranslation()
-  return (
-    <div style={{ display: 'flex', gap: 5, marginTop: 5, flexShrink: 0 }}>
-      {days.map((d, i) => {
-        const todayOpen = d.isToday && !d.played  // dnešek ještě neodehraný → šedý kruh s pomlčkou
-        const title = d.played ? t('menu.markPlayed') : d.isToday ? t('menu.markToday') : t('menu.markMissed')
-        return (
-          <div key={i} style={{ textAlign: 'center', flexShrink: 0 }}>
-            <div title={title} style={{
-              width: 19, height: 19, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, lineHeight: 1,
-              background: d.played ? 'var(--success)' : todayOpen ? 'var(--paper-300)' : 'var(--danger-soft)',
-              color: d.played ? '#fff' : todayOpen ? 'var(--ink-3)' : 'var(--danger)',
-              border: d.played ? 'none' : `1px solid ${todayOpen ? 'var(--line-strong)' : 'var(--danger)'}`,
-            }}>{d.played ? '✓' : todayOpen ? '–' : '✕'}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, marginTop: 3, color: d.isToday ? 'var(--accent-deep)' : 'var(--ink-3)' }}>{d.label}</div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Hero denní výzvy ─────────────────────────────────────
-function DailyHero({ heroImgs, dailyState, countdown, streak, week, onPlay, tall }: {
-  heroImgs: string[]; dailyState: DailyState; countdown: string; streak: number; week: DayMark[]; onPlay: () => void; tall?: boolean
-}) {
-  const { t } = useTranslation()
-  const done = dailyState === 'done'
-  const h = tall ? 196 : 130
-  const now = new Date()
-  const weekday = now.toLocaleDateString(currentLocale(), { weekday: 'short' }).replace('.', '').toUpperCase()
-  const dayNum = now.getDate()
-  return (
-    <button onClick={onPlay} style={{
-      display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', padding: 0,
-      borderRadius: 22, overflow: 'hidden', border: '1px solid var(--line)', background: 'var(--surface)',
-      boxShadow: '0 8px 24px -14px rgba(60,45,30,0.3)',
-    }}>
-      <div style={{ position: 'relative', height: h, background: 'linear-gradient(180deg,#CBBAA0 0%,#7A6650 66%,#40331f 100%)' }}>
-        {/* Dokud nedorazí obrázky, jemný shimmer místo prázdného gradientu */}
-        {heroImgs.length === 0 && <div className="skeleton" style={{ position: 'absolute', inset: 0, background: 'transparent', borderRadius: 0 }}/>}
-        {heroImgs.length > 0 && <HeroSlideshow urls={heroImgs} scrimDark/>}
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(130% 100% at 40% 12%, transparent 26%, rgba(0,0,0,0.72))' }}/>
-        {/* kalendářní lístek s dnešním datem — jasně signalizuje „denní výzva" */}
-        <div style={{ position: 'absolute', top: 13, left: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 44, background: 'var(--paper-50)', borderRadius: 9, overflow: 'hidden', textAlign: 'center', boxShadow: '0 3px 10px rgba(0,0,0,0.35)', flexShrink: 0 }}>
-            <div style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', padding: '2px 0' }}>{weekday}</div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--ink)', lineHeight: 1.1, padding: '1px 0 3px' }}>{dayNum}</div>
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.13em', color: '#fff', fontWeight: 600 }}>{t('menu.dailyLabel').toUpperCase()}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.72)', marginTop: 2 }}>{t('menu.dailyEveryDay')}</div>
-          </div>
-        </div>
-        {/* jen NOVÁ pro neodehrané; odpočet je v patičce (žádný duplicitní horní) */}
-        {!done && (
-          <div style={{ position: 'absolute', top: 12, right: 13 }}>
-            <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.06em', padding: '4px 9px', borderRadius: 20 }}>{t('menu.badgeNew')}</span>
-          </div>
-        )}
-        {/* title */}
-        <div style={{ position: 'absolute', left: 15, right: 15, bottom: 12, color: '#fff', fontFamily: 'var(--font-serif)', fontSize: tall ? 26 : 18, lineHeight: 1.12, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
-          {t('menu.dailyHeroTitle')}
-        </div>
-      </div>
-      <div style={{ padding: '12px 14px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-          <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="flame" size={20}/></span>
-          <div style={{ lineHeight: 1.18, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{t('menu.streakDays', { n: streak })}</div>
-            {week.length > 0
-              ? <DailyMarks days={week}/>
-              : <div style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 2 }}>{done ? t('menu.dailyNext', { time: countdown || '00:00:00' }) : t('menu.dontMissToday')}</div>}
-          </div>
-        </div>
-        {done
-          ? <span style={{ background: 'rgba(92,148,104,0.18)', color: 'var(--success-deep, #3f7a4d)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: '11px 16px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>{t('menu.results')} →</span>
-          : <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, padding: tall ? '11px 16px' : '11px 14px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap' }}>{tall ? t('menu.playChallenge') : t('menu.playShort')} →</span>}
-      </div>
-    </button>
-  )
-}
-
-// ─── Progres karta (Level + XP + světový žebříček) ────────
-function ProgressCard({ lvl, world, delta, loading, onOpen }: { lvl: LevelInfo; world: { rank: number; total: number } | null; delta: number; loading?: boolean; onOpen?: () => void }) {
-  const { t } = useTranslation()
-  const loc = currentLocale()
-  const up = delta > 0, down = delta < 0
-  return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, padding: '16px 18px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
-        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t('menu.level')} {lvl.level}</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{lvl.into.toLocaleString(loc)} / {lvl.need.toLocaleString(loc)} XP</span>
-      </div>
-      <div style={{ height: 8, borderRadius: 10, background: 'var(--paper-300)', overflow: 'hidden', marginBottom: 18 }}>
-        <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg,#d97757,#d89a54)', transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)' }}/>
-      </div>
-      {/* Světový žebříček — klikací, otevře plný žebříček */}
-      <button onClick={onOpen} disabled={!onOpen} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: onOpen ? 'pointer' : 'default' }}>
-        <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, background: 'var(--paper-200)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="globe" size={22}/></div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{t('menu.worldRank')}</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minHeight: 32 }}>
-            {world
-              ? <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>#{world.rank.toLocaleString(loc)}</span>
-              : loading
-                ? <span className="skeleton" style={{ display: 'inline-block', width: 74, height: 26, marginTop: 4 }}/>
-                : <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--accent)', letterSpacing: '-0.02em', lineHeight: 1.05 }}>—</span>}
-            {world && (up || down) && (
-              <span title={t('menu.rankPeriod')} style={{
-                alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: 2,
-                fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 999,
-                background: up ? 'rgba(92,148,104,0.16)' : 'rgba(192,57,43,0.14)',
-                color: up ? 'var(--success-deep, #3f7a4d)' : 'var(--danger)',
-              }}>{up ? '▲' : '▼'} {Math.abs(delta).toLocaleString(loc)}</span>
-            )}
-          </div>
-        </div>
-        {onOpen && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--accent)' }}>
-            {t('lb.viewCta')} <span style={{ fontSize: 14 }}>→</span>
-          </span>
-        )}
-      </button>
-    </div>
-  )
-}
-
-// ─── CTA banner Premium (jen pro Free hráče) ──────────────
-function PremiumBanner({ onClick }: { onClick: () => void }) {
-  const { t } = useTranslation()
-  return (
-    <button onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
-      background: ACCENT_GRAD, border: 'none', borderRadius: 18, padding: '14px 16px', color: '#fff',
-    }}>
-      <span style={{ flexShrink: 0, display: 'flex' }}><Icon name="star" size={22}/></span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.premiumCtaTitle')}</div>
-        <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.premiumCtaSub')}</div>
-      </div>
-      <span style={{ fontSize: 18, opacity: 0.9 }}>›</span>
-    </button>
-  )
-}
-
-// ─── Banner pro anonyma: ulož si postup / soutěž ──────────
-function SaveProgressBanner({ onClick }: { onClick: () => void }) {
-  const { t } = useTranslation()
-  return (
-    <button onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
-      background: ACCENT_GRAD, border: 'none', borderRadius: 18, padding: '14px 16px', color: '#fff',
-    }}>
-      <span style={{ flexShrink: 0, display: 'flex' }}><Icon name="save" size={22}/></span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{t('menu.guestSaveTitle')}</div>
-        <div style={{ fontSize: 11.5, opacity: 0.92, marginTop: 2 }}>{t('menu.guestSaveSub')}</div>
-      </div>
-      <span style={{ fontSize: 18, opacity: 0.9 }}>›</span>
-    </button>
-  )
-}
-
-// ─── Dlaždice roadmapy (jen pro předplatitele) ────────────
-function RoadmapTile({ onClick }: { onClick: () => void }) {
-  const { t } = useTranslation()
-  return (
-    <button onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
-      background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 15px',
-    }}>
-      <span style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: 'var(--paper-300)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="roadmap" size={21}/></span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>{t('menu.roadmapTitle')}</div>
-        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('menu.roadmapSub')}</div>
-      </div>
-      <span style={{ color: 'var(--ink-3)', fontSize: 18 }}>›</span>
-    </button>
-  )
-}
 
 // ─── Dlaždice režimu (desktop / sheet řádek) ──────────────
 // ─── Slideshow ilustračních obrázků (Ken Burns + prolínání) ──
@@ -926,23 +728,6 @@ function HeroSlideshow({ urls, scrimDark }: { urls: string[]; scrimDark: boolean
         </div>
       ))}
       <div style={{ position: 'absolute', inset: 0, background: scrim }}/>
-    </div>
-  )
-}
-
-// ─── Wordmark ─────────────────────────────────────────────
-function Wordmark() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-      <div style={{ width: 30, height: 30, borderRadius: 9, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="17" height="17" viewBox="0 0 32 32" fill="none">
-          <circle cx="16" cy="16" r="13" stroke="#fff" strokeWidth="1.6"/>
-          <path d="M16 3 C9 9 9 23 16 29" stroke="#fff" strokeWidth="0.9" opacity="0.7" fill="none"/>
-          <path d="M16 3 C23 9 23 23 16 29" stroke="#fff" strokeWidth="0.9" opacity="0.7" fill="none"/>
-          <circle cx="16" cy="16" r="2.3" fill="#fff"/>
-        </svg>
-      </div>
-      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '-0.01em', color: 'var(--ink)' }}>HistoryGuesser</span>
     </div>
   )
 }
