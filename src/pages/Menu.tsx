@@ -288,7 +288,7 @@ export default function MenuPage() {
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
-                <span style={{ display: 'flex', gap: 5 }}>{(dailyWeek.length ? dailyWeek : Array.from({ length: 7 }, () => ({ played: false }))).slice(0, 7).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
+                <span style={{ display: 'flex', gap: 5 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
               </div>
             </div>
 
@@ -532,24 +532,31 @@ export default function MenuPage() {
         </div>
 
         {/* Hero obsah (dole) */}
-        <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px calc(var(--nav-space) + 14px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
-            <span style={{ display: 'flex', gap: 4 }}>{(dailyWeek.length ? dailyWeek : Array.from({ length: 7 }, () => ({ played: false }))).slice(0, 7).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
+            <span style={{ display: 'flex', gap: 4 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
           </div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(30px, 8vw, 40px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 18px' }}>{t('menu.heroQuestion')}</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 16px' }}>{t('menu.heroQuestion')}</h1>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+          {/* Denní výzva — primární akce (jako na desktopu) */}
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E9A183', marginBottom: 8 }}>{t('menu.dailyLabel')} · {dateStr}</div>
+          <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
+            <Icon name="bolt" size={17}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
+          </button>
+
+          {/* Herní režimy */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {mModes.map((m) => (
               <button key={m.title} onClick={m.onClick} style={{
                 display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
                 padding: '12px 14px', borderRadius: 14,
-                background: m.primary ? 'rgba(190,98,64,.92)' : 'rgba(20,16,12,.5)',
+                background: 'rgba(20,16,12,.5)',
                 backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-                border: `1px solid ${m.primary ? 'rgba(233,161,131,.5)' : 'rgba(251,247,240,.14)'}`,
+                border: `1px solid ${m.primary ? 'rgba(233,161,131,.4)' : 'rgba(251,247,240,.14)'}`,
               }}>
-                <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.14)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
+                <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.primary ? 'rgba(190,98,64,.85)' : 'rgba(251,247,240,.1)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, color: '#FBF7F0' }}>{m.title}</span>
                   <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{m.sub}</span>
@@ -559,16 +566,8 @@ export default function MenuPage() {
             ))}
           </div>
 
-          <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 16, borderRadius: 15, border: 'none', cursor: 'pointer', background: 'rgba(251,247,240,.12)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15 }}>
-            <Icon name="calendar" size={17}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
-          </button>
-
           {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
         </div>
-
-        <a href={`/${eloc}/${mSeg.ex}`} style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid rgba(251,247,240,.14)', padding: '14px 20px', textDecoration: 'none', color: 'rgba(251,247,240,.8)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.1em' }}>
-          ↓ {t('menu.exploreHistory').toUpperCase()}
-        </a>
       </section>
 
       {/* Pod záhybem — světlá vrstva (jednosloupcově) */}
