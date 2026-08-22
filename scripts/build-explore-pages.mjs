@@ -27,7 +27,7 @@ const UI = {
     home: 'Domů', explore: 'Objevuj historii',
     whatHappened: 'Co se tady stalo?', whyImportant: 'Proč to bylo důležité?',
     related: 'Související události', facts: 'Fakta', dateL: 'Datum', placeL: 'Místo',
-    periodL: 'Období', categoryL: 'Kategorie', play: 'Zahrát tuto událost',
+    periodL: 'Období', yearL: 'Rok', back: 'Zpět', categoryL: 'Kategorie', play: 'Zahrát tuto událost',
     view360: 'Prohlédnout ve 360°', explore_cta: 'Objevit historii',
     reconstruction: 'Panorama je historicky pravděpodobná rekonstrukce vytvořená pomocí AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr pro historii',
@@ -56,7 +56,7 @@ const UI = {
     home: 'Home', explore: 'Explore history',
     whatHappened: 'What happened here?', whyImportant: 'Why did it matter?',
     related: 'Related events', facts: 'Facts', dateL: 'Date', placeL: 'Place',
-    periodL: 'Period', categoryL: 'Category', play: 'Play this event',
+    periodL: 'Period', yearL: 'Year', back: 'Back', categoryL: 'Category', play: 'Play this event',
     view360: 'View in 360°', explore_cta: 'Explore history',
     reconstruction: 'The panorama is a historically plausible reconstruction created with AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr for history',
@@ -85,7 +85,7 @@ const UI = {
     home: 'Start', explore: 'Geschichte entdecken',
     whatHappened: 'Was geschah hier?', whyImportant: 'Warum war es wichtig?',
     related: 'Verwandte Ereignisse', facts: 'Fakten', dateL: 'Datum', placeL: 'Ort',
-    periodL: 'Epoche', categoryL: 'Kategorie', play: 'Dieses Ereignis spielen',
+    periodL: 'Epoche', yearL: 'Jahr', back: 'Zurück', categoryL: 'Kategorie', play: 'Dieses Ereignis spielen',
     view360: 'In 360° ansehen', explore_cta: 'Geschichte entdecken',
     reconstruction: 'Das Panorama ist eine historisch plausible, mit KI erstellte Rekonstruktion.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr für Geschichte',
@@ -345,7 +345,7 @@ function renderEvent(ev, locale, all) {
   }))
 
   const crumbs = [
-    { name: t.home, path: `/${locale}` },
+    { name: t.home, path: '/menu' },
     { name: t.explore, path: exploreListPath(locale) },
     ...(cat ? [{ name: cat.label, path: categoryPath(locale, catKey) }] : []),
     { name: title, path },
@@ -394,10 +394,11 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
   <header class="xp-hero" ${img ? `style="--hero-img:url('${escapeHtml(img)}')"` : ''}>
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="${escapeHtml(t.explore)}">
-      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
       <a class="xp-btn-ghost" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
     </nav>
     <div class="xp-hero-inner">
+      <a class="xp-back" href="${cat ? categoryPath(locale, catKey) : exploreListPath(locale)}" onclick="if(history.length>1){history.back();return false}">← ${escapeHtml(t.back)}</a>
       <nav class="xp-breadcrumb" aria-label="breadcrumb">
         ${crumbs.map((c, i) => i < crumbs.length - 1
           ? `<a href="${c.path}">${escapeHtml(c.name)}</a><span aria-hidden="true">/</span>`
@@ -429,8 +430,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
       <div class="xp-facts">
         <div class="xp-facts-title">${escapeHtml(t.facts)}</div>
         <dl>
-          ${ev.event_date ? `<dt>${escapeHtml(t.dateL)}</dt><dd>${escapeHtml(ev.event_date)}</dd>` : ''}
-          ${period ? `<dt>${escapeHtml(t.periodL)}</dt><dd>${escapeHtml(period)}</dd>` : ''}
+          ${yearLabel ? `<dt>${escapeHtml(t.yearL)}</dt><dd>${escapeHtml(yearLabel)}</dd>` : ''}
           ${cat ? `<dt>${escapeHtml(t.categoryL)}</dt><dd>${escapeHtml(cat.label)}</dd>` : ''}
         </dl>
         <a class="xp-btn-primary" href="${playEventPath(ev.id)}">${escapeHtml(t.play)}</a>
@@ -478,7 +478,7 @@ function renderListing(locale, all, catKey) {
   }))
 
   const crumbs = [
-    { name: t.home, path: `/${locale}` },
+    { name: t.home, path: '/menu' },
     { name: t.explore, path: exploreListPath(locale) },
     ...(cat ? [{ name: cat.label, path }] : []),
   ]
@@ -538,8 +538,8 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
   <header class="xp-hero xp-hero-list">
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="${escapeHtml(t.explore)}">
-      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
-      <a class="xp-btn-ghost" href="/${locale}">${escapeHtml(t.home)}</a>
+      <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-btn-ghost" href="/menu">${escapeHtml(t.home)}</a>
     </nav>
     <div class="xp-hero-inner">
       <nav class="xp-breadcrumb" aria-label="breadcrumb">
@@ -567,109 +567,6 @@ ${footerHtml(locale)}
 `
 }
 
-// ── Veřejná homepage (panorama na pozadí + rozcestník) ──────────────────────
-function renderHome(locale, all) {
-  const t = UI[locale]
-  const canonical = abs(`/${locale}`)
-  const withImg = all.filter((e) => imgFor(e))
-  const heroEv = withImg[0] || all[0]
-  const heroImg = heroEv ? (heroEv.panorama_url || imgFor(heroEv)) : ''
-  const featured = withImg.slice(0, 3)
-
-  const alternates = LOCALES.map((l) => ({ l, href: abs(`/${l}`) }))
-  const metaTitle = `${t.metaSuffix} — ${t.tagline}`
-
-  const ld = [{
-    '@context': 'https://schema.org', '@type': 'WebSite',
-    name: 'Historyguesser', url: canonical, inLanguage: locale,
-    description: t.homeMeta,
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${abs(exploreListPath(locale))}?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
-    },
-  }]
-
-  const steps = t.steps.map(([h, d], i) => `
-          <div class="how-step">
-            <span class="how-num">${String(i + 1).padStart(2, '0')}</span>
-            <h3>${escapeHtml(h)}</h3>
-            <p>${escapeHtml(d)}</p>
-          </div>`).join('')
-
-  const cards = featured.map((e) => renderCard(e, locale, t)).join('')
-
-  return `<!doctype html>
-<html lang="${locale}">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>${escapeHtml(metaTitle)}</title>
-  <meta name="description" content="${escapeHtml(t.homeMeta)}" />
-  <link rel="canonical" href="${canonical}" />
-  ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
-  <link rel="alternate" hreflang="x-default" href="${abs('/cs')}" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="${escapeHtml(metaTitle)}" />
-  <meta property="og:description" content="${escapeHtml(t.homeSub)}" />
-  <meta property="og:url" content="${canonical}" />
-  ${heroImg ? `<meta property="og:image" content="${escapeHtml(heroImg)}" />` : ''}
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/explore.css" />
-  <script type="application/ld+json">
-${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
-  </script>
-</head>
-<body class="xp">
-  <header class="xp-home-hero">
-    ${heroImg ? `<img class="xp-pan" src="${escapeHtml(heroImg)}" alt="" aria-hidden="true">` : ''}
-    <div class="xp-hero-scrim"></div>
-    <nav class="xp-topbar" aria-label="Historyguesser">
-      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
-      <div class="xp-nav-right">
-        <a class="xp-btn-ghost" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
-        <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.homePlay)}</a>
-      </div>
-    </nav>
-    <div class="xp-home-inner">
-      <span class="xp-kicker">${escapeHtml(t.homeKicker)}</span>
-      <h1>${escapeHtml(t.homeH1)}</h1>
-      <p class="xp-home-sub">${escapeHtml(t.homeSub)}</p>
-      <div class="xp-cta-row">
-        <a class="xp-btn-primary" href="/menu">${escapeHtml(t.homePlay)}</a>
-        <a class="xp-btn-ghost" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
-      </div>
-    </div>
-    <a class="xp-home-strip" href="${exploreListPath(locale)}">↓ ${all.length} ${escapeHtml(t.explore_word)} ${escapeHtml(t.homeBrowse)}</a>
-  </header>
-
-  <section class="xp-section">
-    <div class="xp-section-inner">
-      <h2>${escapeHtml(t.howTitle)}</h2>
-      <div class="how-grid">${steps}
-      </div>
-    </div>
-  </section>
-
-  <section class="xp-section xp-section-sunk">
-    <div class="xp-section-inner">
-      <div class="xp-section-head">
-        <h2>${escapeHtml(t.featuredTitle)}</h2>
-        <a class="xp-more-link" href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)} →</a>
-      </div>
-      <div class="ev-grid">${cards}
-      </div>
-    </div>
-  </section>
-
-${footerHtml(locale)}
-</body>
-</html>
-`
-}
-
 // ── Statická stránka (O projektu / Jak hrát) ────────────────────────────────
 function staticPath(locale, pageKey) {
   return `/${locale}/${STATIC[locale][pageKey].slug}`
@@ -684,7 +581,7 @@ function footerHtml(locale) {
       <a href="${staticPath(locale, 'howto')}">${escapeHtml(STATIC[locale].howto.title)}</a>
       <a href="${staticPath(locale, 'about')}">${escapeHtml(STATIC[locale].about.title)}</a>
     </nav>
-    <div class="xp-footer-brand"><a href="/${locale}">Historyguesser</a> · ${escapeHtml(t.tagline)}</div>
+    <div class="xp-footer-brand"><a href="/menu">Historyguesser</a> · ${escapeHtml(t.tagline)}</div>
   </footer>`
 }
 
@@ -698,7 +595,7 @@ function renderStaticPage(locale, pageKey) {
 
   const alternates = LOCALES.map((l) => ({ l, href: abs(staticPath(l, pageKey)) }))
   const crumbs = [
-    { name: t.home, path: `/${locale}` },
+    { name: t.home, path: '/menu' },
     { name: page.title, path },
   ]
   const body = page.sections.map(([h, paras]) => `
@@ -736,7 +633,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
   <header class="xp-hero xp-hero-doc">
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="Historyguesser">
-      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
       <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.homePlay)}</a>
     </nav>
     <div class="xp-hero-inner">
@@ -786,7 +683,7 @@ function renderCampaign(locale, c, all) {
 
   const alternates = LOCALES.map((l) => ({ l, href: abs(campaignPath(l, c.slug)) }))
   const crumbs = [
-    { name: t.home, path: `/${locale}` },
+    { name: t.home, path: '/menu' },
     { name: t.campaignsTitle, path: exploreListPath(locale) },
     { name: title, path },
   ]
@@ -855,7 +752,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
   <header class="xp-hero" ${img ? `style="--hero-img:url('${escapeHtml(img)}')"` : ''}>
     <div class="xp-hero-scrim"></div>
     <nav class="xp-topbar" aria-label="Historyguesser">
-      <a class="xp-logo" href="/${locale}"><span class="xp-logo-mark"></span> Historyguesser</a>
+      <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
       <a class="xp-btn-primary xp-btn-sm" href="/menu">${escapeHtml(t.campPlay)}</a>
     </nav>
     <div class="xp-hero-inner">
@@ -911,14 +808,6 @@ for (const ev of events) {
     sitemap.push({ loc: abs(eventPath(locale, slug)), lastmod: new Date().toISOString().slice(0, 10) })
     count++
   }
-}
-
-// Veřejná homepage per jazyk (/cs, /en, /de) — nahrazuje i18n shelly bohatým obsahem
-for (const locale of LOCALES) {
-  const homeDir = resolve(dist, locale)
-  mkdirSync(homeDir, { recursive: true })
-  writeFileSync(resolve(homeDir, 'index.html'), renderHome(locale, events), 'utf8')
-  sitemap.push({ loc: abs(`/${locale}`), lastmod: new Date().toISOString().slice(0, 10) })
 }
 
 // Kampaně (vyžadují migraci 20260821140000 — jinak fetchCampaigns vrátí [])

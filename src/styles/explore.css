@@ -65,6 +65,14 @@ body.xp a { color: inherit; }
 .xp-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--hg-display); font-size: 19px; text-decoration: none; color: var(--hg-paper); }
 .xp-logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--hg-brand); display: inline-block; }
 .xp-hero-inner { position: relative; z-index: 1; margin-top: auto; padding: 26px; max-width: 1120px; width: 100%; margin-left: auto; margin-right: auto; }
+.xp-back {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+  padding: 8px 14px; border-radius: var(--hg-r-pill);
+  background: rgba(251,247,240,.12); border: 1px solid rgba(251,247,240,.28);
+  color: var(--hg-paper); text-decoration: none; font-weight: 600; font-size: 13px;
+  backdrop-filter: blur(14px);
+}
+.xp-back:hover { background: rgba(251,247,240,.2); }
 .xp-breadcrumb { font-family: var(--hg-mono); font-size: 11px; letter-spacing: .04em; color: rgba(251,247,240,.72); display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .xp-breadcrumb a { color: rgba(251,247,240,.72); text-decoration: none; }
 .xp-breadcrumb a:hover { color: var(--hg-paper); text-decoration: underline; }
