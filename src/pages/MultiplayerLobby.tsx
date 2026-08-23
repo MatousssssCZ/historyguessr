@@ -61,6 +61,12 @@ export default function MultiplayerLobbyPage() {
   // Min. počet událostí: BR potřebuje aspoň 2, klasika počet kol
   const minEvents = settings.mode === 'battle_royale' ? 2 : settings.rounds
 
+  // Aktuální hodnoty pro cleanup při ODMOUNTOVÁNÍ (viz efekt „leave on unmount").
+  // Bez refů by cleanup běžel při každé změně room/isHost a odhlásil hráče z místnosti.
+  const roomRef = useRef(room); roomRef.current = room
+  const isHostRef = useRef(isHost); isHostRef.current = isHost
+  const userRef = useRef(user); userRef.current = user
+
   // Pokud přišel s kódem v URL
   useEffect(() => {
     const code = searchParams.get('code')
@@ -80,12 +86,16 @@ export default function MultiplayerLobbyPage() {
   }, [settings.categories, settings.year_from, settings.year_to])
 
   // Cleanup při odchodu
+  // Leave místnosti JEN při skutečném odmountování (odchod z lobby), ne při každé
+  // změně room/isHost. Aktuální hodnoty přes refy. (Bez [] deps to vyhazovalo
+  // připojené hráče při každém realtime/poll updatu místnosti.)
   useEffect(() => {
     return () => {
       unsubRef.current?.()
-      if (room && user && !isHost && !enteringGameRef.current) leaveRoom(room.id, user.id)
+      const r = roomRef.current
+      if (r && userRef.current && !isHostRef.current && !enteringGameRef.current) leaveRoom(r.id, userRef.current.id)
     }
-  }, [room, user, isHost])
+  }, [])
 
   // Pojistka proti nespolehlivému Realtime: v lobby pravidelně přečti seznam
   // hráčů i stav místnosti, aby hostitel viděl nově připojené a aby všichni
