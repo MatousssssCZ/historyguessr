@@ -539,9 +539,16 @@ export default function MenuPage() {
 
         {/* Hero obsah (dole) */}
         <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px calc(var(--nav-space) + 14px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
-            <span style={{ display: 'flex', gap: 4 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.7)', whiteSpace: 'nowrap' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
+              <span style={{ display: 'flex', gap: 4 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
+            </div>
+            {world && (
+              <button onClick={() => navigate('/leaderboard')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0, height: 26, padding: '0 11px', borderRadius: 999, background: 'rgba(251,247,240,.1)', border: '1px solid rgba(251,247,240,.16)', color: '#FBF7F0', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}>
+                <Icon name="globe" size={12}/> #{world.rank.toLocaleString(menuLoc)} <span style={{ color: 'rgba(251,247,240,.5)' }}>›</span>
+              </button>
+            )}
           </div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 16px' }}>{t('menu.heroQuestion')}</h1>
