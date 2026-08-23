@@ -67,11 +67,17 @@ export default function MultiplayerLobbyPage() {
   const isHostRef = useRef(isHost); isHostRef.current = isHost
   const userRef = useRef(user); userRef.current = user
 
-  // Pokud přišel s kódem v URL
+  // Pozvánka z odkazu (?code=): předvyplň kód a rovnou se připoj (auto-join),
+  // ať příjemce skončí přímo v lobby. Když selže (plná/rozjetá), zůstane na
+  // obrazovce s kódem + chybou.
+  const autoJoinRef = useRef(false)
   useEffect(() => {
     const code = searchParams.get('code')
-    if (code) { setJoinCode(code); setScreen('join_code') }
-  }, [])
+    if (!code) return
+    setJoinCode(code)
+    setScreen('join_code')
+    if (user && !autoJoinRef.current) { autoJoinRef.current = true; handleJoin(code) }
+  }, [user])
 
   // Úklid MP místností — nespoléhá na pg_cron (viz migrace 038). Throttlováno na 10 min.
   useEffect(() => { maintainMultiplayer() }, [])
@@ -148,10 +154,11 @@ export default function MultiplayerLobbyPage() {
     setLoading(false)
   }
 
-  async function handleJoin() {
-    if (!user || !joinCode.trim()) return
+  async function handleJoin(codeArg?: string) {
+    const code = (typeof codeArg === 'string' ? codeArg : joinCode).trim()
+    if (!user || !code) return
     setLoading(true); setError(null)
-    const foundRoom = await getRoomByCode(joinCode.trim())
+    const foundRoom = await getRoomByCode(code)
     if (!foundRoom) { setError(t('lobby.errNotFound')); setLoading(false); return }
     if (foundRoom.status !== 'waiting') { setError(t('lobby.errInProgress')); setLoading(false); return }
     const currentPlayers = await getPlayers(foundRoom.id)
@@ -277,7 +284,7 @@ export default function MultiplayerLobbyPage() {
 
           {error && <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 12 }}>⚠ {error}</p>}
 
-          <button disabled={joinCode.length !== 5 || loading} onClick={handleJoin} style={{
+          <button disabled={joinCode.length !== 5 || loading} onClick={() => handleJoin()} style={{
             width: '100%', padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
             background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15,
             opacity: joinCode.length !== 5 || loading ? 0.55 : 1,
@@ -464,7 +471,15 @@ export default function MultiplayerLobbyPage() {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--ink)' }}>{room?.code}</span>
           </div>
         </div>
-        <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 14px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>{t('lobby.copy')}</button>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} aria-label={t('lobby.copy')} style={{ background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', color: 'var(--ink-2)', cursor: 'pointer' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          <button onClick={shareInvite} style={{ background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            {inviteCopied ? t('lobby.inviteCopied') : t('lobby.invite')}
+          </button>
+        </div>
       </header>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
