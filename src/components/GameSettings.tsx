@@ -52,7 +52,28 @@ export function Segmented<T extends string | number>({ value, options, onChange 
   )
 }
 
-/** Chipy kategorií (label z i18n už obsahuje ikonu). */
+/** SVG ikony kategorií (line, currentColor) — nahrazují emoji v labelu. */
+const CAT_ICON: Record<string, ReactNode> = {
+  war: <><path d="M14.5 3H20v5.5L9 19.5 4.5 15z"/><path d="M9.5 3H4v5.5L15 19.5 19.5 15z"/></>,
+  moments: <><path d="M8 4h9a1.5 1.5 0 0 1 1.5 1.5V17a3 3 0 0 0 3 3H8a3 3 0 0 1-3-3V6.5"/><path d="M5 6.5A1.5 1.5 0 0 0 3.5 8 1.5 1.5 0 0 0 5 9.5h1.5"/><path d="M9 8.5h6M9 11.5h6M9 14.5h4"/></>,
+  places: <><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13.2 13 8.5 15.5 10.8 11z"/></>,
+  inventions: <><path d="M9.5 18.5h5M10.5 21h3"/><path d="M12 3a6 6 0 0 1 3.8 10.6c-.6.5-.8 1-.8 1.9H9c0-.9-.2-1.4-.8-1.9A6 6 0 0 1 12 3z"/></>,
+  art: <><path d="M12 3a9 9 0 0 0 0 18c1.3 0 2-.9 2-1.9 0-1.2 1-2.1 2.1-2.1H17a4 4 0 0 0 4-4c0-5-4-8-9-8z"/><circle cx="7.5" cy="11.5" r="1"/><circle cx="12" cy="8.5" r="1"/><circle cx="16" cy="11.5" r="1"/></>,
+  sports: <><circle cx="12" cy="9" r="5"/><path d="M8.5 13 7.5 21l4.5-2.4L16.5 21l-1-8"/></>,
+  mysteries: <><circle cx="12" cy="10" r="5.5"/><path d="M6.5 19h11"/><path d="M8 19l1.5-3.7M16 19l-1.5-3.7"/><path d="M9.8 8.2a2.8 2.8 0 0 1 2.7-1.6"/></>,
+  disasters: <><path d="M3 20.5h18"/><path d="M8 20.5 11 13h2l3 7.5"/><path d="M12 13V9"/><path d="M10 6.5 12 4l2 2.5"/></>,
+}
+function CatIcon({ id, size = 15 }: { id: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+      {CAT_ICON[id]}
+    </svg>
+  )
+}
+/** Odstraní vedoucí emoji z labelu kategorie (i18n „⚔ Války" → „Války"). */
+const catLabel = (raw: string) => raw.replace(/^[^\p{L}]+/u, '').trim() || raw
+
+/** Chipy kategorií (SVG ikona + text). */
 export function CategoryChips({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
   const { t } = useTranslation()
   return (
@@ -61,12 +82,12 @@ export function CategoryChips({ selected, onToggle }: { selected: string[]; onTo
         const on = selected.includes(id)
         return (
           <button key={id} onClick={() => onToggle(id)} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 999,
+            display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 999,
             fontSize: 13, cursor: 'pointer',
             border: `1px solid ${on ? 'var(--accent)' : 'var(--line-strong)'}`,
             background: on ? 'var(--accent)' : 'transparent',
             color: on ? '#fff' : 'var(--ink-2)',
-          }}>{t('cat.' + id)}</button>
+          }}><CatIcon id={id}/>{catLabel(t('cat.' + id))}</button>
         )
       })}
     </div>

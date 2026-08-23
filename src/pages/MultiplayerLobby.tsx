@@ -23,6 +23,21 @@ const DEFAULT_SETTINGS: RoomSettings = {
 
 type Screen = 'menu' | 'join_code' | 'lobby'
 
+// Rovnost pro polling — aby se stav neaktualizoval (a hlavička neproblikávala),
+// když se z DB vrátí totožná data.
+function sameRoom(a: MultiplayerRoom | null, b: MultiplayerRoom): boolean {
+  return !!a && a.id === b.id && a.code === b.code && a.status === b.status
+    && a.current_round === b.current_round && a.updated_at === b.updated_at
+}
+function samePlayers(a: MultiplayerPlayer[], b: MultiplayerPlayer[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((p, i) => {
+    const q = b[i]
+    return q && p.user_id === q.user_id && p.total_score === q.total_score
+      && p.is_host === q.is_host && p.ready === q.ready && p.username === q.username
+  })
+}
+
 export default function MultiplayerLobbyPage() {
   const { t } = useTranslation()
   const { user, profile } = useAuth()
@@ -127,12 +142,14 @@ export default function MultiplayerLobbyPage() {
     const refetch = async () => {
       const [ps, r] = await Promise.all([getPlayers(roomId), getRoom(roomId)])
       if (!alive) return
-      setPlayers(ps)
+      // Aktualizuj stav jen při reálné změně — jinak polling každé 2 s
+      // zbytečně překresluje hlavičku (kód místnosti pak problikává).
+      setPlayers(prev => samePlayers(prev, ps) ? prev : ps)
       // Vyhození: byl jsem v seznamu a už nejsem → zpět do menu
       if (user && ps.some(p => p.user_id === user.id)) sawSelfRef.current = true
       else if (sawSelfRef.current && !enteringGameRef.current) { enteringGameRef.current = true; navigate('/menu'); return }
       if (r) {
-        setRoom(r)
+        setRoom(prev => sameRoom(prev, r) ? prev : r)
         if (r.status === 'playing') { enteringGameRef.current = true; navigate(`/multiplayer/game/${roomId}`) }
       }
     }
@@ -352,10 +369,12 @@ export default function MultiplayerLobbyPage() {
       <SettingSection label={t('lobby.modeLabel')}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <ModeCard
-            icon="🏛" title={t('lobby.modeClassic')} desc={t('lobby.modeClassicDesc')}
+            icon={<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9 12 4l9 5"/><path d="M4 9h16"/><path d="M6 9v8M10 9v8M14 9v8M18 9v8"/><path d="M3 20h18"/></svg>}
+            title={t('lobby.modeClassic')} desc={t('lobby.modeClassicDesc')}
             on={!isBR} onClick={() => handleSettingChange('mode', 'classic')}/>
           <ModeCard
-            icon="⚔" title={t('lobby.modeBR')} desc={t('lobby.brHint')}
+            icon={<Icon name="swords" size={19}/>}
+            title={t('lobby.modeBR')} desc={t('lobby.brHint')}
             on={isBR} onClick={() => handleSettingChange('mode', 'battle_royale')}/>
         </div>
       </SettingSection>
@@ -655,7 +674,7 @@ function MpLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function ModeCard({ icon, title, desc, on, onClick }: { icon: string; title: string; desc: string; on: boolean; onClick: () => void }) {
+function ModeCard({ icon, title, desc, on, onClick }: { icon: React.ReactNode; title: string; desc: string; on: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
       textAlign: 'left', cursor: 'pointer', padding: '14px 15px', borderRadius: 14,
@@ -664,7 +683,7 @@ function ModeCard({ icon, title, desc, on, onClick }: { icon: string; title: str
       display: 'flex', flexDirection: 'column', gap: 6, transition: 'border-color 150ms, background 150ms',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 18 }}>{icon}</span>
+        <span style={{ display: 'flex', color: on ? 'var(--accent)' : 'var(--ink-2)' }}>{icon}</span>
         <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--ink)', fontWeight: 500 }}>{title}</span>
         {on && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: 15 }}>✓</span>}
       </div>
