@@ -631,7 +631,6 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const [showShare, setShowShare] = useState(false)
   // Mezikrok: popis události + hodnocení → skóre. Znovunavštívení (už odehráno) ho přeskočí.
   const [scoreShown, setScoreShown] = useState(alreadyPlayed)
-  const [chCopied, setChCopied] = useState(false)
   const { profile } = useAuth()
   const loc = currentLocale()
 
@@ -649,6 +648,10 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const yearLabel = result.yrDiff === 0 ? t('daily.exact') : t('game.yearOff', { n: result.yrDiff })
   const betterThan = allScores.length >= 5 ? Math.round((allScores.filter(v => v < result.totalScore).length / (allScores.length - 1)) * 100) : null
   const dateLabel = new Date().toLocaleDateString(loc, { day: 'numeric', month: 'long' })
+  const doChallenge = async () => {
+    const url = buildChallengeUrl(event.id, result.totalScore, profile?.username, { daily: true })
+    await shareChallenge(url, t('challenge.shareText', { score: result.totalScore }))
+  }
   const shareData = { dateLabel, score: result.totalScore, maxScore: 1000, locScore: result.locScore, yearScore: result.yrScore, distanceLabel: formatDistance(result.distKm), yearLabel, betterThan }
   const shareText = [`HistoryGuesser · ${t('menu.dailyMobile')} · ${dateLabel}`, `★ ${result.totalScore} / 1000`, `${t('common.place')}: ${formatDistance(result.distKm)} · ${t('common.year')}: ${yearLabel}`, 'historyguesser.net'].join('\n')
 
@@ -728,22 +731,18 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         title={eventTitle(event)}
         subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
         leaderboard={shown} playersToday={entries.length} distribution={distribution}
-        panorama={panorama} story={story} xpSection={xpSection}
+        story={story} xpSection={xpSection}
+        onChallenge={isMakeup ? undefined : doChallenge}
+        onShare={isMakeup ? undefined : () => setShowShare(true)}
         onBack={() => setDetailTab(null)} ctaLabel={t('daily.menu')} onCta={onMenu}
       />
     )
   }
 
   const ghost: CSSProperties = { flex: 1, padding: '9px 0', borderRadius: 11, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }
-  const secondary = isMakeup ? null : (<>
-    <button onClick={() => setShowShare(true)} style={ghost}><Icon name="share" size={14}/> {t('daily.share')}</button>
-    <button onClick={async () => {
-      const url = buildChallengeUrl(event.id, result.totalScore, profile?.username, { daily: true })
-      const r = await shareChallenge(url, t('challenge.shareText', { score: result.totalScore }))
-      if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
-    }} style={ghost}>{chCopied ? <>✓ {t('challenge.linkCopied')}</> : <><Icon name="swords" size={14}/> {t('challenge.friendBtn')}</>}</button>
-    {makeupCount > 0 && onMakeup && <button onClick={onMakeup} style={ghost}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>}
-  </>)
+  const makeupAction = (!isMakeup && makeupCount > 0 && onMakeup)
+    ? <button onClick={onMakeup} style={ghost}>🎟 {t('daily.makeupCta', { n: makeupCount })}</button>
+    : null
 
   return (<>
     <RoundResult
@@ -753,9 +752,11 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
       distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
       yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
       praise={praise}
+      panorama={panorama}
       showDetail onOpenDetail={setDetailTab}
+      onChallenge={isMakeup ? undefined : doChallenge}
       ctaLabel={t('daily.menu')} onCta={onMenu}
-      secondaryActions={secondary}    />
+      secondaryActions={makeupAction}    />
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     {challengeBanner}
   </>)

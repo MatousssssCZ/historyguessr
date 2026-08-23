@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
 import { formatDistance } from '@/lib/scoring'
-import { C, F, SHADOW_CTA, DETAIL_TABS, type DetailTab } from './RoundResult'
+import { C, F, SHADOW_CTA, type DetailTab } from './RoundResult'
+import ResultSwitcher from './ResultSwitcher'
 
 export interface LeaderEntry {
   id: string
@@ -15,27 +16,24 @@ export interface LeaderEntry {
 export interface Distribution { bins: number[]; myBinIndex: number; percentileBetterThan: number }
 
 interface Props {
-  initialTab: DetailTab
-  tabs?: DetailTab[]           // které taby ukázat (default všechny 3)
+  initialTab: DetailTab          // 'leaderboard' (žebříček) nebo 'story' (o události)
   title: string           // „Kolo 3 · IBM PC" nebo název události
   subtitle: string        // „826 B. · 1981 · BOCA RATON"
   leaderboard: LeaderEntry[]
   playersToday: number
   distribution: Distribution
-  panorama: React.ReactNode
-  story: React.ReactNode        // „O události" — popis/příběh (nahradil tab Rozložení)
-  xpSection?: React.ReactNode   // XP bar přes celou šířku (pod dlaždicemi/detailem)
-  onBack: () => void
+  story: React.ReactNode        // „O události" — popis/příběh
+  xpSection?: React.ReactNode   // XP bar přes celou šířku
+  onBack: () => void            // zpět na „Moje skóre"
+  onChallenge?: () => void      // „Vyzvi kamaráda" v přepínači
+  onShare?: () => void          // „Sdílet výsledek" (v žebříčku)
   ctaLabel: string
   onCta: () => void
 }
 
 export default function RoundDetail(p: Props) {
   const { t } = useTranslation()
-  const [tab, setTab] = useState<DetailTab>(p.initialTab)
-  const label: Record<DetailTab, string> = {
-    panorama: t('round.tabPanorama'), story: t('round.tabStory'), leaderboard: t('round.tabLeaderboard'),
-  }
+  const isBoard = p.initialTab === 'leaderboard'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: C.bg, overflow: 'hidden', maxWidth: 480, marginInline: 'auto' }}>
       {/* Topbar */}
@@ -47,47 +45,45 @@ export default function RoundDetail(p: Props) {
         </div>
       </div>
 
-      {/* Taby */}
-      <div style={{ flex: 'none', display: 'flex', gap: 5, padding: '0 18px 12px' }} role="tablist">
-        {(p.tabs ?? DETAIL_TABS).map(tk => {
-          const on = tab === tk
-          return (
-            <button key={tk} type="button" role="tab" aria-selected={on} onClick={() => setTab(tk)} style={{ flex: 1, textAlign: 'center', padding: '8px 0', borderRadius: 10, cursor: 'pointer', border: on ? `1px solid ${C.ink}` : `1px solid ${C.lineStrong}`, background: on ? C.ink : C.surface, color: on ? C.surface : C.muted, font: `${on ? 700 : 600} 11px ${F.ui}` }}>{label[tk]}</button>
-          )
-        })}
-      </div>
-
       {/* Počet hráčů (jen žebříček) */}
-      {tab === 'leaderboard' && (
+      {isBoard && (
         <div style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px 9px' }}>
           <span style={{ font: `500 9.5px ${F.mono}`, letterSpacing: '.10em', color: C.muted2 }}>{t('round.playedToday')}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, font: `600 11px ${F.ui}`, color: C.ink }}>
-            <span style={{ fontSize: 13 }}>👥</span>{p.playersToday.toLocaleString(currentLocale())} {t('round.players')}
+            {p.playersToday.toLocaleString(currentLocale())} {t('round.players')}
           </span>
         </div>
       )}
 
       {/* Obsah */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: tab === 'panorama' ? 'hidden' : 'auto', WebkitOverflowScrolling: 'touch', padding: tab === 'panorama' ? 0 : '0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {tab === 'leaderboard' && (
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {isBoard ? (
           <>
             {p.leaderboard.map((e, i) => <LeaderRow key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
+            {p.onShare && (
+              <button type="button" onClick={p.onShare} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', marginTop: 4, padding: 11, border: `1px solid ${C.lineStrong}`, borderRadius: 12, background: 'transparent', color: C.ink2, font: `600 12.5px ${F.ui}`, cursor: 'pointer' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/></svg>
+                {t('daily.share')}
+              </button>
+            )}
             {p.xpSection && <div style={{ marginTop: 5 }}>{p.xpSection}</div>}
             <DistributionCard dist={p.distribution} t={t}/>
           </>
-        )}
-        {tab === 'story' && (
+        ) : (
           <div style={{ padding: '4px 0 10px' }}>{p.story}</div>
-        )}
-        {tab === 'panorama' && (
-          <div style={{ position: 'relative', flex: 1, minHeight: 0, background: '#3a342b', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', inset: 0 }}>{p.panorama}</div>
-          </div>
         )}
       </div>
 
-      {/* Footer CTA */}
-      <div style={{ flex: 'none', padding: '12px 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}>
+      {/* Přepínač + CTA */}
+      <div style={{ flex: 'none', padding: '8px 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}>
+        <ResultSwitcher
+          active="mid"
+          onScore={p.onBack}
+          scoreLabel={t('round.tabMyScore')}
+          mid={{ label: isBoard ? t('round.tabLeaderboard') : t('round.tabStory'), icon: isBoard ? 'trophy' : 'info', onClick: () => {} }}
+          onChallenge={p.onChallenge}
+          challengeLabel={t('challenge.friendBtn')}
+        />
         <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer' }}>{p.ctaLabel} <span style={{ fontSize: 15 }}>→</span></button>
       </div>
     </div>

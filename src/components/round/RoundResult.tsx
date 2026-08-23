@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
 import { formatDistance, formatYear } from '@/lib/scoring'
+import ResultSwitcher from './ResultSwitcher'
 
 // Redesign výsledku kola (handoff 17e). Mapa je hrdina (62 %), výsledek je
 // jedna spodní karta. Prezentační komponenta — data i mapa přijdou přes props.
@@ -41,6 +42,8 @@ interface Props {
   showDetail?: boolean            // vstupy do detailu
   detailTabs?: DetailTab[]        // které taby ukázat (default všechny 3)
   onOpenDetail?: (tab: DetailTab) => void
+  panorama?: React.ReactNode      // 360° panorama (otevře se z pilulky na mapě)
+  onChallenge?: () => void        // „Vyzvi kamaráda" v přepínači
   ctaLabel: string
   onCta: () => void
   secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
@@ -65,9 +68,11 @@ export function DetailIcon({ tab, size = 19 }: { tab: DetailTab; size?: number }
 export default function RoundResult(p: Props) {
   const { t } = useTranslation()
   const loc = currentLocale()
-  const detailLabel: Record<DetailTab, string> = {
-    panorama: t('round.tabPanorama'), story: t('round.tabStory'), leaderboard: t('round.tabLeaderboard'),
-  }
+  const [panoOpen, setPanoOpen] = useState(false)
+  // Prostřední tlačítko přepínače: Žebříček (je-li) jinak O události
+  const tabs = p.detailTabs ?? DETAIL_TABS
+  const midTab: DetailTab | null = tabs.includes('leaderboard') ? 'leaderboard' : (tabs.includes('story') ? 'story' : null)
+  const hasPano = !!p.panorama
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100dvh', background: C.bg, overflow: 'hidden' }}>
       {/* Mapa (hrdina) */}
@@ -75,6 +80,13 @@ export default function RoundResult(p: Props) {
         <div style={{ position: 'absolute', inset: 0 }}>{p.map}</div>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(38,33,28,.42) 0%, rgba(38,33,28,0) 24%, rgba(38,33,28,0) 60%, rgba(242,236,226,.5) 92%, ' + C.bg + ' 100%)' }}/>
       </div>
+
+      {/* 360° pilulka (otevře panorama) */}
+      {hasPano && (
+        <button type="button" onClick={() => setPanoOpen(true)} style={{ position: 'absolute', zIndex: 2, right: 16, top: 'calc(env(safe-area-inset-top,0px) + 10px)', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', border: 0, borderRadius: 999, background: 'rgba(28,24,18,.62)', backdropFilter: 'blur(8px)', color: C.surface, font: `600 12px ${F.ui}`, cursor: 'pointer' }}>
+          <DetailIcon tab="panorama" size={15}/> 360°
+        </button>
+      )}
 
       {/* Čip kola (jen sólo) */}
       {p.roundLabel && (
@@ -102,24 +114,31 @@ export default function RoundResult(p: Props) {
           <Metric label={t('round.yearsOff', { n: p.yearOff })} points={p.yearPoints} pct={p.yearPoints / p.yearMax} color={C.good}/>
         </div>
 
-        {p.showDetail && p.onOpenDetail && (
-          <div style={{ display: 'flex', gap: 7, marginBottom: 13 }}>
-            {(p.detailTabs ?? DETAIL_TABS).map(tab => (
-              <button key={tab} type="button" onClick={() => p.onOpenDetail!(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '9px 4px', minHeight: 56, border: `1px solid ${C.lineStrong}`, borderRadius: 12, background: C.surface, color: C.ink2, font: `600 9.5px ${F.ui}`, cursor: 'pointer' }}>
-                <span style={{ color: C.accent, display: 'flex' }}><DetailIcon tab={tab}/></span>
-                <span>{detailLabel[tab]}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
         {p.rating && <div style={{ padding: '2px 2px 12px' }}>{p.rating}</div>}
+
+        {p.showDetail && p.onOpenDetail && midTab && (
+          <ResultSwitcher
+            active="score"
+            onScore={() => {}}
+            scoreLabel={t('round.tabMyScore')}
+            mid={{ label: midTab === 'leaderboard' ? t('round.tabLeaderboard') : t('round.tabStory'), icon: midTab === 'leaderboard' ? 'trophy' : 'info', onClick: () => p.onOpenDetail!(midTab) }}
+            onChallenge={p.onChallenge}
+            challengeLabel={t('challenge.friendBtn')}
+          />
+        )}
 
         <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer' }}>
           {p.ctaLabel} <span style={{ fontSize: 15 }}>→</span>
         </button>
         {p.secondaryActions && <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>{p.secondaryActions}</div>}
       </div>
+
+      {panoOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000' }}>
+          <div style={{ position: 'absolute', inset: 0 }}>{p.panorama}</div>
+          <button type="button" onClick={() => setPanoOpen(false)} aria-label={t('common.close')} style={{ position: 'absolute', zIndex: 2, top: 'calc(env(safe-area-inset-top,0px) + 16px)', right: 16, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, borderRadius: '50%', background: 'rgba(28,24,18,.7)', backdropFilter: 'blur(8px)', color: '#fff', fontSize: 20, cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
     </div>
   )
 }

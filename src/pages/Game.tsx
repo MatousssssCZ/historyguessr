@@ -713,6 +713,10 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       if (r === 'copied') { setChCopied(true); setTimeout(() => setChCopied(false), 2000) }
     }}>{chCopied ? <>✓ {t('challenge.linkCopied')}</> : <><Icon name="swords" size={14}/> {t('challenge.friendBtn')}</>}</button>
   )
+  const doChallenge = async () => {
+    const url = buildChallengeUrl(event.id, round.round_score, profile?.username)
+    await shareChallenge(url, t('challenge.shareText', { score: round.round_score }))
+  }
 
   // Mezikrok: nejdřív popis události + hodnocení, pak skóre
   if (!scoreShown) {
@@ -750,10 +754,11 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   if (detailTab) {
     return (
       <RoundDetail
-        initialTab={detailTab} tabs={SOLO_TABS}
+        initialTab={detailTab}
         title={eventTitle(event)} subtitle={`${round.round_score.toLocaleString(currentLocale())} ${t('common.pts')} · ${formatYear(event.year)}`}
         leaderboard={[]} playersToday={0} distribution={{ bins: [], myBinIndex: 0, percentileBetterThan: 0 }}
-        panorama={panoNode} story={storyNode}
+        story={storyNode}
+        onChallenge={doChallenge}
         onBack={() => setDetailTab(null)} ctaLabel={ctaLabel} onCta={onNext}
       />
     )
@@ -774,8 +779,9 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearOff={round.year_diff}
       yearPoints={round.year_score}
       yearMax={500}
+      panorama={panoNode}
       showDetail detailTabs={SOLO_TABS} onOpenDetail={setDetailTab}
-      secondaryActions={challengeBtn}
+      onChallenge={doChallenge}
       ctaLabel={ctaLabel}
       onCta={onNext}
     />
