@@ -12,6 +12,7 @@ import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import { loadResume, RESUME_TTL, type ResumeState } from '@/lib/resume'
 import { getMenuHeroImages } from '@/lib/preload'
+import { getPendingInvites } from '@/lib/invites'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -73,6 +74,8 @@ export default function MenuPage() {
   const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
   const [, setIsPremium] = useState(false)
   const [teaser, setTeaser] = useState<{ events: TeaserEvent[]; campaigns: TeaserCampaign[] } | null>(null)
+  const [inviteCount, setInviteCount] = useState(0)
+  useEffect(() => { getPendingInvites().then(l => setInviteCount(l.length)).catch(() => {}) }, [])
   useEffect(() => { getMyEntitlements().then(e => setIsPremium(isPremiumUser(e))).catch(() => {}) }, [])
 
   // „Jak hrát" se NEZOBRAZUJE automaticky — jen ručně přes „?" tlačítko
@@ -312,6 +315,7 @@ export default function MenuPage() {
                         <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: '#FBF7F0' }}>{m.title}</span>
                         <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.6)', marginTop: 1 }}>{m.sub}</span>
                       </span>
+                      {m.icon === 'swords' && inviteCount > 0 && <span style={{ flexShrink: 0, background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{inviteCount}</span>}
                       <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
                     </button>
                   ))}
@@ -578,6 +582,7 @@ export default function MenuPage() {
                     <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, color: '#FBF7F0' }}>{m.title}</span>
                     <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{m.sub}</span>
                   </span>
+                  {m.icon === 'swords' && inviteCount > 0 && <span style={{ flexShrink: 0, background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{inviteCount}</span>}
                   <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
                 </button>
               ))}
