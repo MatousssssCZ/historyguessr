@@ -24,6 +24,7 @@ import { starThresholds, maxScoreFor } from '@/lib/campaignLogic'
 import ControlDock from '@/components/GameControls'
 import AdSlot from '@/components/AdSlot'
 import EraToggle from '@/components/EraToggle'
+import { CatIcon, catLabel } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Event, RoundResult, CampaignReward, RewardRarity } from '@/types/database'
 
@@ -804,8 +805,8 @@ export function InfoContent({ event }: { event: Event }) {
           <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>{eventDescription(event)}</p>
         )}
         {event.category && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
-            {t('cat.' + event.category)}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.1em', textTransform: 'uppercase', background: 'var(--paper-200)', padding: '3px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
+            <CatIcon id={event.category} size={12}/>{catLabel(t('cat.' + event.category))}
           </span>
         )}
         <div style={{ borderTop: '1px solid var(--line)', marginTop: 4 }}>

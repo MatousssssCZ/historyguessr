@@ -63,7 +63,7 @@ const CAT_ICON: Record<string, ReactNode> = {
   mysteries: <><circle cx="12" cy="10" r="5.5"/><path d="M6.5 19h11"/><path d="M8 19l1.5-3.7M16 19l-1.5-3.7"/><path d="M9.8 8.2a2.8 2.8 0 0 1 2.7-1.6"/></>,
   disasters: <><path d="M3 20.5h18"/><path d="M8 20.5 11 13h2l3 7.5"/><path d="M12 13V9"/><path d="M10 6.5 12 4l2 2.5"/></>,
 }
-function CatIcon({ id, size = 15 }: { id: string; size?: number }) {
+export function CatIcon({ id, size = 15 }: { id: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
       {CAT_ICON[id]}
@@ -71,7 +71,7 @@ function CatIcon({ id, size = 15 }: { id: string; size?: number }) {
   )
 }
 /** Odstraní vedoucí emoji z labelu kategorie (i18n „⚔ Války" → „Války"). */
-const catLabel = (raw: string) => raw.replace(/^[^\p{L}]+/u, '').trim() || raw
+export const catLabel = (raw: string) => raw.replace(/^[^\p{L}]+/u, '').trim() || raw
 
 /** Chipy kategorií (SVG ikona + text). */
 export function CategoryChips({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {

@@ -13,7 +13,7 @@ import { singlePlayerAnalytics, monetizationAnalytics } from '@/lib/analytics'
 import type { SinglePlayerPreset, PresetRules } from '@/lib/presets'
 import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
-import { Segmented, CategoryChips, CATEGORY_IDS as CAT_IDS } from '@/components/GameSettings'
+import { Segmented, CategoryChips, CatIcon, catLabel, CATEGORY_IDS as CAT_IDS } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { PageHeader } from '@/components/ui/Page'
 import AppHeader from '@/components/AppHeader'
@@ -344,8 +344,8 @@ export default function PreGameLobbyPage() {
               }}/>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14.5, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: out ? 'line-through' : 'none' }}>{eventTitle({ ...ev, description: '' })}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
-                  {formatYear(ev.year)}{ev.category ? ` · ${t('cat.' + ev.category)}` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
+                  {formatYear(ev.year)}{ev.category && <> · <CatIcon id={ev.category} size={11}/> {catLabel(t('cat.' + ev.category))}</>}
                 </div>
               </div>
               <button onClick={() => toggleExclude(ev.id)}
@@ -430,7 +430,7 @@ export default function PreGameLobbyPage() {
 
   // ── Desktop: layout dle mockupu (mřížka 2×2 + pravý rail) ──
   if (!isMobile) {
-    const catName = (id: string) => t('cat.' + id).split(' ').slice(1).join(' ') || t('cat.' + id)
+    const catName = (id: string) => catLabel(t('cat.' + id))
     const catSummary = categories.length === 0 ? t('pregame.allCats')
       : categories.length === 1 ? catName(categories[0]) : String(categories.length)
 
@@ -488,7 +488,7 @@ export default function PreGameLobbyPage() {
                         color: on ? 'var(--accent-deep)' : 'var(--ink-2)',
                         fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 500, fontSize: 13.5,
                       }}>
-                        {t('cat.' + id)}
+                        <CatIcon id={id} size={15}/>{catLabel(t('cat.' + id))}
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: on ? 'var(--accent)' : 'var(--ink-3)' }}>{catCounts[id] ?? 0}</span>
                       </button>
                     )
