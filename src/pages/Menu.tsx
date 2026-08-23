@@ -19,7 +19,8 @@ import MobileNav from '@/components/MobileNav'
 import Icon, { type IconName } from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
-import { isInstallTileHidden } from '@/lib/pwaInstall'
+import { DownloadIcon } from '@/components/BrowserIcons'
+import { isInstallTileHidden, isStandalone } from '@/lib/pwaInstall'
 
 type DailyState = 'loading' | 'new' | 'done'
 
@@ -27,6 +28,7 @@ type DailyState = 'loading' | 'new' | 'done'
 type DayMark = { played: boolean; label: string; isToday: boolean }
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
+const SUCCESS_GRAD = 'linear-gradient(150deg,#5f9d68,#3f6b45)'
 
 // Krátkodobá in-memory cache dat menu — drží se mezi překliky v rámci session
 // (nikoli po reloadu). Klíč obsahuje xp + datum registrace, takže po odehrání
@@ -68,7 +70,7 @@ export default function MenuPage() {
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
   const [showInstall, setShowInstall] = useState(false)
-  const [, setInstallTileHidden] = useState(() => isInstallTileHidden())
+  const [installTileHidden, setInstallTileHidden] = useState(() => isInstallTileHidden())
   const [, setIsPremium] = useState(false)
   const [teaser, setTeaser] = useState<{ events: TeaserEvent[]; campaigns: TeaserCampaign[] } | null>(null)
   useEffect(() => { getMyEntitlements().then(e => setIsPremium(isPremiumUser(e))).catch(() => {}) }, [])
@@ -283,8 +285,8 @@ export default function MenuPage() {
               <div style={{ ...cardLabel, color: '#E9A183', marginBottom: 16 }}><span style={{ display: 'inline-flex', width: 6, height: 6, borderRadius: '50%', background: '#BE6240', marginRight: 8, verticalAlign: 'middle' }}/>{t('menu.dailyLabel').toUpperCase()} · {dateStr}</div>
               <div style={{ fontFamily: 'var(--font-sans)', fontSize: 15, color: 'rgba(251,247,240,.75)', marginBottom: 10 }}>{greet}, {name}</div>
               <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(40px, 4.6vw, 60px)', lineHeight: 1.05, letterSpacing: '-0.03em', margin: '0 0 28px' }}>{t('menu.heroQuestion')}</h1>
-              <button onClick={goDaily} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 28px', borderRadius: 15, border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, boxShadow: '0 22px 46px -20px rgba(190,98,64,.95)' }}>
-                <Icon name="bolt" size={18}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
+              <button onClick={goDaily} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 28px', borderRadius: 15, border: 'none', cursor: 'pointer', background: dailyState === 'done' ? SUCCESS_GRAD : ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, boxShadow: dailyState === 'done' ? '0 22px 46px -20px rgba(63,107,69,.9)' : '0 22px 46px -20px rgba(190,98,64,.95)' }}>
+                <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={18}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}>🔥 {t('menu.streakDays', { n: dailyStreak })}</span>
@@ -542,29 +544,45 @@ export default function MenuPage() {
 
           {/* Denní výzva — primární akce (jako na desktopu) */}
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E9A183', marginBottom: 8 }}>{t('menu.dailyLabel')} · {dateStr}</div>
-          <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
-            <Icon name="bolt" size={17}/> {dailyState === 'done' ? t('menu.results') : t('menu.playChallenge')}
+          <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: dailyState === 'done' ? SUCCESS_GRAD : ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: dailyState === 'done' ? '0 18px 40px -22px rgba(63,107,69,.9)' : '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
+            <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={17}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
           </button>
 
-          {/* Herní režimy */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {mModes.map((m) => (
-              <button key={m.title} onClick={m.onClick} style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
-                padding: '12px 14px', borderRadius: 14,
-                background: 'rgba(20,16,12,.5)',
-                backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-                border: `1px solid ${m.primary ? 'rgba(233,161,131,.4)' : 'rgba(251,247,240,.14)'}`,
-              }}>
-                <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.primary ? 'rgba(190,98,64,.85)' : 'rgba(251,247,240,.1)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, color: '#FBF7F0' }}>{m.title}</span>
-                  <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{m.sub}</span>
-                </span>
-                <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
-              </button>
-            ))}
-          </div>
+          {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto) → jinak herní režimy */}
+          {(!isStandalone() && !installTileHidden) ? (
+            <button onClick={() => setShowInstall(true)} style={{
+              display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+              padding: '14px 15px', borderRadius: 14,
+              background: 'rgba(190,98,64,.16)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+              border: '1px solid rgba(233,161,131,.45)',
+            }}>
+              <span style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: ACCENT_GRAD, color: '#fff' }}><DownloadIcon size={20} color="#fff"/></span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, color: '#FBF7F0' }}>{t('common.instTile')}</span>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{t('common.instTileSub')}</span>
+              </span>
+              <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>›</span>
+            </button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {mModes.map((m) => (
+                <button key={m.title} onClick={m.onClick} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
+                  padding: '12px 14px', borderRadius: 14,
+                  background: 'rgba(20,16,12,.5)',
+                  backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+                  border: `1px solid ${m.primary ? 'rgba(233,161,131,.4)' : 'rgba(251,247,240,.14)'}`,
+                }}>
+                  <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.primary ? 'rgba(190,98,64,.85)' : 'rgba(251,247,240,.1)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, color: '#FBF7F0' }}>{m.title}</span>
+                    <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{m.sub}</span>
+                  </span>
+                  <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
         </div>
