@@ -52,6 +52,8 @@ export default function MultiplayerLobbyPage() {
   const [inviteCopied, setInviteCopied] = useState(false)
   const [tab, setTab] = useState<'settings' | 'lobby'>('settings')
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const [inviteFriends, setInviteFriends] = useState<FriendInvite[]>([])
 
   // Pozvánka do místnosti — odkaz s předvyplněným kódem (?code=), přes Web Share
@@ -235,7 +237,14 @@ export default function MultiplayerLobbyPage() {
 
   // Odchod z lobby — hostitelství přejde na dalšího (leave_multiplayer_room),
   // ať místnost nezůstane osiřelá. enteringGameRef zabrání dvojímu leave z unmountu.
-  async function handleLeave() {
+  const copyText = async (txt: string) => {
+    if (!txt) return
+    try { await navigator.clipboard.writeText(txt); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* ignore */ }
+  }
+
+  function handleLeave() { setConfirmLeave(true) }
+  async function doLeave() {
+    setConfirmLeave(false)
     if (room && user) { enteringGameRef.current = true; await leaveMultiplayerRoom(room.id).catch(() => {}) }
     navigate('/menu')
   }
@@ -488,16 +497,19 @@ export default function MultiplayerLobbyPage() {
 
   const sheetRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 12px', borderRadius: 13, background: 'var(--paper-200)', border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: 8 }
   const inviteSheet = inviteOpen ? (
-    <div onClick={() => setInviteOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 8000, background: 'rgba(20,17,13,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, background: 'var(--surface)', borderRadius: '22px 22px 0 0', padding: '16px 18px calc(18px + env(safe-area-inset-bottom,0px))', maxHeight: '82vh', overflowY: 'auto' }}>
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-strong)', margin: '0 auto 14px' }}/>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', marginBottom: 14 }}>{t('lobby.sheetTitle')}</div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 8000, background: 'var(--surface)', display: 'flex', flexDirection: 'column' }}>
+      {/* Hlavička přes celou šířku + zavírací křížek */}
+      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: 'calc(env(safe-area-inset-top,0px) + 14px) 18px 12px', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--ink)' }}>{t('lobby.sheetTitle')}</div>
+        <button onClick={() => setInviteOpen(false)} aria-label={t('common.close')} style={{ width: 36, height: 36, flexShrink: 0, borderRadius: '50%', border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer', fontSize: 18, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px calc(18px + env(safe-area-inset-bottom,0px))', maxWidth: 480, width: '100%', margin: '0 auto' }}>
 
         <button onClick={() => { shareInvite() }} style={sheetRow}>
           <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span>
           <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)' }}>{t('lobby.invite')}</span>
         </button>
-        <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} style={{ ...sheetRow, marginBottom: 16 }}>
+        <button onClick={() => copyText(room?.code ?? '')} style={{ ...sheetRow, marginBottom: 16 }}>
           <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: 'var(--paper-300)', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
           <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)' }}>{t('lobby.copyCode')} <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-3)' }}>{room?.code}</span></span>
         </button>
@@ -518,6 +530,32 @@ export default function MultiplayerLobbyPage() {
       </div>
     </div>
   ) : null
+
+  // Toast po zkopírování
+  const copyToast = (
+    <div aria-live="polite" style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(env(safe-area-inset-bottom,0px) + 22px)', zIndex: 9000, display: 'flex', justifyContent: 'center', pointerEvents: 'none', opacity: copied ? 1 : 0, transform: copied ? 'translateY(0)' : 'translateY(8px)', transition: 'opacity 180ms, transform 180ms' }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--sepia-900, #2a1f17)', color: '#FBF7F0', padding: '10px 16px', borderRadius: 999, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, boxShadow: '0 6px 20px rgba(20,17,13,.35)' }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg>
+        {t('lobby.copied')}
+      </div>
+    </div>
+  )
+
+  // Potvrzení opuštění lobby / hry
+  const leaveConfirm = confirmLeave ? (
+    <div onClick={() => setConfirmLeave(false)} style={{ position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(20,17,13,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 360, background: 'var(--surface)', borderRadius: 20, padding: '22px 22px 18px', boxShadow: '0 12px 40px rgba(20,17,13,.4)' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 21, color: 'var(--ink)', marginBottom: 8 }}>{t(room?.status === 'playing' ? 'lobby.leaveGameConfirm' : 'lobby.leaveLobbyConfirm')}</div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 20 }}>{t('lobby.leaveConfirmDesc')}</div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => setConfirmLeave(false)} style={{ flex: 1, padding: 12, borderRadius: 12, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-2)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{t('lobby.stay')}</button>
+          <button onClick={doLeave} style={{ flex: 1, padding: 12, borderRadius: 12, border: 0, background: 'var(--danger, #c0392b)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>{t('lobby.leaveBtn')}</button>
+        </div>
+      </div>
+    </div>
+  ) : null
+
+  const overlays = <>{inviteSheet}{copyToast}{leaveConfirm}</>
 
   // ── Desktop — kartový layout (sladěno s „Klasickou hrou") ──
   if (!isMobile) {
@@ -557,7 +595,7 @@ export default function MultiplayerLobbyPage() {
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   <button
-                    onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
+                    onClick={() => copyText(room?.code ?? '')}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     {t('lobby.copy')}
@@ -581,7 +619,7 @@ export default function MultiplayerLobbyPage() {
             </div>
           </div>
         </div>
-        {inviteSheet}
+        {overlays}
       </div>
     )
   }
@@ -620,7 +658,7 @@ export default function MultiplayerLobbyPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
-          <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} aria-label={t('lobby.copy')} style={{ width: 34, height: 34, borderRadius: 10, border: 0, background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <button onClick={() => copyText(room?.code ?? '')} aria-label={t('lobby.copy')} style={{ width: 34, height: 34, borderRadius: 10, border: 0, background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>
           <button onClick={openInvite} style={{ background: 'var(--accent)', border: 0, borderRadius: 10, padding: '0 14px', height: 34, display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
@@ -664,7 +702,7 @@ export default function MultiplayerLobbyPage() {
       <div style={{ padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))', background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
         <StartButton/>
       </div>
-      {inviteSheet}
+      {overlays}
     </div>
   )
 }
