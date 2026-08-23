@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom, abandonRoom,
-  getPlayers, startGame, subscribeToRoom, countMatchingEvents, getRoomPanoramas,
+  getPlayers, startGame, subscribeToRoom, countMatchingEvents, getRoomPanoramas, updateRoomSettings,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
 import { maintainMultiplayer } from '@/lib/supabase'
@@ -33,6 +33,7 @@ export default function MultiplayerLobbyPage() {
   const [settings, setSettings] = useState<RoomSettings>(DEFAULT_SETTINGS)
   const [joinCode, setJoinCode] = useState('')
   const [inviteCopied, setInviteCopied] = useState(false)
+  const [tab, setTab] = useState<'settings' | 'lobby'>('settings')
 
   // Pozvánka do místnosti — odkaz s předvyplněným kódem (?code=), přes Web Share
   // API nebo do schránky (fallback).
@@ -90,6 +91,14 @@ export default function MultiplayerLobbyPage() {
     }, 400)
     return () => clearTimeout(t)
   }, [settings.categories, settings.year_from, settings.year_to])
+
+  // Host: ulož změny nastavení do místnosti (debounce) → použije je start hry
+  // a přes realtime je uvidí i připojení hráči.
+  useEffect(() => {
+    if (!isHost || !room || screen !== 'lobby') return
+    const tmr = setTimeout(() => { updateRoomSettings(room.id, settings).catch(() => {}) }, 400)
+    return () => clearTimeout(tmr)
+  }, [settings, isHost, room?.id, screen])
 
   // Cleanup při odchodu
   // Leave místnosti JEN při skutečném odmountování (odchod z lobby), ne při každé
@@ -340,9 +349,16 @@ export default function MultiplayerLobbyPage() {
         </div>
       </SettingSection>
 
-      {/* Počet kol + čas na kolo */}
+      {/* BR: hraje se do posledního — počet kol se nenastavuje */}
+      {isBR && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 13px', borderRadius: 12, background: 'rgba(217,119,87,0.09)', fontSize: 12.5, color: 'var(--accent-deep)' }}>
+          <Icon name="bug" size={15}/> {t('lobby.brNote')}
+        </div>
+      )}
+
+      {/* Počet kol + čas na kolo — každé přes celý řádek */}
       <SettingSection>
-        <div style={{ display: 'grid', gridTemplateColumns: isBR ? '1fr' : '1fr 1fr', gap: 18 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {!isBR && (
             <div>
               <SubLabel>{t('pregame.rounds')}</SubLabel>
@@ -460,37 +476,75 @@ export default function MultiplayerLobbyPage() {
     )
   }
 
-  // ── Mobil — původní layout ────────────────────────────
+  // ── Mobil — přepínač Nastavení hry / Lobby ────────────
+  // Read-only souhrn nastavení pro připojené hráče (bere aktuální nastavení místnosti)
+  const rs = room?.settings ?? settings
+  const isBRs = rs.mode === 'battle_royale'
+  const settingsSummary = [
+    isBRs ? t('lobby.modeBR') : t('lobby.modeClassic'),
+    isBRs ? null : `${t('pregame.rounds')}: ${rs.rounds}`,
+    `${t('lobby.timeLabel')}: ${rs.time_limit} s`,
+    `${t('lobby.categoriesLabel')}: ${rs.categories?.length ? rs.categories.length : t('lobby.catsAll')}`,
+  ].filter(Boolean).join(' · ')
+  const tabBtn = (key: 'settings' | 'lobby', label: React.ReactNode) => {
+    const on = tab === key
+    return (
+      <button onClick={() => setTab(key)} style={{
+        flex: 1, padding: '10px 0', border: 0, borderRadius: 9, cursor: 'pointer',
+        fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 600, fontSize: 12.5,
+        background: on ? 'var(--surface)' : 'transparent', color: on ? 'var(--ink)' : 'var(--ink-3)',
+        boxShadow: on ? '0 1px 4px rgba(60,45,30,.18)' : 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+      }}>{label}</button>
+    )
+  }
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--paper-200)', display: 'flex', flexDirection: 'column' }}>
-      <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--line)', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 'calc(14px + env(safe-area-inset-top,0px))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <MpBack onClick={handleLeave} label={t('lobby.leave')}/>
-          <div>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.16em', color: 'var(--accent-deep)', textTransform: 'uppercase', margin: '0 0 2px' }}>{t('lobby.roomCode')}</p>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--ink)' }}>{room?.code}</span>
+      {/* Tmavá hlavička */}
+      <header style={{ background: '#1C1813', color: '#FBF7F0', padding: '12px 16px', paddingTop: 'calc(12px + env(safe-area-inset-top,0px))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+          <button onClick={handleLeave} aria-label={t('lobby.leave')} style={{ width: 32, height: 32, flexShrink: 0, borderRadius: '50%', border: '1px solid rgba(251,247,240,.25)', background: 'transparent', color: '#FBF7F0', cursor: 'pointer', fontSize: 16 }}>←</button>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.18em', color: '#E9A183', textTransform: 'uppercase', margin: '0 0 1px' }}>{t('lobby.roomCode')}</p>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, letterSpacing: '0.2em' }}>{room?.code}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} aria-label={t('lobby.copy')} style={{ background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', color: 'var(--ink-2)', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
+          <button onClick={() => navigator.clipboard.writeText(room?.code ?? '')} aria-label={t('lobby.copy')} style={{ width: 34, height: 34, borderRadius: 10, border: 0, background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>
-          <button onClick={shareInvite} style={{ background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
+          <button onClick={shareInvite} style={{ background: 'var(--accent)', border: 0, borderRadius: 10, padding: '0 14px', height: 34, display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
             {inviteCopied ? t('lobby.inviteCopied') : t('lobby.invite')}
           </button>
         </div>
       </header>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div className="card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: 0 }}>Hráči ({players.length} / 12)</p>
-          </div>
-          <div style={{ padding: '8px 12px' }}><PlayerList/></div>
+      {/* Přepínač Nastavení / Lobby */}
+      <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', padding: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 6, padding: 4, background: 'var(--paper-300)', borderRadius: 12 }}>
+          {tabBtn('settings', t('lobby.gameSettings'))}
+          {tabBtn('lobby', <>{t('lobby.tabLobby')} <span style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>{players.length}</span></>)}
         </div>
-        {isHost && <div className="card" style={{ padding: '16px' }}><p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 14px' }}>{t('lobby.gameSettings')}</p>{SettingsPanel()}</div>}
-        {!isHost && <div style={{ textAlign: 'center', padding: '20px', color: 'var(--ink-3)', fontSize: 14 }}>{t('lobby.hostSetsUp')}</div>}
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {tab === 'settings' ? (
+          isHost ? SettingsPanel() : (
+            <div className="card" style={{ padding: '16px' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 12px' }}>{t('lobby.gameSettings')}</p>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{settingsSummary}</p>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '12px 0 0' }}>{t('lobby.hostSetsUp')}</p>
+            </div>
+          )
+        ) : (
+          <>
+            <PlayerList/>
+            <button onClick={shareInvite} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: '1.5px dashed var(--line-strong)', borderRadius: 14, background: 'transparent', color: 'var(--ink-3)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              <Icon name="friends" size={16}/> {t('lobby.invite')}
+            </button>
+          </>
+        )}
         {error && <div className="alert alert-error">{error}</div>}
       </div>
 

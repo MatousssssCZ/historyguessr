@@ -145,6 +145,14 @@ export async function abandonRoom(roomId: string) {
     .eq('id', roomId)
 }
 
+// Host uloží změny nastavení do místnosti → použije je startGame a přes realtime
+// je uvidí i připojení hráči (read-only souhrn).
+export async function updateRoomSettings(roomId: string, settings: RoomSettings) {
+  await supabase.from('multiplayer_rooms')
+    .update({ settings, updated_at: new Date().toISOString() })
+    .eq('id', roomId)
+}
+
 export async function getPlayers(roomId: string): Promise<MultiplayerPlayer[]> {
   const { data } = await supabase
     .from('multiplayer_players')
