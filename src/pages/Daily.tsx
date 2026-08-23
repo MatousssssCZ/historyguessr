@@ -670,7 +670,8 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const distribution: Distribution = {
     bins,
     myBinIndex: Math.min(BINS - 1, Math.floor((result.totalScore / 1000) * BINS)),
-    percentileBetterThan: allScores.length > 0 ? Math.round((allScores.filter(sc => sc < result.totalScore).length / allScores.length) * 100) : 0,
+    // Podíl OSTATNÍCH hráčů (bez tebe), které jsi překonal → nejlepší = 100 %
+    percentileBetterThan: allScores.length > 1 ? Math.round((allScores.filter(sc => sc < result.totalScore).length / (allScores.length - 1)) * 100) : 100,
   }
 
   const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
