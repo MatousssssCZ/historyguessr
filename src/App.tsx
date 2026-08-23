@@ -7,6 +7,7 @@ import UsernameSetup from '@/components/UsernameSetup'
 import CompassLoader from '@/components/CompassLoader'
 import UpdateWatcher from '@/components/UpdateWatcher'
 import EnvBadge from '@/components/EnvBadge'
+import GameInviteListener from '@/components/GameInviteListener'
 import AuthPage from '@/pages/Auth'
 import GuestSetupPage from '@/pages/GuestSetup'
 import TryGamePage from '@/pages/TryGame'
@@ -110,6 +111,7 @@ export default function App() {
         <BrowserRouter>
           <UpdateWatcher/>
           <EnvBadge/>
+          <GameInviteListener/>
           <Suspense fallback={<FullScreenSpinner/>}>
             <Routes>
               <Route path="/" element={<HomeRoute/>}/>
