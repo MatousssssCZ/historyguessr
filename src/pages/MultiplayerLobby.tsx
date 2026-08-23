@@ -331,6 +331,25 @@ export default function MultiplayerLobbyPage() {
   // ── Lobby ──────────────────────────────────────────────
 
   // ── Sdílené komponenty ─────────────────────────────────
+  // Elegantní ukazatel kapacity místnosti (max 12 hráčů).
+  const CapacityHeader = () => {
+    const n = players.length
+    const full = n >= 12
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 7 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('lobby.playersTitle')}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: full ? 'var(--accent-deep)' : 'var(--ink-2)' }}>
+            <span style={{ fontWeight: 700, color: full ? 'var(--accent)' : 'var(--ink)' }}>{n}</span> / 12{full && ` · ${t('lobby.full')}`}
+          </span>
+        </div>
+        <div style={{ height: 4, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${Math.min(100, (n / 12) * 100)}%`, borderRadius: 999, background: full ? 'var(--accent)' : 'var(--ink-3)', transition: 'width 200ms' }}/>
+        </div>
+      </div>
+    )
+  }
+
   const PlayerList = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {players.map(p => {
@@ -630,10 +649,13 @@ export default function MultiplayerLobbyPage() {
           )
         ) : (
           <>
+            <CapacityHeader/>
             <PlayerList/>
-            <button onClick={openInvite} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: '1.5px dashed var(--line-strong)', borderRadius: 14, background: 'transparent', color: 'var(--ink-3)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-              <Icon name="friends" size={16}/> {t('lobby.invite')}
-            </button>
+            {players.length < 12 && (
+              <button onClick={openInvite} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: '1.5px dashed var(--line-strong)', borderRadius: 14, background: 'transparent', color: 'var(--ink-3)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                <Icon name="friends" size={16}/> {t('lobby.invite')}
+              </button>
+            )}
           </>
         )}
         {error && <div className="alert alert-error">{error}</div>}
