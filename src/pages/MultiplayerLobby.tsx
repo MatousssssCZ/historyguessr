@@ -32,6 +32,22 @@ export default function MultiplayerLobbyPage() {
   const [players, setPlayers] = useState<MultiplayerPlayer[]>([])
   const [settings, setSettings] = useState<RoomSettings>(DEFAULT_SETTINGS)
   const [joinCode, setJoinCode] = useState('')
+  const [inviteCopied, setInviteCopied] = useState(false)
+
+  // Pozvánka do místnosti — odkaz s předvyplněným kódem (?code=), přes Web Share
+  // API nebo do schránky (fallback).
+  async function shareInvite() {
+    const code = room?.code
+    if (!code) return
+    const url = `${location.origin}/multiplayer/lobby?code=${code}`
+    const text = t('lobby.inviteText', { code })
+    const nav = navigator as Navigator & { share?: (d: { title?: string; text?: string; url?: string }) => Promise<void> }
+    if (nav.share) {
+      try { await nav.share({ title: 'HistoryGuesser', text, url }) } catch { /* zrušeno uživatelem */ }
+    } else {
+      try { await navigator.clipboard.writeText(`${text}\n${url}`); setInviteCopied(true); setTimeout(() => setInviteCopied(false), 2000) } catch { /* ignore */ }
+    }
+  }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [matchingEvents, setMatchingEvents] = useState<number | null>(null)
@@ -397,12 +413,20 @@ export default function MultiplayerLobbyPage() {
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 44, fontWeight: 700, letterSpacing: '0.18em', color: 'var(--ink)', lineHeight: 1, marginBottom: 14 }}>
                   {room?.code}
                 </div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  {t('lobby.copy')}
-                </button>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(room?.code ?? '')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--paper-200)', border: '1px solid var(--line-strong)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    {t('lobby.copy')}
+                  </button>
+                  <button
+                    onClick={shareInvite}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+                    {inviteCopied ? t('lobby.inviteCopied') : t('lobby.invite')}
+                  </button>
+                </div>
               </MpCard>
 
               {/* Hráči */}

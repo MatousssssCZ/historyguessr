@@ -385,13 +385,18 @@ export async function getRoundAnswers(
 
 // ── Realtime subscription ────────────────────────────────
 
+// Roste s každým voláním → unikátní topic kanálu. Kdyby dvě obrazovky (lobby →
+// hra) nebo StrictMode double-mount použily stejný topic, `supabase.channel()`
+// vrátí už subscribovaný kanál a `.on()` po `subscribe()` shodí realtime.
+let channelSeq = 0
+
 export function subscribeToRoom(
   roomId: string,
   onRoomChange: (room: MultiplayerRoom) => void,
   onPlayersChange: (players: MultiplayerPlayer[]) => void,
   onAnswersChange: () => void,
 ) {
-  const channel = supabase.channel(`mp:${roomId}`)
+  const channel = supabase.channel(`mp:${roomId}:${++channelSeq}`)
     .on('postgres_changes', {
       event: '*', schema: 'public', table: 'multiplayer_rooms',
       filter: `id=eq.${roomId}`,
