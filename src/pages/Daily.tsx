@@ -661,8 +661,6 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
     yearOff: r.guess_year != null ? yearDiff(r.guess_year, event.year_from, event.year_to) : 0,
     isMe: r.user_id === userId,
   }))
-  const myIdx = entries.findIndex(e => e.isMe)
-  const shown = myIdx >= 5 ? [...entries.slice(0, 5), entries[myIdx]] : entries.slice(0, 5)
 
   const BINS = 9
   const bins = Array(BINS).fill(0) as number[]
@@ -715,7 +713,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
         yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
         praise={praise}
-        leaderboard={shown} playersToday={entries.length} distribution={distribution}
+        leaderboard={entries} playersToday={entries.length} distribution={distribution}
         xpSection={xpSection}
         onShare={isMakeup ? null : () => setShowShare(true)}
         ctaLabel={t('daily.menu')} onCta={onMenu}
@@ -732,7 +730,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
           initialTab={detailTab}
           title={eventTitle(event)}
           subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
-          leaderboard={shown} playersToday={entries.length} distribution={distribution}
+          leaderboard={entries} playersToday={entries.length} distribution={distribution}
           story={story} xpSection={xpSection}
           onChallenge={isMakeup ? undefined : doChallenge}
           onShare={isMakeup ? undefined : () => setShowShare(true)}

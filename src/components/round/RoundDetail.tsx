@@ -60,12 +60,6 @@ export default function RoundDetail(p: Props) {
         {isBoard ? (
           <>
             {p.leaderboard.map((e, i) => <LeaderRow key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
-            {p.onShare && (
-              <button type="button" onClick={p.onShare} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', marginTop: 4, padding: 11, border: `1px solid ${C.lineStrong}`, borderRadius: 12, background: 'transparent', color: C.ink2, font: `600 12.5px ${F.ui}`, cursor: 'pointer' }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/></svg>
-                {t('daily.share')}
-              </button>
-            )}
             {p.xpSection && <div style={{ marginTop: 5 }}>{p.xpSection}</div>}
             <DistributionCard dist={p.distribution} t={t}/>
           </>
@@ -74,8 +68,14 @@ export default function RoundDetail(p: Props) {
         )}
       </div>
 
-      {/* Přepínač + CTA */}
+      {/* Sdílet (nad přepínačem) + přepínač + CTA */}
       <div style={{ flex: 'none', padding: '8px 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}>
+        {p.onShare && (
+          <button type="button" onClick={p.onShare} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', marginBottom: 10, padding: 11, border: `1px solid ${C.lineStrong}`, borderRadius: 12, background: 'transparent', color: C.ink2, font: `600 12.5px ${F.ui}`, cursor: 'pointer' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13"/><path d="M8 7l4-4 4 4"/></svg>
+            {t('daily.share')}
+          </button>
+        )}
         <ResultSwitcher
           active="mid"
           onScore={p.onBack}
