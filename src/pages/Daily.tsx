@@ -638,10 +638,10 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
   const praise = (() => {
     const s = result.totalScore
     if (s >= 950) return t('daily.praise.perfect')
-    if (s >= 800) return t('daily.praise.great')
-    if (s >= 600) return t('daily.praise.good')
-    if (s >= 400) return t('daily.praise.ok')
-    if (s >= 200) return t('daily.praise.meh')
+    if (s >= 850) return t('daily.praise.great')
+    if (s >= 700) return t('daily.praise.good')
+    if (s >= 500) return t('daily.praise.ok')
+    if (s >= 300) return t('daily.praise.meh')
     return t('daily.praise.low')
   })()
 
@@ -726,16 +726,18 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
 
   if (detailTab) {
     return (
-      <RoundDetail
-        initialTab={detailTab}
-        title={eventTitle(event)}
-        subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
-        leaderboard={shown} playersToday={entries.length} distribution={distribution}
-        story={story} xpSection={xpSection}
-        onChallenge={isMakeup ? undefined : doChallenge}
-        onShare={isMakeup ? undefined : () => setShowShare(true)}
-        onBack={() => setDetailTab(null)} ctaLabel={t('daily.menu')} onCta={onMenu}
-      />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'var(--paper-200)' }}>
+        <RoundDetail
+          initialTab={detailTab}
+          title={eventTitle(event)}
+          subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
+          leaderboard={shown} playersToday={entries.length} distribution={distribution}
+          story={story} xpSection={xpSection}
+          onChallenge={isMakeup ? undefined : doChallenge}
+          onShare={isMakeup ? undefined : () => setShowShare(true)}
+          onBack={() => setDetailTab(null)} ctaLabel={t('daily.menu')} onCta={onMenu}
+        />
+      </div>
     )
   }
 
@@ -745,18 +747,20 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
     : null
 
   return (<>
-    <RoundResult
-      map={map} roundLabel={null}
-      eventTitle={eventTitle(event)} eventYear={event.year}
-      scoreTotal={result.totalScore} scoreMax={1000}
-      distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
-      yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
-      praise={praise}
-      panorama={panorama}
-      showDetail onOpenDetail={setDetailTab}
-      onChallenge={isMakeup ? undefined : doChallenge}
-      ctaLabel={t('daily.menu')} onCta={onMenu}
-      secondaryActions={makeupAction}    />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'var(--paper-200)' }}>
+      <RoundResult
+        map={map} roundLabel={null}
+        eventTitle={eventTitle(event)} eventYear={event.year}
+        scoreTotal={result.totalScore} scoreMax={1000}
+        distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
+        yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+        praise={praise}
+        panorama={panorama}
+        showDetail onOpenDetail={setDetailTab}
+        onChallenge={isMakeup ? undefined : doChallenge}
+        ctaLabel={t('daily.menu')} onCta={onMenu}
+        secondaryActions={makeupAction}    />
+    </div>
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     {challengeBanner}
   </>)
