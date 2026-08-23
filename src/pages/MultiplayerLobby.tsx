@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
-  createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom, abandonRoom,
+  createRoom, getRoom, getRoomByCode, joinRoom, leaveRoom,
   getPlayers, startGame, subscribeToRoom, countMatchingEvents, getRoomPanoramas, updateRoomSettings,
+  kickPlayer, setReady, leaveMultiplayerRoom,
 } from '@/lib/multiplayer'
 import { getFriendsForInvite, sendGameInvite, type FriendInvite } from '@/lib/invites'
 import { preloadImage } from '@/lib/preload'
@@ -75,6 +76,7 @@ export default function MultiplayerLobbyPage() {
   // ať příjemce skončí přímo v lobby. Když selže (plná/rozjetá), zůstane na
   // obrazovce s kódem + chybou.
   const autoJoinRef = useRef(false)
+  const sawSelfRef = useRef(false)   // viděl jsem se v seznamu? (detekce vyhození)
   useEffect(() => {
     const code = searchParams.get('code')
     if (!code) return
@@ -126,6 +128,9 @@ export default function MultiplayerLobbyPage() {
       const [ps, r] = await Promise.all([getPlayers(roomId), getRoom(roomId)])
       if (!alive) return
       setPlayers(ps)
+      // Vyhození: byl jsem v seznamu a už nejsem → zpět do menu
+      if (user && ps.some(p => p.user_id === user.id)) sawSelfRef.current = true
+      else if (sawSelfRef.current && !enteringGameRef.current) { enteringGameRef.current = true; navigate('/menu'); return }
       if (r) {
         setRoom(r)
         if (r.status === 'playing') { enteringGameRef.current = true; navigate(`/multiplayer/game/${roomId}`) }
@@ -211,12 +216,10 @@ export default function MultiplayerLobbyPage() {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 
-  // Odchod z lobby — host navíc místnost ukončí, ať nezůstane osiřelá
+  // Odchod z lobby — hostitelství přejde na dalšího (leave_multiplayer_room),
+  // ať místnost nezůstane osiřelá. enteringGameRef zabrání dvojímu leave z unmountu.
   async function handleLeave() {
-    if (room && user) {
-      if (isHost) await abandonRoom(room.id)
-      await leaveRoom(room.id, user.id)
-    }
+    if (room && user) { enteringGameRef.current = true; await leaveMultiplayerRoom(room.id).catch(() => {}) }
     navigate('/menu')
   }
 
@@ -328,7 +331,12 @@ export default function MultiplayerLobbyPage() {
             </span>
             {p.is_host
               ? <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', background: 'rgba(217,119,87,0.12)', color: 'var(--accent-deep)', padding: '3px 9px', borderRadius: 999 }}>{t('lobby.host')}</span>
-              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success, #5c9468)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              : (<>
+                  {p.ready && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: 'var(--success-deep, #3f7a4d)', background: 'rgba(76,122,80,.14)', padding: '4px 9px', borderRadius: 999 }}>✓ {t('lobby.ready')}</span>}
+                  {isHost && !me && (
+                    <button onClick={() => room && kickPlayer(room.id, p.user_id)} aria-label="×" style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--danger, #c0392b)', cursor: 'pointer', fontSize: 15, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  )}
+                </>)
             }
           </div>
         )
@@ -401,17 +409,33 @@ export default function MultiplayerLobbyPage() {
     )
   }
 
-  const StartButton = () => isHost ? (
-    <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '14px' }}
-      disabled={loading || players.length < 1 || (matchingEvents !== null && matchingEvents < minEvents)}
-      onClick={handleStart}>
-      {loading ? t('lobby.starting') : t('lobby.startGame', { count: players.length })}
-    </button>
-  ) : (
-    <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', padding: '10px 0' }}>
-      {t('lobby.waiting')}
-    </div>
-  )
+  const StartButton = () => {
+    if (isHost) {
+      const others = players.filter(p => !p.is_host)
+      const readyCount = others.filter(p => p.ready).length
+      return (
+        <>
+          {others.length > 0 && <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.06em', color: readyCount === others.length ? 'var(--success-deep, #3f7a4d)' : 'var(--ink-3)', marginBottom: 8 }}>{t('lobby.readyCount', { ready: readyCount, total: others.length })}</div>}
+          <button className="btn btn-accent" style={{ width: '100%', fontSize: 15, padding: '14px' }}
+            disabled={loading || players.length < 1 || (matchingEvents !== null && matchingEvents < minEvents)}
+            onClick={handleStart}>
+            {loading ? t('lobby.starting') : t('lobby.startGame', { count: players.length })}
+          </button>
+        </>
+      )
+    }
+    const myReady = !!players.find(p => p.user_id === user?.id)?.ready
+    return (
+      <button onClick={() => room && setReady(room.id, !myReady)} style={{
+        width: '100%', padding: 14, borderRadius: 14, cursor: 'pointer',
+        border: myReady ? '0' : '1.5px solid var(--accent)',
+        background: myReady ? 'var(--success, #5c9468)' : 'transparent',
+        color: myReady ? '#fff' : 'var(--accent)',
+        fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+      }}>{myReady ? <>✓ {t('lobby.ready')}</> : t('lobby.notReady')}</button>
+    )
+  }
 
   const openInvite = async () => {
     setInviteOpen(true)

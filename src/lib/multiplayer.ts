@@ -34,6 +34,7 @@ export interface MultiplayerPlayer {
   username: string
   total_score: number
   is_host: boolean
+  ready?: boolean
   joined_at: string
   eliminated?: boolean
   eliminated_round?: number | null
@@ -151,6 +152,19 @@ export async function updateRoomSettings(roomId: string, settings: RoomSettings)
   await supabase.from('multiplayer_rooms')
     .update({ settings, updated_at: new Date().toISOString() })
     .eq('id', roomId)
+}
+
+// Host vyhodí hráče
+export async function kickPlayer(roomId: string, userId: string) {
+  await supabase.rpc('kick_player', { p_room: roomId, p_user: userId })
+}
+// Hráč nastaví „připraven"
+export async function setReady(roomId: string, ready: boolean) {
+  await supabase.rpc('set_ready', { p_room: roomId, p_ready: ready })
+}
+// Odchod z místnosti s migrací hostitelství
+export async function leaveMultiplayerRoom(roomId: string) {
+  await supabase.rpc('leave_multiplayer_room', { p_room: roomId })
 }
 
 export async function getPlayers(roomId: string): Promise<MultiplayerPlayer[]> {
