@@ -11,6 +11,7 @@ const GROUPS: Group[] = [
     label: 'Události',
     tiles: [
       { icon: '🗂', title: 'Správa událostí', sub: 'Přidání, editace, náhledy', to: '/admin/events', showCount: true },
+      { icon: '📋', title: 'Zadání pro editory', sub: 'Číselník + schvalování návrhů', to: '/admin/tasks' },
       { icon: '✨', title: 'AI zadávání', sub: 'AI navrhne události + data', to: '/admin/bulk-ai' },
       { icon: '↑', title: 'Hromadný import', sub: 'Import CSV/XLS + šablony', to: '/admin/import' },
     ],

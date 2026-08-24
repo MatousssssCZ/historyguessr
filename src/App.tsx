@@ -40,6 +40,8 @@ const AdminContinentsPage = lazy(() => import('@/pages/AdminContinents'))
 const AdminRoadmapPage = lazy(() => import('@/pages/AdminRoadmap'))
 const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedback'))
 const AdminPanoramaRepairPage = lazy(() => import('@/pages/AdminPanoramaRepair'))
+const AdminEventTasksPage = lazy(() => import('@/pages/AdminEventTasks'))
+const EditorPage = lazy(() => import('@/pages/Editor'))
 const MultiplayerLobbyPage = lazy(() => import('@/pages/MultiplayerLobby'))
 const MultiplayerGamePage = lazy(() => import('@/pages/MultiplayerGame'))
 
@@ -61,6 +63,16 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/auth" replace/>
   if (profile && !profile.username) return <UsernameSetup/>
   if (!isAdmin) return <Navigate to="/menu" replace/>
+  return <>{children}</>
+}
+
+// ── Editor guard (editor NEBO admin) ─────────────────────
+function RequireEditor({ children }: { children: React.ReactNode }) {
+  const { user, profile, isEditor, loading } = useAuth()
+  if (loading) return <FullScreenSpinner/>
+  if (!user) return <Navigate to="/auth" replace/>
+  if (profile && !profile.username) return <UsernameSetup/>
+  if (!isEditor) return <Navigate to="/menu" replace/>
   return <>{children}</>
 }
 
@@ -144,6 +156,8 @@ export default function App() {
               <Route path="/admin/panorama-repair" element={<RequireAdmin><AdminPanoramaRepairPage/></RequireAdmin>}/>
               <Route path="/admin/roadmap" element={<RequireAdmin><AdminRoadmapPage/></RequireAdmin>}/>
               <Route path="/admin/feedback" element={<RequireAdmin><AdminFeedbackPage/></RequireAdmin>}/>
+              <Route path="/admin/tasks" element={<RequireAdmin><AdminEventTasksPage/></RequireAdmin>}/>
+              <Route path="/editor" element={<RequireEditor><EditorPage/></RequireEditor>}/>
               <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
               <Route path="/multiplayer/lobby" element={<RequireAuth><MultiplayerLobbyPage/></RequireAuth>}/>
               <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>

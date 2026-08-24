@@ -2,7 +2,7 @@ export interface Profile {
   id: string
   username: string | null
   avatar_url: string | null
-  role: 'user' | 'admin'
+  role: 'user' | 'editor' | 'admin'
   total_score: number
   games_played: number
   xp: number

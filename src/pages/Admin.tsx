@@ -463,8 +463,15 @@ type FormData = {
 
 const SHOW_AI_PANORAMA = true
 
-function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: () => void; onPublishNext?: () => void }) {
+export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefillTitle, prefillYear, onSubmitted, onSavedDraft }: {
+  event?: Event; onDone: () => void; onPublishNext?: () => void
+  mode?: 'admin' | 'editor'
+  prefillTitle?: string; prefillYear?: number | null
+  onSubmitted?: (eventId: string) => void | Promise<void>
+  onSavedDraft?: (eventId: string) => void | Promise<void>
+}) {
   const { user } = useAuth()
+  const isEditorMode = mode === 'editor'
   const [form, setForm] = useState<FormData>({
     title: event?.title ?? '',
     description: event?.description ?? '',
@@ -472,8 +479,8 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
     description_en: event?.description_en ?? '',
     title_de: event?.title_de ?? '',
     description_de: event?.description_de ?? '',
-    year_from: String(event?.year_from ?? event?.year ?? 1900),
-    year_to: String(event?.year_to ?? event?.year ?? 1900),
+    year_from: String(event?.year_from ?? event?.year ?? prefillYear ?? 1900),
+    year_to: String(event?.year_to ?? event?.year ?? prefillYear ?? 1900),
     event_date: event?.event_date ?? '',
     lat: String(event?.lat ?? 50.0755),
     lng: String(event?.lng ?? 14.4378),
@@ -537,9 +544,9 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
   const panoramaRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
 
-  // ── AI předvyplnění ──
-  const [aiTitle, setAiTitle] = useState('')
-  const [aiYear, setAiYear] = useState('')
+  // ── AI předvyplnění ── (v editor režimu předvyplněno ze zadání)
+  const [aiTitle, setAiTitle] = useState(prefillTitle ?? '')
+  const [aiYear, setAiYear] = useState(prefillYear != null ? String(prefillYear) : '')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
   const [aiNote, setAiNote] = useState<string | null>(null)
@@ -692,9 +699,14 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
     doSave()
   }
 
-  async function doSave(opts: { forcePublish?: boolean; next?: boolean } = {}) {
+  async function doSave(opts: { forcePublish?: boolean; next?: boolean; submitReview?: boolean } = {}) {
     if (!user) return
     setError(null)
+    // Editor musí mít panorama (nahrané nebo už uložené) než odešle ke schválení
+    if (opts.submitReview && !panoramaFile && (!event?.panorama_url || event.panorama_url === 'pending')) {
+      setError('Nahraj prosím panorama před odesláním ke schválení.')
+      return
+    }
     if (opts.next) setSavingNext(true); else setSaving(true)
 
     try {
@@ -724,7 +736,8 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
         location_radius_km: parseInt(form.location_radius_km) || 0,
         category: form.category || null,
         difficulty: parseInt(form.difficulty) as 1 | 2 | 3,
-        published: opts.forcePublish ? true : form.published,
+        published: opts.submitReview ? false : (opts.forcePublish ? true : form.published),
+        ...(opts.submitReview ? { status: 'awaiting_review' as const } : {}),
         panorama_url: event?.panorama_url ?? '',
         event_image_url: event?.event_image_url ?? null,
         created_by: user.id,
@@ -793,7 +806,9 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
         track(event ? 'admin_event_updated' : 'admin_event_created', { event_id: savedId })
       }
 
-      if (opts.next && onPublishNext) onPublishNext()
+      if (opts.submitReview && onSubmitted && savedId) await onSubmitted(savedId)
+      else if (isEditorMode && onSavedDraft && savedId) { await onSavedDraft(savedId); onDone() }
+      else if (opts.next && onPublishNext) onPublishNext()
       else onDone()
     } catch (err: unknown) {
       // Vytáhni skutečnou hlášku i z PostgrestError (není to Error instance)
@@ -1129,7 +1144,8 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
           </div>
         </div>
 
-        {/* Publikování */}
+        {/* Publikování — jen admin; editor publikovat nemůže */}
+        {!isEditorMode && (
         <div className="card" style={{ padding: 20 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
             <input type="checkbox" checked={form.published} onChange={set('published')} style={{ width: 18, height: 18, accentColor: 'var(--accent)' }}/>
@@ -1139,16 +1155,32 @@ function EventForm({ event, onDone, onPublishNext }: { event?: Event; onDone: ()
             </div>
           </label>
         </div>
+        )}
 
         {error && <div className="alert alert-error">{error}</div>}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button type="button" className="btn btn-ghost" onClick={onDone} disabled={saving || savingNext}>Zrušit</button>
+          {isEditorMode ? (
+            <>
+              <button type="submit" className="btn btn-ghost" disabled={saving || savingNext} title="Uloží rozpracované, zůstane u tebe">
+                {saving ? <span className="spinner" style={{ width: 14, height: 14 }}/> : null}
+                {saving ? 'Ukládám…' : 'Uložit rozpracované'}
+              </button>
+              <button type="button" className="btn btn-accent" disabled={saving || savingNext}
+                onClick={() => doSave({ submitReview: true })}
+                title="Odešle událost adminovi ke schválení">
+                {savingNext ? <span className="spinner" style={{ width: 14, height: 14 }}/> : null}
+                Ke schválení a další →
+              </button>
+            </>
+          ) : (
           <button type="submit" className="btn btn-accent" disabled={saving || savingNext}>
             {saving ? <span className="spinner" style={{ width: 14, height: 14 }}/> : null}
             {saving ? 'Ukládám…' : isEdit ? 'Uložit změny' : 'Vytvořit událost'}
           </button>
-          {isEdit && onPublishNext && (
+          )}
+          {!isEditorMode && isEdit && onPublishNext && (
             <button
               type="button"
               className="btn btn-primary"
