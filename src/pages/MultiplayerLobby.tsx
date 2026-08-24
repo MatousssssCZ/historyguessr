@@ -55,6 +55,7 @@ export default function MultiplayerLobbyPage() {
   const [copied, setCopied] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [inviteFriends, setInviteFriends] = useState<FriendInvite[]>([])
+  const [inviteError, setInviteError] = useState<string | null>(null)
 
   // Pozvánka do místnosti — odkaz s předvyplněným kódem (?code=), přes Web Share
   // API nebo do schránky (fallback).
@@ -490,9 +491,16 @@ export default function MultiplayerLobbyPage() {
   }
   const invitePozvat = async (friendId: string) => {
     if (!room) return
+    setInviteError(null)
     setInviteFriends(prev => prev.map(f => f.id === friendId ? { ...f, state: 'pending' } : f))
     const { error } = await sendGameInvite(room.id, friendId)
-    if (error) setInviteFriends(prev => prev.map(f => f.id === friendId ? { ...f, state: 'none' } : f))
+    if (error) {
+      setInviteFriends(prev => prev.map(f => f.id === friendId ? { ...f, state: 'none' } : f))
+      // Známé kódy z RPC → srozumitelná hláška, jinak obecná
+      const known = ['not_friends', 'room_not_open', 'not_in_room', 'rate_limit', 'cooldown']
+      const key = known.find(k => error.includes(k))
+      setInviteError(key ? t('lobby.inviteErr_' + key) : t('lobby.inviteErrGeneric'))
+    }
   }
 
   const sheetRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 12px', borderRadius: 13, background: 'var(--paper-200)', border: 'none', cursor: 'pointer', textAlign: 'left', marginBottom: 8 }
@@ -514,6 +522,7 @@ export default function MultiplayerLobbyPage() {
           <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)' }}>{t('lobby.copyCode')} <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-3)' }}>{room?.code}</span></span>
         </button>
 
+        {inviteError && <div style={{ fontSize: 12.5, color: 'var(--danger, #c0392b)', background: 'rgba(192,57,43,0.09)', borderRadius: 10, padding: '9px 12px', marginBottom: 12 }}>{inviteError}</div>}
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 8 }}>{t('lobby.friendsLabel')}</div>
         {inviteFriends.length === 0 && <div style={{ fontSize: 13, color: 'var(--ink-3)', padding: '6px 2px' }}>{t('lobby.noFriends')}</div>}
         {inviteFriends.map(f => (

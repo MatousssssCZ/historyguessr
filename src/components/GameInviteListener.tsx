@@ -15,10 +15,26 @@ export default function GameInviteListener() {
 
   useEffect(() => {
     if (!user?.id) return
-    // Doběr nevyřízené pozvánky (kdyby přišla, když appka nebyla otevřená)
-    getPendingInvites().then(list => { if (list.length) setInvite(prev => prev ?? list[0]) }).catch(() => {})
+    let alive = true
+    // Doběr nevyřízených pozvánek. Realtime je rychlá cesta, ale nemusí vždy
+    // dorazit (RLS/socket), proto k tomu pravidelně pollujeme + při návratu na
+    // záložku — pozvánka tak přijde spolehlivě do pár sekund.
+    const poll = () => getPendingInvites()
+      .then(list => { if (alive && list.length) setInvite(prev => prev ?? list[0]) })
+      .catch(() => {})
+    poll()
     const unsub = subscribeIncomingInvites(user.id, inv => setInvite(prev => prev ?? inv))
-    return unsub
+    const iv = setInterval(poll, 10000)
+    const onFocus = () => { if (document.visibilityState === 'visible') poll() }
+    document.addEventListener('visibilitychange', onFocus)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      alive = false
+      clearInterval(iv)
+      document.removeEventListener('visibilitychange', onFocus)
+      window.removeEventListener('focus', onFocus)
+      unsub()
+    }
   }, [user?.id])
 
   if (!invite) return null
