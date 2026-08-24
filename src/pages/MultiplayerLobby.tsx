@@ -604,7 +604,7 @@ export default function MultiplayerLobbyPage() {
                     onClick={openInvite}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 10, padding: '8px 16px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-                    {inviteCopied ? t('lobby.inviteCopied') : t('lobby.invite')}
+                    {inviteCopied ? t('lobby.inviteCopied') : t('lobby.inviteMore')}
                   </button>
                 </div>
               </MpCard>
@@ -663,7 +663,7 @@ export default function MultiplayerLobbyPage() {
           </button>
           <button onClick={openInvite} style={{ background: 'var(--accent)', border: 0, borderRadius: 10, padding: '0 14px', height: 34, display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, color: '#fff', cursor: 'pointer' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-            {inviteCopied ? t('lobby.inviteCopied') : t('lobby.invite')}
+            {inviteCopied ? t('lobby.inviteCopied') : t('lobby.inviteMore')}
           </button>
         </div>
       </header>
@@ -691,7 +691,7 @@ export default function MultiplayerLobbyPage() {
             <PlayerList/>
             {players.length < 12 && (
               <button onClick={openInvite} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: '1.5px dashed var(--line-strong)', borderRadius: 14, background: 'transparent', color: 'var(--ink-3)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                <Icon name="friends" size={16}/> {t('lobby.invite')}
+                <Icon name="friends" size={16}/> {t('lobby.inviteMore')}
               </button>
             )}
           </>
