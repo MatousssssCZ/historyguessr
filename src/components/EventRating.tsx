@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { addEventRating } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 
 // Hodnocení události (1–5 hvězd). Klik jen VYBERE; odešle se až při odchodu
 // z obrazovky (cleanup efekt), aby šlo výběr měnit. Akcentní barva odlišuje
@@ -9,6 +10,7 @@ export default function EventRating({ eventId, compact = false, label }: {
   eventId: string; compact?: boolean; label?: string
 }) {
   const { t } = useTranslation()
+  const { isAnonymous } = useAuth()
   const [selected, setSelected] = useState(0)
   const [hover, setHover] = useState(0)
   const selectedRef = useRef(0)
@@ -24,6 +26,9 @@ export default function EventRating({ eventId, compact = false, label }: {
   }, [eventId])
 
   function pick(i: number) { setSelected(i); selectedRef.current = i }
+
+  // Hodnotit mohou jen registrovaní (host = hra bez registrace)
+  if (isAnonymous) return null
   const size = compact ? 22 : 28
   const text = label ?? t('round.rateEvent')
 

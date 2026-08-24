@@ -253,7 +253,8 @@ export default function MenuPage() {
       { label: t('menu.navHome'), onClick: () => {}, active: true },
       { label: t('menu.campaigns'), onClick: () => navigate('/campaigns') },
       { label: t('menu.navBadges'), onClick: () => navigate('/stats') },
-      { label: t('menu.navFriends'), onClick: () => navigate('/friends') },
+      // Přátelé jsou jen pro registrované (host = hra bez registrace)
+      ...(isAnonymous ? [] : [{ label: t('menu.navFriends'), onClick: () => navigate('/friends') }]),
       { label: t('menu.navExplore'), href: `/${eloc}/${exSeg}` },
       ...(isAdmin ? [{ label: t('menu.admin'), onClick: () => navigate('/admin') }] : []),
     ]

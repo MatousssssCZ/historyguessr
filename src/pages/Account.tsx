@@ -21,7 +21,7 @@ const cardStyle: React.CSSProperties = { background: 'var(--surface)', border: '
 
 export default function AccountPage() {
   const { t } = useTranslation()
-  const { profile, user } = useAuth()
+  const { profile, user, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [username, setUsername] = useState(profile?.username ?? '')
   const [saving, setSaving] = useState(false)
@@ -113,7 +113,8 @@ export default function AccountPage() {
           </div>
         </button>
 
-        {/* Přátelé */}
+        {/* Přátelé — jen pro registrované (host = hra bez registrace) */}
+        {!isAnonymous && (
         <button onClick={() => navigate('/friends')} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
           <span style={{ display: 'flex', color: 'var(--accent)' }}><Icon name="friends" size={22}/></span>
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -123,6 +124,7 @@ export default function AccountPage() {
           {friendReqs > 0 && <span style={{ background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>{friendReqs}</span>}
           <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
         </button>
+        )}
 
         {/* Vzhled */}
         <div style={cardStyle}>

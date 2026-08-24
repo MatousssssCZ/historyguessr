@@ -40,7 +40,7 @@ function samePlayers(a: MultiplayerPlayer[], b: MultiplayerPlayer[]): boolean {
 
 export default function MultiplayerLobbyPage() {
   const { t } = useTranslation()
-  const { user, profile } = useAuth()
+  const { user, profile, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -267,16 +267,28 @@ export default function MultiplayerLobbyPage() {
           <PageHeader eyebrow={t('menu.multiplayer')} title={t('menu.multiplayerSub2')} onBack={() => navigate('/menu')}/>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button onClick={handleCreate} disabled={loading} style={{
-              display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',
-              background: 'rgba(217,119,87,0.09)', border: '1px solid var(--accent)', borderRadius: 18,
-            }}>
-              <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', background: 'linear-gradient(150deg,#d97757,#b85a3e)' }}><Icon name="plus" size={24}/></span>
-              <div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{t('lobby.create')}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.createSub')}</div>
+            {/* Založit místnost může jen registrovaný; host se může jen připojit */}
+            {isAnonymous ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 17, width: '100%', background: 'var(--surface)', border: '1px dashed var(--line-strong)', borderRadius: 18 }}>
+                <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', background: 'var(--paper-300)' }}><Icon name="lock" size={22}/></span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{t('lobby.createGuestTitle')}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.createGuestSub')}</div>
+                  <button onClick={() => navigate('/auth')} style={{ marginTop: 9, padding: '8px 16px', border: 0, borderRadius: 10, background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('lobby.createGuestCta')}</button>
+                </div>
               </div>
-            </button>
+            ) : (
+              <button onClick={handleCreate} disabled={loading} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',
+                background: 'rgba(217,119,87,0.09)', border: '1px solid var(--accent)', borderRadius: 18,
+              }}>
+                <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', background: 'linear-gradient(150deg,#d97757,#b85a3e)' }}><Icon name="plus" size={24}/></span>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{t('lobby.create')}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{t('lobby.createSub')}</div>
+                </div>
+              </button>
+            )}
 
             <button onClick={() => setScreen('join_code')} style={{
               display: 'flex', alignItems: 'center', gap: 14, padding: 17, cursor: 'pointer', textAlign: 'left', width: '100%',

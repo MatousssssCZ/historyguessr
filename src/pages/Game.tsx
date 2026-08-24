@@ -823,6 +823,7 @@ export function InfoContent({ event }: { event: Event }) {
 // odmountuje tuto obrazovku → cleanup efekt odešle poslední výběr).
 function StarRating({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
+  const { isAnonymous } = useAuth()
   const [selected, setSelected] = useState(0)
   const [hover, setHover] = useState(0)
   const selectedRef = useRef(0)
@@ -838,6 +839,9 @@ function StarRating({ eventId }: { eventId: string }) {
   }, [eventId])
 
   function pick(i: number) { setSelected(i); selectedRef.current = i }
+
+  // Hodnotit mohou jen registrovaní (host = hra bez registrace)
+  if (isAnonymous) return null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 0 4px' }}>
