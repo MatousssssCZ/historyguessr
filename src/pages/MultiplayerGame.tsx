@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { clearResume } from '@/lib/resume'
 import {
   getRound, getPlayers, subscribeToRoom, submitAnswer,
-  getRoundAnswers, advanceRound, getRoomPanoramas, getMyMatchHits,
+  getRoundAnswers, advanceRound, getRoomPanoramas, getMyMatchHits, setReady,
 } from '@/lib/multiplayer'
 import { preloadImage } from '@/lib/preload'
 import { panoramaHfov, encodePanoramaUrl } from '@/lib/panorama'
@@ -33,7 +33,9 @@ interface MyResult {
   guessLat: number; guessLng: number; guessYear: number
 }
 
-const NEXT_ROUND_DELAY = 8000
+// Fallback okno výsledků: kolo se posune, jakmile jsou VŠICHNI „Připraveni",
+// jinak nejpozději po tomto čase (pojistka proti AFK hráči).
+const NEXT_ROUND_DELAY = 20000
 
 export default function MultiplayerGamePage() {
   const { t } = useTranslation()
@@ -69,6 +71,7 @@ export default function MultiplayerGamePage() {
   // Results
   const [myResult, setMyResult] = useState<MyResult | null>(null)
   const [activeTab, setActiveTab] = useState<'round' | 'total'>('round')
+  const [imReady, setImReady] = useState(false)   // „Připraven" mezi koly
   const [nextRoundCountdown, setNextRoundCountdown] = useState(NEXT_ROUND_DELAY / 1000)
   const nextRoundTotalRef = useRef(NEXT_ROUND_DELAY / 1000) // celková délka okna výsledků (pro kruh)
   const nextRoundTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -88,6 +91,10 @@ export default function MultiplayerGamePage() {
 
   // Prefetch panoramat: kolo → URL. Plníme jednou na začátku hry.
   const panoramasRef = useRef<Map<number, string>>(new Map())
+
+  // Vždy aktuální seznam hráčů pro director (kontrola „všichni připraveni")
+  const playersRef = useRef<MultiplayerPlayer[]>(players)
+  useEffect(() => { playersRef.current = players }, [players])
 
   // Osobní vyhodnocení (XP/achievementy) na konci zápasu
   const [matchHits, setMatchHits] = useState<Record<string, number>>({})
@@ -167,6 +174,10 @@ export default function MultiplayerGamePage() {
     hasSubmittedRef.current = false
     setGuessLat(null); setGuessLng(null); setGuessYear(0); setGuessYearSet(false)
     setMyResult(null); setRoundAnswers([])
+    // Nové kolo → vynuluj „Připraven" (i na serveru), ať stará hodnota
+    // z minulého kola / lobby neposune další kolo předčasně.
+    setImReady(false)
+    if (roomId) setReady(roomId, false).catch(() => {})
 
     if (round.started_at) {
       startRoundTimer(round.started_at, room_.settings.time_limit)
@@ -276,7 +287,14 @@ export default function MultiplayerGamePage() {
     setPlayers(ps)
     setActiveTab('round')
     setPhase('round_results')
-    // Postup do dalšího kola řeší časový „director" efekt níže (advanceRound)
+    // Postup do dalšího kola řeší director níže: buď „všichni připraveni",
+    // nebo (pojistka) vypršení okna výsledků.
+  }
+
+  async function toggleReady() {
+    if (!roomId || imReady) return
+    setImReady(true)
+    try { await setReady(roomId, true) } catch { setImReady(false) }
   }
 
   // ── Director: časově řízený, idempotentní postup kola ──────
@@ -302,8 +320,13 @@ export default function MultiplayerGamePage() {
       if (p === 'round_results') {
         setNextRoundCountdown(Math.max(0, Math.ceil((advanceAt - now) / 1000)))
       }
-      // Posuň kolo (idempotentně) po vypršení okna výsledků
-      if (now >= advanceAt && advancedRoundRef.current !== roundNo) {
+      // Všichni (žijící) hráči připraveni → posuň kolo hned
+      const allReady = p === 'round_results' && (() => {
+        const alive = playersRef.current.filter(pl => !pl.eliminated)
+        return alive.length > 0 && alive.every(pl => pl.ready)
+      })()
+      // Posuň kolo (idempotentně): buď všichni ready, nebo vypršelo okno výsledků
+      if ((allReady || now >= advanceAt) && advancedRoundRef.current !== roundNo) {
         advancedRoundRef.current = roundNo
         advanceRound(roomId, roundNo, total, room.settings.mode ?? 'classic')
       }
@@ -560,6 +583,19 @@ export default function MultiplayerGamePage() {
       </div>
     )
 
+    const aliveForReady = players.filter(p => !p.eliminated)
+    const readyCount = aliveForReady.filter(p => p.ready).length
+    const readyBar = amEliminated ? null : (
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px calc(12px + env(safe-area-inset-bottom,0px))', borderTop: '0.5px solid var(--line)', background: 'var(--paper-50)' }}>
+        <span style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.04em', color: readyCount === aliveForReady.length ? '#1d6b3a' : 'var(--ink-3)' }}>{t('mp.readyCount', { ready: readyCount, total: aliveForReady.length })}</span>
+        <button onClick={toggleReady} disabled={imReady} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 12, border: 0, cursor: imReady ? 'default' : 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, background: imReady ? 'rgba(39,174,96,0.14)' : 'var(--accent)', color: imReady ? '#1d6b3a' : '#fff' }}>
+          {imReady
+            ? <><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg>{t('mp.readyWaiting')}</>
+            : t('mp.ready')}
+        </button>
+      </div>
+    )
+
     if (!isMobile) {
       return (
         <MpResultDesktop map={<ResultMap guessLat={myResult?.guessLat ?? event.lat} guessLng={myResult?.guessLng ?? event.lng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>} panoramaUrl={event.panorama_url}>
@@ -580,6 +616,7 @@ export default function MultiplayerGamePage() {
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 24px 24px' }}>
             {activeTab === 'round' ? roundList : totalList}
           </div>
+          {readyBar}
         </MpResultDesktop>
       )
     }
@@ -702,6 +739,7 @@ export default function MultiplayerGamePage() {
             </div>
           )}
         </div>
+        {readyBar}
       </div>
     )
   }
