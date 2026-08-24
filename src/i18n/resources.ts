@@ -177,7 +177,7 @@ export const resources = {
       remove: 'Odebrat', removeConfirm: 'Opravdu odebrat tohoto přítele?',
       res_sent: 'Žádost odeslána ✓', res_accepted: 'Jste přátelé ✓', res_pending: 'Žádost už čeká na vyřízení.',
       res_already_friends: 'Tohoto hráče už máš mezi přáteli.', res_self: 'Nemůžeš přidat sám sebe.',
-      res_not_found: 'Hráč s touto přezdívkou neexistuje.', res_unauthorized: 'Musíš být přihlášený.', res_error: 'Něco se pokazilo.',
+      res_not_found: 'Hráč s touto přezdívkou neexistuje.', res_unauthorized: 'Musíš být přihlášený.', res_guest_target: 'Tohoto hráče nelze přidat — hraje jako host bez registrace.', res_guest_self: 'Hosté nemohou přidávat přátele. Zaregistruj se a hraj dál.', res_error: 'Něco se pokazilo.',
     },
     cat: { war: '⚔ Války', moments: '📜 Historické okamžiky', places: '🧭 Objevy míst', inventions: '💡 Vynálezy', art: '🎨 Umění', sports: '🏅 Sportovní okamžiky', mysteries: '🔮 Záhady a legendy', disasters: '🌋 Katastrofy' },
     ach: {
@@ -492,7 +492,7 @@ export const resources = {
       remove: 'Remove', removeConfirm: 'Really remove this friend?',
       res_sent: 'Request sent ✓', res_accepted: "You're now friends ✓", res_pending: 'A request is already pending.',
       res_already_friends: 'This player is already your friend.', res_self: "You can't add yourself.",
-      res_not_found: 'No player with that nickname.', res_unauthorized: 'You must be signed in.', res_error: 'Something went wrong.',
+      res_not_found: 'No player with that nickname.', res_unauthorized: 'You must be signed in.', res_guest_target: 'Can’t add this player — they’re playing as a guest without an account.', res_guest_self: 'Guests can’t add friends. Sign up to keep playing.', res_error: 'Something went wrong.',
     },
     ach: {
       war: { label: 'Wars & battles', c1: 'Recruit', c3: 'Private', c5: 'Veteran', c10: 'Officer', c20: 'Colonel', c30: 'General', c40: 'Warlord', c50: 'Battle master' },
@@ -807,7 +807,7 @@ export const resources = {
       remove: 'Entfernen', removeConfirm: 'Diesen Freund wirklich entfernen?',
       res_sent: 'Anfrage gesendet ✓', res_accepted: 'Ihr seid jetzt Freunde ✓', res_pending: 'Eine Anfrage ist bereits offen.',
       res_already_friends: 'Dieser Spieler ist bereits dein Freund.', res_self: 'Du kannst dich nicht selbst hinzufügen.',
-      res_not_found: 'Kein Spieler mit diesem Spitznamen.', res_unauthorized: 'Du musst angemeldet sein.', res_error: 'Etwas ist schiefgelaufen.',
+      res_not_found: 'Kein Spieler mit diesem Spitznamen.', res_unauthorized: 'Du musst angemeldet sein.', res_guest_target: 'Dieser Spieler kann nicht hinzugefügt werden — er spielt als Gast ohne Konto.', res_guest_self: 'Gäste können keine Freunde hinzufügen. Registriere dich, um weiterzuspielen.', res_error: 'Etwas ist schiefgelaufen.',
     },
     ach: {
       war: { label: 'Kriege & Schlachten', c1: 'Rekrut', c3: 'Gefreiter', c5: 'Veteran', c10: 'Offizier', c20: 'Oberst', c30: 'General', c40: 'Feldherr', c50: 'Schlachtenmeister' },

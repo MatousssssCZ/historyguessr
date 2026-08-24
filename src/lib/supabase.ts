@@ -551,7 +551,7 @@ export async function getCategoryHits(userId: string): Promise<Record<string, nu
 
 export interface Friend { id: string; username: string | null; xp: number }
 export type FriendRequestResult =
-  | 'sent' | 'accepted' | 'pending' | 'already_friends' | 'self' | 'not_found' | 'unauthorized' | 'error'
+  | 'sent' | 'accepted' | 'pending' | 'already_friends' | 'self' | 'not_found' | 'unauthorized' | 'guest_self' | 'guest_target' | 'error'
 
 export async function sendFriendRequest(username: string): Promise<FriendRequestResult> {
   const { data, error } = await supabase.rpc('send_friend_request', { p_username: username })
