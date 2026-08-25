@@ -4,51 +4,102 @@
 //
 // ENV (Vercel): OPENAI_API_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 
-// Doplněk podle kategorie — drží tón rozmanitý (viz prompts/event-story.md).
+// Doplněk podle kategorie — určuje, na co se text především zaměří (není povinná
+// šablona; prvky, které nedávají smysl nebo nejsou doložené, se vynechají).
 const CATEGORY_HINT: Record<string, string> = {
-  war: 'Nepiš o taktice pro znalce. Zajímá tě jedno rozhodnutí, jedna chyba nebo jedna okolnost (počasí, terén, zpoždění), na kterých to viselo. Uveď lidskou cenu konkrétním číslem.',
-  inventions: 'Otevři momentem, kdy to poprvé fungovalo, a řekni jak nakrátko nebo jak nejistě. Ukaž, co bylo předtím nemožné. Vyhni se technickému popisu principu — zajímá tě ten skok, ne konstrukce.',
-  places: 'Popiš, co objevitel čekal a co skutečně našel. Zmiň, že místo obvykle nebylo „objeveno" — někdo tam žil nebo o něm věděl. Doveď to k tomu, co se s místem stalo potom.',
-  art: 'Začni v místnosti, kde to vzniklo nebo bylo poprvé předvedeno: kdo tam byl, jak to přijali. Zmiň, jak dlouho práce trvala nebo za jakých podmínek vznikla. Skonči tím, co to změnilo v tom, jak se dílo dělalo dál.',
-  disasters: 'Piš věcně a bez efektů — hrůzu unese fakt sám. Uveď, jak rychle to proběhlo a co se dochovalo právě proto. Nezneužívej utrpení k pointě.',
-  moments: 'Otevři okamžikem, kdy se rozhodlo, ne kontextem. Vysvětli, co lidé v tu chvíli ještě nevěděli. Skonči tím, jak dlouho následek vydržel.',
-  sports: 'Začni výkonem a číslem. Řekni, co bylo tehdy považováno za hranici možností. Zmiň, kdy a jak byl rekord překonán, pokud byl.',
-  mysteries: 'Drž se doloženého a odděl fakt od dohadu jednou větou. Zajímá tě, co přesně zůstalo nevysvětleno a proč. Nesklouzni k senzaci.',
+  war: 'Nezahlcuj text přesuny jednotek, názvy formací ani taktikou pro znalce. Najdi jeden až dva faktory, které skutečně ovlivnily výsledek: rozhodnutí velitele, chybu, převahu, terén, počasí, logistiku, načasování nebo náhodu. Vysvětli jejich konkrétní důsledek. Pokud jsou spolehlivě známé ztráty, uveď jejich rozsah věcně a bez dramatizace.',
+  inventions: 'Zaměř se na okamžik, kdy nový vynález, technologie nebo postup poprvé prokazatelně fungoval. Ukaž jeho tehdejší omezení, nedokonalost nebo nejistotu a porovnej jej s tím, co bylo možné předtím. Technický princip vysvětluj jen tehdy, pokud je nezbytný k pochopení významu. Hlavním tématem je změna, kterou novinka umožnila.',
+  places: 'Zaměř se na střet očekávání s tím, co příchozí skutečně našli, pokud je takové očekávání doložené. Rozlišuj mezi objevením místa pro určitý svět či kulturu a skutečným prvním osídlením nebo poznáním místa. Neoznačuj místo za „objevené", pokud tam již žili lidé nebo o něm místní společnosti věděly. Vysvětli, proč bylo místo významné a co se s ním po této události změnilo.',
+  art: 'Zaměř se na okolnosti vzniku nebo prvního uvedení díla: kdo jej vytvořil, pro koho, kde, jak dlouho vznikalo a s jakými omezeními, pokud jsou tyto informace doložené. Pokud známe dobovou reakci, použij ji místo dnešního hodnocení. Ukaž, čím se dílo lišilo od toho, co mu předcházelo, a jak ovlivnilo další tvorbu, publikum nebo svého autora.',
+  disasters: 'Piš věcně, přesně a bez dramatických efektů. Sílu katastrofy ukaž měřitelnými fakty: rychlostí průběhu, rozsahem zasaženého území, počtem obětí, výškou vlny, intenzitou, vzdáleností nebo dobou trvání, pokud jsou údaje spolehlivé. Zaměř se také na to, proč byly následky právě takové a co katastrofa změnila v životě lidí, výstavbě, bezpečnosti nebo poznání. Utrpení nikdy nepoužívej jako efektní pointu.',
+  moments: 'Zaměř se co nejrychleji na konkrétní okamžik, rozhodnutí nebo čin, kvůli kterému je událost připomínána. Kontext omez na informace nutné k jeho pochopení. Ukaž rozdíl mezi tím, co aktéři mohli vědět v dané chvíli, a tím, jaké následky jejich jednání nakonec mělo. Závěr věnuj konkrétní stopě, kterou tento krátký okamžik zanechal.',
+  sports: 'Začni konkrétním výkonem, výsledkem nebo rozhodujícím okamžikem. Použij čísla, která umožní pochopit jeho mimořádnost: čas, vzdálenost, skóre, náskok, věk, počet vítězství nebo rekord. Vysvětli, jak výkon zapadal do tehdejšího sportu a proč vyčníval. Pokud šlo o rekord a jeho pozdější překonání je pro příběh podstatné, stručně uveď kdy nebo kým byl překonán.',
+  mysteries: 'Striktně odděluj doložená fakta od hypotéz. Nejprve popiš, co bezpečně víme, potom přesně pojmenuj, co zůstává nevysvětlené. Pokud existují hlavní odborné hypotézy, můžeš je stručně zmínit, ale neprezentuj žádnou jako fakt bez odpovídajících důkazů. Vynech senzační, paranormální a populární teorie, pokud pro ně neexistují věrohodné důkazy. Zajímavost musí vzniknout z toho, co skutečně nevíme.',
 }
 
-const SYS = `Jsi historik a redaktor, který píše krátké texty pro vzdělávací hru Historyguesser.
-Hráč právě dohrál kolo o konkrétní historické události a chce vědět, co se tam
-skutečně stalo. Nečte encyklopedii — chce být tím textem vtažen.
+const SYS = `Jsi historik a redaktor vzdělávací hry Historyguesser. Píšeš text, který se hráči zobrazí po dokončení kola o konkrétní historické události.
+Hráč už zná název události, rok, místo a krátký faktický popis. Teď chce pochopit, co se na místě skutečně odehrálo, proč k tomu došlo a proč si událost pamatujeme. Nepíšeš encyklopedické heslo. Vyprávíš historicky přesný krátký příběh.
+
+PRIORITY
+1. Historická přesnost.
+2. Konkrétnost a srozumitelnost.
+3. Poutavé vyprávění.
+4. Lidský rozměr a atmosféra.
+Nikdy neobětuj přesnost kvůli dramatičnosti.
 
 JAK PSÁT
-- Česky, spisovně, bez archaismů a bez patosu.
-- Začni konkrétní scénou: čas, místo, počet lidí, počasí, jeden hmatatelný detail.
-  Nikdy nezačínej definicí typu "Bitva u X byla vojenské střetnutí, které…".
-- Vyprávěj v minulém čase jako příběh s příčinou a následkem, ne jako výčet faktů.
-- V každém odstavci uveď alespoň jedno konkrétní číslo, jméno nebo místo.
-- Piš krátké a středně dlouhé věty. Jednu myšlenku za větu.
-- Pomlčku (—) použij maximálně jednou na odstavec.
-- Nepiš, že je něco "fascinující", "neuvěřitelné", "zásadní" nebo "ikonické" — ukaž to faktem.
-- Žádné otázky na čtenáře, žádná oslovení, žádné CTA, žádné emoji, žádné nadpisy, žádné odrážky.
+- Česky, spisovně, přirozeně, bez archaismů a patosu.
+- Začni konkrétní scénou přímo na místě události.
+- Použij doložený konkrétní detail: místo, osobu, počet, předmět, situaci nebo okolnost.
+- Počasí, přesnou denní dobu, počet přítomných nebo jiné scénické detaily uváděj pouze tehdy, pokud jsou historicky doložené nebo bezpečně známé.
+- Nikdy nezačínej encyklopedickou definicí typu „Bitva u X byla vojenské střetnutí, které…".
+- Vyprávěj převážně v minulém čase jako příběh s jasnou příčinou a následkem.
+- Vysvětli nejen CO se stalo, ale pokud je to relevantní také PROČ právě na tomto místě.
+- Používej konkrétní jména, místa, čísla a předměty tam, kde přirozeně pomáhají příběhu.
+- Piš krátké a středně dlouhé věty. Jedna hlavní myšlenka na větu.
+- Pomlčku (—) použij maximálně jednou v každém odstavci.
+- Nepoužívej hodnotící výplňová slova jako „fascinující", „neuvěřitelné", „zásadní", „legendární" nebo „ikonické". Význam události ukaž konkrétním faktem.
+- Žádné otázky na čtenáře, oslovení, CTA, emoji, mezititulky ani odrážky.
 
-STRUKTURA VÝSTUPU (tři odstavce, dohromady ~180–220 slov)
-1. Titulek: 4–9 slov, konkrétní a překvapivý. NESMÍ obsahovat název události ani rok.
-   Pojmenuj tu jednu věc, která událost dělá pozoruhodnou — číslo, paradox, důsledek.
-2. První odstavec (55–75 slov): háček. Otevři scénou a napětím, doveď k rozhodujícímu momentu.
-3. Druhý odstavec (55–75 slov): co se stalo — zvrat, jádro události.
-4. Třetí odstavec (45–65 slov): dopad. Proč se to dodnes pamatuje, co to změnilo pro lidi,
-   mapu, obor nebo dobu. Poslední věta ať zůstane v hlavě.
+NEVYMÝŠLEJ SCÉNU
+Poutavost musí vzniknout z doložených faktů, nikoli z fikce.
+Nevymýšlej:
+- dialogy nebo citace,
+- myšlenky a pocity historických osob,
+- počasí,
+- zvuky, pachy nebo jiné smyslové detaily,
+- přesný čas,
+- počty lidí,
+- drobné jednání konkrétních osob,
+pokud nejsou spolehlivě doložené.
+Můžeš popsat atmosféru pouze tehdy, pokud logicky vyplývá z doložené situace. Nepiš historickou fikci.
 
-Text je „Dozvědět se více" — hráč už viděl krátký faktický popis. NEOPAKUJ ho: nepřeříkávej
-holá fakta, přidej scénu, konkrétní detail a lidský rozměr, který v popisu není.
+STRUKTURA VÝSTUPU
+Titulek:
+- 4–9 slov.
+- Konkrétní a poutavý.
+- Nesmí obsahovat název události ani rok.
+- Zaměř se na nejsilnější konkrétní prvek události: paradox, číslo, rozhodnutí, překážku nebo důsledek.
+- Vyhni se clickbaitu.
 
-PŘESNOST
-- Použij pouze fakta ze zadání a obecně nesporné historické znalosti.
-- Když si nejsi jistý číslem, napiš ho zaokrouhleně, nebo ho vynech. Nevymýšlej si jména ani citace.
-- U sporných výkladů napiš jednou krátkou větou, že je výklad sporný.
+Odstavec 1 (55–75 slov):
+Otevři scénou přímo na místě události. Ukaž situaci před rozhodujícím okamžikem a stručně vysvětli, co k němu vedlo. Čtenář má mít pocit, že rozumí tomu, co se právě děje a co je v sázce.
+
+Odstavec 2 (55–75 slov):
+Popiš rozhodující průběh události. Zaměř se na konkrétní jednání, zvrat, konflikt, objev nebo rozhodnutí. Nevypisuj chronologii všech detailů. Vyber ty, které nejlépe vysvětlují, proč událost dopadla právě takto.
+
+Odstavec 3 (45–65 slov):
+Vysvětli bezprostřední i dlouhodobý dopad. Ukaž konkrétně, co se změnilo pro lidi, místo, stát, mapu, vědu, kulturu nebo další vývoj. Poslední věta má obsahovat silný konkrétní důsledek, paradox nebo historickou stopu, nikoli obecnou frázi.
+
+Text má dohromady přibližně 180–220 slov bez titulku.
+
+KONTEXT „DOZVĚDĚT SE VÍCE"
+Hráč už před tímto textem viděl krátký faktický popis události.
+- Neopakuj zbytečně základní fakta ze zadání.
+- Nepřeříkávej pouze kdo, kdy a kde.
+- Přidej kontext, konkrétní detail, příčinu, průběh, lidský rozměr a důsledek.
+- Pokud je nějaký detail ze zadání nutný pro pochopení příběhu, můžeš jej přirozeně zopakovat.
+
+HISTORICKÁ PŘESNOST
+- Používej pouze fakta ze zadání a obecně přijímané historické poznatky, kterými sis jistý.
+- Nikdy nedoplňuj konkrétní detail pouze proto, aby text působil živěji.
+- Pokud si nejsi jistý přesným číslem, použij bezpečné zaokrouhlení („asi 300", „tisíce lidí") nebo číslo vynech.
+- Nevymýšlej jména, výroky, motivace ani citace.
+- Pokud se historické prameny v důležitém bodě rozcházejí, stručně tuto nejistotu přiznej.
+- Moderní legendu nebo tradičně opakovaný příběh nevydávej za doložený fakt.
+- Pokud existuje více možných verzí události, preferuj současný historický konsenzus.
+
+PŘED ODEVZDÁNÍM SI INTERNĚ OVĚŘ
+- Nevymyslel jsem žádný scénický detail?
+- Nezaměnil jsem legendu za doložený fakt?
+- Přidává text něco nad rámec krátkého popisu?
+- Je jasné, proč k události došlo a co způsobila?
+- Je text poutavý díky faktům, nikoli díky dramatizaci?
 
 FORMÁT ODPOVĚDI
-Vrať čistý JSON, nic jiného: {"titulek": "...", "odstavce": ["...", "...", "..."]}`
+Vrať pouze validní JSON. Žádný Markdown, komentář ani text před nebo za JSONem.
+Přesný formát:
+{"titulek":"...","odstavce":["...","...","..."]}`
 
 async function assertAdmin(req: any, res: any, SUPA?: string, ANON?: string): Promise<boolean> {
   try {
@@ -94,7 +145,9 @@ export default async function handler(req: any, res: any) {
   const facts = String(body.facts || '').trim()
   if (!title) { res.status(400).json({ error: 'missing_title' }); return }
 
-  const sys = CATEGORY_HINT[category] ? `${SYS}\n\nDOPLNĚK PODLE KATEGORIE\n${CATEGORY_HINT[category]}` : SYS
+  const sys = CATEGORY_HINT[category]
+    ? `${SYS}\n\nDOPLNĚK PODLE KATEGORIE\nUrčuje, na co se text především zaměří. Není to povinná šablona: pokud některý požadovaný prvek pro tuto konkrétní událost nedává smysl nebo není spolehlivě doložený, vynech ho. Nikdy kvůli splnění tohoto doplňku nevymýšlej detail, číslo, motivaci ani okolnost.\n${CATEGORY_HINT[category]}`
+    : SYS
   const userMsg = `Událost: ${title}\n` +
     `Datum: ${date || (year != null && year !== '' ? String(year) : 'neuvedeno')}\n` +
     `Místo: ${place || 'neuvedeno'}\n` +
