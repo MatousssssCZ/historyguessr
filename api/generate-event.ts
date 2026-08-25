@@ -36,6 +36,7 @@ export default async function handler(req: any, res: any) {
     `Pokud si nějakým polem nejsi jistý, vrať null (nehádej souřadnice ani datum). ` +
     `Souřadnice = skutečné místo události. ` +
     `Popisy piš populárně-naučným stylem (čtivě, poutavě, ale fakticky přesně), každý popis cca 80 slov, bez markdownu. ` +
+    `V TEXTU popisů piš roky před naším letopočtem vždy jako „44 př. n. l." — NIKDY s mínusem (ne „-44"); to platí jen pro text, číselná pole year_from/year_to zůstávají záporná. ` +
     `event_date jen pro n. l. (formát YYYY-MM-DD); pokud je rok př. n. l. nebo datum neznámé, vrať null. ` +
     `year_from/year_to celá čísla (záporná = př. n. l.); u přesné události oba stejné, u nejisté/víceleté rozsah. ` +
     `category jedno z: ${CATEGORIES.join(', ')} nebo null. ` +
@@ -48,7 +49,9 @@ export default async function handler(req: any, res: any) {
     `"inventions" = vynálezy a technický pokrok; "art" = umění a kultura; "sports" = sport; ` +
     `"mysteries" = záhady; "disasters" = katastrofy a neštěstí.`
 
-  const userMsg = `Událost: "${title}"${year != null && year !== '' ? `, přibližný rok: ${year}` : ''}.\n` +
+  const yNum = typeof year === 'number' ? year : (year != null && year !== '' && !isNaN(parseInt(String(year))) ? parseInt(String(year)) : null)
+  const yLabel = yNum == null ? '' : (yNum < 0 ? `${Math.abs(yNum)} př. n. l.` : String(yNum))
+  const userMsg = `Událost: "${title}"${yLabel ? `, přibližný rok: ${yLabel}` : ''}.\n` +
     `Vrať JSON s klíči: title_cs, title_en, title_de, description_cs, description_en, description_de, ` +
     `event_date, year_from, year_to, lat, lng, category, note (krátká poznámka česky o zdroji/jistotě).`
 

@@ -36,6 +36,7 @@ JAK PSÁT
 - Vyprávěj převážně v minulém čase jako příběh s jasnou příčinou a následkem.
 - Vysvětli nejen CO se stalo, ale pokud je to relevantní také PROČ právě na tomto místě.
 - Používej konkrétní jména, místa, čísla a předměty tam, kde přirozeně pomáhají příběhu.
+- Letopočty před naším letopočtem piš vždy slovně jako „44 př. n. l." — NIKDY s mínusem (ne „-44"). Roky našeho letopočtu piš jako běžné číslo bez přípony, pokud není nutná pro jasnost.
 - Piš krátké a středně dlouhé věty. Jedna hlavní myšlenka na větu.
 - Pomlčku (—) použij maximálně jednou v každém odstavci.
 - Nepoužívej hodnotící výplňová slova jako „fascinující", „neuvěřitelné", „zásadní", „legendární" nebo „ikonické". Význam události ukaž konkrétním faktem.
@@ -148,8 +149,11 @@ export default async function handler(req: any, res: any) {
   const sys = CATEGORY_HINT[category]
     ? `${SYS}\n\nDOPLNĚK PODLE KATEGORIE\nUrčuje, na co se text především zaměří. Není to povinná šablona: pokud některý požadovaný prvek pro tuto konkrétní událost nedává smysl nebo není spolehlivě doložený, vynech ho. Nikdy kvůli splnění tohoto doplňku nevymýšlej detail, číslo, motivaci ani okolnost.\n${CATEGORY_HINT[category]}`
     : SYS
+  // Letopočet pro AI naformátuj lidsky — záporný rok = př. n. l. (bez mínusu).
+  const yearNum = typeof year === 'number' ? year : (year != null && year !== '' && !isNaN(parseInt(String(year))) ? parseInt(String(year)) : null)
+  const yearLabel = yearNum == null ? '' : (yearNum < 0 ? `${Math.abs(yearNum)} př. n. l.` : `${yearNum} n. l.`)
   const userMsg = `Událost: ${title}\n` +
-    `Datum: ${date || (year != null && year !== '' ? String(year) : 'neuvedeno')}\n` +
+    `Datum: ${date || yearLabel || 'neuvedeno'}\n` +
     `Místo: ${place || 'neuvedeno'}\n` +
     `Kategorie: ${category || 'neuvedeno'}\n` +
     `Známá fakta: ${facts || '(žádná dodatečná fakta — vyjdi z obecně nesporných znalostí)'}\n\n` +
