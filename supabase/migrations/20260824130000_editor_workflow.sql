@@ -3,6 +3,11 @@
 -- odešlou „ke schválení" → admin zkontroluje/upraví a publikuje / vrátí / zruší.
 -- Idempotentní.
 
+-- ── Povolit roli „editor" v CHECK constraintu profiles.role ─────────────────
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('user','editor','admin'));
+
 -- ── Helper: is_editor (editor NEBO admin = „staff") ─────────────────────────
 create or replace function public.is_editor()
   returns boolean language sql stable security definer set search_path to 'public'
