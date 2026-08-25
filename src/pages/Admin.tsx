@@ -21,6 +21,8 @@ export default function AdminPage() {
   const [fetching, setFetching] = useState(true)
   const [regen, setRegen] = useState<{ running: boolean; done: number; total: number; failed: number; firstError?: string } | null>(null)
   const [imgComp, setImgComp] = useState<{ running: boolean; done: number; total: number; saved: number; skipped: number; failed: number; firstError?: string } | null>(null)
+  const [storyBatch, setStoryBatch] = useState<{ running: boolean; done: number; total: number; failed: number; firstError?: string } | null>(null)
+  const storyStopRef = useRef(false)
   // Velikosti souborů (panorama/ilustrace) — načítají se na pozadí ze Storage.
   const [sizes, setSizes] = useState<Map<string, { panorama: number | null; illustration: number | null }>>(new Map())
 
@@ -71,6 +73,31 @@ export default function AdminPage() {
       setImgComp({ running: true, done, total: targets.length, saved, skipped, failed, firstError })
     }
     setImgComp({ running: false, done, total: targets.length, saved, skipped, failed, firstError })
+    await loadEvents()
+  }
+
+  // Dávkové generování příběhů „Dozvědět se více" pro publikované události bez příběhu.
+  async function handleGenerateStories() {
+    const targets = events.filter(e => e.published && !(e.story_cs && e.story_cs.odstavce?.length))
+    if (targets.length === 0) { alert('Všechny publikované události už mají příběh.'); return }
+    if (!confirm(`Vygenerovat příběh (AI) pro ${targets.length} publikovaných událostí bez příběhu?\nNech kartu otevřenou. Průběh můžeš zastavit tlačítkem.`)) return
+    storyStopRef.current = false
+    setStoryBatch({ running: true, done: 0, total: targets.length, failed: 0 })
+    let done = 0, failed = 0, firstError = ''
+    for (const ev of targets) {
+      if (storyStopRef.current) break
+      try {
+        const { cs, en, de } = await generateStory({
+          title: ev.title, year: ev.year_from ?? ev.year,
+          event_date: ev.event_date, category: ev.category, facts: ev.description,
+        })
+        const { error } = await updateEvent(ev.id, { story_cs: cs, story_en: en, story_de: de })
+        if (error) { failed++; firstError ||= error.message }
+      } catch (e) { failed++; firstError ||= e instanceof Error ? e.message : String(e) }
+      done++
+      setStoryBatch({ running: true, done, total: targets.length, failed, firstError })
+    }
+    setStoryBatch({ running: false, done, total: targets.length, failed, firstError })
     await loadEvents()
   }
 
@@ -188,6 +215,9 @@ export default function AdminPage() {
             <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={imgComp?.running} onClick={handleRecompressIllustrations} title="Zmenší a zkomprimuje všechny doplňkové obrázky událostí (WebP, max 1600 px)">
               {imgComp?.running ? `🗜 ${imgComp.done}/${imgComp.total}…` : '🗜 Komprimovat ilustrace'}
             </button>
+            {storyBatch?.running
+              ? <button className="btn btn-ghost" style={{ fontSize: 13, color: 'var(--danger, #c0392b)' }} onClick={() => { storyStopRef.current = true }}>■ Zastavit ({storyBatch.done}/{storyBatch.total})</button>
+              : <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={handleGenerateStories} title="Vygeneruje příběh Dozvědět se více pro publikované události, které ho ještě nemají">📖 Generovat příběhy</button>}
             <button className="btn btn-accent" onClick={() => setPanel('new')}>+ Nová událost</button>
           </div>
         )}
@@ -221,6 +251,20 @@ export default function AdminPage() {
             )}
           </span>
           {!imgComp.running && <button className="btn btn-ghost" style={{ fontSize: 12, color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => setImgComp(null)}>Zavřít</button>}
+        </div>
+      )}
+
+      {storyBatch && (
+        <div style={{ background: storyBatch.running ? 'var(--accent)' : 'var(--success-deep, #1d6b3a)', color: '#fff', padding: '10px 32px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>
+            {storyBatch.running
+              ? `📖 Generuji příběhy… ${storyBatch.done} / ${storyBatch.total}${storyBatch.failed ? ` (chyb: ${storyBatch.failed})` : ''}`
+              : `✓ Hotovo — ${storyBatch.done - storyBatch.failed} příběhů vytvořeno${storyBatch.failed ? `, ${storyBatch.failed} se nezdařilo` : ''}`}
+            {!storyBatch.running && storyBatch.failed > 0 && storyBatch.firstError && (
+              <span style={{ display: 'block', fontSize: 12, opacity: 0.85, marginTop: 4 }}>Důvod: {storyBatch.firstError}</span>
+            )}
+          </span>
+          {!storyBatch.running && <button className="btn btn-ghost" style={{ fontSize: 12, color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => setStoryBatch(null)}>Zavřít</button>}
         </div>
       )}
 

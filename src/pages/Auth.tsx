@@ -7,6 +7,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher'
 import Turnstile from '@/components/Turnstile'
 import PanoramaBackdrop from '@/components/PanoramaBackdrop'
 import { CAPTCHA_ENABLED } from '@/lib/turnstile'
+import { exploreListPath, categoryPath, CATEGORIES, type ExploreLocale, type CategoryKey } from '@/lib/exploreUrls'
+import i18n from '@/i18n'
 
 const forgotLinkStyle: React.CSSProperties = {
   alignSelf: 'flex-end', background: 'none', border: 'none', padding: 0,
@@ -464,13 +466,30 @@ function LandingSeo() {
     { icon: '📅', t: t('menu.ht3t'), d: t('menu.ht3d') },
   ]
   const faq = [1, 2, 3, 4, 5, 6, 7].map(n => ({ q: t('landing.faqQ' + n), a: t('landing.faqA' + n) }))
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  const eloc: ExploreLocale = lng === 'en' ? 'en' : lng === 'de' ? 'de' : 'cs'
+  const catKeys = Object.keys(CATEGORIES) as CategoryKey[]
   return (
     <div style={{ background: 'var(--paper-50)', color: 'var(--ink)', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 22px 20px' }}>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, textAlign: 'center', margin: '0 0 16px', letterSpacing: '-0.015em' }}>{t('landing.h1')}</h2>
-        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65, textAlign: 'center', margin: '0 auto 40px', maxWidth: 620 }}>
+        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65, textAlign: 'center', margin: '0 auto 28px', maxWidth: 620 }}>
           {t('landing.sub')}
         </p>
+
+        {/* Prominentní vstup do veřejné Explore vrstvy (crawl + AdSense obsah). */}
+        <div style={{ textAlign: 'center', marginBottom: 44 }}>
+          <a href={exploreListPath(eloc)} style={{ display: 'inline-block', padding: '13px 26px', borderRadius: 13, background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
+            {t('menu.exploreHistory')} →
+          </a>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 18 }}>
+            {catKeys.map(k => (
+              <a key={k} href={categoryPath(eloc, k)} style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid var(--line-strong)', background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 13, textDecoration: 'none' }}>
+                {CATEGORIES[k][eloc].label}
+              </a>
+            ))}
+          </div>
+        </div>
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, textAlign: 'center', margin: '0 0 20px', letterSpacing: '-0.01em' }}>{t('landing.howTitle')}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 44 }}>
