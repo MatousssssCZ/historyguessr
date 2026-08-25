@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, type CSSProperties } from 're
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription, eventStory } from '@/lib/eventLocale'
-import StoryView from '@/components/round/StoryView'
+import StoryModal from '@/components/round/StoryModal'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
@@ -629,6 +629,7 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
   const { t } = useTranslation()
   const isMobile = useIsMobile()
   const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
+  const [showStory, setShowStory] = useState(false)
   const [showShare, setShowShare] = useState(false)
   // Mezikrok: popis události + hodnocení → skóre. Znovunavštívení (už odehráno) ho přeskočí.
   const [scoreShown, setScoreShown] = useState(alreadyPlayed)
@@ -677,7 +678,8 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
   const map = <ResultMap guessLat={guessLat} guessLng={guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
   const panorama = hasPanorama ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
   const storyData = eventStory(event)
-  const story = <StoryView story={storyData} fallback={eventDescription(event)}/>
+  // „O události" = krátký popis; delší příběh je zvlášť pod „Dozvědět se více".
+  const story = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
   const xpSection = (!alreadyPlayed && userId) ? <GameEvaluation userId={userId} gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)} gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}} extraUnlocked={streakBadges}/> : null
 
   // Srovnání s kamarádovou výzvou (fixní pilulka nad výsledkem — vidí ji i „už odehráno")
@@ -711,6 +713,7 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
         map={map} panorama={panorama}
         eventTitle={eventTitle(event)} eventYear={event.year} metaLine={roundMetaLine(event)}
         story={story}
+        onLearnMore={storyData ? () => setShowStory(true) : undefined} storyTeaser={storyData?.titulek}
         scoreTotal={result.totalScore} scoreMax={1000}
         distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
         yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500} guessYear={guessYear}
@@ -720,7 +723,8 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
         onShare={isMakeup ? null : () => setShowShare(true)}
         ctaLabel={t('daily.menu')} onCta={onMenu}
       />
-      {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
+      {showStory && <StoryModal eventTitle={eventTitle(event)} story={storyData} onClose={() => setShowStory(false)}/>}
+    {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
       {challengeBanner}
     </>)
   }
@@ -758,11 +762,12 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
         praise={praise}
         panorama={panorama}
         showDetail onOpenDetail={setDetailTab}
-        onLearnMore={storyData ? () => setDetailTab('story') : undefined} storyTeaser={storyData?.titulek}
+        onLearnMore={storyData ? () => setShowStory(true) : undefined} storyTeaser={storyData?.titulek}
         onChallenge={isMakeup ? undefined : doChallenge}
         ctaLabel={t('daily.menu')} onCta={onMenu}
         secondaryActions={makeupAction}    />
     </div>
+    {showStory && <StoryModal eventTitle={eventTitle(event)} story={storyData} onClose={() => setShowStory(false)}/>}
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}
     {challengeBanner}
   </>)

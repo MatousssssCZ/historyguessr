@@ -571,12 +571,7 @@ export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefil
         lng: d.lng != null ? d.lng.toFixed(6) : f.lng,
         category: d.category ?? f.category,
       }))
-      // Předvyplněný popis rovnou seedni do editoru textu (jediný zdroj).
-      // Je to jen výchozí bod — pro pořádný web text pak „Vygenerovat text (AI)".
-      const mk = (t: string | null | undefined) => (t && t.trim() ? { titulek: '', odstavce: [t.trim()] } : null)
-      if (d.description_cs) setStoryCs(mk(d.description_cs))
-      if (d.description_en) setStoryEn(mk(d.description_en))
-      if (d.description_de) setStoryDe(mk(d.description_de))
+      // Popis a příběh jsou nezávislé — příběh se generuje zvlášť tlačítkem níže.
       const gpsWarn = (d.lat == null || d.lng == null)
         ? '⚠️ GPS se nepodařilo spolehlivě určit — souřadnice zadej ručně kliknutím do mapy. '
         : ''
@@ -588,17 +583,13 @@ export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefil
     }
   }
 
-  // ── Text události (jediný zdroj: příběh; krátký popis se z něj odvodí) ──
-  // Staré události bez příběhu se předvyplní z jejich popisu, aby admin viděl JEDEN text.
-  const seedStory = (s: EventStory | null | undefined, desc: string | null | undefined): EventStory | null =>
-    s ?? (desc && desc.trim()
-      ? { titulek: '', odstavce: desc.split(/\n{2,}/).map(p => p.trim()).filter(Boolean) }
-      : null)
-  const [storyCs, setStoryCs] = useState<EventStory | null>(seedStory(event?.story_cs, event?.description))
-  const [storyEn, setStoryEn] = useState<EventStory | null>(seedStory(event?.story_en, event?.description_en))
-  const [storyDe, setStoryDe] = useState<EventStory | null>(seedStory(event?.story_de, event?.description_de))
+  // ── Příběh „Dozvědět se více" — NEZÁVISLÝ na krátkém popisu ──
+  const [storyCs, setStoryCs] = useState<EventStory | null>(event?.story_cs ?? null)
+  const [storyEn, setStoryEn] = useState<EventStory | null>(event?.story_en ?? null)
+  const [storyDe, setStoryDe] = useState<EventStory | null>(event?.story_de ?? null)
   const [storyLoading, setStoryLoading] = useState(false)
   const [storyError, setStoryError] = useState<string | null>(null)
+  const [descLoading, setDescLoading] = useState(false)
 
   // Editace odstavců jednoho jazyka z jednoho textarea (odděleno prázdným řádkem).
   function setParas(cur: EventStory | null, text: string): EventStory | null {
@@ -606,9 +597,23 @@ export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefil
     if (!odstavce.length) return cur ? { ...cur, odstavce: [] } : null
     return { titulek: cur?.titulek ?? '', odstavce }
   }
-  // Krátký popis pro hru = 1. odstavec příběhu (fallback na dřívější popis).
-  const deriveDesc = (s: EventStory | null, fallback: string) =>
-    (s && s.odstavce.length ? s.odstavce[0] : fallback)
+  // Vygeneruje jen krátký popis (80 slov) z názvu + roku — nezávisle na příběhu.
+  async function handleGenerateDesc() {
+    const titleForAi = form.title.trim() || aiTitle.trim()
+    if (!titleForAi) { setError('Nejdřív vyplň název události.'); return }
+    setError(null); setDescLoading(true)
+    try {
+      const d = await generateEventDraft(titleForAi, form.year_from || aiYear)
+      setForm(f => ({
+        ...f,
+        description: d.description_cs ?? f.description,
+        description_en: d.description_en ?? f.description_en,
+        description_de: d.description_de ?? f.description_de,
+      }))
+    } catch (e: any) {
+      setError(e?.message || 'Generování popisu selhalo.')
+    } finally { setDescLoading(false) }
+  }
 
   async function handleGenerateStory() {
     if (!form.title.trim()) { setStoryError('Nejdřív vyplň název události.'); return }
@@ -714,11 +719,12 @@ export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefil
       const yearTo = parseInt(form.year_to) || 1900
       if (yearFrom > yearTo) { setError('Rok od musí být ≤ roku do.'); setSaving(false); setSavingNext(false); return }
       const yearMid = Math.round((yearFrom + yearTo) / 2)
-      // Krátký popis (pro hru) se odvodí z 1. odstavce příběhu; příběh je zdroj.
-      const descCs = deriveDesc(storyCs, form.description).trim()
-      if (!descCs) { setError('Vyplň text události (co se tady stalo).'); setSaving(false); setSavingNext(false); return }
-      const descEn = (storyEn ? storyEn.odstavce[0] : form.description_en).trim()
-      const descDe = (storyDe ? storyDe.odstavce[0] : form.description_de).trim()
+      // Krátký popis a příběh jsou dva NEZÁVISLÉ texty (popis = vidět u události,
+      // příběh = „Dozvědět se více"). Popis je povinný, příběh volitelný.
+      const descCs = form.description.trim()
+      if (!descCs) { setError('Vyplň krátký popis události.'); setSaving(false); setSavingNext(false); return }
+      const descEn = form.description_en.trim()
+      const descDe = form.description_de.trim()
       const payload = {
         title: form.title,
         description: descCs,
@@ -894,17 +900,50 @@ export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefil
               <label className="label">Název události *</label>
               <input className="input" value={form.title} onChange={set('title')} required placeholder="např. Bitva na Bílé hoře"/>
             </div>
-            {/* Text události — JEDINÝ zdroj. Web ukazuje celý text, hra 1. odstavec. */}
+            {/* Krátký popis (~80 slov) — vidět u události. Nezávislý na příběhu. */}
             <div style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--paper-100)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                <label className="label" style={{ margin: 0 }}>📖 Text události — co se tady stalo *</label>
-                <button type="button" className="btn btn-secondary" onClick={handleGenerateStory} disabled={storyLoading}>
-                  {storyLoading ? 'Generuji…' : (storyCs ? '↻ Přegenerovat text (AI)' : '✨ Vygenerovat text (AI)')}
+                <label className="label" style={{ margin: 0 }}>📝 Krátký popis (~80 slov) — vidět u události *</label>
+                <button type="button" className="btn btn-secondary" onClick={handleGenerateDesc} disabled={descLoading}>
+                  {descLoading ? 'Generuji…' : (form.description.trim() ? '↻ Přegenerovat popis' : '✨ Generovat popis')}
                 </button>
               </div>
               <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
-                Jeden čtenářský text (2 odstavce). Web ho ukáže celý na stránce události, hra po tipu
-                ukáže jeho 1. odstavec. Odstavce oddělíš prázdným řádkem.
+                Stručné „co to je", které hráč uvidí hned po tipu. Generuje se z názvu a roku.
+              </p>
+              <textarea className="input" rows={4} style={{ resize: 'vertical' }} required
+                value={form.description} onChange={set('description') as React.ChangeEventHandler<HTMLTextAreaElement>}
+                placeholder="Cca 80 slov: co se stalo, kde a proč je to důležité…"/>
+              <details style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+                <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--ink-2)' }}>
+                  🌐 Překlad popisu (EN / DE) — volitelné
+                </summary>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '10px 0 4px' }}>
+                  <div>
+                    <label className="label">🇬🇧 Popis (EN)</label>
+                    <textarea className="input" rows={3} style={{ resize: 'vertical' }}
+                      value={form.description_en} onChange={set('description_en') as React.ChangeEventHandler<HTMLTextAreaElement>} placeholder="Short description in English…"/>
+                  </div>
+                  <div>
+                    <label className="label">🇩🇪 Popis (DE)</label>
+                    <textarea className="input" rows={3} style={{ resize: 'vertical' }}
+                      value={form.description_de} onChange={set('description_de') as React.ChangeEventHandler<HTMLTextAreaElement>} placeholder="Kurze Beschreibung auf Deutsch…"/>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            {/* Příběh „Dozvědět se více" — delší čtenářský text (volitelný). */}
+            <div style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--paper-100)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <label className="label" style={{ margin: 0 }}>📖 Příběh „Dozvědět se více" (volitelný)</label>
+                <button type="button" className="btn btn-secondary" onClick={handleGenerateStory} disabled={storyLoading}>
+                  {storyLoading ? 'Generuji…' : (storyCs ? '↻ Přegenerovat příběh (AI)' : '✨ Generovat příběh (AI)')}
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
+                Delší poutavý text (3 odstavce, ~200 slov) schovaný ve hře pod „Dozvědět se více".
+                Nechej prázdné a hra ukáže jen krátký popis. Odstavce oddělíš prázdným řádkem.
               </p>
               {storyError && <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{storyError}</p>}
               <div>
@@ -915,7 +954,7 @@ export function EventForm({ event, onDone, onPublishNext, mode = 'admin', prefil
               </div>
               <div>
                 <label className="label">Text (CZ) — odstavce oddělené prázdným řádkem</label>
-                <textarea className="input" rows={8} style={{ resize: 'vertical' }} required
+                <textarea className="input" rows={8} style={{ resize: 'vertical' }}
                   value={storyCs?.odstavce.join('\n\n') ?? ''}
                   onChange={e => setStoryCs(setParas(storyCs, e.target.value))}
                   placeholder="Otevři konkrétní scénou (čas, místo, číslo)…&#10;&#10;Druhý odstavec: jak to skončilo a co to změnilo."/>

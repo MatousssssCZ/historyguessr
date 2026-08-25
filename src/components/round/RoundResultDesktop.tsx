@@ -28,6 +28,8 @@ interface Props {
   yearPoints: number
   yearMax: number
   guessYear?: number | null       // tvůj tipnutý rok (do závorky)
+  onLearnMore?: () => void         // „Dozvědět se více o události" (příběh)
+  storyTeaser?: string | null      // titulek příběhu
   leaderboard?: LeaderEntry[] | null   // null → sólo (bez přepínače)
   playersToday?: number
   distribution?: Distribution | null
@@ -104,7 +106,20 @@ export default function RoundResultDesktop(p: Props) {
           {view === 'score' ? (
             <>
               {/* Popis události */}
-              <div style={{ marginBottom: 20 }}>{p.story}</div>
+              <div style={{ marginBottom: p.onLearnMore ? 12 : 20 }}>{p.story}</div>
+
+              {p.onLearnMore && (
+                <button type="button" onClick={p.onLearnMore} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', marginBottom: 20, padding: '11px 13px', borderRadius: 13, border: `1px solid ${C.accentBorder}`, background: C.accentSoft, cursor: 'pointer', textAlign: 'left' }}>
+                  <span style={{ flex: 'none', width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.accent, color: '#fff' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5z"/></svg>
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', font: `700 13px ${F.ui}`, color: C.ink }}>{t('round.learnMore')}</span>
+                    {p.storyTeaser && <span style={{ display: 'block', font: `500 11.5px ${F.ui}`, color: C.muted2, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.storyTeaser}</span>}
+                  </span>
+                  <span style={{ flex: 'none', color: C.accent, fontSize: 16 }}>›</span>
+                </button>
+              )}
 
               {/* Skóre */}
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: p.praise ? 6 : 16 }}>
