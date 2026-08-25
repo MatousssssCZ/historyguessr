@@ -372,7 +372,7 @@ export default function MenuPage() {
 
           {/* Spodní pruh */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, borderTop: '1px solid rgba(251,247,240,.14)', padding: '20px 0 calc(20px + var(--safe-bottom))' }}>
-            <a href={nav[4].href} style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: '#FBF7F0', fontFamily: 'var(--font-mono)', fontSize: 'clamp(18px, 2.2vw, 30px)', letterSpacing: '0.06em' }}>
+            <a href={`/${eloc}/${exSeg}`} style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: '#FBF7F0', fontFamily: 'var(--font-mono)', fontSize: 'clamp(18px, 2.2vw, 30px)', letterSpacing: '0.06em' }}>
               <span style={{ fontSize: '1.1em' }}>↓</span> {t('menu.exploreHistory').toUpperCase()}
             </a>
             <div style={{ display: 'flex', gap: 22 }}>
