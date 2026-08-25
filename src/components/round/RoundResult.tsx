@@ -39,6 +39,7 @@ interface Props {
   yearOff: number                 // roky vedle
   yearPoints: number
   yearMax: number
+  guessYear?: number | null       // tvůj tipnutý rok (do závorky)
   showDetail?: boolean            // vstupy do detailu
   detailTabs?: DetailTab[]        // které taby ukázat (default všechny 3)
   onOpenDetail?: (tab: DetailTab) => void
@@ -111,7 +112,7 @@ export default function RoundResult(p: Props) {
 
         <div style={{ display: 'flex', gap: 9, marginBottom: 13 }}>
           <Metric label={t('round.kmOff', { d: formatDistance(p.distanceKm) })} points={p.placePoints} pct={p.placePoints / p.placeMax} color={C.accent}/>
-          <Metric label={t('round.yearsOff', { n: p.yearOff })} points={p.yearPoints} pct={p.yearPoints / p.yearMax} color={C.good}/>
+          <Metric label={`${t('round.yearsOff', { n: p.yearOff })}${p.guessYear != null ? ` (${formatYear(p.guessYear)})` : ''}`} points={p.yearPoints} pct={p.yearPoints / p.yearMax} color={C.good}/>
         </div>
 
         {p.rating && <div style={{ padding: '2px 2px 12px' }}>{p.rating}</div>}

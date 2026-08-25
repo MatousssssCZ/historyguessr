@@ -327,7 +327,7 @@ export default function DailyChallengePage() {
       <>
       <DailyResultView
         event={event} result={result}
-        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0}
+        guessLat={guessLat ?? 0} guessLng={guessLng ?? 0} guessYear={guessYear}
         leaderboard={leaderboard} allScores={allScores} userId={user?.id}
         alreadyPlayed={phase === 'already_played'} isMakeup={!!makeup}
         makeupCount={makeupStatus.balance}
@@ -618,9 +618,9 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 // Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
 
 // ── Výsledek denní výzvy (redesign 17e) ───────────────────
-function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, challengeTarget, challengeBy, onMenu }: {
+function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, challengeTarget, challengeBy, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
-  guessLat: number; guessLng: number
+  guessLat: number; guessLng: number; guessYear: number
   leaderboard: DailyLeaderRow[]; allScores: number[]; userId?: string; alreadyPlayed: boolean; isMakeup?: boolean
   makeupCount?: number; onMakeup?: () => void; streakBadges?: UnlockedTier[]; onMenu: () => void
   challengeTarget?: number | null; challengeBy?: string
@@ -711,7 +711,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         story={story}
         scoreTotal={result.totalScore} scoreMax={1000}
         distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
-        yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+        yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500} guessYear={guessYear}
         praise={praise}
         leaderboard={entries} playersToday={entries.length} distribution={distribution}
         xpSection={xpSection}
@@ -752,7 +752,7 @@ function DailyResultView({ event, result, guessLat, guessLng, leaderboard, allSc
         eventTitle={eventTitle(event)} eventYear={event.year}
         scoreTotal={result.totalScore} scoreMax={1000}
         distanceKm={result.distKm} placePoints={result.locScore} placeMax={500}
-        yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500}
+        yearOff={result.yrDiff} yearPoints={result.yrScore} yearMax={500} guessYear={guessYear}
         praise={praise}
         panorama={panorama}
         showDetail onOpenDetail={setDetailTab}

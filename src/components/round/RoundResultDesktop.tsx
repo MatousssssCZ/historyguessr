@@ -27,6 +27,7 @@ interface Props {
   yearOff: number
   yearPoints: number
   yearMax: number
+  guessYear?: number | null       // tvůj tipnutý rok (do závorky)
   leaderboard?: LeaderEntry[] | null   // null → sólo (bez přepínače)
   playersToday?: number
   distribution?: Distribution | null
@@ -115,7 +116,7 @@ export default function RoundResultDesktop(p: Props) {
               {/* Dlaždice km / rok */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
                 <MetricRow icon="pin" label={t('round.kmOff', { d: formatDistance(p.distanceKm) })} points={p.placePoints} max={p.placeMax} color={C.accent}/>
-                <MetricRow icon="calendar" label={t('round.yearsOffLong', { count: p.yearOff })} points={p.yearPoints} max={p.yearMax} color={C.good}/>
+                <MetricRow icon="calendar" label={`${t('round.yearsOffLong', { count: p.yearOff })}${p.guessYear != null ? ` (${formatYear(p.guessYear)})` : ''}`} points={p.yearPoints} max={p.yearMax} color={C.good}/>
               </div>
 
               {p.xpSection && <div style={{ marginBottom: 6 }}>{p.xpSection}</div>}

@@ -743,7 +743,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
         story={<p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>}
         scoreTotal={round.round_score} scoreMax={1000}
         distanceKm={round.distance_km} placePoints={round.location_score} placeMax={500}
-        yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500}
+        yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500} guessYear={round.guess_year}
         leaderboard={null}
         secondaryActions={challengeBtn}
         ctaLabel={ctaLabel} onCta={onNext}
@@ -780,6 +780,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       yearOff={round.year_diff}
       yearPoints={round.year_score}
       yearMax={500}
+      guessYear={round.guess_year}
       panorama={panoNode}
       showDetail detailTabs={SOLO_TABS} onOpenDetail={setDetailTab}
       onChallenge={doChallenge}
