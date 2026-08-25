@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback, type CSSProperties } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
-import { eventTitle, eventDescription } from '@/lib/eventLocale'
+import { eventTitle, eventDescription, eventStory } from '@/lib/eventLocale'
+import StoryView from '@/components/round/StoryView'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
@@ -675,7 +676,8 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
   const hasPanorama = !!event.panorama_url && event.panorama_url !== 'pending'
   const map = <ResultMap guessLat={guessLat} guessLng={guessLng} truthLat={event.lat} truthLng={event.lng} radiusKm={event.location_radius_km ?? 0}/>
   const panorama = hasPanorama ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
-  const story = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+  const storyData = eventStory(event)
+  const story = <StoryView story={storyData} fallback={eventDescription(event)}/>
   const xpSection = (!alreadyPlayed && userId) ? <GameEvaluation userId={userId} gainedXp={Math.round((result.totalScore + XP_BONUS_DAILY) * result.xpMult)} gameHits={event.category && result.totalScore >= 950 ? { [event.category]: 1 } : {}} extraUnlocked={streakBadges}/> : null
 
   // Srovnání s kamarádovou výzvou (fixní pilulka nad výsledkem — vidí ji i „už odehráno")
@@ -756,6 +758,7 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
         praise={praise}
         panorama={panorama}
         showDetail onOpenDetail={setDetailTab}
+        onLearnMore={storyData ? () => setDetailTab('story') : undefined} storyTeaser={storyData?.titulek}
         onChallenge={isMakeup ? undefined : doChallenge}
         ctaLabel={t('daily.menu')} onCta={onMenu}
         secondaryActions={makeupAction}    />

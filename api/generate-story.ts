@@ -31,12 +31,16 @@ JAK PSÁT
 - Nepiš, že je něco "fascinující", "neuvěřitelné", "zásadní" nebo "ikonické" — ukaž to faktem.
 - Žádné otázky na čtenáře, žádná oslovení, žádné CTA, žádné emoji, žádné nadpisy, žádné odrážky.
 
-STRUKTURA VÝSTUPU
+STRUKTURA VÝSTUPU (tři odstavce, dohromady ~180–220 slov)
 1. Titulek: 4–9 slov, konkrétní a překvapivý. NESMÍ obsahovat název události ani rok.
    Pojmenuj tu jednu věc, která událost dělá pozoruhodnou — číslo, paradox, důsledek.
-2. První odstavec (60–90 slov): co se dělo. Otevři scénou, doveď ji do rozhodujícího momentu.
-3. Druhý odstavec (60–90 slov): jak to skončilo a co to změnilo. Poslední věta ať sahá
-   za samotnou událost — dopad na lidi, mapu, obor nebo dobu.
+2. První odstavec (55–75 slov): háček. Otevři scénou a napětím, doveď k rozhodujícímu momentu.
+3. Druhý odstavec (55–75 slov): co se stalo — zvrat, jádro události.
+4. Třetí odstavec (45–65 slov): dopad. Proč se to dodnes pamatuje, co to změnilo pro lidi,
+   mapu, obor nebo dobu. Poslední věta ať zůstane v hlavě.
+
+Text je „Dozvědět se více" — hráč už viděl krátký faktický popis. NEOPAKUJ ho: nepřeříkávej
+holá fakta, přidej scénu, konkrétní detail a lidský rozměr, který v popisu není.
 
 PŘESNOST
 - Použij pouze fakta ze zadání a obecně nesporné historické znalosti.
@@ -44,7 +48,7 @@ PŘESNOST
 - U sporných výkladů napiš jednou krátkou větou, že je výklad sporný.
 
 FORMÁT ODPOVĚDI
-Vrať čistý JSON, nic jiného: {"titulek": "...", "odstavce": ["...", "..."]}`
+Vrať čistý JSON, nic jiného: {"titulek": "...", "odstavce": ["...", "...", "..."]}`
 
 async function assertAdmin(req: any, res: any, SUPA?: string, ANON?: string): Promise<boolean> {
   try {
@@ -55,7 +59,7 @@ async function assertAdmin(req: any, res: any, SUPA?: string, ANON?: string): Pr
     const user = await userRes.json()
     const profRes = await fetch(`${SUPA}/rest/v1/profiles?id=eq.${user.id}&select=role`, { headers: { apikey: ANON, Authorization: `Bearer ${token}` } })
     const prof = await profRes.json()
-    if (!Array.isArray(prof) || prof[0]?.role !== 'admin') { res.status(403).json({ error: 'forbidden' }); return false }
+    if (!Array.isArray(prof) || !['admin','editor'].includes(prof[0]?.role)) { res.status(403).json({ error: 'forbidden' }); return false }
     return true
   } catch {
     res.status(401).json({ error: 'unauthorized' }); return false

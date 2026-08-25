@@ -35,6 +35,16 @@ export function eventDescription(ev: EventLike): string {
   return ev.description
 }
 
+// Lokalizovaný „příběh" události (Dozvědět se více) — titulek + odstavce.
+// Vrací null, když příběh v daném jazyce (ani CZ fallback) není.
+export function eventStory(ev: Partial<Pick<Event, 'story_cs' | 'story_en' | 'story_de'>>): Event['story_cs'] {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  const pick = lng === 'en' ? ev.story_en : lng === 'de' ? ev.story_de : ev.story_cs
+  const story = pick ?? ev.story_cs ?? null
+  if (!story || !Array.isArray(story.odstavce) || story.odstavce.length === 0) return null
+  return story
+}
+
 // Lokalizovaný název/popis odměny z kampaně (relikvie). Stejný princip: CZ fallback.
 type RewardLike = { name: string; name_en?: string | null; name_de?: string | null
   description?: string | null; description_en?: string | null; description_de?: string | null }

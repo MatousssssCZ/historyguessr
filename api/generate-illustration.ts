@@ -38,7 +38,7 @@ export default async function handler(req: any, res: any) {
     const user = await userRes.json()
     const profRes = await fetch(`${SUPA}/rest/v1/profiles?id=eq.${user.id}&select=role`, { headers: { apikey: ANON, Authorization: `Bearer ${token}` } })
     const prof = await profRes.json()
-    if (!Array.isArray(prof) || prof[0]?.role !== 'admin') { res.status(403).json({ error: 'forbidden' }); return }
+    if (!Array.isArray(prof) || !['admin','editor'].includes(prof[0]?.role)) { res.status(403).json({ error: 'forbidden' }); return }
   } catch {
     res.status(401).json({ error: 'unauthorized' }); return
   }

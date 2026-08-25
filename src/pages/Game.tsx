@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
-import { eventTitle, eventDescription, roundMetaLine } from '@/lib/eventLocale'
+import { eventTitle, eventDescription, eventStory, roundMetaLine } from '@/lib/eventLocale'
+import StoryView from '@/components/round/StoryView'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
 import RoundResultView, { type DetailTab } from '@/components/round/RoundResult'
@@ -702,7 +703,8 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   const ctaLabel = isLast ? t('round.ctaGameResult') : t('round.ctaNext')
   const hasPano = !!event.panorama_url && event.panorama_url !== 'pending'
   const panoNode = hasPano ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
-  const storyNode = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
+  const storyData = eventStory(event)
+  const storyNode = <StoryView story={storyData} fallback={eventDescription(event)}/>
   const SOLO_TABS: DetailTab[] = ['panorama', 'story']
 
   // „Vyzvi kamaráda" — na tuhle právě zahranou událost, se svým skóre v odkazu
@@ -740,7 +742,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
         panorama={hasPanorama ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>}
         roundLabel={roundLabel} dots={dots}
         eventTitle={eventTitle(event)} eventYear={event.year} metaLine={roundMetaLine(event)}
-        story={<p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>}
+        story={storyNode}
         scoreTotal={round.round_score} scoreMax={1000}
         distanceKm={round.distance_km} placePoints={round.location_score} placeMax={500}
         yearOff={round.year_diff} yearPoints={round.year_score} yearMax={500} guessYear={round.guess_year}
@@ -783,6 +785,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
       guessYear={round.guess_year}
       panorama={panoNode}
       showDetail detailTabs={SOLO_TABS} onOpenDetail={setDetailTab}
+      onLearnMore={storyData ? () => setDetailTab('story') : undefined} storyTeaser={storyData?.titulek}
       onChallenge={doChallenge}
       ctaLabel={ctaLabel}
       onCta={onNext}
