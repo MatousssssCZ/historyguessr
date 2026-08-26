@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
+import { TILE_URL, TILE_ATTR } from '@/lib/mapTiles'
 
 // Fix Leaflet marker ikonek pro Vite
 // (Vite nezpracovává default Leaflet icon URLs správně)
@@ -35,9 +36,9 @@ export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: Admin
       zoom: 4,
     })
 
-    // OpenStreetMap tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    // Mapové dlaždice (zdroj přes ENV, viz mapTiles.ts)
+    L.tileLayer(TILE_URL, {
+      attribution: TILE_ATTR,
       maxZoom: 19,
       detectRetina: true,
     }).addTo(map)

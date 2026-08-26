@@ -50,11 +50,16 @@ export async function muteInviter(fromUserId: string): Promise<void> {
   await supabase.from('invite_mutes').upsert({ muter_id: me, muted_id: fromUserId })
 }
 
-/** Čekající pozvánky pro mě (nevypršené). */
+/** Čekající pozvánky pro mě (nevypršené). Filtruje jen PŘÍCHOZÍ (to_user_id = já) —
+ *  RLS totiž povoluje číst i vlastní odeslané (from_user_id), ty ale banner ukazovat nesmí. */
 export async function getPendingInvites(): Promise<GameInvite[]> {
+  const { data: auth } = await supabase.auth.getUser()
+  const me = auth.user?.id
+  if (!me) return []
   const { data } = await supabase
     .from('game_invites')
     .select('*')
+    .eq('to_user_id', me)
     .eq('status', 'pending')
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })

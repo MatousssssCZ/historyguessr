@@ -1,13 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import L from 'leaflet'
-
-// Leaflet tile URL a attributace
+// Zdroj mapových dlaždic — konfigurovatelný přes ENV (viz mapTiles.ts).
 // {r} + detectRetina → na HiDPI displejích načte ostré @2x dlaždice
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-// Prostá URL bez {r} — pro mini náhled na dlaždici (minimální konfigurace)
-const TILE_URL_PLAIN = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
-const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+import { TILE_URL, TILE_URL_PLAIN, TILE_ATTR } from '@/lib/mapTiles'
+
 
 // Custom ikony (SVG inline — bez externích PNG souborů)
 const makeIcon = (fill: string, stroke: string) => L.divIcon({
