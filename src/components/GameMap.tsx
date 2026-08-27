@@ -1,40 +1,19 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import L from 'leaflet'
-// Zdroj mapových dlaždic — konfigurovatelný přes ENV (viz mapTiles.ts).
-// {r} + detectRetina → na HiDPI displejích načte ostré @2x dlaždice
-import { TILE_URL, TILE_URL_PLAIN, TILE_ATTR } from '@/lib/mapTiles'
+import { Map as MLMap, Marker, LngLatBounds } from 'maplibre-gl'
+import type { Feature } from 'geojson'
+import {
+  MAP_STYLE, GUESS_FILL, GUESS_STROKE, TRUTH_FILL, TRUTH_STROKE,
+  wrapLng, makePinElement, circlePolygon, createMapWhenSized,
+} from '@/lib/mapTiles'
 
-
-// Custom ikony (SVG inline — bez externích PNG souborů)
-const makeIcon = (fill: string, stroke: string) => L.divIcon({
-  className: '',
-  html: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 22 28">
-    <path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="${fill}" stroke="${stroke}" stroke-width="1"/>
-    <circle cx="11" cy="11" r="3.2" fill="#fff"/>
-  </svg>`,
-  iconSize: [26, 34],
-  iconAnchor: [13, 34],
-  popupAnchor: [0, -34],
-})
-
-const GUESS_ICON = makeIcon('#d97757', '#b85a3e')   // tip hráče — oranžový
-const TRUTH_ICON = makeIcon('#1f9d57', '#157a42')   // správné místo — zelený
-
-// Normalizuj zeměpisnou délku do <-180, 180> — zabrání tipu „o mapu vedle"
-// při posunu mapy přes okraj světa (Leaflet jinak vrací např. 300° nebo -300°)
-function wrapLng(lng: number): number {
-  return ((lng + 180) % 360 + 360) % 360 - 180
-}
-
-// Omezení mapy na jediný svět (žádné nekonečné kopie)
-const WORLD_BOUNDS: L.LatLngBoundsExpression = [[-85, -180], [85, 180]]
+// Pozn.: NEPŘEDÁVÁME maxBounds v konstruktoru (maplibre-gl 6.x při init padá).
+// Jeden svět zajistí renderWorldCopies:false; klik normalizujeme wrapLng().
+// Vrstvy/markery přidáváme na 'style.load' (event 'load' se v některých
+// prostředích nefíruje spolehlivě).
 
 // ─────────────────────────────────────────────────────────
 // GuessMap — herní mapa pro tipování
-// Klíčový fix: Leaflet se inicializuje SYNCHRONNĚ v useEffect
-// ale map pane offset se opravuje přes MutationObserver který
-// čeká dokud není kontejner skutečně v DOM s nenulovou výškou
 // ─────────────────────────────────────────────────────────
 interface GuessMapProps {
   onGuess: (lat: number, lng: number) => void
@@ -46,168 +25,85 @@ interface GuessMapProps {
 export function GuessMap({ onGuess, guessLat, guessLng, compact }: GuessMapProps) {
   const { t } = useTranslation()
   const wrapRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const markerRef = useRef<L.Marker | null>(null)
-  const roRef = useRef<ResizeObserver | null>(null)
+  const mapRef = useRef<MLMap | null>(null)
+  const markerRef = useRef<Marker | null>(null)
+  const readyRef = useRef(false)
   const onGuessRef = useRef(onGuess)
   onGuessRef.current = onGuess
+
+  function placeMarker(lat: number, lng: number) {
+    const map = mapRef.current
+    if (!map || !readyRef.current) return
+    if (markerRef.current) { markerRef.current.setLngLat([lng, lat]); return }
+    const m = new Marker({ element: makePinElement(GUESS_FILL, GUESS_STROKE), anchor: 'bottom', draggable: !compact })
+      .setLngLat([lng, lat]).addTo(map)
+    if (!compact) {
+      m.on('dragend', () => {
+        const p = m.getLngLat(); const wl = wrapLng(p.lng)
+        m.setLngLat([wl, p.lat]); onGuessRef.current(p.lat, wl)
+      })
+    }
+    markerRef.current = m
+  }
 
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap || mapRef.current) return
-
-    // Počkej dokud kontejner má nenulovou výšku
-    // (pokud je v absolutně pozicovaném elementu, layout může být delayed)
-    function initWhenReady() {
-      if (!wrap) return
-      const h = wrap.offsetHeight
-      const w = wrap.offsetWidth
-      if (h === 0 || w === 0) {
-        // Zkus znovu za 1 frame
-        requestAnimationFrame(initWhenReady)
-        return
-      }
-
-      // Inicializuj mapu — compact používá minimální (jistou) konfiguraci
-      const map = L.map(wrap, {
-        center: [20, 0],
-        zoom: compact ? 1 : 2,
-        minZoom: 1,
-        maxZoom: 18,
-        zoomControl: !compact,
-        dragging: !compact,
-        scrollWheelZoom: !compact,
-        doubleClickZoom: !compact,
-        boxZoom: !compact,
-        keyboard: !compact,
-        attributionControl: !compact,
-        ...(compact ? {} : { worldCopyJump: true, maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 }),
-      })
-
-      L.tileLayer(compact ? TILE_URL_PLAIN : TILE_URL, {
-        attribution: TILE_ATTR,
-        maxZoom: 19,
-        ...(compact ? {} : { noWrap: true, detectRetina: true }),
-      }).addTo(map)
-
-      // Odstraň Leaflet prefix (vlajku + „Leaflet"); ponech jen povinnou
-      // atribuci dat (OpenStreetMap, CARTO)
-      map.attributionControl?.setPrefix(false)
-
-      // Oprav offset — zavolej invalidateSize IHNED po inicializaci
-      // a pak ještě 3x s různými delays
-      map.invalidateSize({ animate: false })
-      setTimeout(() => { map.invalidateSize({ animate: false }) }, 100)
-      setTimeout(() => { map.invalidateSize({ animate: false }) }, 300)
-      setTimeout(() => { map.invalidateSize({ animate: false }) }, 600)
-
-      // Click handler jen u plné mapy; compact je jen náhled
-      if (!compact) {
-        map.on('click', (e: L.LeafletMouseEvent) => {
-          const ll = L.latLng(e.latlng.lat, wrapLng(e.latlng.lng))
-          if (markerRef.current) {
-            markerRef.current.setLatLng(ll)
-          } else {
-            const m = L.marker(ll, { icon: GUESS_ICON, draggable: true }).addTo(map)
-            m.on('dragend', () => {
-              const pos = m.getLatLng()
-              const wrapped = L.latLng(pos.lat, wrapLng(pos.lng))
-              m.setLatLng(wrapped)
-              onGuessRef.current(wrapped.lat, wrapped.lng)
-            })
-            markerRef.current = m
-          }
-          onGuessRef.current(ll.lat, ll.lng)
-        })
-      }
-
-      // Pokud už pin existuje, vykresli ho a vycentruj na něj
-      if (guessLat != null && guessLng != null) {
-        markerRef.current = L.marker([guessLat, guessLng], { icon: GUESS_ICON, draggable: !compact }).addTo(map)
+    return createMapWhenSized(wrap,
+      (el) => new MLMap({
+        container: el, style: MAP_STYLE, center: [0, 20], zoom: compact ? 1 : 1.4,
+        minZoom: 0.5, maxZoom: 18, interactive: !compact, renderWorldCopies: false,
+        attributionControl: compact ? false : { compact: true },
+        dragRotate: false, pitchWithRotate: false,
+      }),
+      (map) => {
+        mapRef.current = map
         if (!compact) {
-          markerRef.current.on('dragend', () => {
-            const pos = markerRef.current!.getLatLng()
-            const wrapped = L.latLng(pos.lat, wrapLng(pos.lng))
-            markerRef.current!.setLatLng(wrapped)
-            onGuessRef.current(wrapped.lat, wrapped.lng)
+          map.on('click', (e) => {
+            if (!readyRef.current) return
+            const lat = e.lngLat.lat; const lng = wrapLng(e.lngLat.lng)
+            placeMarker(lat, lng); onGuessRef.current(lat, lng)
           })
         }
-        map.setView([guessLat, guessLng], compact ? 4 : 5, { animate: false })
-      }
-
-      mapRef.current = map
-
-      // Překresli mapu při změně velikosti kontejneru (roztahování panelu)
-      const ro = new ResizeObserver(() => map.invalidateSize({ animate: false }))
-      ro.observe(wrap)
-      roRef.current = ro
-    }
-
-    // Spusť inicializaci po prvním frame
-    requestAnimationFrame(initWhenReady)
-
-    return () => {
-      roRef.current?.disconnect()
-      roRef.current = null
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-        markerRef.current = null
-      }
-    }
+        map.on('style.load', () => {
+          readyRef.current = true
+          if (guessLat != null && guessLng != null) {
+            placeMarker(guessLat, wrapLng(guessLng))
+            map.jumpTo({ center: [wrapLng(guessLng), guessLat], zoom: compact ? 3 : 4 })
+          }
+        })
+      })
+    // cleanup vrací createMapWhenSized (odpojí RO, odstraní mapu)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Synchronizuj pin podle props (compact náhled na dlaždici se posune k pinu)
+  // Reset ready/marker refů při odmountování je součástí cleanupu mapy výše;
+  // markerRef necháváme nulovat zde jen logicky (mapa se stejně odstraní).
+
+  // Synchronizace pinu podle props
   useEffect(() => {
-    let raf = 0
-    function apply() {
-      const map = mapRef.current
-      if (!map) { raf = requestAnimationFrame(apply); return }
-      if (guessLat != null && guessLng != null) {
-        const ll = L.latLng(guessLat, guessLng)
-        if (markerRef.current) markerRef.current.setLatLng(ll)
-        else markerRef.current = L.marker(ll, { icon: GUESS_ICON, draggable: !compact }).addTo(map)
-        if (compact) map.setView(ll, 4, { animate: false })
-      } else if (markerRef.current) {
-        markerRef.current.remove()
-        markerRef.current = null
-        if (compact) map.setView([20, 0], 1, { animate: false })
-      }
+    const map = mapRef.current
+    if (!map || !readyRef.current) return
+    if (guessLat != null && guessLng != null) {
+      placeMarker(guessLat, wrapLng(guessLng))
+      if (compact) map.jumpTo({ center: [wrapLng(guessLng), guessLat], zoom: 3 })
+    } else if (markerRef.current) {
+      markerRef.current.remove(); markerRef.current = null
+      if (compact) map.jumpTo({ center: [0, 20], zoom: 1 })
     }
-    apply()
-    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guessLat, guessLng, compact])
 
   if (compact) {
-    // absolute inset:0 → spolehlivá velikost na všech prohlížečích (i iOS Safari)
-    return (
-      <div
-        ref={wrapRef}
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-      />
-    )
+    return <div ref={wrapRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
   }
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div
-        ref={wrapRef}
-        style={{ width: '100%', height: '100%', minHeight: 200 }}
-      />
+      <div ref={wrapRef} style={{ width: '100%', height: '100%', minHeight: 200 }} />
       {guessLat === null && (
-        <div style={{
-          position: 'absolute', bottom: 10, left: '50%',
-          transform: 'translateX(-50%)',
-          pointerEvents: 'none', zIndex: 1000,
-          whiteSpace: 'nowrap',
-        }}>
-          <div style={{
-            background: 'rgba(42,31,23,0.65)',
-            backdropFilter: 'blur(6px)',
-            padding: '5px 12px', borderRadius: 999,
-            fontFamily: 'var(--font-mono)', fontSize: 10,
-            letterSpacing: '0.12em', color: 'rgba(245,241,232,0.85)',
-          }}>
+        <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none', zIndex: 1000, whiteSpace: 'nowrap' }}>
+          <div style={{ background: 'rgba(42,31,23,0.65)', backdropFilter: 'blur(6px)', padding: '5px 12px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'rgba(245,241,232,0.85)' }}>
             {t('game.clickToPin')}
           </div>
         </div>
@@ -230,76 +126,41 @@ interface ResultMapProps {
 export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0 }: ResultMapProps) {
   const { t } = useTranslation()
   const wrapRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
+  const mapRef = useRef<MLMap | null>(null)
 
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap || mapRef.current) return
-
-    function initWhenReady() {
-      if (!wrap) return
-      if (wrap.offsetHeight === 0 || wrap.offsetWidth === 0) {
-        requestAnimationFrame(initWhenReady)
-        return
-      }
-
-      const map = L.map(wrap, { maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1.0 })
-      L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19, noWrap: true, detectRetina: true }).addTo(map)
-      map.attributionControl?.setPrefix(false)
-
-      // Normalizuj délky (i pro starší uložené tipy „o mapu vedle")
-      const gLng = wrapLng(guessLng)
-      const tLng = wrapLng(truthLng)
-
-      // Piny
-      L.marker([guessLat, gLng], { icon: GUESS_ICON })
-        .addTo(map)
-        .bindTooltip(t('game.yourGuessMap'), { permanent: true, direction: 'right', offset: [8, -16] })
-
-      L.marker([truthLat, tLng], { icon: TRUTH_ICON })
-        .addTo(map)
-        .bindTooltip(t('game.correctPlace'), { permanent: true, direction: 'right', offset: [8, -16] })
-
-      // Linka
-      L.polyline([[guessLat, gLng], [truthLat, tLng]], {
-        color: '#d97757', weight: 2, dashArray: '6 4', opacity: 0.8,
-      }).addTo(map)
-
-      // Radius
-      if (radiusKm > 0) {
-        L.circle([truthLat, tLng], {
-          radius: radiusKm * 1000,
-          color: '#2a1f17', fillColor: '#2a1f17', fillOpacity: 0.06,
-          weight: 1.5, dashArray: '4 4',
-        }).addTo(map)
-      }
-
-      // Fit bounds
-      const bounds = L.latLngBounds([guessLat, gLng], [truthLat, tLng])
-      map.fitBounds(bounds, { padding: [90, 90], maxZoom: 9 })
-      map.invalidateSize({ animate: false })
-      setTimeout(() => map.invalidateSize({ animate: false }), 100)
-
-      mapRef.current = map
-    }
-
-    requestAnimationFrame(initWhenReady)
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
+    const gLng = wrapLng(guessLng)
+    const tLng = wrapLng(truthLng)
+    return createMapWhenSized(wrap,
+      (el) => new MLMap({
+        container: el, style: MAP_STYLE,
+        center: [(gLng + tLng) / 2, (guessLat + truthLat) / 2], zoom: 3,
+        maxZoom: 18, renderWorldCopies: false, attributionControl: { compact: true },
+        dragRotate: false, pitchWithRotate: false,
+      }),
+      (map) => {
+        mapRef.current = map
+        map.on('style.load', () => {
+          new Marker({ element: makePinElement(GUESS_FILL, GUESS_STROKE, t('game.yourGuessMap')), anchor: 'bottom' })
+            .setLngLat([gLng, guessLat]).addTo(map)
+          new Marker({ element: makePinElement(TRUTH_FILL, TRUTH_STROKE, t('game.correctPlace')), anchor: 'bottom' })
+            .setLngLat([tLng, truthLat]).addTo(map)
+          map.addSource('line', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[gLng, guessLat], [tLng, truthLat]] } } })
+          map.addLayer({ id: 'line', type: 'line', source: 'line', paint: { 'line-color': '#d97757', 'line-width': 2, 'line-dasharray': [3, 2], 'line-opacity': 0.85 } })
+          if (radiusKm > 0) {
+            map.addSource('radius', { type: 'geojson', data: circlePolygon(truthLat, tLng, radiusKm) as Feature })
+            map.addLayer({ id: 'radius-fill', type: 'fill', source: 'radius', paint: { 'fill-color': '#2a1f17', 'fill-opacity': 0.06 } })
+            map.addLayer({ id: 'radius-line', type: 'line', source: 'radius', paint: { 'line-color': '#2a1f17', 'line-width': 1.2, 'line-dasharray': [2, 2], 'line-opacity': 0.5 } })
+          }
+          const b = new LngLatBounds([gLng, guessLat], [gLng, guessLat])
+          b.extend([tLng, truthLat])
+          map.fitBounds(b, { padding: 70, maxZoom: 9, animate: false })
+        })
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return (
-    <div
-      ref={wrapRef}
-      style={{
-        width: '100%', height: '100%', minHeight: 120,
-        overflow: 'hidden',
-      }}
-    />
-  )
+  return <div ref={wrapRef} style={{ width: '100%', height: '100%', minHeight: 120, overflow: 'hidden' }} />
 }

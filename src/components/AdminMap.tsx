@@ -1,19 +1,7 @@
 import { useEffect, useRef } from 'react'
-import L from 'leaflet'
-import { TILE_URL, TILE_ATTR } from '@/lib/mapTiles'
-
-// Fix Leaflet marker ikonek pro Vite
-// (Vite nezpracovává default Leaflet icon URLs správně)
-const accentIcon = L.divIcon({
-  className: '',
-  html: `<svg width="26" height="34" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="#d97757" stroke="#b85a3e" stroke-width="1"/>
-    <circle cx="11" cy="11" r="3.2" fill="#fff"/>
-  </svg>`,
-  iconSize: [26, 34],
-  iconAnchor: [13, 34],
-  popupAnchor: [0, -34],
-})
+import { Map as MLMap, Marker, GeoJSONSource } from 'maplibre-gl'
+import type { Feature } from 'geojson'
+import { MAP_STYLE, GUESS_FILL, GUESS_STROKE, makePinElement, circlePolygon, createMapWhenSized } from '@/lib/mapTiles'
 
 interface AdminMapProps {
   lat: number
@@ -24,98 +12,75 @@ interface AdminMapProps {
 
 export default function AdminMap({ lat, lng, radiusKm, onLocationChange }: AdminMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const markerRef = useRef<L.Marker | null>(null)
-  const circleRef = useRef<L.Circle | null>(null)
+  const mapRef = useRef<MLMap | null>(null)
+  const markerRef = useRef<Marker | null>(null)
+  const readyRef = useRef(false)
+  const cbRef = useRef(onLocationChange)
+  cbRef.current = onLocationChange
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
-
-    const map = L.map(containerRef.current, {
-      center: [lat, lng],
-      zoom: 4,
-    })
-
-    // Mapové dlaždice (zdroj přes ENV, viz mapTiles.ts)
-    L.tileLayer(TILE_URL, {
-      attribution: TILE_ATTR,
-      maxZoom: 19,
-      detectRetina: true,
-    }).addTo(map)
-    map.attributionControl?.setPrefix(false)
-
-    // Marker s vlastní ikonou
-    const marker = L.marker([lat, lng], { icon: accentIcon, draggable: true }).addTo(map)
-
-    marker.on('dragend', () => {
-      const pos = marker.getLatLng()
-      onLocationChange(pos.lat, pos.lng)
-    })
-
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      marker.setLatLng(e.latlng)
-      onLocationChange(e.latlng.lat, e.latlng.lng)
-    })
-
-    markerRef.current = marker
-    mapRef.current = map
-
-    return () => {
-      map.remove()
-      mapRef.current = null
-      markerRef.current = null
-      circleRef.current = null
-    }
+    const el = containerRef.current
+    if (!el || mapRef.current) return
+    return createMapWhenSized(el,
+      (c) => new MLMap({
+        container: c, style: MAP_STYLE, center: [lng, lat], zoom: 4,
+        renderWorldCopies: false, attributionControl: { compact: true },
+        dragRotate: false, pitchWithRotate: false,
+      }),
+      (map) => {
+        mapRef.current = map
+        map.on('click', (e) => {
+          markerRef.current?.setLngLat(e.lngLat)
+          cbRef.current(e.lngLat.lat, e.lngLat.lng)
+        })
+        map.on('style.load', () => {
+          readyRef.current = true
+          const marker = new Marker({ element: makePinElement(GUESS_FILL, GUESS_STROKE), anchor: 'bottom', draggable: true })
+            .setLngLat([lng, lat]).addTo(map)
+          marker.on('dragend', () => { const p = marker.getLngLat(); cbRef.current(p.lat, p.lng) })
+          markerRef.current = marker
+          applyRadius()
+        })
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Sync marker při ručním zadání souřadnic
+  // Sync marker + střed při ručním zadání souřadnic
   useEffect(() => {
-    if (!mapRef.current || !markerRef.current) return
-    const cur = markerRef.current.getLatLng()
+    const map = mapRef.current, marker = markerRef.current
+    if (!map || !marker || !readyRef.current) return
+    const cur = marker.getLngLat()
     if (Math.abs(cur.lat - lat) > 0.0001 || Math.abs(cur.lng - lng) > 0.0001) {
-      markerRef.current.setLatLng([lat, lng])
-      mapRef.current.setView([lat, lng], mapRef.current.getZoom())
+      marker.setLngLat([lng, lat])
+      map.easeTo({ center: [lng, lat], duration: 300 })
     }
-  }, [lat, lng])
+    applyRadius()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lat, lng, radiusKm])
 
-  // Kružnice radiusu
-  useEffect(() => {
-    if (!mapRef.current) return
-    if (circleRef.current) {
-      circleRef.current.remove()
-      circleRef.current = null
-    }
+  function applyRadius() {
+    const map = mapRef.current
+    if (!map || !readyRef.current) return
+    const has = !!map.getSource('adm-radius')
     if (radiusKm > 0) {
-      circleRef.current = L.circle([lat, lng], {
-        radius: radiusKm * 1000,
-        color: '#d97757',
-        fillColor: '#d97757',
-        fillOpacity: 0.1,
-        weight: 2,
-        dashArray: '6 4',
-      }).addTo(mapRef.current)
-      mapRef.current.fitBounds(circleRef.current.getBounds(), { padding: [20, 20] })
+      const data = circlePolygon(lat, lng, radiusKm) as Feature
+      if (has) { (map.getSource('adm-radius') as GeoJSONSource).setData(data) }
+      else {
+        map.addSource('adm-radius', { type: 'geojson', data })
+        map.addLayer({ id: 'adm-radius-fill', type: 'fill', source: 'adm-radius', paint: { 'fill-color': '#d97757', 'fill-opacity': 0.1 } })
+        map.addLayer({ id: 'adm-radius-line', type: 'line', source: 'adm-radius', paint: { 'line-color': '#d97757', 'line-width': 2, 'line-dasharray': [3, 2] } })
+      }
+    } else if (has) {
+      if (map.getLayer('adm-radius-fill')) map.removeLayer('adm-radius-fill')
+      if (map.getLayer('adm-radius-line')) map.removeLayer('adm-radius-line')
+      map.removeSource('adm-radius')
     }
-  }, [radiusKm, lat, lng])
+  }
 
   return (
     <div style={{ position: 'relative' }}>
-      <div
-        ref={containerRef}
-        style={{
-          width: '100%',
-          height: 340,
-          borderRadius: 10,
-          border: '1px solid var(--line)',
-          overflow: 'hidden',
-        }}
-      />
-      <div style={{
-        position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
-        fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em',
-        color: 'var(--ink-3)', background: 'rgba(245,241,232,0.92)',
-        padding: '3px 12px', borderRadius: 999, pointerEvents: 'none', zIndex: 1000,
-      }}>
+      <div ref={containerRef} style={{ width: '100%', height: 340, borderRadius: 10, border: '1px solid var(--line)', overflow: 'hidden' }} />
+      <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)', background: 'rgba(245,241,232,0.92)', padding: '3px 12px', borderRadius: 999, pointerEvents: 'none', zIndex: 1000 }}>
         KLIKNI NA MAPU · NEBO TÁHNI PIN
       </div>
     </div>
