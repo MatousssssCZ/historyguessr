@@ -279,3 +279,18 @@ body.xp a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .rel-card { transition: none; }
 }
+
+/* ── „Dozvědět se více" — rozbalovací příběh na stránce události ────────── */
+.xp-more { margin: 8px 0 4px; border-top: 1px solid rgba(31,27,22,.1); padding-top: 14px; }
+.xp-more > summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--hg-display); font-size: 16px; font-weight: 600; color: var(--hg-brand-text);
+  padding: 4px 0; user-select: none;
+}
+.xp-more > summary::-webkit-details-marker { display: none; }
+.xp-more > summary::after {
+  content: "›"; font-size: 20px; line-height: 1; transition: transform .18s ease; color: var(--hg-brand-text);
+}
+.xp-more[open] > summary::after { transform: rotate(90deg); }
+.xp-more > summary:hover { color: var(--hg-brand); }
+.xp-more-body { margin-top: 14px; }

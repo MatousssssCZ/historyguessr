@@ -25,7 +25,7 @@ const ANON = process.env.VITE_SUPABASE_ANON_KEY ||
 const UI = {
   cs: {
     home: 'Domů', explore: 'Objevuj historii',
-    whatHappened: 'Co se tady stalo?', whyImportant: 'Proč to bylo důležité?',
+    whatHappened: 'Co se tady stalo?', learnMore: 'Dozvědět se více o události', whyImportant: 'Proč to bylo důležité?',
     related: 'Související události', facts: 'Fakta', dateL: 'Datum', placeL: 'Místo',
     periodL: 'Období', yearL: 'Rok', back: 'Zpět', categoryL: 'Kategorie', play: 'Zahrát tuto událost',
     navBadges: 'Odznaky', navFriends: 'Přátelé', navExplore: 'Objevuj',
@@ -55,7 +55,7 @@ const UI = {
   },
   en: {
     home: 'Home', explore: 'Explore history',
-    whatHappened: 'What happened here?', whyImportant: 'Why did it matter?',
+    whatHappened: 'What happened here?', learnMore: 'Learn more about this event', whyImportant: 'Why did it matter?',
     related: 'Related events', facts: 'Facts', dateL: 'Date', placeL: 'Place',
     periodL: 'Period', yearL: 'Year', back: 'Back', categoryL: 'Category', play: 'Play this event',
     navBadges: 'Badges', navFriends: 'Friends', navExplore: 'Explore',
@@ -85,7 +85,7 @@ const UI = {
   },
   de: {
     home: 'Start', explore: 'Geschichte entdecken',
-    whatHappened: 'Was geschah hier?', whyImportant: 'Warum war es wichtig?',
+    whatHappened: 'Was geschah hier?', learnMore: 'Mehr über dieses Ereignis', whyImportant: 'Warum war es wichtig?',
     related: 'Verwandte Ereignisse', facts: 'Fakten', dateL: 'Datum', placeL: 'Ort',
     periodL: 'Epoche', yearL: 'Jahr', back: 'Zurück', categoryL: 'Kategorie', play: 'Dieses Ereignis spielen',
     navBadges: 'Abzeichen', navFriends: 'Freunde', navExplore: 'Entdecken',
@@ -284,15 +284,23 @@ function imgFor(ev) {
 }
 
 function storyHtml(story, desc, t) {
-  // Delší příběh, jinak fallback na krátký popis rozdělený do odstavců.
-  if (story) {
-    const paras = story.odstavce.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n        ')
-    const head = story.titulek ? `<p class="lede">${escapeHtml(story.titulek)}</p>\n        ` : ''
-    return head + paras
-  }
-  const text = (desc || '').trim()
-  if (!text) return `<p>${escapeHtml(t.tagline)}.</p>`
-  return text.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p.trim())}</p>`).join('\n        ')
+  // Krátký popis vždy nahoře; delší příběh (pokud je) v rozbalovacím „Dozvědět se více".
+  const descText = (desc || '').trim()
+  const descParas = descText
+    ? descText.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p.trim())}</p>`).join('\n        ')
+    : `<p>${escapeHtml(t.tagline)}.</p>`
+
+  if (!story || !Array.isArray(story.odstavce) || story.odstavce.length === 0) return descParas
+
+  const head = story.titulek ? `<p class="lede">${escapeHtml(story.titulek)}</p>\n          ` : ''
+  const paras = story.odstavce.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n          ')
+  return `${descParas}
+        <details class="xp-more">
+          <summary>${escapeHtml(t.learnMore)}</summary>
+          <div class="xp-more-body">
+          ${head}${paras}
+          </div>
+        </details>`
 }
 
 // Horní navigační pilulka (jako v appce) — statické odkazy do sekcí appky.
