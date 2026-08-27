@@ -29,7 +29,7 @@ const UI = {
     related: 'Související události', facts: 'Fakta', dateL: 'Datum', placeL: 'Místo',
     periodL: 'Období', yearL: 'Rok', back: 'Zpět', categoryL: 'Kategorie', play: 'Zahrát tuto událost',
     navBadges: 'Odznaky', navFriends: 'Přátelé', navExplore: 'Objevuj',
-    view360: 'Prohlédnout ve 360°', explore_cta: 'Objevit historii',
+    view360: 'Prohlédnout ve 360°', explore_cta: 'Objevit historii', locationL: 'Kde se to stalo', coordsL: 'Souřadnice', viewLarger: 'Zobrazit větší mapu', seeHereTitle: 'Co na tomto místě uvidíš', seeHereText: 'Ve hře stojíš přímo na tomto místě v 360° panoramatu a hádáš, kde a kdy se událost stala.',
     reconstruction: 'Panorama je historicky pravděpodobná rekonstrukce vytvořená pomocí AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr pro historii',
     listH1: 'Okamžiky, které utvořily náš svět',
@@ -59,7 +59,7 @@ const UI = {
     related: 'Related events', facts: 'Facts', dateL: 'Date', placeL: 'Place',
     periodL: 'Period', yearL: 'Year', back: 'Back', categoryL: 'Category', play: 'Play this event',
     navBadges: 'Badges', navFriends: 'Friends', navExplore: 'Explore',
-    view360: 'View in 360°', explore_cta: 'Explore history',
+    view360: 'View in 360°', explore_cta: 'Explore history', locationL: 'Where it happened', coordsL: 'Coordinates', viewLarger: 'View larger map', seeHereTitle: 'What you\'ll see here', seeHereText: 'In the game you stand right at this place in a 360° panorama and guess where and when the event happened.',
     reconstruction: 'The panorama is a historically plausible reconstruction created with AI.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr for history',
     listH1: 'Moments that shaped our world',
@@ -89,7 +89,7 @@ const UI = {
     related: 'Verwandte Ereignisse', facts: 'Fakten', dateL: 'Datum', placeL: 'Ort',
     periodL: 'Epoche', yearL: 'Jahr', back: 'Zurück', categoryL: 'Kategorie', play: 'Dieses Ereignis spielen',
     navBadges: 'Abzeichen', navFriends: 'Freunde', navExplore: 'Entdecken',
-    view360: 'In 360° ansehen', explore_cta: 'Geschichte entdecken',
+    view360: 'In 360° ansehen', explore_cta: 'Geschichte entdecken', locationL: 'Wo es geschah', coordsL: 'Koordinaten', viewLarger: 'Größere Karte anzeigen', seeHereTitle: 'Was du hier siehst', seeHereText: 'Im Spiel stehst du direkt an diesem Ort in einem 360°-Panorama und errätst, wo und wann das Ereignis geschah.',
     reconstruction: 'Das Panorama ist eine historisch plausible, mit KI erstellte Rekonstruktion.',
     metaSuffix: 'Historyguesser', tagline: 'GeoGuessr für Geschichte',
     listH1: 'Momente, die unsere Welt prägten',
@@ -303,6 +303,21 @@ function storyHtml(story, desc, t) {
         </details>`
 }
 
+// Sekce „Kde se to stalo" — keyless OSM embed s markerem na přesné poloze.
+// Přidává unikátní hodnotu (přesné místo + mapa), kterou textové heslo nemá.
+function mapSection(ev, t) {
+  if (ev.lat == null || ev.lng == null) return ''
+  const d = 0.06
+  const bbox = `${(ev.lng - d).toFixed(4)},${(ev.lat - d).toFixed(4)},${(ev.lng + d).toFixed(4)},${(ev.lat + d).toFixed(4)}`
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${ev.lat.toFixed(5)},${ev.lng.toFixed(5)}`
+  const larger = `https://www.openstreetmap.org/?mlat=${ev.lat.toFixed(5)}&mlon=${ev.lng.toFixed(5)}#map=6/${ev.lat.toFixed(3)}/${ev.lng.toFixed(3)}`
+  return `<section class="xp-loc">
+        <h2>${escapeHtml(t.locationL)}</h2>
+        <iframe class="xp-map" title="${escapeHtml(t.locationL)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe>
+        <p class="xp-coords">${escapeHtml(t.coordsL)}: ${ev.lat.toFixed(4)}, ${ev.lng.toFixed(4)} · <a href="${larger}" target="_blank" rel="noopener">${escapeHtml(t.viewLarger)}</a></p>
+      </section>`
+}
+
 // Horní navigační pilulka (jako v appce) — statické odkazy do sekcí appky.
 // active: 'home' | 'campaigns' | 'badges' | 'friends' | 'explore' | '' (nic).
 function navPill(locale, active) {
@@ -353,6 +368,9 @@ function renderEvent(ev, locale, all) {
   const title = eventTitleFor(ev, locale)
   const desc = eventDescriptionFor(ev, locale)
   const story = eventStoryFor(ev, locale)
+  // „Tenká" stránka bez příběhu se neindexuje (AdSense / thin content). Odkazy
+  // se dál sledují (follow), stránka zůstane dostupná — jen mimo index a sitemap.
+  const hasStory = !!(ev.story_cs && Array.isArray(ev.story_cs.odstavce) && ev.story_cs.odstavce.length)
   const catKey = CATEGORY_KEYS.includes(ev.category) ? ev.category : null
   const cat = catKey ? CATEGORIES[catKey][locale] : null
   const path = eventPath(locale, slug)
@@ -399,6 +417,7 @@ function renderEvent(ev, locale, all) {
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>${escapeHtml(metaTitle)}</title>
   <meta name="description" content="${escapeHtml(metaDesc)}" />
+  ${hasStory ? '' : '<meta name="robots" content="noindex,follow" />'}
   <link rel="canonical" href="${canonical}" />
   ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
   <link rel="alternate" hreflang="x-default" href="${abs(eventPath('cs', eventSlugFor(ev, 'cs')))}" />
@@ -445,6 +464,14 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
         ${storyHtml(story, desc, t)}
       </div>
 
+      ${mapSection(ev, t)}
+
+      <section class="xp-see">
+        <h2>${escapeHtml(t.seeHereTitle)}</h2>
+        <p>${escapeHtml(t.seeHereText)}</p>
+        <a class="xp-btn-primary" href="${playEventPath(ev.id)}">${escapeHtml(t.view360)} →</a>
+      </section>
+
       ${related ? `<section class="xp-related">
         <h2>${escapeHtml(t.related)}</h2>
         <div class="rel-grid">${related}
@@ -458,6 +485,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
         <dl>
           ${yearLabel ? `<dt>${escapeHtml(t.yearL)}</dt><dd>${escapeHtml(yearLabel)}</dd>` : ''}
           ${cat ? `<dt>${escapeHtml(t.categoryL)}</dt><dd>${escapeHtml(cat.label)}</dd>` : ''}
+          ${ev.lat != null && ev.lng != null ? `<dt>${escapeHtml(t.coordsL)}</dt><dd>${ev.lat.toFixed(4)}, ${ev.lng.toFixed(4)}</dd>` : ''}
         </dl>
         <a class="xp-btn-primary" href="${playEventPath(ev.id)}">${escapeHtml(t.play)}</a>
         <p class="xp-recon">${escapeHtml(t.reconstruction)}</p>
@@ -824,17 +852,22 @@ try {
 
 const sitemap = []
 let count = 0
+let thinSkipped = 0
 for (const ev of events) {
+  // Do sitemapy jen události s příběhem (indexovatelné); tenké zůstanou noindex.
+  const hasStory = !!(ev.story_cs && Array.isArray(ev.story_cs.odstavce) && ev.story_cs.odstavce.length)
   for (const locale of LOCALES) {
     const html = renderEvent(ev, locale, events)
     const slug = eventSlugFor(ev, locale)
     const outDir = resolve(dist, locale, PATH_SEG[locale].events, slug)
     mkdirSync(outDir, { recursive: true })
     writeFileSync(resolve(outDir, 'index.html'), html, 'utf8')
-    sitemap.push({ loc: abs(eventPath(locale, slug)), lastmod: new Date().toISOString().slice(0, 10) })
+    if (hasStory) sitemap.push({ loc: abs(eventPath(locale, slug)), lastmod: new Date().toISOString().slice(0, 10) })
+    else thinSkipped++
     count++
   }
 }
+if (thinSkipped) console.warn(`[explore] ${thinSkipped} tenkých stránek (bez příběhu) → noindex + mimo sitemap`)
 
 // Kampaně (vyžadují migraci 20260821140000 — jinak fetchCampaigns vrátí [])
 const eventsById = new Map(events.map((e) => [e.id, e]))
