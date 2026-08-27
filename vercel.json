@@ -24,7 +24,11 @@
       ]
     },
     {
-      "source": "/assets/(.*)",
+      "source": "/assets/maplibre-gl-(worker|shared).mjs",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/assets/((?!maplibre-gl-).*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {

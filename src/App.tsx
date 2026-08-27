@@ -42,7 +42,6 @@ const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedback'))
 const AdminPanoramaRepairPage = lazy(() => import('@/pages/AdminPanoramaRepair'))
 const AdminEventTasksPage = lazy(() => import('@/pages/AdminEventTasks'))
 const EditorPage = lazy(() => import('@/pages/Editor'))
-const MapTestPage = lazy(() => import('@/pages/MapTest'))
 const MultiplayerLobbyPage = lazy(() => import('@/pages/MultiplayerLobby'))
 const MultiplayerGamePage = lazy(() => import('@/pages/MultiplayerGame'))
 
@@ -162,7 +161,6 @@ export default function App() {
               <Route path="/daily"   element={<RequireAuth><DailyChallengePage/></RequireAuth>}/>
               <Route path="/multiplayer/lobby" element={<RequireAuth><MultiplayerLobbyPage/></RequireAuth>}/>
               <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>
-              <Route path="/maptest" element={<MapTestPage/>}/>
               <Route path="/privacy" element={<PrivacyPage/>}/>
               <Route path="/terms"   element={<TermsPage/>}/>
               <Route path="*"        element={<Navigate to="/" replace/>}/>
