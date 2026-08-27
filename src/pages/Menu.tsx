@@ -405,7 +405,7 @@ export default function MenuPage() {
                     <div style={kicker}>{t('menu.exploreHistory')}</div>
                     <h2 style={h2}>{t('menu.teaserH2')}</h2>
                   </div>
-                  <a href={`/${eloc}/${seg.ex}`} style={moreLink}>{t('menu.allEventsLink')} →</a>
+                  <a href={`/${eloc}/${seg.ex}`} style={moreLink}>{t('menu.teaserCta')} →</a>
                 </div>
                 <p style={{ maxWidth: 620, fontSize: 14.5, lineHeight: 1.7, color: '#5C5347', margin: '16px 0 32px' }}>{t('menu.teaserIntro')}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
@@ -473,8 +473,9 @@ export default function MenuPage() {
                   <div style={{ background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 18, padding: '24px 26px' }}>
                     <div style={kicker}>{t('menu.aboutShort')}</div>
                     <h2 style={{ ...h2, fontSize: 'clamp(24px,2.6vw,30px)', margin: '6px 0 16px' }}>{t('menu.aboutH2')}</h2>
-                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 12px' }}>{t('menu.aboutP1')}</p>
-                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 16px' }}>{t('menu.aboutP2')}</p>
+                    <p style={{ fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.5, color: '#1F1B16', margin: '0 0 14px' }}>{t('menu.aboutP1')}</p>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 12px' }}>{t('menu.aboutP2')}</p>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 16px' }}>{t('menu.aboutP3')}</p>
                     <a href={`/${eloc}/${seg.ab}`} style={moreLink}>{t('menu.aboutMore')} →</a>
                   </div>
                 </div>
@@ -643,7 +644,7 @@ export default function MenuPage() {
               )
             })}
           </div>
-          <a href={`/${eloc}/${mSeg.ex}`} style={{ display: 'inline-block', marginTop: 14, fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.allEventsLink')} →</a>
+          <a href={`/${eloc}/${mSeg.ex}`} style={{ display: 'inline-block', marginTop: 14, fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.teaserCta')} →</a>
         </section>
 
         <section style={{ padding: '36px 18px 0' }}>
@@ -668,7 +669,9 @@ export default function MenuPage() {
           <div style={{ borderTop: '1px solid rgba(31,27,22,.1)', paddingTop: 28, background: '#F3EDE2', border: '1px solid rgba(31,27,22,.09)', borderRadius: 18, padding: '22px 20px', marginTop: 0 }}>
             <div style={mKick}>{t('menu.aboutShort')}</div>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 22, letterSpacing: '-0.02em', color: '#1F1B16', margin: '6px 0 12px' }}>{t('menu.aboutH2')}</h2>
-            <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#3E362C', margin: '0 0 14px' }}>{t('menu.aboutP1')}</p>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.5, color: '#1F1B16', margin: '0 0 12px' }}>{t('menu.aboutP1')}</p>
+            <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#3E362C', margin: '0 0 10px' }}>{t('menu.aboutP2')}</p>
+            <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#3E362C', margin: '0 0 14px' }}>{t('menu.aboutP3')}</p>
             <a href={`/${eloc}/${mSeg.ab}`} style={{ fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.aboutMore')} →</a>
           </div>
         </section>
