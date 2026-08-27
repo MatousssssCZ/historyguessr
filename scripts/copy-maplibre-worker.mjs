@@ -1,0 +1,21 @@
+// maplibre-gl v6 vytváří web worker přes `new URL('./maplibre-gl-worker.mjs', import.meta.url)`.
+// import.meta.url je hlavní chunk v /assets/, takže worker URL = /assets/maplibre-gl-worker.mjs.
+// Vite ten soubor (ani jeho ./maplibre-gl-shared.mjs) do buildu neemituje (dynamický název),
+// proto je sem zkopírujeme ručně, jinak worker na produkci 404 → mapa se nenačte.
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const src = resolve(root, 'node_modules/maplibre-gl/dist')
+const dest = resolve(root, 'dist/assets')
+mkdirSync(dest, { recursive: true })
+
+const files = ['maplibre-gl-worker.mjs', 'maplibre-gl-shared.mjs']
+let copied = 0
+for (const f of files) {
+  const from = resolve(src, f)
+  if (existsSync(from)) { copyFileSync(from, resolve(dest, f)); copied++ }
+  else console.warn(`[maplibre] chybí ${f} v node_modules`)
+}
+console.log(`[maplibre] zkopírováno ${copied}/${files.length} worker souborů do dist/assets`)

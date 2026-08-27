@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/build-i18n-pages.mjs && node scripts/build-explore-pages.mjs",
+    "build": "vite build && node scripts/build-i18n-pages.mjs && node scripts/build-explore-pages.mjs && node scripts/copy-maplibre-worker.mjs",
     "preview": "vite preview",
     "lint": "eslint src",
     "test": "vitest run",
