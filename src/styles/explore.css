@@ -305,3 +305,27 @@ body.xp a { color: inherit; }
 .xp-coords { margin-top: 10px; font-size: 13.5px; color: var(--hg-body-soft); }
 .xp-coords a { color: var(--hg-brand-text); font-weight: 600; }
 .xp-see p { max-width: 720px; font-size: 15px; line-height: 1.72; color: var(--hg-body); margin: 0 0 16px; }
+
+/* ── Mapa událostí ve světě (hlavní stránka Objevuj) ───────────────────────── */
+.xp-map { max-width: 1120px; margin: 22px auto 0; padding: 0 20px; }
+.xp-mapstats {
+  display: flex; flex-wrap: wrap; gap: 10px 26px; justify-content: center;
+  margin: 0 0 14px; font-family: var(--hg-ui);
+}
+.xp-mapstat { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--hg-body-soft); }
+.xp-mapstat b { color: var(--hg-brand-text); font-weight: 700; }
+.xp-mapstat-ic { font-size: 15px; line-height: 1; }
+.xp-map-frame {
+  background: var(--hg-ink-900);
+  border: 1px solid rgba(251,247,240,.10);
+  border-radius: var(--hg-r-xl);
+  padding: 10px;
+  box-shadow: var(--hg-shadow-soft);
+  overflow: hidden;
+}
+.xp-map-svg { display: block; width: 100%; height: auto; }
+@media (max-width: 560px) {
+  .xp-map { padding: 0 12px; }
+  .xp-mapstats { gap: 6px 16px; }
+  .xp-mapstat { font-size: 13px; }
+}

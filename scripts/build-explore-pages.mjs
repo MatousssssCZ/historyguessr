@@ -12,6 +12,7 @@ import {
   eventSlugFor, eventTitleFor, eventDescriptionFor, eventStoryFor,
   escapeHtml, formatYear, slugify,
 } from './explore-shared.mjs'
+import { renderWorldMap } from './lib/worldMap.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const dist = resolve(root, 'dist')
@@ -37,6 +38,7 @@ const UI = {
     listMeta: 'Objevuj stovky historických okamžiků na Historyguesser: kde se staly a v jakém roce.',
     allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
     explore_word: 'událostí', playCta: 'Prozkoumat', backToList: 'Zpět na výpis',
+    mapCountries: 'zemí', mapRounds: 'hratelných kol', mapStories: 'událostí s příběhem',
     catMetaPrefix: 'Historické události v kategorii',
     homeKicker: 'Vzdělávací hra', homePlay: 'Hrát',
     homeH1: 'Stůj tam, kde se psaly dějiny',
@@ -67,6 +69,7 @@ const UI = {
     listMeta: 'Explore hundreds of historical moments on Historyguesser: where they happened and in what year.',
     allEvents: 'All events', allCats: 'All', filterBy: 'Category',
     explore_word: 'events', playCta: 'Explore', backToList: 'Back to list',
+    mapCountries: 'countries', mapRounds: 'playable rounds', mapStories: 'events with a story',
     catMetaPrefix: 'Historical events in category',
     homeKicker: 'Educational game', homePlay: 'Play',
     homeH1: 'Stand where history happened',
@@ -97,6 +100,7 @@ const UI = {
     listMeta: 'Entdecke Hunderte historischer Momente auf Historyguesser: wo sie geschahen und in welchem Jahr.',
     allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
     explore_word: 'Ereignisse', playCta: 'Entdecken', backToList: 'Zur Übersicht',
+    mapCountries: 'Länder', mapRounds: 'spielbare Runden', mapStories: 'Ereignisse mit Geschichte',
     catMetaPrefix: 'Historische Ereignisse in der Kategorie',
     homeKicker: 'Lernspiel', homePlay: 'Spielen',
     homeH1: 'Steh dort, wo Geschichte geschah',
@@ -518,7 +522,24 @@ function renderCard(ev, locale, t) {
         </a>`
 }
 
-function renderListing(locale, all, catKey) {
+// Blok „mapa událostí ve světě" + statistiky nad výpisem (jen hlavní stránka Objevuj).
+// `mapSvg` a `stats` se spočítají jednou při buildu a předají do všech jazyků.
+function worldMapSection(locale, mapSvg, stats) {
+  const t = UI[locale]
+  const fmt = (n) => n.toLocaleString(locale === 'cs' ? 'cs-CZ' : locale === 'de' ? 'de-DE' : 'en-US')
+  const item = (icon, n, label) =>
+    `<span class="xp-mapstat"><span class="xp-mapstat-ic" aria-hidden="true">${icon}</span><b>${fmt(n)}</b> ${escapeHtml(label)}</span>`
+  return `  <section class="xp-map" aria-label="${escapeHtml(t.listH1)}">
+    <div class="xp-mapstats">
+      ${item('📍', stats.countries, t.mapCountries)}
+      ${item('✨', stats.rounds, t.mapRounds)}
+      ${item('📜', stats.stories, t.mapStories)}
+    </div>
+    <div class="xp-map-frame">${mapSvg}</div>
+  </section>`
+}
+
+function renderListing(locale, all, catKey, mapHtml = '') {
   const t = UI[locale]
   const cat = catKey ? CATEGORIES[catKey][locale] : null
   const path = catKey ? categoryPath(locale, catKey) : exploreListPath(locale)
@@ -610,6 +631,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     </div>
   </header>
 
+  ${mapHtml}
   <main class="xp-list-main">
     <nav class="xp-filters" aria-label="${escapeHtml(t.filterBy)}">
       ${chips}
@@ -858,6 +880,20 @@ try {
   process.exit(0) // nebfoukat celý build kvůli výpadku sítě
 }
 
+// Mapa událostí ve světě — spočítá se JEDNOU (point-in-polygon je drahý) a použije
+// na hlavní stránce Objevuj ve všech jazycích.
+let MAP_SVG = ''
+let MAP_STATS = { countries: 0, rounds: 0, stories: 0 }
+try {
+  const { svg, stats } = renderWorldMap(events)
+  const stories = events.filter((e) => e.story_cs && Array.isArray(e.story_cs.odstavce) && e.story_cs.odstavce.length).length
+  MAP_SVG = svg
+  MAP_STATS = { countries: stats.countries, rounds: events.length, stories }
+  console.log(`[explore] ✓ mapa událostí: ${stats.countries} zemí, ${events.length} kol, ${stories} s příběhem`)
+} catch (err) {
+  console.warn(`[explore] mapu se nepodařilo vykreslit (${err.message}) — stránka Objevuj bude bez ní.`)
+}
+
 const sitemap = []
 let count = 0
 let thinSkipped = 0
@@ -921,7 +957,8 @@ for (const locale of LOCALES) {
   // hlavní výpis
   const listDir = resolve(dist, locale, PATH_SEG[locale].explore)
   mkdirSync(listDir, { recursive: true })
-  writeFileSync(resolve(listDir, 'index.html'), renderListing(locale, events, null), 'utf8')
+  const mapHtml = MAP_SVG ? worldMapSection(locale, MAP_SVG, MAP_STATS) : ''
+  writeFileSync(resolve(listDir, 'index.html'), renderListing(locale, events, null, mapHtml), 'utf8')
   sitemap.push({ loc: abs(exploreListPath(locale)), lastmod: new Date().toISOString().slice(0, 10) })
   listCount++
   // kategorie
