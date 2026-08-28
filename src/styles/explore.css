@@ -316,6 +316,7 @@ body.xp a { color: inherit; }
 .xp-mapstat b { color: var(--hg-brand-text); font-weight: 700; }
 .xp-mapstat-ic { font-size: 15px; line-height: 1; }
 .xp-map-frame {
+  position: relative;
   background: var(--hg-ink-900);
   border: 1px solid rgba(251,247,240,.10);
   border-radius: var(--hg-r-xl);
@@ -324,6 +325,16 @@ body.xp a { color: inherit; }
   overflow: hidden;
 }
 .xp-map-svg { display: block; width: 100%; height: auto; }
+.xp-map-svg path[data-name] { transition: filter .12s ease; }
+.xp-map-svg path[data-name]:hover { filter: brightness(1.45); }
+.xp-map-tip {
+  position: absolute; z-index: 5; pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+  background: rgba(20,16,13,.96); color: #fff;
+  border: 1px solid rgba(251,247,240,.16); border-radius: 9px;
+  padding: 5px 10px; font-family: var(--hg-ui); font-size: 12.5px; font-weight: 600;
+  white-space: nowrap; box-shadow: 0 6px 20px -6px rgba(0,0,0,.7);
+}
 @media (max-width: 560px) {
   .xp-map { padding: 0 12px; }
   .xp-mapstats { gap: 6px 16px; }

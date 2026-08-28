@@ -529,14 +529,30 @@ function worldMapSection(locale, mapSvg, stats) {
   const fmt = (n) => n.toLocaleString(locale === 'cs' ? 'cs-CZ' : locale === 'de' ? 'de-DE' : 'en-US')
   const item = (icon, n, label) =>
     `<span class="xp-mapstat"><span class="xp-mapstat-ic" aria-hidden="true">${icon}</span><b>${fmt(n)}</b> ${escapeHtml(label)}</span>`
+  // Lokalizované tvary jednotky pro tooltip (skloňování dělá inline skript).
+  const forms = {
+    cs: { one: 'událost', few: 'události', many: 'událostí' },
+    en: { one: 'event', few: 'events', many: 'events' },
+    de: { one: 'Ereignis', few: 'Ereignisse', many: 'Ereignisse' },
+  }[locale] || { one: 'event', few: 'events', many: 'events' }
   return `  <section class="xp-map" aria-label="${escapeHtml(t.listH1)}">
     <div class="xp-mapstats">
       ${item('📍', stats.countries, t.mapCountries)}
       ${item('✨', stats.rounds, t.mapRounds)}
       ${item('📜', stats.stories, t.mapStories)}
     </div>
-    <div class="xp-map-frame">${mapSvg}</div>
-  </section>`
+    <div class="xp-map-frame" id="xpMapFrame">${mapSvg}<div class="xp-map-tip" id="xpMapTip" hidden></div></div>
+  </section>
+  <script>(function(){
+    var f=document.getElementById('xpMapFrame'),tip=document.getElementById('xpMapTip');
+    if(!f||!tip)return;
+    var F=${JSON.stringify(forms)},LC=${JSON.stringify(locale)};
+    function unit(n){n=Math.abs(n);if(LC==='cs'){if(n===1)return F.one;if(n>=2&&n<=4)return F.few;return F.many;}return n===1?F.one:F.many;}
+    function show(el,x,y){var n=+el.getAttribute('data-n')||0;tip.textContent=el.getAttribute('data-name')+': '+n+' '+unit(n);tip.hidden=false;var r=f.getBoundingClientRect();tip.style.left=(x-r.left)+'px';tip.style.top=(y-r.top)+'px';}
+    f.addEventListener('mousemove',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)show(el,e.clientX,e.clientY);else tip.hidden=true;});
+    f.addEventListener('mouseleave',function(){tip.hidden=true;});
+    f.addEventListener('click',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)show(el,e.clientX,e.clientY);else tip.hidden=true;});
+  })();</script>`
 }
 
 function renderListing(locale, all, catKey, mapHtml = '') {

@@ -47,12 +47,15 @@ export function renderWorldMap(events) {
   const projection = geoEqualEarth().fitExtent([[PAD, PAD], [W - PAD, H - PAD]], { type: 'Sphere' })
   const path = geoPath(projection)
 
-  // Země
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+  // Země — s data atributy pro interaktivní tooltip a <title> jako no-JS fallback.
   const land = countries.map((c) => {
     const n = counts.get(c.id) || 0
     const d = path(c)
     if (!d) return ''
-    return `<path d="${d}" fill="${fillFor(n)}" stroke="#000" stroke-width="0.35" stroke-opacity="0.55"/>`
+    const name = esc(c.properties?.name || '')
+    return `<path d="${d}" fill="${fillFor(n)}" stroke="#000" stroke-width="0.35" stroke-opacity="0.55" data-name="${name}" data-n="${n}"><title>${name}: ${n}</title></path>`
   }).join('')
 
   // Tečky u zemí s obsahem (na těžišti země)
