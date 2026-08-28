@@ -46,7 +46,12 @@ export function wrapLng(lng: number): number {
 // SVG pin jako HTML element pro maplibregl.Marker (anchor „bottom" = hrot na souřadnici).
 export function makePinElement(fill: string, stroke: string, label?: string): HTMLDivElement {
   const el = document.createElement('div')
-  el.style.position = 'relative'
+  // POZOR: musí být `absolute`, ne `relative`. MapLibre spoléhá, že marker je
+  // mimo tok (position:absolute z .maplibregl-marker). `relative` to přebilo →
+  // markery se skládaly v toku pod sebe a druhý (Správné místo) padal o výšku
+  // prvního (34 px) níž pod svou souřadnici. `absolute` zároveň slouží jako
+  // containing block pro absolutně umístěný popisek níže.
+  el.style.position = 'absolute'
   el.style.width = '26px'
   el.style.height = '34px'
   el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 22 28" style="display:block">
