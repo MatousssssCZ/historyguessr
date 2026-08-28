@@ -24,7 +24,7 @@
       ]
     },
     {
-      "source": "/assets/(mlworker-v1|maplibre-gl-shared).mjs",
+      "source": "/assets/(mlworker-v2|maplibre-gl-shared).mjs",
       "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
     },
     {

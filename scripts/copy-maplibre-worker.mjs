@@ -12,10 +12,10 @@ const dest = resolve(root, 'dist/assets')
 mkdirSync(dest, { recursive: true })
 
 // worker → náš verzovaný název (obchází případnou rozbitou cache pod výchozím jménem;
-// musí sedět se setWorkerUrl('/assets/mlworker-v1.mjs') v src/lib/mapTiles.ts).
+// musí sedět se setWorkerUrl('/assets/mlworker-v2.mjs') v src/lib/mapTiles.ts).
 // shared.mjs si worker importuje relativně (./maplibre-gl-shared.mjs), název měnit nelze.
 const copies = [
-  ['maplibre-gl-worker.mjs', 'mlworker-v1.mjs'],
+  ['maplibre-gl-worker.mjs', 'mlworker-v2.mjs'],
   ['maplibre-gl-shared.mjs', 'maplibre-gl-shared.mjs'],
 ]
 let copied = 0

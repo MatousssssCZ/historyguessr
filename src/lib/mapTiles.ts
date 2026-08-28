@@ -5,15 +5,15 @@ import { setWorkerUrl, type Map as MLMap } from 'maplibre-gl'
 // názvem. Výchozí `maplibre-gl-worker.mjs` mohl někomu uvíznout v cache jako rozbitá
 // verze (viz build/copy skript); nový název ho obejde — prohlížeč ho stáhne čerstvý.
 // Bump verze (mlworker-vN) kdykoli je potřeba znovu prorazit cache.
-setWorkerUrl('/assets/mlworker-v1.mjs')
+setWorkerUrl('/assets/mlworker-v2.mjs')
 
 // Zdroj mapy — MapLibre GL styl (vektorové dlaždice).
-// Výchozí: OpenFreeMap (zdarma, bez klíče, bez limitů) — styl „liberty".
+// Výchozí: OpenFreeMap (zdarma, bez klíče, bez limitů) — styl „bright".
 // Přes ENV lze přepnout na jiný styl.
 //   VITE_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/positron
 //   (nebo MapTiler: https://api.maptiler.com/maps/basic-v2/style.json?key=KLIC)
 const CUSTOM_STYLE = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined)?.trim()
-export const MAP_STYLE = CUSTOM_STYLE || 'https://tiles.openfreemap.org/styles/liberty'
+export const MAP_STYLE = CUSTOM_STYLE || 'https://tiles.openfreemap.org/styles/bright'
 
 // Předehřátí mapy — zavolej co nejdřív (např. při startu kola), ať je mapa při
 // otevření rychlá. Warmne spojení + nacachuje styl, sprite a TileJSON zdroje,
