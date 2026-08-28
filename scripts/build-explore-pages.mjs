@@ -415,6 +415,8 @@ function renderEvent(ev, locale, all) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="google-adsense-account" content="ca-pub-5787066414093087" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5787066414093087" crossorigin="anonymous"></script>
   <title>${escapeHtml(metaTitle)}</title>
   <meta name="description" content="${escapeHtml(metaDesc)}" />
   ${hasStory ? '' : '<meta name="robots" content="noindex,follow" />'}
@@ -571,6 +573,8 @@ function renderListing(locale, all, catKey) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="google-adsense-account" content="ca-pub-5787066414093087" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5787066414093087" crossorigin="anonymous"></script>
   <title>${escapeHtml(metaTitle)}</title>
   <meta name="description" content="${escapeHtml(metaDesc)}" />
   <link rel="canonical" href="${canonical}" />
@@ -666,6 +670,8 @@ function renderStaticPage(locale, pageKey) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="google-adsense-account" content="ca-pub-5787066414093087" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5787066414093087" crossorigin="anonymous"></script>
   <title>${escapeHtml(metaTitle)}</title>
   <meta name="description" content="${escapeHtml(metaDesc)}" />
   <link rel="canonical" href="${canonical}" />
@@ -784,6 +790,8 @@ function renderCampaign(locale, c, all) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="google-adsense-account" content="ca-pub-5787066414093087" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5787066414093087" crossorigin="anonymous"></script>
   <title>${escapeHtml(metaTitle)}</title>
   <meta name="description" content="${escapeHtml(metaDesc)}" />
   <link rel="canonical" href="${canonical}" />

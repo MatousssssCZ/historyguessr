@@ -14,5 +14,5 @@ export const PREMIUM_BENEFITS: { key: string; icon: string }[] = [
   { key: 'unlimitedExclude', icon: '♾️' },
   { key: 'continent', icon: '🌍' },
   { key: 'presets', icon: '💾' },
-  { key: 'roadmap', icon: '🗳️' },
+  // Roadmapa dočasně skrytá z Premium výčtu (pořeší se později) — feature i RPC zůstávají.
 ]
