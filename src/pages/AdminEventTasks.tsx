@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { EventForm } from '@/pages/Admin'
 import { CATEGORY_IDS } from '@/components/GameSettings'
 import {
-  listTasks, createTask, deleteTask, approveTask, rejectTask, returnTask,
+  listTasks, createTask, createTasks, deleteTask, approveTask, rejectTask, returnTask,
   getEventById, setUserRole, type EventTask,
 } from '@/lib/editor'
 import type { Event } from '@/types/database'
@@ -243,16 +243,18 @@ function BulkTaskImport({ onImported }: { onImported: () => void }) {
 
   async function doImport() {
     setBusy(true); setMsg(null); setErr(null)
-    let ok = 0, fail = 0
-    for (const r of rows) {
-      const { error } = await createTask({ title: r.title, year: r.year, category: null, note: null })
-      if (error) fail++; else ok++
+    try {
+      const { inserted, error } = await createTasks(rows.map(r => ({ title: r.title, year: r.year })))
+      if (error) { setErr('Import selhal: ' + error); return }
+      setMsg(`✓ Naimportováno ${inserted} zadání.`)
+      setRows([])
+      if (fileRef.current) fileRef.current.value = ''
+      onImported()
+    } catch (e) {
+      setErr('Import selhal: ' + (e instanceof Error ? e.message : String(e)))
+    } finally {
+      setBusy(false)
     }
-    setBusy(false)
-    setMsg(`✓ Naimportováno ${ok} zadání${fail ? `, ${fail} selhalo` : ''}.`)
-    setRows([])
-    if (fileRef.current) fileRef.current.value = ''
-    onImported()
   }
 
   return (

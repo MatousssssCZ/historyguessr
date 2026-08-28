@@ -43,6 +43,24 @@ export async function createTask(input: { title: string; year?: number | null; c
   }).select().single()
 }
 
+// Hromadné vytvoření zadání (import z XLS/CSV) — jeden insert, jedna chyba.
+export async function createTasks(
+  items: { title: string; year?: number | null; category?: string | null }[],
+): Promise<{ inserted: number; error: string | null }> {
+  const { data: u } = await supabase.auth.getUser()
+  const rows = items
+    .map((it) => ({
+      title: it.title.trim(),
+      year: it.year ?? null,
+      category: it.category ?? null,
+      created_by: u.user?.id ?? null,
+    }))
+    .filter((r) => r.title.length > 0)
+  if (!rows.length) return { inserted: 0, error: 'Žádné platné řádky.' }
+  const { data, error } = await supabase.from('event_tasks').insert(rows).select('id')
+  return { inserted: data?.length ?? 0, error: error ? error.message : null }
+}
+
 export async function deleteTask(id: string) {
   return supabase.from('event_tasks').delete().eq('id', id)
 }

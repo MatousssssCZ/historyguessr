@@ -1,0 +1,12 @@
+-- Oprava: event_tasks nemá table-level GRANT pro roli `authenticated`.
+--
+-- Migrace 20260824130000_editor_workflow vytvořila tabulku + RLS politiky
+-- ("tasks: admin all", "tasks: editor read"), ale nezavolala GRANT na tabulku.
+-- Bez table grantu Postgres odmítne přístup ještě PŘED vyhodnocením RLS s chybou
+-- `42501 permission denied for table event_tasks` — takže i admin nemůže zadání
+-- vypsat, vytvořit ani smazat (rozbitý import i celý číselník).
+--
+-- RLS dál rozhoduje, KDO co smí (admin vše, editor čte todo/vlastní); grant jen
+-- otevírá tabulku roli `authenticated`, aby se RLS vůbec vyhodnotila.
+-- Idempotentní.
+grant select, insert, update, delete on public.event_tasks to authenticated;
