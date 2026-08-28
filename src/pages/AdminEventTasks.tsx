@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { EventForm } from '@/pages/Admin'
@@ -101,6 +101,7 @@ export default function AdminEventTasksPage() {
         {tab === 'pool' ? (
           <>
             <NewTaskForm onCreated={load}/>
+            <BulkTaskImport onImported={load}/>
             <RoleGrant/>
             <p className="eyebrow" style={{ margin: '26px 0 12px' }}>Zadání v číselníku</p>
             {pool.length === 0
@@ -185,6 +186,102 @@ function NewTaskForm({ onCreated }: { onCreated: () => void }) {
         {msg && <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{msg}</span>}
       </div>
     </form>
+  )
+}
+
+// Hromadný import zadání z XLS/XLSX/CSV. Sloupec A = název události, B = rok.
+// XLS parsuje SheetJS načtený z unpkg (stejná konvence jako AdminImport, CSP to povoluje).
+function BulkTaskImport({ onImported }: { onImported: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [rows, setRows] = useState<{ title: string; year: number | null }[]>([])
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+
+  async function handleFile(file: File) {
+    setErr(null); setMsg(null); setRows([])
+    const name = file.name.toLowerCase()
+    try {
+      let matrix: unknown[][] = []
+      if (name.endsWith('.csv')) {
+        const text = await file.text()
+        matrix = text.split(/\r?\n/).filter(l => l.trim()).map(l => l.split(/[,;\t]/))
+      } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+        if (!(window as unknown as { XLSX?: unknown }).XLSX) {
+          await new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script')
+            s.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+            s.onload = () => resolve(); s.onerror = reject
+            document.head.appendChild(s)
+          })
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const XLSX = (window as any).XLSX
+        const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][]
+      } else {
+        setErr('Podporované formáty: .xlsx, .xls, .csv'); return
+      }
+
+      const parsed: { title: string; year: number | null }[] = []
+      for (const r of matrix) {
+        const title = String(r?.[0] ?? '').trim().replace(/^"|"$/g, '')
+        const yearRaw = String(r?.[1] ?? '').trim()
+        if (!title) continue
+        // přeskoč hlavičkový řádek (B buňka = "Rok"/"Year"/"Jahr")
+        if (/^(rok|year|jahr)$/i.test(yearRaw)) continue
+        const year = /^-?\d{1,4}$/.test(yearRaw) ? parseInt(yearRaw, 10) : null
+        parsed.push({ title, year })
+      }
+      if (!parsed.length) { setErr('Nenašel jsem žádné řádky (sloupec A = název, B = rok).'); return }
+      setRows(parsed)
+    } catch {
+      setErr('Soubor se nepodařilo načíst. Ujisti se, že jde o platný XLS/XLSX/CSV.')
+    }
+  }
+
+  async function doImport() {
+    setBusy(true); setMsg(null); setErr(null)
+    let ok = 0, fail = 0
+    for (const r of rows) {
+      const { error } = await createTask({ title: r.title, year: r.year, category: null, note: null })
+      if (error) fail++; else ok++
+    }
+    setBusy(false)
+    setMsg(`✓ Naimportováno ${ok} zadání${fail ? `, ${fail} selhalo` : ''}.`)
+    setRows([])
+    if (fileRef.current) fileRef.current.value = ''
+    onImported()
+  }
+
+  return (
+    <div className="card" style={{ padding: 18, marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <p className="eyebrow" style={{ margin: 0 }}>Hromadný import (XLS / CSV)</p>
+      <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-3)' }}>
+        Sloupec <b>A</b> = název události, sloupec <b>B</b> = rok. První řádek smí být hlavička.
+      </p>
+      <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ fontSize: 13 }}
+        onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}/>
+      {rows.length > 0 && (
+        <>
+          <div style={{ maxHeight: 170, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 10, padding: '6px 4px' }}>
+            {rows.slice(0, 60).map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '4px 8px', fontSize: 13 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-3)', flexShrink: 0 }}>{r.year ?? '—'}</span>
+              </div>
+            ))}
+            {rows.length > 60 && <div style={{ padding: '4px 8px', fontSize: 12, color: 'var(--ink-3)' }}>… a dalších {rows.length - 60}</div>}
+          </div>
+          <button className="btn btn-accent" disabled={busy} onClick={doImport}>
+            {busy ? 'Importuji…' : `Importovat ${rows.length} zadání`}
+          </button>
+        </>
+      )}
+      {msg && <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{msg}</span>}
+      {err && <span style={{ fontSize: 13, color: 'var(--danger, #c0392b)' }}>{err}</span>}
+    </div>
   )
 }
 
