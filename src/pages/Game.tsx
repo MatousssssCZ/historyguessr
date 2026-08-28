@@ -5,6 +5,7 @@ import { eventTitle, eventDescription, eventStory, roundMetaLine } from '@/lib/e
 import StoryModal from '@/components/round/StoryModal'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
+import { prewarmMap } from '@/lib/mapTiles'
 import RoundResultView, { type DetailTab } from '@/components/round/RoundResult'
 import RoundDetail from '@/components/round/RoundDetail'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
@@ -52,6 +53,10 @@ export default function GamePage() {
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
   const [confirmQuit, setConfirmQuit] = useState(false)
+
+  // Předehřej mapu hned na začátku hry (warm spojení + styl), ať se „Mapa"
+  // otevře rychle — než hráč doprozkoumá panorama, je mapa nachystaná.
+  useEffect(() => { prewarmMap() }, [])
 
   useEffect(() => {
     if (state.phase !== 'idle') return
@@ -696,6 +701,7 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   const [scoreShown, setScoreShown] = useState(false)
   const [detailTab, setDetailTab] = useState<DetailTab | null>(null)
   const [chCopied, setChCopied] = useState(false)
+  const [showStory, setShowStory] = useState(false)
   if (!round) return null
   const dots = Array.from({ length: totalRounds }, (_, i) => i <= roundNumber - 1)
   const roundLabel = t('game.round', { n: roundNumber, total: totalRounds }).toUpperCase()
@@ -704,7 +710,6 @@ function RoundResult({ event, round, onNext, isLast, roundNumber, totalRounds }:
   const hasPano = !!event.panorama_url && event.panorama_url !== 'pending'
   const panoNode = hasPano ? <PanoramaViewer url={event.panorama_url}/> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(245,241,232,.6)', fontSize: 13 }}>{t('game.panoramaUnavailable')}</div>
   const storyData = eventStory(event)
-  const [showStory, setShowStory] = useState(false)
   // „O události" = krátký popis; delší příběh je zvlášť pod „Dozvědět se více".
   const storyNode = <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>{eventDescription(event)}</p>
   const SOLO_TABS: DetailTab[] = ['panorama', 'story']

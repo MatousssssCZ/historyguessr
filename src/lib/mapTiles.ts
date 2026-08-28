@@ -15,6 +15,24 @@ setWorkerUrl('/assets/mlworker-v1.mjs')
 const CUSTOM_STYLE = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined)?.trim()
 export const MAP_STYLE = CUSTOM_STYLE || 'https://tiles.openfreemap.org/styles/liberty'
 
+// Předehřátí mapy — zavolej co nejdřív (např. při startu kola), ať je mapa při
+// otevření rychlá. Warmne spojení + nacachuje styl, sprite a TileJSON zdroje,
+// takže než hráč klikne na „Mapa", MapLibre už čte z cache. Běží jen jednou, tiše.
+let warmed = false
+export function prewarmMap(): void {
+  if (warmed || typeof fetch === 'undefined') return
+  warmed = true
+  const warm = (u?: string | null) => { if (u) fetch(u).catch(() => {}) }
+  fetch(MAP_STYLE)
+    .then(r => (r.ok ? r.json() : null))
+    .then((style: { sprite?: string; sources?: Record<string, { url?: string }> } | null) => {
+      if (!style) return
+      if (style.sprite) { warm(style.sprite + '.json'); warm(style.sprite + '.png') }
+      Object.values(style.sources || {}).forEach(s => warm(s?.url))
+    })
+    .catch(() => {})
+}
+
 export const GUESS_FILL = '#d97757'
 export const GUESS_STROKE = '#b85a3e'
 export const TRUTH_FILL = '#1f9d57'
