@@ -3,7 +3,6 @@ import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { eventTitle, eventDescription, eventStory } from '@/lib/eventLocale'
 import StoryModal from '@/components/round/StoryModal'
-import { prewarmMap } from '@/lib/mapTiles'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
@@ -52,7 +51,6 @@ export default function DailyChallengePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const chParam = searchParams.get('ch')
-  useEffect(() => { prewarmMap() }, [])
   const challengeTarget = chParam ? Math.max(0, Math.min(1000, parseInt(chParam, 10) || 0)) : null
   const challengeBy = (searchParams.get('by') || '').slice(0, 24)
 

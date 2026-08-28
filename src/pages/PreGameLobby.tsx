@@ -15,7 +15,6 @@ import { formatYear } from '@/lib/scoring'
 import YearRange, { YEAR_MIN, YEAR_MAX } from '@/components/YearRange'
 import { Segmented, CategoryChips, CatIcon, catLabel, CATEGORY_IDS as CAT_IDS } from '@/components/GameSettings'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { prewarmMap } from '@/lib/mapTiles'
 import { PageHeader } from '@/components/ui/Page'
 import AppHeader from '@/components/AppHeader'
 import type { GameOptions } from '@/hooks/useGame'
@@ -35,9 +34,6 @@ type SortBy = 'year' | 'title'
 export default function PreGameLobbyPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-
-  // Předehřej mapu už v předsálí — než hráč spustí hru, je nachystaná.
-  useEffect(() => { prewarmMap() }, [])
 
   const [rounds, setRounds] = useState(5)
   const [categories, setCategories] = useState<string[]>([])

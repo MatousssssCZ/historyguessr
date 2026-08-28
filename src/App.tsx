@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { prefetchMenuHero } from '@/lib/preload'
+import { prewarmMap } from '@/lib/mapTiles'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import UsernameSetup from '@/components/UsernameSetup'
@@ -116,7 +117,7 @@ function FullScreenSpinner() {
 export default function App() {
   // Přednačti hero obrázky domovského menu co nejdřív (běží i na Auth/loadingu),
   // ať je panorama menu připravené dřív, než se do menu vejde.
-  useEffect(() => { prefetchMenuHero() }, [])
+  useEffect(() => { prefetchMenuHero(); prewarmMap() }, [])
   return (
     <ErrorBoundary>
       <AuthProvider>

@@ -145,8 +145,12 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
         map.on('style.load', () => {
           new Marker({ element: makePinElement(GUESS_FILL, GUESS_STROKE, t('game.yourGuessMap')), anchor: 'bottom' })
             .setLngLat([gLng, guessLat]).addTo(map)
-          new Marker({ element: makePinElement(TRUTH_FILL, TRUTH_STROKE, t('game.correctPlace')), anchor: 'bottom' })
+          const truth = new Marker({ element: makePinElement(TRUTH_FILL, TRUTH_STROKE, t('game.correctPlace')), anchor: 'bottom' })
             .setLngLat([tLng, truthLat]).addTo(map)
+          // MapLibre řadí markery podle šířky (severnější = vzadu). Správné místo
+          // ale musí být vždy navrchu, ať ho tip nepřekryje. Mapa je statická (jen
+          // fitBounds), takže ruční z-index drží.
+          truth.getElement().style.zIndex = '3'
           map.addSource('line', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[gLng, guessLat], [tLng, truthLat]] } } })
           map.addLayer({ id: 'line', type: 'line', source: 'line', paint: { 'line-color': '#d97757', 'line-width': 2, 'line-dasharray': [3, 2], 'line-opacity': 0.85 } })
           if (radiusKm > 0) {

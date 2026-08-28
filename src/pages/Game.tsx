@@ -5,7 +5,6 @@ import { eventTitle, eventDescription, eventStory, roundMetaLine } from '@/lib/e
 import StoryModal from '@/components/round/StoryModal'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { GuessMap, ResultMap } from '@/components/GameMap'
-import { prewarmMap } from '@/lib/mapTiles'
 import RoundResultView, { type DetailTab } from '@/components/round/RoundResult'
 import RoundDetail from '@/components/round/RoundDetail'
 import RoundResultDesktop from '@/components/round/RoundResultDesktop'
@@ -53,10 +52,6 @@ export default function GamePage() {
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
   const [confirmQuit, setConfirmQuit] = useState(false)
-
-  // Předehřej mapu hned na začátku hry (warm spojení + styl), ať se „Mapa"
-  // otevře rychle — než hráč doprozkoumá panorama, je mapa nachystaná.
-  useEffect(() => { prewarmMap() }, [])
 
   useEffect(() => {
     if (state.phase !== 'idle') return
