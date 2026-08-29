@@ -71,11 +71,17 @@ export function renderWorldMap(events) {
 
   // Počet událostí v každé zemi (point-in-polygon).
   const counts = new Map()
+  const eventCC = new Map()  // event.id → alpha-2 (pro klik-filtr na kartách)
   for (const ev of events) {
     if (ev.lat == null || ev.lng == null) continue
     const pt = [Number(ev.lng), Number(ev.lat)]
     for (const c of countries) {
-      if (geoContains(c, pt)) { counts.set(c.id, (counts.get(c.id) || 0) + 1); break }
+      if (geoContains(c, pt)) {
+        counts.set(c.id, (counts.get(c.id) || 0) + 1)
+        const cc = NUM2A2[String(c.id).padStart(3, '0')]
+        if (cc) eventCC.set(ev.id, cc)
+        break
+      }
     }
   }
 
@@ -142,5 +148,5 @@ export function renderWorldMap(events) {
   ${compass}
 </svg>`
 
-  return { svg, stats: { countries: counts.size } }
+  return { svg, stats: { countries: counts.size }, eventCC }
 }

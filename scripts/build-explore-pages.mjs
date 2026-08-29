@@ -512,7 +512,7 @@ function renderCard(ev, locale, t) {
   const catKey = CATEGORY_KEYS.includes(ev.category) ? ev.category : null
   const cat = catKey ? CATEGORIES[catKey][locale] : null
   return `
-        <a class="ev-card" href="${eventPath(locale, slug)}">
+        <a class="ev-card" href="${eventPath(locale, slug)}" data-cc="${ev._cc || ''}">
           <div class="ev-thumb">${img ? `<img loading="lazy" src="${escapeHtml(img)}" alt="">` : ''}</div>
           <div class="ev-body">
             <span class="ev-meta">${escapeHtml(formatYear(ev.year, locale))}${cat ? ` · ${escapeHtml(cat.label)}` : ''}</span>
@@ -535,6 +535,11 @@ function worldMapSection(locale, mapSvg, stats) {
     en: { one: 'event', few: 'events', many: 'events' },
     de: { one: 'Ereignis', few: 'Ereignisse', many: 'Ereignisse' },
   }[locale] || { one: 'event', few: 'events', many: 'events' }
+  const labels = {
+    cs: { hint: 'Klikni na stát a zobrazíš jeho události', clear: '✕ Zrušit filtr', none: 'Odsud zatím žádná událost' },
+    en: { hint: 'Click a country to see its events', clear: '✕ Clear filter', none: 'No events here yet' },
+    de: { hint: 'Klicke ein Land an, um seine Ereignisse zu sehen', clear: '✕ Filter entfernen', none: 'Von hier noch keine Ereignisse' },
+  }[locale] || { hint: 'Click a country to see its events', clear: '✕ Clear filter', none: 'No events here yet' }
   return `  <section class="xp-worldmap" aria-label="${escapeHtml(t.listH1)}">
     <div class="xp-mapstats">
       ${item('📍', stats.countries, t.mapCountries)}
@@ -542,19 +547,39 @@ function worldMapSection(locale, mapSvg, stats) {
       ${item('🏛', stats.campaigns, t.mapCampaigns)}
     </div>
     <div class="xp-map-frame" id="xpMapFrame"><div class="xp-map-ratio">${mapSvg}</div><div class="xp-map-tip" id="xpMapTip" hidden></div></div>
+    <div class="xp-maphint">${escapeHtml(labels.hint)}</div>
+    <div class="xp-mapfilter" id="xpMapFilter" hidden></div>
   </section>
   <script>(function(){
-    var f=document.getElementById('xpMapFrame'),tip=document.getElementById('xpMapTip');
+    var f=document.getElementById('xpMapFrame'),tip=document.getElementById('xpMapTip'),bar=document.getElementById('xpMapFilter');
     if(!f||!tip)return;
-    var F=${JSON.stringify(forms)},LC=${JSON.stringify(locale)};
-    // Lokalizace názvů zemí přes prohlížeč (numerické ISO id → jméno v jazyce stránky).
+    var F=${JSON.stringify(forms)},LC=${JSON.stringify(locale)},L=${JSON.stringify(labels)};
     var DN=null; try{ DN=new Intl.DisplayNames([LC],{type:'region'}); }catch(e){}
     function cname(el){var cc=el.getAttribute('data-cc'),en=el.getAttribute('data-name');if(DN&&cc){try{var r=DN.of(cc);if(r&&r!==cc)return r;}catch(e){}}return en;}
     function unit(n){n=Math.abs(n);if(LC==='cs'){if(n===1)return F.one;if(n>=2&&n<=4)return F.few;return F.many;}return n===1?F.one:F.many;}
     function show(el,x,y){var n=+el.getAttribute('data-n')||0;tip.textContent=cname(el)+': '+n+' '+unit(n);tip.hidden=false;var r=f.getBoundingClientRect();tip.style.left=(x-r.left)+'px';tip.style.top=(y-r.top)+'px';}
     f.addEventListener('mousemove',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)show(el,e.clientX,e.clientY);else tip.hidden=true;});
     f.addEventListener('mouseleave',function(){tip.hidden=true;});
-    f.addEventListener('click',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)show(el,e.clientX,e.clientY);else tip.hidden=true;});
+    // ── Klik = filtr událostí podle státu ──
+    // Grid/karty načítáme AŽ při prvním kliku — inline skript běží dřív, než je
+    // .ev-grid naparsovaný (mapa je nad seznamem), takže init by našel 0 karet.
+    var grid,cards=[],countEl,totalTxt='',activeCC=null,inited=false;
+    function ensure(){if(inited)return;inited=true;grid=document.querySelector('.ev-grid');cards=grid?Array.prototype.slice.call(grid.querySelectorAll('.ev-card')):[];countEl=document.querySelector('.xp-count');totalTxt=countEl?countEl.textContent:'';}
+    function clearFilter(){ensure();activeCC=null;cards.forEach(function(c){c.style.display='';});if(bar){bar.hidden=true;bar.innerHTML='';}if(countEl)countEl.textContent=totalTxt;
+      f.querySelectorAll('path[data-active]').forEach(function(p){p.removeAttribute('data-active');});}
+    function filterBy(el){ensure();var cc=el.getAttribute('data-cc'),n=+el.getAttribute('data-n')||0;
+      if(!cc||n<=0){clearFilter();return;}
+      if(activeCC===cc){clearFilter();return;}
+      clearFilter();activeCC=cc;el.setAttribute('data-active','1');
+      var shown=0;cards.forEach(function(c){var m=c.getAttribute('data-cc')===cc;c.style.display=m?'':'none';if(m)shown++;});
+      var name=cname(el);
+      if(countEl)countEl.textContent=shown+' '+unit(shown)+' · '+name;
+      if(bar){bar.hidden=false;bar.innerHTML='';
+        var s=document.createElement('span');s.textContent=name+' — '+shown+' '+unit(shown);
+        var b=document.createElement('button');b.type='button';b.className='xp-mapfilter-x';b.textContent=L.clear;b.addEventListener('click',clearFilter);
+        bar.appendChild(s);bar.appendChild(b);}
+      if(grid){var y=grid.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:y,behavior:'smooth'});}}
+    f.addEventListener('click',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)filterBy(el);else clearFilter();});
   })();</script>`
 }
 
@@ -904,7 +929,8 @@ try {
 let MAP_SVG = ''
 let MAP_STATS = { countries: 0, rounds: 0, campaigns: 0 }  // campaigns doplníme po fetchi níže
 try {
-  const { svg, stats } = renderWorldMap(events)
+  const { svg, stats, eventCC } = renderWorldMap(events)
+  events.forEach((e) => { e._cc = eventCC.get(e.id) || '' })  // pro klik-filtr na kartách
   MAP_SVG = svg
   MAP_STATS = { countries: stats.countries, rounds: events.length, campaigns: 0 }
   console.log(`[explore] ✓ mapa událostí: ${stats.countries} zemí, ${events.length} kol`)
