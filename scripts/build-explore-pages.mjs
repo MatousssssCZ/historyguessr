@@ -535,13 +535,13 @@ function worldMapSection(locale, mapSvg, stats) {
     en: { one: 'event', few: 'events', many: 'events' },
     de: { one: 'Ereignis', few: 'Ereignisse', many: 'Ereignisse' },
   }[locale] || { one: 'event', few: 'events', many: 'events' }
-  return `  <section class="xp-map" aria-label="${escapeHtml(t.listH1)}">
+  return `  <section class="xp-worldmap" aria-label="${escapeHtml(t.listH1)}">
     <div class="xp-mapstats">
       ${item('📍', stats.countries, t.mapCountries)}
       ${item('✨', stats.rounds, t.mapRounds)}
       ${item('🏛', stats.campaigns, t.mapCampaigns)}
     </div>
-    <div class="xp-map-frame" id="xpMapFrame">${mapSvg}<div class="xp-map-tip" id="xpMapTip" hidden></div></div>
+    <div class="xp-map-frame" id="xpMapFrame"><div class="xp-map-ratio">${mapSvg}</div><div class="xp-map-tip" id="xpMapTip" hidden></div></div>
   </section>
   <script>(function(){
     var f=document.getElementById('xpMapFrame'),tip=document.getElementById('xpMapTip');

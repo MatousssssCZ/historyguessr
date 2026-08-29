@@ -307,8 +307,9 @@ body.xp a { color: inherit; }
 .xp-see p { max-width: 720px; font-size: 15px; line-height: 1.72; color: var(--hg-body); margin: 0 0 16px; }
 
 /* ── Mapa událostí ve světě — starobylý / pergamenový styl (str. Objevuj) ───── */
-/* Žije uvnitř .xp-list-main → dědí šířku i rozestupy sekce (nepřekáží textům). */
-.xp-map { margin: 0 0 30px; }
+/* Žije uvnitř .xp-list-main → dědí šířku i rozestupy sekce (nepřekáží textům).
+   POZOR: NEpoužívat .xp-map (koliduje s mapkou na detailu události, height:300px). */
+.xp-worldmap { margin: 0 0 30px; }
 .xp-mapstats {
   display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: center;
   margin: 0 0 16px; font-family: var(--hg-ui);
@@ -325,7 +326,11 @@ body.xp a { color: inherit; }
   box-shadow: inset 0 0 40px rgba(124,90,48,.10), 0 2px 14px -8px rgba(46,33,20,.4);
   overflow: hidden;
 }
-.xp-map-svg { display: block; width: 100%; height: auto; }
+/* Pevný poměr stran (viewBox 1000×500) přes padding-bottom wrapper — vytvoří
+   reálnou výšku v toku, takže rodič mapu obtéká a nepřekrývá texty pod ní.
+   (aspect-ratio přímo na SVG rodič v některých prohlížečích nedopočítal.) */
+.xp-map-ratio { position: relative; width: 100%; padding-bottom: 50%; }
+.xp-map-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .xp-map-svg path[data-name] { transition: filter .12s ease; }
 .xp-map-svg path[data-name]:hover { filter: brightness(.9) saturate(1.25); }
 .xp-map-tip {

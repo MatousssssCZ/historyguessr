@@ -100,7 +100,7 @@ export function renderWorldMap(events) {
     if (n <= 0) return ''
     const p = projection(geoCentroid(c))
     if (!p || Number.isNaN(p[0]) || Number.isNaN(p[1])) return ''
-    return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="1.7" fill="${DOT}" fill-opacity="0.8"/>`
+    return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="1.7" fill="${DOT}" fill-opacity="0.8" pointer-events="none"/>`
   }).join('')
 
   const graticule = path(geoGraticule10())
@@ -130,15 +130,15 @@ export function renderWorldMap(events) {
     <clipPath id="xp-map-clip"><path d="${sphere}"/></clipPath>
   </defs>
   <g clip-path="url(#xp-map-clip)">
-    <path d="${sphere}" fill="url(#xp-vign)"/>
-    <path d="${graticule}" fill="none" stroke="${GRID}" stroke-opacity="0.16" stroke-width="0.5"/>
+    <path d="${sphere}" fill="url(#xp-vign)" pointer-events="none"/>
+    <path d="${graticule}" fill="none" stroke="${GRID}" stroke-opacity="0.16" stroke-width="0.5" pointer-events="none"/>
     ${land}
     ${dots}
-    <rect x="0" y="0" width="${W}" height="${H}" filter="url(#xp-paper)"/>
+    <rect x="0" y="0" width="${W}" height="${H}" filter="url(#xp-paper)" pointer-events="none"/>
   </g>
-  <path d="${sphere}" fill="none" stroke="${COAST}" stroke-opacity="0.55" stroke-width="1"/>
-  <rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="10" fill="none" stroke="${COAST}" stroke-opacity="0.5" stroke-width="1.4"/>
-  <rect x="11" y="11" width="${W - 22}" height="${H - 22}" rx="7" fill="none" stroke="${COAST}" stroke-opacity="0.3" stroke-width="0.6"/>
+  <path d="${sphere}" fill="none" stroke="${COAST}" stroke-opacity="0.55" stroke-width="1" pointer-events="none"/>
+  <rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="10" fill="none" stroke="${COAST}" stroke-opacity="0.5" stroke-width="1.4" pointer-events="none"/>
+  <rect x="11" y="11" width="${W - 22}" height="${H - 22}" rx="7" fill="none" stroke="${COAST}" stroke-opacity="0.3" stroke-width="0.6" pointer-events="none"/>
   ${compass}
 </svg>`
 
