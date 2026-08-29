@@ -38,7 +38,7 @@ const UI = {
     listMeta: 'Objevuj stovky historických okamžiků na Historyguesser: kde se staly a v jakém roce.',
     allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
     explore_word: 'událostí', playCta: 'Prozkoumat', backToList: 'Zpět na výpis',
-    mapCountries: 'zemí', mapRounds: 'hratelných kol', mapStories: 'událostí s příběhem',
+    mapCountries: 'zemí', mapRounds: 'hratelných kol', mapCampaigns: 'kampaní',
     catMetaPrefix: 'Historické události v kategorii',
     homeKicker: 'Vzdělávací hra', homePlay: 'Hrát',
     homeH1: 'Stůj tam, kde se psaly dějiny',
@@ -69,7 +69,7 @@ const UI = {
     listMeta: 'Explore hundreds of historical moments on Historyguesser: where they happened and in what year.',
     allEvents: 'All events', allCats: 'All', filterBy: 'Category',
     explore_word: 'events', playCta: 'Explore', backToList: 'Back to list',
-    mapCountries: 'countries', mapRounds: 'playable rounds', mapStories: 'events with a story',
+    mapCountries: 'countries', mapRounds: 'playable rounds', mapCampaigns: 'campaigns',
     catMetaPrefix: 'Historical events in category',
     homeKicker: 'Educational game', homePlay: 'Play',
     homeH1: 'Stand where history happened',
@@ -100,7 +100,7 @@ const UI = {
     listMeta: 'Entdecke Hunderte historischer Momente auf Historyguesser: wo sie geschahen und in welchem Jahr.',
     allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
     explore_word: 'Ereignisse', playCta: 'Entdecken', backToList: 'Zur Übersicht',
-    mapCountries: 'Länder', mapRounds: 'spielbare Runden', mapStories: 'Ereignisse mit Geschichte',
+    mapCountries: 'Länder', mapRounds: 'spielbare Runden', mapCampaigns: 'Kampagnen',
     catMetaPrefix: 'Historische Ereignisse in der Kategorie',
     homeKicker: 'Lernspiel', homePlay: 'Spielen',
     homeH1: 'Steh dort, wo Geschichte geschah',
@@ -539,7 +539,7 @@ function worldMapSection(locale, mapSvg, stats) {
     <div class="xp-mapstats">
       ${item('📍', stats.countries, t.mapCountries)}
       ${item('✨', stats.rounds, t.mapRounds)}
-      ${item('📜', stats.stories, t.mapStories)}
+      ${item('🏛', stats.campaigns, t.mapCampaigns)}
     </div>
     <div class="xp-map-frame" id="xpMapFrame">${mapSvg}<div class="xp-map-tip" id="xpMapTip" hidden></div></div>
   </section>
@@ -547,8 +547,11 @@ function worldMapSection(locale, mapSvg, stats) {
     var f=document.getElementById('xpMapFrame'),tip=document.getElementById('xpMapTip');
     if(!f||!tip)return;
     var F=${JSON.stringify(forms)},LC=${JSON.stringify(locale)};
+    // Lokalizace názvů zemí přes prohlížeč (numerické ISO id → jméno v jazyce stránky).
+    var DN=null; try{ DN=new Intl.DisplayNames([LC],{type:'region'}); }catch(e){}
+    function cname(el){var cc=el.getAttribute('data-cc'),en=el.getAttribute('data-name');if(DN&&cc){try{var r=DN.of(cc);if(r&&r!==cc)return r;}catch(e){}}return en;}
     function unit(n){n=Math.abs(n);if(LC==='cs'){if(n===1)return F.one;if(n>=2&&n<=4)return F.few;return F.many;}return n===1?F.one:F.many;}
-    function show(el,x,y){var n=+el.getAttribute('data-n')||0;tip.textContent=el.getAttribute('data-name')+': '+n+' '+unit(n);tip.hidden=false;var r=f.getBoundingClientRect();tip.style.left=(x-r.left)+'px';tip.style.top=(y-r.top)+'px';}
+    function show(el,x,y){var n=+el.getAttribute('data-n')||0;tip.textContent=cname(el)+': '+n+' '+unit(n);tip.hidden=false;var r=f.getBoundingClientRect();tip.style.left=(x-r.left)+'px';tip.style.top=(y-r.top)+'px';}
     f.addEventListener('mousemove',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)show(el,e.clientX,e.clientY);else tip.hidden=true;});
     f.addEventListener('mouseleave',function(){tip.hidden=true;});
     f.addEventListener('click',function(e){var el=e.target.closest?e.target.closest('path[data-name]'):null;if(el)show(el,e.clientX,e.clientY);else tip.hidden=true;});
@@ -899,13 +902,12 @@ try {
 // Mapa událostí ve světě — spočítá se JEDNOU (point-in-polygon je drahý) a použije
 // na hlavní stránce Objevuj ve všech jazycích.
 let MAP_SVG = ''
-let MAP_STATS = { countries: 0, rounds: 0, stories: 0 }
+let MAP_STATS = { countries: 0, rounds: 0, campaigns: 0 }  // campaigns doplníme po fetchi níže
 try {
   const { svg, stats } = renderWorldMap(events)
-  const stories = events.filter((e) => e.story_cs && Array.isArray(e.story_cs.odstavce) && e.story_cs.odstavce.length).length
   MAP_SVG = svg
-  MAP_STATS = { countries: stats.countries, rounds: events.length, stories }
-  console.log(`[explore] ✓ mapa událostí: ${stats.countries} zemí, ${events.length} kol, ${stories} s příběhem`)
+  MAP_STATS = { countries: stats.countries, rounds: events.length, campaigns: 0 }
+  console.log(`[explore] ✓ mapa událostí: ${stats.countries} zemí, ${events.length} kol`)
 } catch (err) {
   console.warn(`[explore] mapu se nepodařilo vykreslit (${err.message}) — stránka Objevuj bude bez ní.`)
 }
@@ -933,6 +935,7 @@ if (thinSkipped) console.warn(`[explore] ${thinSkipped} tenkých stránek (bez p
 const eventsById = new Map(events.map((e) => [e.id, e]))
 let campaigns = []
 try { campaigns = await fetchCampaigns(eventsById) } catch (err) { console.warn(`[explore] Kampaně: ${err.message}`) }
+MAP_STATS.campaigns = campaigns.length  // 3. stat mapy = počet kampaní
 // Dev-only náhled šablony kampaně bez přístupu k datům: EXPLORE_MOCK_CAMPAIGN=1
 if (!campaigns.length && process.env.EXPLORE_MOCK_CAMPAIGN) {
   campaigns = [{
