@@ -306,37 +306,38 @@ body.xp a { color: inherit; }
 .xp-coords a { color: var(--hg-brand-text); font-weight: 600; }
 .xp-see p { max-width: 720px; font-size: 15px; line-height: 1.72; color: var(--hg-body); margin: 0 0 16px; }
 
-/* ── Mapa událostí ve světě (hlavní stránka Objevuj) ───────────────────────── */
-.xp-map { max-width: 1120px; margin: 22px auto 0; padding: 0 20px; }
+/* ── Mapa událostí ve světě — starobylý / pergamenový styl (str. Objevuj) ───── */
+/* Žije uvnitř .xp-list-main → dědí šířku i rozestupy sekce (nepřekáží textům). */
+.xp-map { margin: 0 0 30px; }
 .xp-mapstats {
-  display: flex; flex-wrap: wrap; gap: 10px 26px; justify-content: center;
-  margin: 0 0 14px; font-family: var(--hg-ui);
+  display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: center;
+  margin: 0 0 16px; font-family: var(--hg-ui);
 }
-.xp-mapstat { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--hg-body-soft); }
-.xp-mapstat b { color: var(--hg-brand-text); font-weight: 700; }
-.xp-mapstat-ic { font-size: 15px; line-height: 1; }
+.xp-mapstat { display: inline-flex; align-items: baseline; gap: 8px; font-size: 15px; color: var(--hg-body-soft); }
+.xp-mapstat b { color: var(--hg-brand-text); font-weight: 700; font-size: 16px; }
+.xp-mapstat-ic { font-size: 14px; line-height: 1; }
 .xp-map-frame {
   position: relative;
-  background: var(--hg-ink-900);
-  border: 1px solid rgba(251,247,240,.10);
-  border-radius: var(--hg-r-xl);
-  padding: 10px;
-  box-shadow: var(--hg-shadow-soft);
+  background: #ece1c9;                         /* pergamen — splývá se SVG podkladem */
+  border: 1px solid rgba(124,90,48,.35);       /* sepia neatline */
+  border-radius: var(--hg-r-lg);
+  padding: 8px;
+  box-shadow: inset 0 0 40px rgba(124,90,48,.10), 0 2px 14px -8px rgba(46,33,20,.4);
   overflow: hidden;
 }
 .xp-map-svg { display: block; width: 100%; height: auto; }
 .xp-map-svg path[data-name] { transition: filter .12s ease; }
-.xp-map-svg path[data-name]:hover { filter: brightness(1.45); }
+.xp-map-svg path[data-name]:hover { filter: brightness(.9) saturate(1.25); }
 .xp-map-tip {
   position: absolute; z-index: 5; pointer-events: none;
   transform: translate(-50%, calc(-100% - 12px));
-  background: rgba(20,16,13,.96); color: #fff;
-  border: 1px solid rgba(251,247,240,.16); border-radius: 9px;
+  background: #3b2c1a; color: #f4ead4;         /* sepia tooltip */
+  border: 1px solid rgba(201,164,94,.4); border-radius: 8px;
   padding: 5px 10px; font-family: var(--hg-ui); font-size: 12.5px; font-weight: 600;
-  white-space: nowrap; box-shadow: 0 6px 20px -6px rgba(0,0,0,.7);
+  white-space: nowrap; box-shadow: 0 6px 18px -6px rgba(46,33,20,.6);
 }
 @media (max-width: 560px) {
-  .xp-map { padding: 0 12px; }
-  .xp-mapstats { gap: 6px 16px; }
+  .xp-mapstats { gap: 6px 18px; }
   .xp-mapstat { font-size: 13px; }
+  .xp-mapstat b { font-size: 14px; }
 }

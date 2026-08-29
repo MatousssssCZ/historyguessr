@@ -647,8 +647,8 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
     </div>
   </header>
 
-  ${mapHtml}
   <main class="xp-list-main">
+    ${mapHtml}
     <nav class="xp-filters" aria-label="${escapeHtml(t.filterBy)}">
       ${chips}
     </nav>
