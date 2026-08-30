@@ -98,6 +98,16 @@ export function editorProgress(approved: number) {
   return { current, next }
 }
 
+// Editor opustí zadání bez uložení → zpět do zásobníku (no-op, pokud uložil draft/odeslal).
+export async function releaseTask(taskId: string): Promise<void> {
+  await supabase.rpc('release_event_task', { p_task: taskId })
+}
+
+// Pojistka: uvolní opuštěná rozpracovaná zadání (bez draftu) zpět do zásobníku.
+export async function releaseStaleTasks(minutes = 45): Promise<void> {
+  try { await supabase.rpc('release_stale_event_tasks', { p_minutes: minutes }) } catch { /* ignore */ }
+}
+
 export async function deleteTask(id: string) {
   return supabase.from('event_tasks').delete().eq('id', id)
 }

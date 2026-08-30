@@ -5,12 +5,13 @@ import { EventForm } from '@/pages/Admin'
 import { CATEGORY_IDS } from '@/components/GameSettings'
 import {
   listTasks, createTask, createTasks, deleteTask, approveTask, rejectTask, returnTask,
-  getEventById, setUserRole, type EventTask,
+  getEventById, setUserRole, releaseStaleTasks, type EventTask,
 } from '@/lib/editor'
+import EditorLeaderboard from '@/components/EditorLeaderboard'
 import type { Event } from '@/types/database'
 
 export default function AdminEventTasksPage() {
-  const { isAdmin, loading } = useAuth()
+  const { user, isAdmin, loading } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'pool' | 'review'>('pool')
   const [tasks, setTasks] = useState<EventTask[]>([])
@@ -19,7 +20,7 @@ export default function AdminEventTasksPage() {
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
-  const load = useCallback(async () => { setTasks(await listTasks()) }, [])
+  const load = useCallback(async () => { await releaseStaleTasks(); setTasks(await listTasks()) }, [])
   useEffect(() => { load() }, [load])
 
   const pool = tasks.filter(t => t.status === 'todo' || t.status === 'in_progress')
@@ -103,6 +104,7 @@ export default function AdminEventTasksPage() {
             <NewTaskForm onCreated={load}/>
             <BulkTaskImport onImported={load}/>
             <RoleGrant/>
+            <div style={{ marginTop: 22 }}><EditorLeaderboard meId={user?.id}/></div>
             <p className="eyebrow" style={{ margin: '26px 0 12px' }}>Zadání v číselníku</p>
             {pool.length === 0
               ? <div style={{ color: 'var(--ink-3)', fontSize: 14 }}>Zatím žádná zadání.</div>
