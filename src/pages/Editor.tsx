@@ -56,7 +56,17 @@ export default function EditorPage() {
     if (!active.task.event_id) await attachTaskEvent(active.task.id, eventId)
     const { error } = await submitTask(active.task.id, eventId)
     if (error) { setErr('Odeslání ke schválení selhalo: ' + error); return }
-    closeForm()
+    await openNext()   // rovnou další zadání ze zásobníku (bez návratu do seznamu)
+  }
+
+  // Vezmi a otevři další volné zadání; když žádné není, vrať se do (prázdného) seznamu.
+  async function openNext() {
+    setErr(null)
+    const list = await listTasks(['todo'])
+    const nextTask = list.find(t => t.status === 'todo')
+    setActive(null)   // při neúspěchu (obsazeno) skončíme v seznamu, ne na starém formuláři
+    if (!nextTask) { load(); return }
+    await openTask(nextTask)
   }
 
   if (active) {
@@ -78,6 +88,7 @@ export default function EditorPage() {
             </div>
           )}
           <EventForm
+            key={active.task.id}
             mode="editor"
             event={active.event ?? undefined}
             prefillTitle={active.task.title}
