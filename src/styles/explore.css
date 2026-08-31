@@ -353,3 +353,12 @@ body.xp a { color: inherit; }
   .xp-mapstat { font-size: 13px; }
   .xp-mapstat b { font-size: 14px; }
 }
+
+/* CTA na statické stránce (denní výzva → do hry) */
+.xp-doc-cta {
+  display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 26px;
+  padding: 13px 22px; border-radius: 13px; background: var(--hg-brand); color: #fff;
+  font-family: var(--hg-ui); font-weight: 700; font-size: 15px; text-decoration: none;
+  box-shadow: var(--hg-shadow-cta);
+}
+.xp-doc-cta:hover { filter: brightness(1.05); }

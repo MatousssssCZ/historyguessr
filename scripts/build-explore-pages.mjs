@@ -39,6 +39,8 @@ const UI = {
     listSeoTitle: 'Historické události na mapě světa | HistoryGuesser',
     listSeoDesc: 'Prozkoumej stovky historických událostí na interaktivní mapě světa. Objevuj války, vynálezy, katastrofy, objevy, umění, sport a další.',
     eventSeoTail: 'místo, historie a zajímavosti', eventSeoDesc: 'Zjisti, kde a kdy se odehrála událost {name}, co jí předcházelo a proč byla důležitá. Prozkoumej místo a zahraj si ji v HistoryGuesser.',
+    campListH1: 'Historické kampaně', campListSub: 'Tematické série událostí — cestuj dějinami po epochách a regionech.',
+    campSeoTitle: 'Historické kampaně – zahraj si dějiny | HistoryGuesser', campSeoDesc: 'Projdi tematické kampaně od starověku po moderní dějiny. Poznávej historické události, získávej hvězdy a odemykej další kapitoly.',
     allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
     explore_word: 'událostí', playCta: 'Prozkoumat', backToList: 'Zpět na výpis',
     mapCountries: 'zemí', mapRounds: 'hratelných kol', mapCampaigns: 'kampaní',
@@ -73,6 +75,8 @@ const UI = {
     listSeoTitle: 'Explore Historical Events Around the World | HistoryGuesser',
     listSeoDesc: 'Explore hundreds of historical events on an interactive world map. Discover battles, inventions, disasters, discoveries, art, sports and more.',
     eventSeoTail: 'History, Location & Facts', eventSeoDesc: 'Discover where and when {name} happened, what led to it and why it mattered. Explore the location and experience the event in HistoryGuesser.',
+    campListH1: 'History campaigns', campListSub: 'Themed sets of events — travel through history by era and region.',
+    campSeoTitle: 'History Campaigns – Play Through Historical Eras', campSeoDesc: 'Play themed history campaigns from ancient civilizations to modern history. Complete events, earn stars and unlock new chapters of the past.',
     allEvents: 'All events', allCats: 'All', filterBy: 'Category',
     explore_word: 'events', playCta: 'Explore', backToList: 'Back to list',
     mapCountries: 'countries', mapRounds: 'playable rounds', mapCampaigns: 'campaigns',
@@ -107,6 +111,8 @@ const UI = {
     listSeoTitle: 'Historische Ereignisse auf der Weltkarte | HistoryGuesser',
     listSeoDesc: 'Entdecke Hunderte historischer Ereignisse auf einer interaktiven Weltkarte: Schlachten, Erfindungen, Katastrophen, Entdeckungen, Kunst, Sport und mehr.',
     eventSeoTail: 'Ort, Geschichte & Fakten', eventSeoDesc: 'Erfahre, wo und wann {name} geschah, was dazu führte und warum es wichtig war. Erkunde den Ort und spiele es in HistoryGuesser.',
+    campListH1: 'Historische Kampagnen', campListSub: 'Thematische Ereignisreihen — reise durch Epochen und Regionen.',
+    campSeoTitle: 'Historische Kampagnen – Spiele durch die Epochen | HistoryGuesser', campSeoDesc: 'Spiele thematische Kampagnen von der Antike bis zur Neuzeit. Erlebe historische Ereignisse, sammle Sterne und schalte neue Kapitel frei.',
     allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
     explore_word: 'Ereignisse', playCta: 'Entdecken', backToList: 'Zur Übersicht',
     mapCountries: 'Länder', mapRounds: 'spielbare Runden', mapCampaigns: 'Kampagnen',
@@ -133,6 +139,18 @@ const UI = {
 const CONTACT_PLACEHOLDER = 'historyguesser.net@gmail.com'
 const STATIC = {
   cs: {
+    daily: {
+      slug: 'denni-vyzva', title: 'Denní výzva',
+      seoTitle: 'Denní historická výzva – Poznáš místo a rok?',
+      seoDesc: 'Každý den nová historická výzva. Prozkoumej 360° scénu, poznej místo a rok a porovnej své skóre s ostatními hráči.',
+      lead: 'Každý den jedna nová historická scéna. Máš jediný pokus — urči, kde na světě se to odehrálo a v jakém roce, a porovnej se s hráči z celého světa.',
+      cta: { href: '/daily', label: 'Hrát dnešní výzvu →' },
+      sections: [
+        ['Jak denní výzva funguje', ['Každý den se odemkne jedna společná scéna — všichni hráči na světě dostávají tu samou. Máš jeden pokus a limit 60 sekund. Za přesnost místa a roku získáš skóre a zařadíš se do denního žebříčku.']],
+        ['Série a návyk', ['Když hraješ každý den, roste ti série. Čím delší, tím víc XP a odznaků. Je to nejrychlejší způsob, jak se u historie potkávat pravidelně — pár minut denně.']],
+        ['Proč jen jednou denně', ['Jeden pokus za den dělá z výzvy férové srovnání i malý rituál. Nedá se to „nafarmit" — každý má stejnou scénu a stejnou šanci.']],
+      ],
+    },
     about: {
       slug: 'o-projektu', title: 'O projektu',
       seoTitle: 'O HistoryGuesser – interaktivní historická hra', seoDesc: 'HistoryGuesser je bezplatná historická hra, ve které prozkoumáváš události ve 360° a hádáš, kde a kdy se skutečně odehrály.',
@@ -159,6 +177,18 @@ const STATIC = {
     },
   },
   en: {
+    daily: {
+      slug: 'daily-challenge', title: 'Daily challenge',
+      seoTitle: 'Daily History Challenge – Guess Where & When',
+      seoDesc: 'One new historical challenge every day. Explore the 360° scene, guess the location and year, then compare your score with players around the world.',
+      lead: 'One new historical scene every day. You get a single guess — figure out where in the world it happened and in what year, then compare with players worldwide.',
+      cta: { href: '/daily', label: "Play today's challenge →" },
+      sections: [
+        ['How the daily works', ['Every day the same scene unlocks for everyone in the world. You get one attempt and 60 seconds. Score points for how close your place and year are, and climb the daily leaderboard.']],
+        ['Streaks and habit', ['Play every day and your streak grows. Longer streaks mean more XP and badges. It is the easiest way to meet history regularly — just a few minutes a day.']],
+        ['Why once a day', ['A single attempt per day makes it a fair comparison and a small ritual. It cannot be farmed — everyone gets the same scene and the same shot.']],
+      ],
+    },
     about: {
       slug: 'about', title: 'About',
       seoTitle: 'About HistoryGuesser – The History Guessing Game', seoDesc: 'HistoryGuesser is a free interactive history game where you explore historical events in 360° and try to guess where and when they happened.',
@@ -185,6 +215,18 @@ const STATIC = {
     },
   },
   de: {
+    daily: {
+      slug: 'tages-challenge', title: 'Tages-Challenge',
+      seoTitle: 'Tägliche Geschichts-Challenge – Ort & Jahr erraten',
+      seoDesc: 'Jeden Tag eine neue historische Challenge. Erkunde die 360°-Szene, errate Ort und Jahr und vergleiche dein Ergebnis mit Spielern weltweit.',
+      lead: 'Jeden Tag eine neue historische Szene. Du hast nur einen Versuch — finde heraus, wo auf der Welt und in welchem Jahr es geschah, und vergleiche dich mit Spielern weltweit.',
+      cta: { href: '/daily', label: 'Heutige Challenge spielen →' },
+      sections: [
+        ['So funktioniert die Tages-Challenge', ['Jeden Tag schaltet sich für alle dieselbe Szene frei. Du hast einen Versuch und 60 Sekunden. Punkte gibt es dafür, wie nah Ort und Jahr sind — und du landest in der Tagesrangliste.']],
+        ['Serien und Gewohnheit', ['Spiele jeden Tag und deine Serie wächst. Längere Serien bringen mehr XP und Abzeichen — der einfachste Weg, regelmäßig in Geschichte einzutauchen.']],
+        ['Warum einmal pro Tag', ['Ein Versuch pro Tag macht es zu einem fairen Vergleich und einem kleinen Ritual. Es lässt sich nicht farmen — alle bekommen dieselbe Szene.']],
+      ],
+    },
     about: {
       slug: 'ueber-uns', title: 'Über das Projekt',
       seoTitle: 'Über HistoryGuesser – das Geschichtsquiz', seoDesc: 'HistoryGuesser ist ein kostenloses interaktives Geschichtsspiel, in dem du historische Ereignisse in 360° erkundest und errätst, wo und wann sie geschahen.',
@@ -719,6 +761,8 @@ function footerHtml(locale) {
   return `  <footer class="xp-footer">
     <nav class="xp-footer-links" aria-label="footer">
       <a href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
+      <a href="/${locale}/${PATH_SEG[locale].campaigns}">${escapeHtml(t.campListH1)}</a>
+      <a href="${staticPath(locale, 'daily')}">${escapeHtml(STATIC[locale].daily.title)}</a>
       <a href="${staticPath(locale, 'howto')}">${escapeHtml(STATIC[locale].howto.title)}</a>
       <a href="${staticPath(locale, 'about')}">${escapeHtml(STATIC[locale].about.title)}</a>
     </nav>
@@ -791,6 +835,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
 
   <main class="xp-doc-main">
     <p class="xp-doc-lead">${escapeHtml(page.lead)}</p>
+    ${page.cta ? `<a class="xp-doc-cta" href="${page.cta.href}">${escapeHtml(page.cta.label)}</a>` : ''}
     <div class="xp-prose">${body}
     </div>
   </main>
@@ -811,6 +856,89 @@ function campDescFor(c, locale) {
   if (locale === 'en') return c.description_en || c.description || ''
   if (locale === 'de') return c.description_de || c.description || ''
   return c.description || ''
+}
+
+// Přehled všech kampaní (rozcestník) — /:lang/:campaigns-seg/
+function renderCampaignsIndex(locale, campaigns) {
+  const t = UI[locale]
+  const listPath = `/${locale}/${PATH_SEG[locale].campaigns}`
+  const canonical = abs(listPath)
+  const alternates = LOCALES.map((l) => ({ l, href: abs(`/${l}/${PATH_SEG[l].campaigns}`) }))
+  const crumbs = [
+    { name: t.home, path: '/menu' },
+    { name: t.campListH1, path: listPath },
+  ]
+  const cards = campaigns.map((c) => {
+    const title = campTitleFor(c, locale)
+    const desc = campDescFor(c, locale).split('\n')[0].slice(0, 120)
+    const n = c.events.length
+    return `
+        <a class="ev-card" href="${campaignPath(locale, c.slug)}">
+          <div class="ev-body">
+            <span class="ev-meta">${n} ${escapeHtml(t.explore_word)}</span>
+            <span class="ev-title">${escapeHtml(title)}</span>
+            ${desc ? `<span class="ev-more" style="color:var(--hg-body-soft);font-weight:400">${escapeHtml(desc)}</span>` : ''}
+          </div>
+        </a>`
+  }).join('')
+
+  const ld = [
+    { '@context': 'https://schema.org', '@type': 'CollectionPage', name: t.campListH1, url: canonical, description: t.campSeoDesc, inLanguage: locale },
+    breadcrumbLd(crumbs),
+  ]
+
+  return `<!doctype html>
+<html lang="${locale}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="google-adsense-account" content="ca-pub-5787066414093087" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5787066414093087" crossorigin="anonymous"></script>
+  <title>${escapeHtml(t.campSeoTitle)}</title>
+  <meta name="description" content="${escapeHtml(t.campSeoDesc)}" />
+  <link rel="canonical" href="${canonical}" />
+  ${alternates.map((a) => `<link rel="alternate" hreflang="${a.l}" href="${a.href}" />`).join('\n  ')}
+  <link rel="alternate" hreflang="x-default" href="${abs(`/cs/${PATH_SEG.cs.campaigns}`)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(t.campListH1)}" />
+  <meta property="og:description" content="${escapeHtml(t.campSeoDesc)}" />
+  <meta property="og:url" content="${canonical}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/explore.css" />
+  <script type="application/ld+json">
+${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
+  </script>
+</head>
+<body class="xp">
+  <header class="xp-hero xp-hero-list">
+    <div class="xp-hero-scrim"></div>
+    <nav class="xp-topbar" aria-label="${escapeHtml(t.campListH1)}">
+      <a class="xp-logo" href="/menu"><span class="xp-logo-mark"></span> Historyguesser</a>
+      ${navPill(locale, 'campaigns')}
+    </nav>
+    <div class="xp-hero-inner">
+      <nav class="xp-breadcrumb" aria-label="breadcrumb">
+        ${crumbs.map((c, i) => i < crumbs.length - 1
+          ? `<a href="${c.path}">${escapeHtml(c.name)}</a><span aria-hidden="true">/</span>`
+          : `<span aria-current="page">${escapeHtml(c.name)}</span>`).join('\n        ')}
+      </nav>
+      <h1>${escapeHtml(t.campListH1)}</h1>
+      <p class="xp-hero-sub">${escapeHtml(t.campListSub)}</p>
+    </div>
+  </header>
+
+  <main class="xp-list-main">
+    <div class="xp-count">${campaigns.length} ${escapeHtml(t.campaignsTitle)}</div>
+    <div class="ev-grid">${cards}
+    </div>
+  </main>
+
+${footerHtml(locale)}
+</body>
+</html>
+`
 }
 
 function renderCampaign(locale, c, all) {
@@ -1000,10 +1128,21 @@ for (const c of campaigns) {
   }
 }
 
+// Přehled kampaní (rozcestník na /:lang/:campaigns-seg/) — jen když nějaké jsou.
+if (campaigns.length) {
+  for (const locale of LOCALES) {
+    const dir = resolve(dist, locale, PATH_SEG[locale].campaigns)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(resolve(dir, 'index.html'), renderCampaignsIndex(locale, campaigns), 'utf8')
+    sitemap.push({ loc: abs(`/${locale}/${PATH_SEG[locale].campaigns}`), lastmod: new Date().toISOString().slice(0, 10) })
+  }
+  console.log(`[explore] ✓ přehled kampaní (3 jazyky)`)
+}
+
 // Statické stránky (O projektu, Jak hrát)
 let staticCount = 0
 for (const locale of LOCALES) {
-  for (const pageKey of ['about', 'howto']) {
+  for (const pageKey of ['about', 'howto', 'daily']) {
     const dir = resolve(dist, locale, STATIC[locale][pageKey].slug)
     mkdirSync(dir, { recursive: true })
     writeFileSync(resolve(dir, 'index.html'), renderStaticPage(locale, pageKey), 'utf8')
