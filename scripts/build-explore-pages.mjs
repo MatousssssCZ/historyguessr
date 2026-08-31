@@ -36,6 +36,9 @@ const UI = {
     listH1: 'Okamžiky, které utvořily náš svět',
     listSub: 'Prozkoumej historické události z celého světa — každou si můžeš i zahrát.',
     listMeta: 'Objevuj stovky historických okamžiků na Historyguesser: kde se staly a v jakém roce.',
+    listSeoTitle: 'Historické události na mapě světa | HistoryGuesser',
+    listSeoDesc: 'Prozkoumej stovky historických událostí na interaktivní mapě světa. Objevuj války, vynálezy, katastrofy, objevy, umění, sport a další.',
+    eventSeoTail: 'místo, historie a zajímavosti', eventSeoDesc: 'Zjisti, kde a kdy se odehrála událost {name}, co jí předcházelo a proč byla důležitá. Prozkoumej místo a zahraj si ji v HistoryGuesser.',
     allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
     explore_word: 'událostí', playCta: 'Prozkoumat', backToList: 'Zpět na výpis',
     mapCountries: 'zemí', mapRounds: 'hratelných kol', mapCampaigns: 'kampaní',
@@ -67,6 +70,9 @@ const UI = {
     listH1: 'Moments that shaped our world',
     listSub: 'Explore historical events from around the world — and play any of them.',
     listMeta: 'Explore hundreds of historical moments on Historyguesser: where they happened and in what year.',
+    listSeoTitle: 'Explore Historical Events Around the World | HistoryGuesser',
+    listSeoDesc: 'Explore hundreds of historical events on an interactive world map. Discover battles, inventions, disasters, discoveries, art, sports and more.',
+    eventSeoTail: 'History, Location & Facts', eventSeoDesc: 'Discover where and when {name} happened, what led to it and why it mattered. Explore the location and experience the event in HistoryGuesser.',
     allEvents: 'All events', allCats: 'All', filterBy: 'Category',
     explore_word: 'events', playCta: 'Explore', backToList: 'Back to list',
     mapCountries: 'countries', mapRounds: 'playable rounds', mapCampaigns: 'campaigns',
@@ -98,6 +104,9 @@ const UI = {
     listH1: 'Momente, die unsere Welt prägten',
     listSub: 'Entdecke historische Ereignisse aus aller Welt — und spiele jedes davon.',
     listMeta: 'Entdecke Hunderte historischer Momente auf Historyguesser: wo sie geschahen und in welchem Jahr.',
+    listSeoTitle: 'Historische Ereignisse auf der Weltkarte | HistoryGuesser',
+    listSeoDesc: 'Entdecke Hunderte historischer Ereignisse auf einer interaktiven Weltkarte: Schlachten, Erfindungen, Katastrophen, Entdeckungen, Kunst, Sport und mehr.',
+    eventSeoTail: 'Ort, Geschichte & Fakten', eventSeoDesc: 'Erfahre, wo und wann {name} geschah, was dazu führte und warum es wichtig war. Erkunde den Ort und spiele es in HistoryGuesser.',
     allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
     explore_word: 'Ereignisse', playCta: 'Entdecken', backToList: 'Zur Übersicht',
     mapCountries: 'Länder', mapRounds: 'spielbare Runden', mapCampaigns: 'Kampagnen',
@@ -126,6 +135,7 @@ const STATIC = {
   cs: {
     about: {
       slug: 'o-projektu', title: 'O projektu',
+      seoTitle: 'O HistoryGuesser – interaktivní historická hra', seoDesc: 'HistoryGuesser je bezplatná historická hra, ve které prozkoumáváš události ve 360° a hádáš, kde a kdy se skutečně odehrály.',
       lead: 'Historyguesser je vzdělávací hra inspirovaná GeoGuessrem, ale zaměřená na historii. Postavíme tě do 360° panoramatu historického místa a ty hádáš, kde na světě jsi a v jakém roce se událost odehrála.',
       sections: [
         ['Proč to vzniklo', ['Historie se špatně učí z dat a jmen. Když ale stojíš přímo na místě, kde se něco stalo, a musíš odhadnout kde a kdy to bylo, zapamatuješ si to jinak. Historyguesser propojuje zeměpis, dějiny a hru do jednoho — poznávání skrze zvědavost, ne memorování.']],
@@ -137,6 +147,7 @@ const STATIC = {
     },
     howto: {
       slug: 'jak-hrat', title: 'Jak hrát',
+      seoTitle: 'Jak hrát HistoryGuesser – hádej místo a rok', seoDesc: 'Prozkoumej historickou scénu ve 360°, hledej stopy, označ místo na mapě a odhadni rok. Čím přesnější tip, tím více bodů získáš.',
       lead: 'Každé kolo tě postaví do panoramatu jednoho historického místa. Tvým úkolem je určit, kde na světě to je, a v jakém roce se událost stala.',
       sections: [
         ['1. Rozhlédni se', ['Panorama si můžeš otočit dokola. Hledej vodítka — architektura, krajina, oblečení lidí, technika. Každý detail může napovědět, na jakém kontinentu a v jaké době se nacházíš.']],
@@ -150,6 +161,7 @@ const STATIC = {
   en: {
     about: {
       slug: 'about', title: 'About',
+      seoTitle: 'About HistoryGuesser – The History Guessing Game', seoDesc: 'HistoryGuesser is a free interactive history game where you explore historical events in 360° and try to guess where and when they happened.',
       lead: 'Historyguesser is an educational game inspired by GeoGuessr, but focused on history. It drops you into a 360° panorama of a historical place and asks you to guess where in the world you are and in what year the event happened.',
       sections: [
         ['Why it exists', ['History is hard to learn from dates and names alone. But when you stand where something happened and have to guess where and when, it sticks differently. Historyguesser blends geography, history and play into one — learning through curiosity, not memorisation.']],
@@ -161,6 +173,7 @@ const STATIC = {
     },
     howto: {
       slug: 'how-to-play', title: 'How to play',
+      seoTitle: 'How to Play HistoryGuesser – Guess the Place & Year', seoDesc: 'Explore a historical scene in 360°, search for clues, guess the location and choose the year. See how close you can get and compete for the best score.',
       lead: 'Each round places you inside a panorama of one historical place. Your task is to work out where in the world it is and in what year the event happened.',
       sections: [
         ['1. Look around', ['You can turn the panorama all the way around. Look for clues — architecture, landscape, clothing, technology. Every detail can hint at the continent and the era.']],
@@ -174,6 +187,7 @@ const STATIC = {
   de: {
     about: {
       slug: 'ueber-uns', title: 'Über das Projekt',
+      seoTitle: 'Über HistoryGuesser – das Geschichtsquiz', seoDesc: 'HistoryGuesser ist ein kostenloses interaktives Geschichtsspiel, in dem du historische Ereignisse in 360° erkundest und errätst, wo und wann sie geschahen.',
       lead: 'Historyguesser ist ein Lernspiel, inspiriert von GeoGuessr, aber mit Fokus auf Geschichte. Es versetzt dich in ein 360°-Panorama eines historischen Ortes und fragt, wo auf der Welt du bist und in welchem Jahr das Ereignis geschah.',
       sections: [
         ['Warum es entstand', ['Geschichte lässt sich aus Daten und Namen schwer lernen. Doch wenn du dort stehst, wo etwas geschah, und erraten musst, wo und wann, bleibt es anders hängen. Historyguesser verbindet Geografie, Geschichte und Spiel — Lernen durch Neugier, nicht durch Auswendiglernen.']],
@@ -185,6 +199,7 @@ const STATIC = {
     },
     howto: {
       slug: 'spielanleitung', title: 'Spielanleitung',
+      seoTitle: 'HistoryGuesser spielen – Ort & Jahr erraten', seoDesc: 'Erkunde eine historische Szene in 360°, suche Hinweise, markiere den Ort und schätze das Jahr. Je genauer dein Tipp, desto mehr Punkte.',
       lead: 'Jede Runde versetzt dich in ein Panorama eines historischen Ortes. Deine Aufgabe ist herauszufinden, wo auf der Welt es ist und in welchem Jahr das Ereignis geschah.',
       sections: [
         ['1. Sieh dich um', ['Du kannst das Panorama ganz herumdrehen. Suche nach Hinweisen — Architektur, Landschaft, Kleidung, Technik. Jedes Detail kann auf Kontinent und Epoche hindeuten.']],
@@ -384,8 +399,9 @@ function renderEvent(ev, locale, all) {
     ? `${formatYear(ev.year_from, locale)} – ${formatYear(ev.year_to, locale)}`
     : yearLabel
   const img = imgFor(ev)
-  const metaTitle = `${title} — ${t.metaSuffix}`
-  const metaDesc = (desc || `${title}. ${t.tagline}.`).slice(0, 300)
+  // SEO pro událost: „{Název} ({rok}) – místo, historie a zajímavosti" + šablona popisu.
+  const metaTitle = `${title} (${yearLabel}) – ${t.eventSeoTail}`
+  const metaDesc = t.eventSeoDesc.replace('{name}', title).slice(0, 300)
 
   // hreflang: každá jazyková varianta má vlastní slug
   const alternates = LOCALES.map((l) => ({
@@ -590,8 +606,9 @@ function renderListing(locale, all, catKey, mapHtml = '') {
   const canonical = abs(path)
   const list = catKey ? all.filter((e) => e.category === catKey) : all
   const h1 = cat ? cat.label : t.listH1
-  const metaTitle = `${h1} — ${t.metaSuffix}`
-  const metaDesc = cat ? `${t.catMetaPrefix} ${cat.label}. ${t.listSub}` : t.listMeta
+  // Hlavní výpis (bez kategorie) má vlastní SEO copy; kategorie drží starý vzor.
+  const metaTitle = cat ? `${h1} — ${t.metaSuffix}` : t.listSeoTitle
+  const metaDesc = cat ? `${t.catMetaPrefix} ${cat.label}. ${t.listSub}` : t.listSeoDesc
 
   // hreflang varianty téže stránky
   const alternates = LOCALES.map((l) => ({
@@ -714,8 +731,8 @@ function renderStaticPage(locale, pageKey) {
   const page = STATIC[locale][pageKey]
   const path = staticPath(locale, pageKey)
   const canonical = abs(path)
-  const metaTitle = `${page.title} — ${t.metaSuffix}`
-  const metaDesc = page.lead.slice(0, 300)
+  const metaTitle = page.seoTitle || `${page.title} — ${t.metaSuffix}`
+  const metaDesc = (page.seoDesc || page.lead).slice(0, 300)
 
   const alternates = LOCALES.map((l) => ({ l, href: abs(staticPath(l, pageKey)) }))
   const crumbs = [

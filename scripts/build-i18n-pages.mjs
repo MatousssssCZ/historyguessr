@@ -16,8 +16,8 @@ const L = {
     lang: 'en',
     path: '/en',
     ogLocale: 'en_US',
-    title: 'Historyguesser — GeoGuessr for history: guess the place and year',
-    description: 'Historyguesser is an educational game like GeoGuessr, but for history. You stand in a 360° panorama of a historical place and guess where in the world the event happened and in what year. Free, in English, Czech and German.',
+    title: 'History Guessing Game – Guess the Place & Year | HistoryGuesser',
+    description: 'Can you guess where and when history happened? Explore 360° historical scenes, find clues and test your history knowledge. Play free, no sign-up required.',
     ogDescription: 'You see a 360° panorama of a historical place. Can you guess where in the world it is and what year the event happened?',
     jsonldDescription: 'An educational geolocation game like GeoGuessr, but for history. The player sees a 360° panorama of a historical place and guesses where in the world the event happened and in what year.',
     faq: [
@@ -49,8 +49,8 @@ const L = {
     lang: 'de',
     path: '/de',
     ogLocale: 'de_DE',
-    title: 'Historyguesser — GeoGuessr für Geschichte: errate Ort und Jahr',
-    description: 'Historyguesser ist ein Lernspiel wie GeoGuessr, aber für Geschichte. Du stehst in einem 360°-Panorama eines historischen Ortes und errätst, wo auf der Welt das Ereignis geschah und in welchem Jahr. Kostenlos, auf Deutsch, Englisch und Tschechisch.',
+    title: 'Geschichtsquiz – Errate Ort & Jahr | HistoryGuesser',
+    description: 'Errätst du, wo und wann es geschah? Erkunde historische 360°-Szenen, finde Hinweise und teste dein Geschichtswissen. Kostenlos und ohne Anmeldung.',
     ogDescription: 'Du siehst ein 360°-Panorama eines historischen Ortes. Errätst du, wo auf der Welt es ist und in welchem Jahr das Ereignis geschah?',
     jsonldDescription: 'Ein Lern- und Geolokationsspiel wie GeoGuessr, aber für Geschichte. Der Spieler sieht ein 360°-Panorama eines historischen Ortes und errät, wo auf der Welt das Ereignis geschah und in welchem Jahr.',
     faq: [
