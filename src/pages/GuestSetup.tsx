@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { playAsGuest, assignGuestUsername, track } from '@/lib/supabase'
 import { CAPTCHA_ENABLED } from '@/lib/turnstile'
@@ -13,7 +13,14 @@ import HowToPlay from '@/components/HowToPlay'
 export default function GuestSetupPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { user, loading } = useAuth()
+
+  // Kam pokračovat po vytvoření hosta. Přišel-li z herní akce (?next=/play),
+  // přeskočíme intro a jdeme rovnou do hry. Sanitizace: jen interní cesta.
+  const nextRaw = params.get('next') || ''
+  const next = /^\/(?!\/)/.test(nextRaw) ? nextRaw : ''
+  const dest = next || '/menu'
 
   // Zachytí, zda byl uživatel přihlášený už při příchodu (pak sem nepatří →
   // menu). Přihlášení během vytváření hosta redirect nespustí.
@@ -21,8 +28,8 @@ export default function GuestSetupPage() {
   useEffect(() => {
     if (loading) return
     if (wasLoggedIn.current === null) wasLoggedIn.current = !!user
-    if (wasLoggedIn.current) navigate('/menu', { replace: true })
-  }, [loading, user, navigate])
+    if (wasLoggedIn.current) navigate(dest, { replace: true })
+  }, [loading, user, navigate, dest])
 
   const [captcha, setCaptcha] = useState<string | null>(CAPTCHA_ENABLED ? null : '')
   const [captchaKey, setCaptchaKey] = useState(0)
@@ -40,9 +47,11 @@ export default function GuestSetupPage() {
       const { error } = await assignGuestUsername(res.userId)
       if (error) { setErrMsg(t('setup.error')); setPhase('error'); return }
       track('sign_up', { converted: false, guest: true }, res.userId)
-      setPhase('choice')
+      // Přišel z herní akce → rovnou do hry (bez intra). Jinak nabídni volbu.
+      if (next) window.location.assign(next)
+      else setPhase('choice')
     })()
-  }, [captcha, t])
+  }, [captcha, t, next])
 
   function retry() {
     started.current = false

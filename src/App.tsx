@@ -84,12 +84,21 @@ function RootRedirect() {
   return <Navigate to={user ? '/menu' : '/auth'} replace/>
 }
 
-// ── Domů: nepřihlášený → přihlašovací stránka (+ SEO blok); přihlášený → menu ─
-function HomeRoute() {
-  const { user, loading } = useAuth()
+// ── Menu gate ─────────────────────────────────────────────
+// Menu je přístupné i BEZ účtu (host-first: návštěvník rovnou v menu, účet
+// vzniká líně až u první hry). Registrovanému bez přezdívky vynutíme setup.
+function MenuGate({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
   if (loading) return <FullScreenSpinner/>
-  if (user) return <Navigate to="/menu" replace/>
-  return <AuthPage landing/>
+  if (user && profile && !profile.username) return <UsernameSetup/>
+  return <>{children}</>
+}
+
+// ── Domů → vždy do menu (host režim řeší samotné Menu). Login žije na /auth. ─
+function HomeRoute() {
+  const { loading } = useAuth()
+  if (loading) return <FullScreenSpinner/>
+  return <Navigate to="/menu" replace/>
 }
 
 // ── Host setup (účet vzniká až tady). Přesměrování „už přihlášený → menu"
@@ -134,7 +143,7 @@ export default function App() {
               <Route path="/vyzva/:eventId" element={<ChallengePage/>}/>
               <Route path="/auth/callback" element={<RootRedirect/>}/>
               <Route path="/reset-password" element={<ResetPasswordPage/>}/>
-              <Route path="/menu"    element={<RequireAuth><MenuPage/></RequireAuth>}/>
+              <Route path="/menu"    element={<MenuGate><MenuPage/></MenuGate>}/>
               <Route path="/play"    element={<RequireAuth><PreGameLobbyPage/></RequireAuth>}/>
               <Route path="/game"    element={<RequireAuth><GamePage/></RequireAuth>}/>
               <Route path="/campaigns" element={<RequireAuth><CampaignsPage/></RequireAuth>}/>

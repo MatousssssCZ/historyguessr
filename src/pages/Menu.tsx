@@ -62,6 +62,25 @@ const MENU_TTL = 60_000
  *  aby se streak / ✓ za dnešek projevily hned a ne až po vypršení TTL. */
 export function invalidateMenuCache() { menuCache = null }
 
+// Výrazný pruh pro hosty (i bez účtu) — nabízí uložení postupu registrací.
+function GuestBanner({ onSignIn }: { onSignIn: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button onClick={onSignIn} style={{
+      display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
+      background: 'linear-gradient(135deg,#d97757,#c15c3d)', color: '#fff', border: 'none',
+      borderRadius: 15, padding: '13px 16px', boxShadow: '0 14px 30px -14px rgba(184,90,62,.85)',
+    }}>
+      <span style={{ fontSize: 20, lineHeight: 1 }}>🔓</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14 }}>{t('menu.guestSaveTitle')}</span>
+        <span style={{ display: 'block', fontSize: 12, opacity: .92, lineHeight: 1.35 }}>{t('menu.guestSaveSub')}</span>
+      </span>
+      <span style={{ flexShrink: 0, background: '#fff', color: '#b85a3e', borderRadius: 10, padding: '9px 13px', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12.5, whiteSpace: 'nowrap' }}>{t('menu.guestBannerCta')} →</span>
+    </button>
+  )
+}
+
 export default function MenuPage() {
   const { t } = useTranslation()
   const { user, profile, isAnonymous, isAdmin, isEditor } = useAuth()
@@ -226,11 +245,18 @@ export default function MenuPage() {
   const greet = t(hour < 11 ? 'menu.greetMorning' : hour < 18 ? 'menu.greetAfternoon' : 'menu.greetEvening')
   const dateStr = new Date().toLocaleDateString(currentLocale(), { weekday: 'short', day: 'numeric', month: 'long' }).toUpperCase()
 
-  const goQuick = () => navigate('/game', { state: { rounds: 1 } })
-  const goClassic = () => navigate('/play')
-  const goDaily = () => navigate('/daily')
-  const goMP = () => navigate('/multiplayer/lobby')
+  // Host-first: bez účtu vede herní akce přes /guest (líné vytvoření hosta),
+  // který po vytvoření pokračuje na cíl (?next). S účtem jde rovnou.
+  const ensurePlay = (dest: string) => {
+    if (user) navigate(dest)
+    else navigate('/guest?next=' + encodeURIComponent(dest))
+  }
+  const goQuick = () => user ? navigate('/game', { state: { rounds: 1 } }) : ensurePlay('/play')
+  const goClassic = () => ensurePlay('/play')
+  const goDaily = () => ensurePlay('/daily')
+  const goMP = () => navigate('/multiplayer/lobby')  // MP host jen registrovaný (řeší guard/zámek)
   const goResume = () => navigate('/game', { state: { resume: true } })
+  const isGuest = !user || isAnonymous   // host (bez účtu i anonymní) → nabídni registraci
 
 
   // Nejbližší odznak (napříč kategoriemi) — pro kartu Level na desktopu
@@ -293,6 +319,8 @@ export default function MenuPage() {
               <button onClick={() => navigate('/account')} style={{ width: 38, height: 38, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15 }}>{name.charAt(0).toUpperCase()}</button>
             </div>
           </header>
+
+          {isGuest && <div style={{ maxWidth: 620, margin: '4px 0 0' }}><GuestBanner onSignIn={() => navigate('/auth')}/></div>}
 
           {/* Hero tělo */}
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 372px', gap: 44, alignItems: 'start', padding: '40px 0 32px' }}>
@@ -551,6 +579,8 @@ export default function MenuPage() {
             <button onClick={() => navigate('/account')} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13 }}>{name.charAt(0).toUpperCase()}</button>
           </div>
         </div>
+
+        {isGuest && <div style={{ position: 'relative', zIndex: 1, padding: '12px 18px 0' }}><GuestBanner onSignIn={() => navigate('/auth')}/></div>}
 
         {/* Hero obsah (dole) */}
         <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px calc(var(--nav-space) + 14px)' }}>
