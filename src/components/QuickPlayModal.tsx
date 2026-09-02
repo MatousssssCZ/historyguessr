@@ -40,14 +40,14 @@ export default function QuickPlayModal({ onClose, onStart }: {
       <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" style={{
         width: '100%', maxWidth: 620, maxHeight: '92dvh', overflowY: 'auto',
         background: '#1e1712', border: '1px solid rgba(251,247,240,.11)', borderRadius: 22,
-        boxShadow: '0 40px 90px -30px rgba(0,0,0,.75)', color: '#FBF7F0', padding: 26,
+        boxShadow: '0 40px 90px -30px rgba(0,0,0,.75)', color: '#FBF7F0', padding: 20,
       }}>
         {/* Hlavička */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--gold, #E8C88A)', marginBottom: 8 }}>{t('menu.quickEyebrow')}</div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', margin: '0 0 8px', lineHeight: 1.08 }}>{t('menu.quickTitle')}</h2>
-            <p style={{ fontSize: 13.5, color: 'rgba(251,247,240,.6)', margin: 0, lineHeight: 1.45, maxWidth: 420 }}>{t('menu.quickSub')}</p>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--gold, #E8C88A)', marginBottom: 6 }}>{t('menu.quickEyebrow')}</div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(20px, 5.2vw, 26px)', letterSpacing: '-0.02em', margin: '0 0 6px', lineHeight: 1.08 }}>{t('menu.quickTitle')}</h2>
+            <p style={{ fontSize: 13, color: 'rgba(251,247,240,.6)', margin: 0, lineHeight: 1.4, maxWidth: 420 }}>{t('menu.quickSub')}</p>
           </div>
           <button onClick={onClose} aria-label="Zavřít" style={{
             flexShrink: 0, width: 34, height: 34, borderRadius: '50%', border: '1px solid rgba(251,247,240,.16)',
@@ -56,8 +56,8 @@ export default function QuickPlayModal({ onClose, onStart }: {
         </div>
 
         {/* Kategorie */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '24px 0 12px', gap: 12 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>{t('menu.quickCatsHint')}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 10px', gap: 12 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)', lineHeight: 1.4 }}>{t('menu.quickCatsHint')}</span>
           {selected.length > 0 && (
             <button onClick={() => setSelected([])} style={{
               flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 11px', borderRadius: 999,
@@ -67,34 +67,32 @@ export default function QuickPlayModal({ onClose, onStart }: {
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
           {CATEGORY_IDS.map(id => {
             const on = selected.includes(id)
             return (
               <button key={id} onClick={() => toggle(id)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', width: '100%', textAlign: 'left', cursor: 'pointer',
-                borderRadius: 13, transition: 'background .12s, border-color .12s',
+                position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, padding: '11px 12px', width: '100%', textAlign: 'left', cursor: 'pointer',
+                borderRadius: 12, transition: 'background .12s, border-color .12s',
                 background: on ? 'rgba(217,119,87,.16)' : 'rgba(251,247,240,.04)',
                 border: `1px solid ${on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.09)'}`,
                 color: '#FBF7F0',
               }}>
-                <span style={{ display: 'flex', color: on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.7)' }}><CatIcon id={id} size={17}/></span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14 }}>{catLabel(t('cat.' + id))}</span>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.45)', marginTop: 1 }}>{counts[id] ?? 0} {t('menu.quickEvents')}</span>
-                </span>
                 <span style={{
-                  flexShrink: 0, width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'absolute', top: 10, right: 10, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: `1.5px solid ${on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.25)'}`,
-                  background: on ? 'var(--accent, #d97757)' : 'transparent', color: '#fff', fontSize: 12,
+                  background: on ? 'var(--accent, #d97757)' : 'transparent', color: '#fff', fontSize: 11,
                 }}>{on ? '✓' : ''}</span>
+                <span style={{ display: 'flex', color: on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.65)' }}><CatIcon id={id} size={16}/></span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.2, paddingRight: 18 }}>{catLabel(t('cat.' + id))}</span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'rgba(251,247,240,.42)' }}>{counts[id] ?? 0} {t('menu.quickEvents')}</span>
               </button>
             )
           })}
         </div>
 
         {/* Patička */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, marginTop: 22, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 14, marginTop: 16, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(251,247,240,.45)' }}>{t('menu.quickSelected', { n: selected.length, total: CATEGORY_IDS.length })}</div>
             <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'rgba(251,247,240,.85)', marginTop: 3 }}>{t('menu.quickPool', { n: pool })}</div>
