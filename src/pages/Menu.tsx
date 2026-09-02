@@ -20,6 +20,7 @@ import MobileNav from '@/components/MobileNav'
 import Icon, { type IconName } from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
+import QuickPlayModal from '@/components/QuickPlayModal'
 import { DownloadIcon } from '@/components/BrowserIcons'
 import { isInstallTileHidden, isStandalone } from '@/lib/pwaInstall'
 
@@ -257,6 +258,13 @@ export default function MenuPage() {
   const goMP = () => navigate('/multiplayer/lobby')  // MP host jen registrovaný (řeší guard/zámek)
   const goResume = () => navigate('/game', { state: { resume: true } })
   const isGuest = !user || isAnonymous   // host (bez účtu i anonymní) → nabídni registraci
+  const [showQuick, setShowQuick] = useState(false)
+  // Rychlá hra: 5 kol, vybrané kategorie (nebo všechny). Přes URL query, ať to
+  // přežije i redirect přes /guest u hostů.
+  const startQuick = (cats: string[]) => {
+    setShowQuick(false)
+    ensurePlay('/game?rounds=5' + (cats.length ? '&cats=' + cats.join(',') : ''))
+  }
 
 
   // Nejbližší odznak (napříč kategoriemi) — pro kartu Level na desktopu
@@ -332,6 +340,11 @@ export default function MenuPage() {
               <button onClick={goDaily} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 28px', borderRadius: 15, border: 'none', cursor: 'pointer', background: dailyState === 'done' ? SUCCESS_GRAD : ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, boxShadow: dailyState === 'done' ? '0 22px 46px -20px rgba(63,107,69,.9)' : '0 22px 46px -20px rgba(190,98,64,.95)' }}>
                 <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={18}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
               </button>
+              <div style={{ marginTop: 14 }}>
+                <button onClick={() => setShowQuick(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 13, border: '1px solid rgba(251,247,240,.2)', background: 'rgba(251,247,240,.06)', color: 'rgba(251,247,240,.9)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, backdropFilter: 'blur(8px)' }}>
+                  <Icon name="bolt" size={15}/> {t('menu.quickBtn')}
+                </button>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}><Flame size={12}/> {t('menu.streakDays', { n: dailyStreak })}</span>
                 <span style={{ display: 'flex', gap: 5 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
@@ -543,6 +556,7 @@ export default function MenuPage() {
 
         {showHowTo && <HowToPlay onClose={closeHowTo}/>}
         {showInstall && <InstallGuide showHideOption onClose={() => { setShowInstall(false); setInstallTileHidden(isInstallTileHidden()) }}/>}
+        {showQuick && <QuickPlayModal onClose={() => setShowQuick(false)} onStart={startQuick}/>}
       </div>
     )
   }
@@ -609,6 +623,10 @@ export default function MenuPage() {
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E9A183', marginBottom: 8 }}>{t('menu.dailyLabel')} · {dateStr}</div>
           <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: dailyState === 'done' ? SUCCESS_GRAD : ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: dailyState === 'done' ? '0 18px 40px -22px rgba(63,107,69,.9)' : '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
             <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={17}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
+          </button>
+
+          <button onClick={() => setShowQuick(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, borderRadius: 14, border: '1px solid rgba(251,247,240,.2)', background: 'rgba(251,247,240,.06)', color: 'rgba(251,247,240,.9)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, backdropFilter: 'blur(8px)', marginBottom: 22 }}>
+            <Icon name="bolt" size={15}/> {t('menu.quickBtn')}
           </button>
 
           {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto) → jinak herní režimy */}
@@ -711,6 +729,7 @@ export default function MenuPage() {
       <MobileNav active="home"/>
       {showHowTo && <HowToPlay onClose={closeHowTo}/>}
       {showInstall && <InstallGuide showHideOption onClose={() => { setShowInstall(false); setInstallTileHidden(isInstallTileHidden()) }}/>}
+        {showQuick && <QuickPlayModal onClose={() => setShowQuick(false)} onStart={startQuick}/>}
     </div>
   )
 }

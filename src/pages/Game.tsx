@@ -41,12 +41,26 @@ declare const pannellum: {
   viewer: (container: string | HTMLElement, config: object) => { destroy: () => void }
 }
 
+// Volby hry z URL query (?rounds=5&cats=war,inventions) — fallback k route state.
+function parseQueryOptions(search: string): GameOptions | undefined {
+  const p = new URLSearchParams(search)
+  const r = parseInt(p.get('rounds') || '', 10)
+  const cats = (p.get('cats') || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (!r && !cats.length) return undefined
+  const opts: GameOptions = {}
+  if (r > 0) opts.rounds = r
+  if (cats.length) opts.categories = cats
+  return opts
+}
+
 export default function GamePage() {
   const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const options = (location.state as GameOptions | null) ?? undefined
+  // Volby hry přijdou buď z route state (navigace v appce), nebo z URL query
+  // (?rounds=5&cats=war,inventions) — to přežije redirect přes /guest u hostů.
+  const options = (location.state as GameOptions | null) ?? parseQueryOptions(location.search)
   const {
     state, currentEvent, lastRound, canSubmit,
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
