@@ -294,7 +294,7 @@ export default function MenuPage() {
       ...(isAdmin ? [{ label: t('menu.admin'), onClick: () => navigate('/admin') }] : []),
     ]
     const modes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
-      { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick, primary: true },
+      { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick },
       { icon: 'sliders', title: t('menu.classicGame'), sub: t('menu.classicGameSubShort'), onClick: goClassic },
       { icon: 'swords', title: t('menu.multiplayer'), sub: t('menu.multiplayerSub'), onClick: goMP },
     ]
@@ -344,13 +344,13 @@ export default function MenuPage() {
                 {/* Outline accent; po odehrané denní (ta je pak zelená) se rychlá hra
                     stane plnou oranžovou hlavní akcí. */}
                 <button onClick={() => setShowQuick(true)} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 9, padding: '13px 22px', borderRadius: 14, cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5,
+                  display: 'inline-flex', alignItems: 'center', gap: 10, padding: '16px 28px', borderRadius: 15, cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16,
                   ...(dailyState === 'done'
-                    ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 20px 42px -20px rgba(190,98,64,.95)' }
+                    ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 22px 46px -20px rgba(190,98,64,.95)' }
                     : { background: 'transparent', border: '1.6px solid #d97757', color: '#eb9d7d' }),
                 }}>
-                  <Icon name="bolt" size={16}/> {t('menu.quickBtn')}
+                  <Icon name="bolt" size={18}/> {t('menu.quickBtn')}
                 </button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
@@ -572,7 +572,7 @@ export default function MenuPage() {
   // ═══════════════════ MOBIL (27a) ═══════════════════
   const mDot = (on: boolean) => ({ width: 7, height: 7, borderRadius: '50%', background: on ? '#E8C88A' : 'rgba(251,247,240,.28)' })
   const mModes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
-    { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick, primary: true },
+    { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick },
     { icon: 'sliders', title: t('menu.classicGame'), sub: t('menu.classicGameSubShort'), onClick: goClassic },
     { icon: 'swords', title: t('menu.multiplayer'), sub: t('menu.multiplayerSub'), onClick: goMP },
   ]
@@ -634,13 +634,13 @@ export default function MenuPage() {
           </button>
 
           <button onClick={() => setShowQuick(true)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, borderRadius: 14, cursor: 'pointer',
-            fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, marginBottom: 22,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, cursor: 'pointer',
+            fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, marginBottom: 22,
             ...(dailyState === 'done'
-              ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 18px 40px -20px rgba(190,98,64,.95)' }
+              ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 18px 40px -22px rgba(190,98,64,.95)' }
               : { background: 'transparent', border: '1.6px solid #d97757', color: '#eb9d7d' }),
           }}>
-            <Icon name="bolt" size={15}/> {t('menu.quickBtn')}
+            <Icon name="bolt" size={17}/> {t('menu.quickBtn')}
           </button>
 
           {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto) → jinak herní režimy */}
