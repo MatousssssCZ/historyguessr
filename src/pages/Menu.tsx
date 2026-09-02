@@ -262,9 +262,9 @@ export default function MenuPage() {
   const [showQuick, setShowQuick] = useState(false)
   // Rychlá hra: 5 kol, vybrané kategorie (nebo všechny). Přes URL query, ať to
   // přežije i redirect přes /guest u hostů.
-  const startQuick = (cats: string[]) => {
+  const startQuick = (cats: string[], rounds: number) => {
     setShowQuick(false)
-    ensurePlay('/game?rounds=5' + (cats.length ? '&cats=' + cats.join(',') : ''))
+    ensurePlay('/game?rounds=' + rounds + (cats.length ? '&cats=' + cats.join(',') : ''))
   }
 
 
