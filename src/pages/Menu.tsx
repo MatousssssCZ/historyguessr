@@ -341,8 +341,16 @@ export default function MenuPage() {
                 <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={18}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
               </button>
               <div style={{ marginTop: 14 }}>
-                <button onClick={() => setShowQuick(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 13, border: '1px solid rgba(251,247,240,.2)', background: 'rgba(251,247,240,.06)', color: 'rgba(251,247,240,.9)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, backdropFilter: 'blur(8px)' }}>
-                  <Icon name="bolt" size={15}/> {t('menu.quickBtn')}
+                {/* Outline accent; po odehrané denní (ta je pak zelená) se rychlá hra
+                    stane plnou oranžovou hlavní akcí. */}
+                <button onClick={() => setShowQuick(true)} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 9, padding: '13px 22px', borderRadius: 14, cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5,
+                  ...(dailyState === 'done'
+                    ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 20px 42px -20px rgba(190,98,64,.95)' }
+                    : { background: 'transparent', border: '1.6px solid #d97757', color: '#eb9d7d' }),
+                }}>
+                  <Icon name="bolt" size={16}/> {t('menu.quickBtn')}
                 </button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 26 }}>
@@ -625,7 +633,13 @@ export default function MenuPage() {
             <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={17}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
           </button>
 
-          <button onClick={() => setShowQuick(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, borderRadius: 14, border: '1px solid rgba(251,247,240,.2)', background: 'rgba(251,247,240,.06)', color: 'rgba(251,247,240,.9)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, backdropFilter: 'blur(8px)', marginBottom: 22 }}>
+          <button onClick={() => setShowQuick(true)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, borderRadius: 14, cursor: 'pointer',
+            fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, marginBottom: 22,
+            ...(dailyState === 'done'
+              ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 18px 40px -20px rgba(190,98,64,.95)' }
+              : { background: 'transparent', border: '1.6px solid #d97757', color: '#eb9d7d' }),
+          }}>
             <Icon name="bolt" size={15}/> {t('menu.quickBtn')}
           </button>
 
