@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getCandidateEvents } from '@/lib/supabase'
 import { CATEGORY_IDS, CatIcon, catLabel } from '@/components/GameSettings'
@@ -12,15 +12,22 @@ export default function QuickPlayModal({ onClose, onStart }: {
   const { t } = useTranslation()
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [total, setTotal] = useState(0)
+  const [loaded, setLoaded] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
 
   useEffect(() => {
     getCandidateEvents({ categories: [] }).then(list => {
       const m: Record<string, number> = {}
       for (const e of list) if (e.category) m[e.category] = (m[e.category] ?? 0) + 1
-      setCounts(m); setTotal(list.length)
-    }).catch(() => {})
+      setCounts(m); setTotal(list.length); setLoaded(true)
+    }).catch(() => setLoaded(true))
   }, [])
+
+  // Řazení kategorií podle počtu událostí (nejobsáhlejší nahoře), až se načtou.
+  const order = useMemo(
+    () => loaded ? [...CATEGORY_IDS].sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0)) : CATEGORY_IDS,
+    [loaded, counts],
+  )
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -57,7 +64,7 @@ export default function QuickPlayModal({ onClose, onStart }: {
 
         {/* Kategorie */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 10px', gap: 12 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)', lineHeight: 1.4 }}>{t('menu.quickCatsHint')}</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5, color: 'rgba(251,247,240,.55)', lineHeight: 1.4 }}>{t('menu.quickCatsHint')}</span>
           {selected.length > 0 && (
             <button onClick={() => setSelected([])} style={{
               flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 11px', borderRadius: 999,
@@ -68,7 +75,7 @@ export default function QuickPlayModal({ onClose, onStart }: {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-          {CATEGORY_IDS.map(id => {
+          {order.map(id => {
             const on = selected.includes(id)
             return (
               <button key={id} onClick={() => toggle(id)} style={{
@@ -78,14 +85,17 @@ export default function QuickPlayModal({ onClose, onStart }: {
                 border: `1px solid ${on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.09)'}`,
                 color: '#FBF7F0',
               }}>
+                {/* Zaškrtávátko (čtvereček) = multi-select: můžeš vybrat víc kategorií */}
                 <span style={{
-                  position: 'absolute', top: 10, right: 10, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: `1.5px solid ${on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.25)'}`,
-                  background: on ? 'var(--accent, #d97757)' : 'transparent', color: '#fff', fontSize: 11,
+                  position: 'absolute', top: 10, right: 10, width: 18, height: 18, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: `1.5px solid ${on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.28)'}`,
+                  background: on ? 'var(--accent, #d97757)' : 'transparent', color: '#fff', fontSize: 12, fontWeight: 700,
                 }}>{on ? '✓' : ''}</span>
                 <span style={{ display: 'flex', color: on ? 'var(--accent, #d97757)' : 'rgba(251,247,240,.65)' }}><CatIcon id={id} size={16}/></span>
                 <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.2, paddingRight: 18 }}>{catLabel(t('cat.' + id))}</span>
-                <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'rgba(251,247,240,.42)' }}>{counts[id] ?? 0} {t('menu.quickEvents')}</span>
+                {loaded
+                  ? <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'rgba(251,247,240,.42)' }}>{counts[id] ?? 0} {t('menu.quickEvents')}</span>
+                  : <span style={{ display: 'block', width: 46, height: 8, borderRadius: 4, background: 'rgba(251,247,240,.1)' }} aria-hidden="true"/>}
               </button>
             )
           })}
@@ -94,8 +104,10 @@ export default function QuickPlayModal({ onClose, onStart }: {
         {/* Patička */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 14, marginTop: 16, flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(251,247,240,.45)' }}>{t('menu.quickSelected', { n: selected.length, total: CATEGORY_IDS.length })}</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'rgba(251,247,240,.85)', marginTop: 3 }}>{t('menu.quickPool', { n: pool })}</div>
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5, fontWeight: 600, color: 'rgba(251,247,240,.6)' }}>
+              {selected.length === 0 ? t('menu.quickAllCats') : t('menu.quickSelected', { n: selected.length, total: CATEGORY_IDS.length })}
+            </div>
+            {loaded && <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12.5, color: 'rgba(251,247,240,.82)', marginTop: 3 }}>{t('menu.quickPool', { n: pool })}</div>}
           </div>
           <button onClick={() => onStart(selected)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 9, padding: '14px 24px', borderRadius: 14, border: 'none', cursor: 'pointer',
