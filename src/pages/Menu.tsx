@@ -21,6 +21,7 @@ import Icon, { type IconName } from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
 import QuickPlayModal from '@/components/QuickPlayModal'
+import LandingSeo from '@/components/LandingSeo'
 import { DownloadIcon } from '@/components/BrowserIcons'
 import { isInstallTileHidden, isStandalone } from '@/lib/pwaInstall'
 
@@ -562,6 +563,9 @@ export default function MenuPage() {
           )
         })()}
 
+        {/* SEO landing pod herem — jen pro hosty (homepage `/`). Indexovatelný obsah. */}
+        {isGuest && <LandingSeo/>}
+
         {showHowTo && <HowToPlay onClose={closeHowTo}/>}
         {showInstall && <InstallGuide showHideOption onClose={() => { setShowInstall(false); setInstallTileHidden(isInstallTileHidden()) }}/>}
         {showQuick && <QuickPlayModal onClose={() => setShowQuick(false)} onStart={startQuick}/>}
@@ -738,6 +742,9 @@ export default function MenuPage() {
           </div>
         </section>
       </main>
+
+      {/* SEO landing pod obsahem — jen pro hosty (homepage `/`). */}
+      {isGuest && <LandingSeo/>}
 
       {/* Sdílená spodní lišta */}
       <MobileNav active="home"/>

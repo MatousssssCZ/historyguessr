@@ -94,11 +94,14 @@ function MenuGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// ── Domů → vždy do menu (host režim řeší samotné Menu). Login žije na /auth. ─
+// ── Domů `/` = přímo menu (host-first), URL zůstává `/` = kanonická homepage.
+// NEredirectovat na /menu — jinak homepage ztratí svůj indexovatelný obsah.
+// Menu si pro nepřihlášené samo dorenderuje SEO landing (LandingSeo). ─
 function HomeRoute() {
-  const { loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   if (loading) return <FullScreenSpinner/>
-  return <Navigate to="/menu" replace/>
+  if (user && profile && !profile.username) return <UsernameSetup/>
+  return <MenuPage/>
 }
 
 // ── Host setup (účet vzniká až tady). Přesměrování „už přihlášený → menu"
