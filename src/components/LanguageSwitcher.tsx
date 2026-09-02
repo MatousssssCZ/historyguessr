@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGES, setLanguage } from '@/i18n'
 
@@ -6,7 +7,11 @@ const FLAGS: Record<string, string> = { cs: '🇨🇿', en: '🇬🇧', de: '�
 
 /** Přepínač jazyka jako dropdown s vlaječkami.
  *  variant="dark"  → na feature ploše (tématické tokeny)
- *  variant="light" → na běžné (flipující) ploše */
+ *  variant="light" → na běžné (flipující) ploše
+ *
+ *  Rozbalená nabídka se renderuje přes PORTAL do body (position:fixed), aby ji
+ *  nezachytil stacking context rodiče (na mobilu se jinak proklikávala do prvků
+ *  pod ní, např. žebříčku). */
 export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dark' | 'light' | 'glass' }) {
   const { i18n } = useTranslation()
   const cur = (i18n.language || 'en').slice(0, 2)
@@ -15,26 +20,47 @@ export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dar
   const fg = glass ? '#f5f1e8' : onFeature ? 'var(--feature-fg)' : 'var(--ink)'
   const idle = glass ? 'rgba(245,241,232,0.65)' : onFeature ? 'var(--feature-fg2)' : 'var(--ink-3)'
   const border = glass ? 'rgba(245,241,232,0.28)' : onFeature ? 'var(--feature-line)' : 'var(--line-strong)'
-  const surface = glass ? 'rgba(30,23,15,0.92)' : onFeature ? 'var(--feature-bg)' : 'var(--surface)'
+  const surface = glass ? 'rgba(30,23,15,0.96)' : onFeature ? 'var(--feature-bg)' : 'var(--surface)'
 
   const [open, setOpen] = useState(false)
-  const wrapRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const place = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect()
+    if (r) setPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) })
+  }, [])
+
+  const toggle = () => { if (!open) place(); setOpen(o => !o) }
 
   useEffect(() => {
     if (!open) return
-    const onDoc = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    const close = (e: Event) => {
+      const t = e.target as Node
+      if (btnRef.current?.contains(t) || menuRef.current?.contains(t)) return
+      setOpen(false)
     }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
+    const reposition = () => setOpen(false)   // při scrollu/resize radši zavřít
+    document.addEventListener('mousedown', close)
+    document.addEventListener('touchstart', close)
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('touchstart', close)
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
   }, [open])
 
   const current = LANGUAGES.find(l => l.code === cur) ?? LANGUAGES[0]
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', flexShrink: 0 }}>
+    <div style={{ position: 'relative', flexShrink: 0 }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={toggle}
         aria-label={current.label}
         aria-expanded={open}
         style={{
@@ -52,12 +78,12 @@ export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dar
         <span style={{ fontSize: 9, color: idle, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>▾</span>
       </button>
 
-      {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 1000,
-          minWidth: 132, padding: 4, borderRadius: 10,
+      {open && pos && createPortal(
+        <div ref={menuRef} style={{
+          position: 'fixed', top: pos.top, right: pos.right, zIndex: 4000,
+          minWidth: 148, padding: 4, borderRadius: 10,
           background: surface, border: `1px solid ${border}`,
-          boxShadow: '0 8px 24px rgba(42,31,23,0.18)',
+          boxShadow: '0 12px 32px rgba(42,31,23,0.35)',
         }}>
           {LANGUAGES.map(l => {
             const active = l.code === cur
@@ -67,8 +93,8 @@ export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dar
                 onClick={() => { setLanguage(l.code); setOpen(false) }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 9, width: '100%',
-                  padding: '8px 10px', borderRadius: 7, border: 'none', cursor: 'pointer',
-                  textAlign: 'left', fontSize: 13,
+                  padding: '11px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                  textAlign: 'left', fontSize: 14,
                   background: active ? 'var(--accent)' : 'transparent',
                   color: active ? '#fff' : fg,
                 }}
@@ -81,7 +107,8 @@ export default function LanguageSwitcher({ variant = 'light' }: { variant?: 'dar
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
