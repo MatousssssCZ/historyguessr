@@ -108,6 +108,16 @@ export async function releaseStaleTasks(minutes = 45): Promise<void> {
   try { await supabase.rpc('release_stale_event_tasks', { p_minutes: minutes }) } catch { /* ignore */ }
 }
 
+// Admin: smazat VŠECHNA zadání z číselníku najednou (RLS „tasks: admin all").
+// Maže jen záznamy v event_tasks — případné už vzniklé draft události zůstávají.
+export async function deleteAllTasks(): Promise<{ count: number; error: string | null }> {
+  const { data, error } = await supabase.from('event_tasks')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')   // filtr, který sedí na všechny
+    .select('id')
+  return { count: data?.length ?? 0, error: error ? error.message : null }
+}
+
 export async function deleteTask(id: string) {
   return supabase.from('event_tasks').delete().eq('id', id)
 }

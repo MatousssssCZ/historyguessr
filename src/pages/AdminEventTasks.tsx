@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { EventForm } from '@/pages/Admin'
 import { CATEGORY_IDS } from '@/components/GameSettings'
 import {
-  listTasks, createTask, createTasks, deleteTask, approveTask, rejectTask, returnTask,
+  listTasks, createTask, createTasks, deleteTask, deleteAllTasks, approveTask, rejectTask, returnTask,
   getEventById, setUserRole, releaseStaleTasks, type EventTask,
 } from '@/lib/editor'
 import EditorLeaderboard from '@/components/EditorLeaderboard'
@@ -17,10 +17,22 @@ export default function AdminEventTasksPage() {
   const [tasks, setTasks] = useState<EventTask[]>([])
   const [review, setReview] = useState<{ task: EventTask; event: Event | null } | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [wiping, setWiping] = useState(false)
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
   const load = useCallback(async () => { await releaseStaleTasks(); setTasks(await listTasks()) }, [])
+
+  async function doDeleteAll() {
+    const n = tasks.length
+    if (!n) return
+    if (!window.confirm(`Opravdu smazat všech ${n} zadání z číselníku? Akci nelze vrátit.`)) return
+    setWiping(true); setErr(null)
+    const { error } = await deleteAllTasks()
+    setWiping(false)
+    if (error) { setErr('Smazání selhalo: ' + error); return }
+    await load()
+  }
   useEffect(() => { load() }, [load])
 
   const pool = tasks.filter(t => t.status === 'todo' || t.status === 'in_progress')
@@ -105,7 +117,15 @@ export default function AdminEventTasksPage() {
             <BulkTaskImport onImported={load}/>
             <RoleGrant/>
             <div style={{ marginTop: 22 }}><EditorLeaderboard meId={user?.id}/></div>
-            <p className="eyebrow" style={{ margin: '26px 0 12px' }}>Zadání v číselníku</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '26px 0 12px' }}>
+              <p className="eyebrow" style={{ margin: 0 }}>Zadání v číselníku ({tasks.length})</p>
+              {tasks.length > 0 && (
+                <button className="btn btn-ghost" disabled={wiping} onClick={doDeleteAll}
+                  style={{ padding: '7px 12px', fontSize: 12.5, color: 'var(--danger, #c0392b)', borderColor: 'var(--danger, #c0392b)' }}>
+                  {wiping ? 'Mažu…' : '🗑 Smazat všechna zadání'}
+                </button>
+              )}
+            </div>
             {pool.length === 0
               ? <div style={{ color: 'var(--ink-3)', fontSize: 14 }}>Zatím žádná zadání.</div>
               : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
