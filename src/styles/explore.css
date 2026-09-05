@@ -362,3 +362,11 @@ body.xp a { color: inherit; }
   box-shadow: var(--hg-shadow-cta);
 }
 .xp-doc-cta:hover { filter: brightness(1.05); }
+
+/* ── FAQ na stránce události (cílené na informační dotazy) ─────────────────── */
+.xp-faq { margin-top: 40px; }
+.xp-faq > h2 { font-family: var(--hg-display); font-weight: 400; font-size: clamp(22px, 3vw, 28px); letter-spacing: -.02em; color: var(--hg-ink-700); margin: 0 0 18px; }
+.xp-faq-item { padding: 14px 0; border-top: 1px solid rgba(31,27,22,.1); max-width: 720px; }
+.xp-faq-item:first-of-type { border-top: none; }
+.xp-faq-item h3 { font-family: var(--hg-ui); font-weight: 700; font-size: 16px; color: var(--hg-ink-700); margin: 0 0 6px; }
+.xp-faq-item p { font-size: 15px; line-height: 1.65; color: var(--hg-body); margin: 0; }

@@ -27,6 +27,7 @@ const UI = {
   cs: {
     home: 'Domů', explore: 'Objevuj historii',
     whatHappened: 'Co se tady stalo?', learnMore: 'Dozvědět se více o události', whyImportant: 'Proč to bylo důležité?',
+    faqTitle: 'Časté otázky', faqWhenQ: 'V jakém roce se {n} odehrálo?', faqWhenA: 'Odehrálo se: {y}.', faqWhatQ: 'Co bylo {n}?', faqPlayQ: 'Kde si {n} můžu vyzkoušet?', faqPlayA: 'V HistoryGuesseru — prozkoumej 360° scénu a uhádni, kde na světě a v jakém roce se událost stala.',
     related: 'Související události', facts: 'Fakta', dateL: 'Datum', placeL: 'Místo',
     periodL: 'Období', yearL: 'Rok', back: 'Zpět', categoryL: 'Kategorie', play: 'Zahrát tuto událost',
     navBadges: 'Odznaky', navFriends: 'Přátelé', navExplore: 'Objevuj',
@@ -63,6 +64,7 @@ const UI = {
   en: {
     home: 'Home', explore: 'Explore history',
     whatHappened: 'What happened here?', learnMore: 'Learn more about this event', whyImportant: 'Why did it matter?',
+    faqTitle: 'FAQ', faqWhenQ: 'In what year did {n} happen?', faqWhenA: 'It happened: {y}.', faqWhatQ: 'What was {n}?', faqPlayQ: 'Where can I try {n}?', faqPlayA: 'On HistoryGuesser — explore a 360° scene and guess where in the world and in what year it happened.',
     related: 'Related events', facts: 'Facts', dateL: 'Date', placeL: 'Place',
     periodL: 'Period', yearL: 'Year', back: 'Back', categoryL: 'Category', play: 'Play this event',
     navBadges: 'Badges', navFriends: 'Friends', navExplore: 'Explore',
@@ -99,6 +101,7 @@ const UI = {
   de: {
     home: 'Start', explore: 'Geschichte entdecken',
     whatHappened: 'Was geschah hier?', learnMore: 'Mehr über dieses Ereignis', whyImportant: 'Warum war es wichtig?',
+    faqTitle: 'Häufige Fragen', faqWhenQ: 'In welchem Jahr geschah {n}?', faqWhenA: 'Es geschah: {y}.', faqWhatQ: 'Was war {n}?', faqPlayQ: 'Wo kann ich {n} ausprobieren?', faqPlayA: 'Auf HistoryGuesser — erkunde eine 360°-Szene und errate, wo auf der Welt und in welchem Jahr es geschah.',
     related: 'Verwandte Ereignisse', facts: 'Fakten', dateL: 'Datum', placeL: 'Ort',
     periodL: 'Epoche', yearL: 'Jahr', back: 'Zurück', categoryL: 'Kategorie', play: 'Dieses Ereignis spielen',
     navBadges: 'Abzeichen', navFriends: 'Freunde', navExplore: 'Entdecken',
@@ -470,7 +473,24 @@ function renderEvent(ev, locale, all) {
           </a>`
   }).join('')
 
-  const ld = [jsonLd(ev, locale, canonical, cat), breadcrumbLd(crumbs)]
+  // FAQ cílená na informační dotazy („kdy/co se stalo") — z GSC dat lidé hledají
+  // přesně tohle. Viditelný blok + FAQPage schema (šance na rich snippet).
+  const faq = [
+    { q: t.faqWhenQ.replace('{n}', title), a: t.faqWhenA.replace('{y}', period) },
+    ...(desc ? [{ q: t.faqWhatQ.replace('{n}', title), a: desc.slice(0, 300) }] : []),
+    { q: t.faqPlayQ.replace('{n}', title), a: t.faqPlayA },
+  ]
+  const faqLd = {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  }
+  const faqHtml = `
+        <section class="xp-faq">
+          <h2>${escapeHtml(t.faqTitle)}</h2>
+          ${faq.map((f) => `<div class="xp-faq-item"><h3>${escapeHtml(f.q)}</h3><p>${escapeHtml(f.a)}</p></div>`).join('\n          ')}
+        </section>`
+
+  const ld = [jsonLd(ev, locale, canonical, cat), breadcrumbLd(crumbs), faqLd]
 
   return `<!doctype html>
 <html lang="${locale}">
@@ -529,6 +549,7 @@ ${ld.map((x) => JSON.stringify(x, null, 2)).join('\n')}
       </div>
 
       ${mapSection(ev, t)}
+      ${faqHtml}
 
       <section class="xp-see">
         <h2>${escapeHtml(t.seeHereTitle)}</h2>
