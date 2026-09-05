@@ -85,6 +85,22 @@ function jsonLd(v) {
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'Organization',
+        '@id': `${BASE}/#org`,
+        name: 'HistoryGuesser',
+        url: `${BASE}/`,
+        logo: `${BASE}/icon-192.png`,
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${BASE}/#website`,
+        name: 'HistoryGuesser',
+        alternateName: ['History Guesser', 'History Guessing Game'],
+        url: `${BASE}/`,
+        inLanguage: ['cs', 'en', 'de'],
+        publisher: { '@id': `${BASE}/#org` },
+      },
+      {
         '@type': 'WebApplication',
         name: 'Historyguesser',
         url: `${BASE}${v.path}`,

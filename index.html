@@ -36,6 +36,22 @@
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "Organization",
+          "@id": "https://historyguesser.net/#org",
+          "name": "HistoryGuesser",
+          "url": "https://historyguesser.net/",
+          "logo": "https://historyguesser.net/icon-192.png"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://historyguesser.net/#website",
+          "name": "HistoryGuesser",
+          "alternateName": ["History Guesser", "History Guessing Game"],
+          "url": "https://historyguesser.net/",
+          "inLanguage": ["cs", "en", "de"],
+          "publisher": { "@id": "https://historyguesser.net/#org" }
+        },
+        {
           "@type": "WebApplication",
           "name": "HistoryGuesser",
           "url": "https://historyguesser.net/",
