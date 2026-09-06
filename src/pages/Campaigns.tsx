@@ -22,6 +22,49 @@ import type { Campaign, CampaignCategory } from '@/types/database'
 const GOLD = '#f5ce8b'
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 
+// ── Obrázky z panoramatu (preview 1. události kampaně) ─────
+function campImage(bundle: CampaignBundle, campId: string): string | null {
+  return bundle.campaignImages[campId] || null
+}
+function categoryImage(bundle: CampaignBundle, cat: CampaignCategory): string | null {
+  const camps = bundle.campaignsByCat[cat.id] ?? []
+  for (const c of camps) { const im = bundle.campaignImages[c.id]; if (im) return im }
+  return cat.hero_image_url || null
+}
+
+// ── Kruhový ukazatel postupu (HVĚZDY / ODEMČENO / DOKONČENO) ──
+function Ring({ value, total, label, dark = false, accent = GOLD }: {
+  value: number; total: number; label: string; dark?: boolean; accent?: string
+}) {
+  const pct = total > 0 ? Math.min(1, value / total) : 0
+  const R = 19, C = 2 * Math.PI * R
+  const track = dark ? 'rgba(255,255,255,0.18)' : 'var(--line)'
+  const ink = dark ? '#fff' : 'var(--ink)'
+  const sub = dark ? 'rgba(245,241,232,0.6)' : 'var(--ink-3)'
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 16,
+      background: dark ? 'rgba(20,16,10,0.5)' : 'var(--surface)',
+      border: `1px solid ${dark ? 'rgba(255,255,255,0.14)' : 'var(--line)'}`,
+      backdropFilter: dark ? 'blur(8px)' : undefined,
+    }}>
+      <svg width={46} height={46} viewBox="0 0 46 46" style={{ flexShrink: 0 }}>
+        <circle cx="23" cy="23" r={R} fill="none" stroke={track} strokeWidth="4"/>
+        <circle cx="23" cy="23" r={R} fill="none" stroke={accent} strokeWidth="4" strokeLinecap="round"
+          strokeDasharray={C} strokeDashoffset={C * (1 - pct)} transform="rotate(-90 23 23)"/>
+        <text x="23" y="28" textAnchor="middle" fontFamily="var(--font-serif)" fontSize="15" fontWeight="600" fill={ink}>{value}</text>
+      </svg>
+      <div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.13em', textTransform: 'uppercase', color: sub, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: ink }}>z {total}</div>
+      </div>
+    </div>
+  )
+}
+
+// Souhrn hvězd + odemčených kategorií (přehled) / dokončených (detail).
+function maxCategoryStars(camps: Campaign[]): number { return camps.length * 3 }
+
 export default function CampaignsPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -40,6 +83,7 @@ export default function CampaignsPage() {
       setBundle({
         categories: [], campaignsByCat: {}, progress: {}, totalStars: 0,
         expeditions: FREE_EXPEDITIONS, isPremium: false, entitlements: FREE_ENTITLEMENTS,
+        campaignImages: {},
       })
     }
     setLoading(false)
@@ -65,14 +109,25 @@ export default function CampaignsPage() {
     )
   }
 
+  const allCamps = Object.values(bundle.campaignsByCat).flat()
+  const maxStars = allCamps.length * 3
+  const unlockedCats = bundle.categories.filter(c => categoryAccess(c, bundle.totalStars, bundle.entitlements).isUnlocked).length
+  const overviewRings = (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      <Ring value={bundle.totalStars} total={maxStars} label={t('camp.hStars')}/>
+      <Ring value={unlockedCats} total={bundle.categories.length} label={t('camp.hUnlocked')} accent="var(--accent)"/>
+    </div>
+  )
+
   return (
     <PageShell maxWidth={1100}>
         <PageHeader
           title={t('camp.title')}
           onBack={isMobile ? () => navigate('/menu') : undefined}
-          actions={<><StarPill stars={bundle.totalStars}/><ExpeditionPill bundle={bundle}/></>}
+          actions={!isMobile ? overviewRings : undefined}
         />
-        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '-14px 0 20px' }}>{t('camp.sub')}</p>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)', margin: '-14px 0 18px', maxWidth: 560 }}>{t('camp.sub')}</p>
+        {isMobile && <div style={{ marginBottom: 18 }}>{overviewRings}</div>}
 
         <CategoriesGrid bundle={bundle} isMobile={isMobile} userId={user?.id} onOpen={(id) => {
           campaignAnalytics.categoryOpened(id, user?.id)
@@ -136,9 +191,12 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
   const acc = categoryAccess(cat, bundle.totalStars, bundle.entitlements)
   const cs = categoryStars(camps, bundle.progress)
   const locked = !acc.isUnlocked
-  const color = cat.color || '#BE6240'
-  // Obrázek kategorie nahraný v administraci (u zamčených jen zešediví, zámek zůstává)
-  const headerImg = cat.hero_image_url || null
+  const premiumLock = locked && acc.lockReason === 'premium'
+  const completedCount = camps.filter(c => (bundle.progress[c.id]?.completed_runs ?? 0) > 0).length
+  const started = completedCount > 0
+  const pct = camps.length ? (completedCount / camps.length) * 100 : 0
+  // Obrázek = panorama z první události kategorie (fallback hero_image_url)
+  const headerImg = categoryImage(bundle, cat)
 
   return (
     <button onClick={() => {
@@ -150,60 +208,90 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
       onOpen(cat.id)
     }} style={{
       position: 'relative', textAlign: 'left', padding: 0, overflow: 'hidden', cursor: locked ? 'not-allowed' : 'pointer',
+      display: 'flex', flexDirection: 'column',
       background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18,
       transition: 'transform 140ms, box-shadow 140ms',
     }}
       onMouseEnter={e => { if (!locked) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px -14px rgba(42,31,23,0.3)' } }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
 
-      {/* Hlavička: ilustrační fotka z události kategorie + barevný scrim, ikona a odznaky */}
+      {/* Panorama hlavička */}
       <div style={{
-        position: 'relative', height: 104, padding: 14,
-        background: locked ? 'var(--paper-300)' : `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        filter: locked ? 'grayscale(0.7)' : 'none', overflow: 'hidden',
+        position: 'relative', height: 168, overflow: 'hidden',
+        background: '#1c150f',
       }}>
-        {headerImg && (
-          <>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${headerImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}cc, ${shade(color, -18)}dd)` }}/>
-          </>
-        )}
-        <span style={{ position: 'relative', fontSize: 30, opacity: locked ? 0.45 : 1, textShadow: headerImg ? '0 1px 6px rgba(0,0,0,0.4)' : 'none' }}>{cat.icon || '📁'}</span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+        {headerImg
+          ? <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${headerImg})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: locked ? 'grayscale(0.6) brightness(0.55)' : 'brightness(0.82)' }}/>
+          : <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${cat.color || '#BE6240'}, ${shade(cat.color || '#BE6240', -22)})`, filter: locked ? 'grayscale(0.6) brightness(0.6)' : 'none' }}/>}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,16,10,.5) 0%, rgba(20,16,10,.05) 45%, rgba(20,16,10,.45) 100%)' }}/>
+
+        {/* Počet kampaní vlevo nahoře */}
+        <span style={{
+          position: 'absolute', top: 12, left: 12, display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: 'rgba(20,16,10,0.6)', backdropFilter: 'blur(6px)', color: '#fff',
+          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+          padding: '5px 10px', borderRadius: 999,
+        }}><Icon name="swords" size={12}/> {t('camp.count', { count: camps.length })}</span>
+
+        {/* Hvězdy / premium vpravo nahoře */}
+        <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
           {cat.is_premium && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4, background: GOLD, color: '#5a4527',
-              fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, padding: '4px 9px', borderRadius: 20,
-            }}>♛ PREMIUM</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: GOLD, color: '#5a4527', fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, padding: '4px 9px', borderRadius: 20 }}>♛ PREMIUM</span>
           )}
           {!locked && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(38,33,28,0.62)',
-              backdropFilter: 'blur(6px)', color: '#fff',
-              fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20,
-            }}><span style={{ color: GOLD }}>★</span> {cs.earned}/{cs.max}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(20,16,10,0.6)', backdropFilter: 'blur(6px)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20 }}>
+              <span style={{ color: GOLD }}>★</span> {cs.earned}/{cs.max}
+            </span>
           )}
         </div>
 
-        {/* Zámek přes hlavičku */}
         {locked && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{
-              width: 52, height: 52, borderRadius: '50%', background: 'rgba(38,33,28,0.45)', backdropFilter: 'blur(4px)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 21,
-            }}>🔒</span>
+            <span style={{ width: 50, height: 50, borderRadius: '50%', background: 'rgba(20,16,10,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.9)' }}><Icon name="lock" size={22}/></span>
           </div>
         )}
       </div>
 
       {/* Tělo */}
-      <div style={{ padding: '14px 16px 16px', opacity: locked ? 0.6 : 1 }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--ink)', letterSpacing: '-0.01em' }}>{localizedTitle(cat)}</div>
-        <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ padding: '15px 17px 16px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--ink)', letterSpacing: '-0.01em', lineHeight: 1.1 }}>{localizedTitle(cat)}</div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 34 }}>
           {locked
-            ? (acc.lockReason === 'premium' ? t('camp.premiumPart') : t('camp.missingStars', { n: acc.missingStars }))
-            : `${t('camp.count', { count: camps.length })}${localizedDescription(cat) ? ` · ${localizedDescription(cat)}` : ''}`}
+            ? (premiumLock ? t('camp.premiumPart') : t('camp.lockedWaiting', { n: camps.length }))
+            : (localizedDescription(cat) || t('camp.count', { count: camps.length }))}
+        </div>
+
+        {/* Progress + CTA */}
+        <div style={{ marginTop: 'auto', paddingTop: 6 }}>
+          {locked ? (
+            premiumLock ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 12, color: '#8a6d2f' }}>
+                <Icon name="lock" size={13}/> {t('camp.premiumPart')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Icon name="lock" size={14}/>
+                <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'var(--line)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.round((bundle.totalStars / Math.max(1, bundle.totalStars + acc.missingStars)) * 100)}%`, background: '#C89A3C' }}/>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: '#8a6d2f', whiteSpace: 'nowrap' }}>{t('camp.stillStars', { n: acc.missingStars })}</span>
+              </div>
+            )
+          ) : (
+            <>
+              <div style={{ height: 6, borderRadius: 999, background: 'var(--line)', overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent)' }}/>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                  {started ? t('camp.doneOf', { done: completedCount, total: camps.length }) : t('camp.notStarted')}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}>
+                  {started ? t('camp.continue') : t('camp.begin')} →
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </button>
@@ -346,11 +434,9 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
           )}
         </div>
         {!isMobile && (
-          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 18, padding: '12px 18px', borderRadius: 14, background: 'rgba(20,16,10,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.14)' }}>
-            <HeroStat label={t('camp.hStars')} value={`${cs.earned} / ${cs.max}`}/>
-            <div style={{ width: 1, height: 34, background: 'rgba(255,255,255,0.18)' }}/>
-            <HeroStat label={t('camp.hDone')} value={`${completedTotal} / ${derived.length}`}/>
-            <div style={{ width: 90, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}><div style={{ height: '100%', width: `${pct}%`, background: '#BE6240' }}/></div>
+          <div style={{ flexShrink: 0, display: 'flex', gap: 12 }}>
+            <Ring value={cs.earned} total={cs.max} label={t('camp.hStars')} dark/>
+            <Ring value={completedTotal} total={derived.length} label={t('camp.hDone')} dark accent="var(--accent)"/>
           </div>
         )}
       </div>
@@ -376,7 +462,13 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
           }}>{f.label} <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: on ? 0.85 : 0.6 }}>{f.count}</span></button>
         )
       })}
-      {!isMobile && <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>{t('camp.starsUnlock')}</span>}
+      {!isMobile && (
+        <span style={{
+          marginLeft: 'auto', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: 420,
+          padding: '8px 14px', borderRadius: 999, background: 'var(--surface)', border: '1px solid var(--line)',
+          fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.3,
+        }}><span style={{ color: GOLD, fontSize: 14 }}>★</span> {t('camp.starsUnlockFull', { n: cs.earned })}</span>
+      )}
     </div>
   )
 
@@ -389,6 +481,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
         : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: 186, gap: 12 }}>
         {visible.map(d => (
           <CampaignCard key={d.c.id} d={d} cat={cat} isMobile={isMobile} categoryStarsEarned={cs.earned}
+            img={campImage(bundle, d.c.id) || d.c.visual_url}
             isContinue={d.c.id === continueId} busy={starting === d.c.id} onPlay={setIntro}/>
         ))}
       </div>
@@ -437,8 +530,8 @@ function HeroStat({ label, value }: { label: string; value: string }) {
 
 type Derived = { c: Campaign; i: number; acc: ReturnType<typeof campaignAccess>; prog: CampaignBundle['progress'][string] | undefined; st: 'completed' | 'playable' | 'locked' }
 
-function CampaignCard({ d, cat, isMobile, isContinue, busy, categoryStarsEarned, onPlay }: {
-  d: Derived; cat: CampaignCategory; isMobile: boolean; isContinue: boolean; busy: boolean; categoryStarsEarned: number; onPlay: (c: Campaign) => void
+function CampaignCard({ d, cat, isMobile, isContinue, busy, categoryStarsEarned, img, onPlay }: {
+  d: Derived; cat: CampaignCategory; isMobile: boolean; isContinue: boolean; busy: boolean; categoryStarsEarned: number; img?: string | null; onPlay: (c: Campaign) => void
 }) {
   const { t } = useTranslation()
   const { c, i, acc, prog, st } = d
@@ -454,8 +547,16 @@ function CampaignCard({ d, cat, isMobile, isContinue, busy, categoryStarsEarned,
   const imgBg: React.CSSProperties = { position: 'relative', flexShrink: 0, overflow: 'hidden', background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})` }
   const imgInner = (
     <>
-      {c.visual_url && <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${c.visual_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>}
-      {locked && <div style={{ position: 'absolute', inset: 0, background: 'rgba(30,26,20,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.85)' }}><Icon name="lock" size={22}/></div>}
+      {img && <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: locked ? 'grayscale(0.55) brightness(0.6)' : 'brightness(0.9)' }}/>}
+      {locked && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(20,16,10,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {reqStars > 0
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(20,16,10,0.72)', backdropFilter: 'blur(5px)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '6px 12px', borderRadius: 999 }}>
+                <Icon name="lock" size={13}/> {t('camp.stillStars', { n: Math.max(0, reqStars - curStars) })}
+              </span>
+            : <Icon name="lock" size={22}/>}
+        </div>
+      )}
     </>
   )
   const kicker = (label: string) => (
@@ -474,11 +575,16 @@ function CampaignCard({ d, cat, isMobile, isContinue, busy, categoryStarsEarned,
           <span style={{ position: 'absolute', top: 10, left: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '4px 9px', borderRadius: 999, background: 'var(--accent)', color: '#fff' }}>{t('camp.continueHere')}</span>
         </div>
         <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '12px 14px 14px' : '16px 18px', display: 'flex', flexDirection: 'column' }}>
-          {kicker(`${t('camp.continueHere')} · ${t('camp.campNo', { n: i + 1 })}`)}
+          {kicker(`${t('camp.campNo', { n: i + 1 })} · ${t('camp.eventsShort', { n: c.rounds_count })}`)}
           <div style={{ margin: '6px 0 4px' }}>{title}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-3)' }}>{t('camp.eventsShort', { n: c.rounds_count })}</div>
+          {localizedDescription(c) && (
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{localizedDescription(c)}</div>
+          )}
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginTop: isMobile ? 12 : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
-            <div style={{ color: 'var(--line-strong)', fontSize: 15, letterSpacing: 3 }}>☆☆☆</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <div style={{ color: 'var(--line-strong)', fontSize: 15, letterSpacing: 3, flexShrink: 0 }}>☆☆☆</div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{t('camp.maxPointsStars', { pts: (c.rounds_count * 1000).toLocaleString(currentLocale()) })}</span>
+            </div>
             <button className="btn btn-accent" style={{ fontSize: 14, minWidth: 110, width: isMobile ? '100%' : 'auto' }} disabled={busy} onClick={(e) => { e.stopPropagation(); go() }}>{busy ? '…' : t('camp.play')} →</button>
           </div>
         </div>
@@ -547,6 +653,7 @@ function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
 }) {
   const { t } = useTranslation()
   const color = cat.color || '#BE6240'
+  const introImg = campImage(bundle, campaign.id) || campaign.visual_url
   const prog = bundle.progress[campaign.id]
   const played = !!prog?.completed_runs
 
@@ -565,10 +672,10 @@ function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
           position: 'relative', height: 150, flexShrink: 0,
           background: `linear-gradient(155deg, ${color}, ${shade(color, -18)})`,
         }}>
-          {campaign.visual_url && (
+          {introImg && (
             <>
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${campaign.visual_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
-              <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${color}bb, ${shade(color, -18)}dd)` }}/>
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${introImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}/>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,16,10,.25), rgba(20,16,10,.7))' }}/>
             </>
           )}
           <div style={{ position: 'absolute', left: 18, right: 18, bottom: 14, display: 'flex', alignItems: 'flex-end', gap: 10 }}>

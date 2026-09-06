@@ -1192,6 +1192,7 @@ export interface CampaignBundle {
   expeditions: Expeditions
   isPremium: boolean
   entitlements: Entitlements
+  campaignImages: Record<string, string>  // campaign_id → panorama/preview 1. události
 }
 
 /** Nahraje (zkomprimovaný) obrázek kategorie do bucketu `events` a vrátí veřejnou URL.
@@ -1225,6 +1226,26 @@ export async function getCampaignBundle(userId: string): Promise<CampaignBundle>
 
   const progress: Record<string, UserCampaignProgress> = {}
   for (const p of (progRes.data ?? []) as UserCampaignProgress[]) progress[p.campaign_id] = p
+
+  // Obrázek pro každou kampaň = panorama (preview) její první aktivní události.
+  // Zadání: karty kampaní berou vizuál z panoramatu (prozatím), ne z visual_url.
+  const campaignImages: Record<string, string> = {}
+  const campIds = campaigns.map(c => c.id)
+  if (campIds.length) {
+    const { data: links } = await supabase
+      .from('campaign_events')
+      .select('campaign_id, position, is_active, events(preview_url, panorama_url)')
+      .in('campaign_id', campIds)
+      .order('position')
+    type ImgRow = { campaign_id: string; position: number; is_active: boolean; events: { preview_url: string | null; panorama_url: string | null } | { preview_url: string | null; panorama_url: string | null }[] | null }
+    for (const l of (links ?? []) as unknown as ImgRow[]) {
+      if (!l.is_active || !l.events || campaignImages[l.campaign_id]) continue
+      const ev = Array.isArray(l.events) ? l.events[0] : l.events
+      const img = ev?.preview_url || ev?.panorama_url
+      if (img && img !== 'pending') campaignImages[l.campaign_id] = img
+    }
+  }
+
   return {
     categories, campaignsByCat, progress,
     totalStars: globalStars(progress),
@@ -1232,6 +1253,7 @@ export async function getCampaignBundle(userId: string): Promise<CampaignBundle>
     // Premium z entitlementů (respektuje expiraci)
     isPremium: isPremiumUser(ent),
     entitlements: ent,
+    campaignImages,
   }
 }
 
