@@ -75,9 +75,10 @@ export const categoryPath = (l, key) => `/${l}/${PATH_SEG[l].explore}/${CATEGORI
 export const eventPath = (l, slug) => `/${l}/${PATH_SEG[l].events}/${slug}`
 export const campaignPath = (l, slug) => `/${l}/${PATH_SEG[l].campaigns}/${slug}`
 export const abs = (p) => `${SITE_ORIGIN}${p}`
-// Přes host-first bránu `/guest?next=`: přihlášeného rovnou přesměruje na hru,
+// „Hrát tuto událost" → rovnou jedno kolo s danou událostí (/game?event=ID),
+// přes host-first bránu `/guest?next=`: přihlášeného rovnou pustí do hry,
 // nepřihlášeného tiše založí jako hosta a pak pustí do hry (žádná registrace).
-export const playEventPath = (id) => `/guest?next=${encodeURIComponent(`/play?event=${id}`)}`
+export const playEventPath = (id) => `/guest?next=${encodeURIComponent(`/game?event=${id}`)}`
 
 /** Slug události pro daný jazyk (perzistovaný sloupec, fallback na base slug). */
 export function eventSlugFor(ev, locale) {

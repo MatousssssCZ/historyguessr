@@ -199,6 +199,13 @@ export async function getRandomEvents(count = 5, filters?: EventFilters): Promis
   return selectedIds.map(id => byId.get(id)).filter(Boolean) as Event[]
 }
 
+/** Načte jednu publikovanou událost podle ID (pro „Hrát tuto událost" z veřejné stránky). */
+export async function getEventById(id: string): Promise<Event | null> {
+  const { data } = await supabase
+    .from('events').select('*').eq('id', id).eq('published', true).maybeSingle()
+  return (data as Event) ?? null
+}
+
 export interface CandidateEvent {
   id: string
   title: string

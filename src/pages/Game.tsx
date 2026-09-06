@@ -16,7 +16,7 @@ import Icon from '@/components/Icon'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
-import { addEventRating, startCampaignAttempt, getEventsByIds } from '@/lib/supabase'
+import { addEventRating, startCampaignAttempt, getEventsByIds, getEventById } from '@/lib/supabase'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
@@ -61,6 +61,9 @@ export default function GamePage() {
   // Volby hry přijdou buď z route state (navigace v appce), nebo z URL query
   // (?rounds=5&cats=war,inventions) — to přežije redirect přes /guest u hostů.
   const options = (location.state as GameOptions | null) ?? parseQueryOptions(location.search)
+  // „Hrát tuto událost" z veřejné event stránky → /game?event=ID = jedno kolo
+  // právě s touto událostí (přeskočí předsálí). Přežije redirect přes /guest.
+  const forcedEventId = new URLSearchParams(location.search).get('event')
   const {
     state, currentEvent, lastRound, canSubmit,
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
@@ -69,6 +72,13 @@ export default function GamePage() {
 
   useEffect(() => {
     if (state.phase !== 'idle') return
+    // Konkrétní událost z veřejné stránky: načti ji a spusť jako jedno kolo
+    if (forcedEventId) {
+      getEventById(forcedEventId)
+        .then(ev => { if (ev) startGame({ events: [ev], rounds: 1 }); else startGame(options) })
+        .catch(() => startGame(options))
+      return
+    }
     // Pokračování v rozehrané hře; když se nepodaří, spusť normálně
     if (options?.resume) { if (!resumeGame()) startGame() }
     else startGame(options)
