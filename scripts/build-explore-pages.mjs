@@ -367,19 +367,50 @@ function storyHtml(story, desc, t) {
         </details>`
 }
 
-// Sekce „Kde se to stalo" — keyless OSM embed s markerem na přesné poloze.
+// Sekce „Kde se to stalo" — MapLibre mapa (stejný styl „bright" + oranžový pin
+// jako ve hře), líně načtená z CDN až při scrollu k ní (rychlost + SEO).
 // Přidává unikátní hodnotu (přesné místo + mapa), kterou textové heslo nemá.
+const MAPLIBRE_V = '6.6.0'
 function mapSection(ev, t) {
   if (ev.lat == null || ev.lng == null) return ''
-  const d = 0.06
-  const bbox = `${(ev.lng - d).toFixed(4)},${(ev.lat - d).toFixed(4)},${(ev.lng + d).toFixed(4)},${(ev.lat + d).toFixed(4)}`
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${ev.lat.toFixed(5)},${ev.lng.toFixed(5)}`
-  const larger = `https://www.openstreetmap.org/?mlat=${ev.lat.toFixed(5)}&mlon=${ev.lng.toFixed(5)}#map=6/${ev.lat.toFixed(3)}/${ev.lng.toFixed(3)}`
+  const lat = ev.lat, lng = ev.lng
+  const larger = `https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lng.toFixed(5)}#map=6/${lat.toFixed(3)}/${lng.toFixed(3)}`
   return `<section class="xp-loc">
         <h2>${escapeHtml(t.locationL)}</h2>
-        <iframe class="xp-map" title="${escapeHtml(t.locationL)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe>
-        <p class="xp-coords">${escapeHtml(t.coordsL)}: ${ev.lat.toFixed(4)}, ${ev.lng.toFixed(4)} · <a href="${larger}" target="_blank" rel="noopener">${escapeHtml(t.viewLarger)}</a></p>
-      </section>`
+        <div class="xp-map" id="xp-map-loc" role="img" aria-label="${escapeHtml(t.locationL)}" data-lat="${lat}" data-lng="${lng}"></div>
+        <p class="xp-coords">${escapeHtml(t.coordsL)}: ${lat.toFixed(4)}, ${lng.toFixed(4)} · <a href="${larger}" target="_blank" rel="noopener">${escapeHtml(t.viewLarger)}</a></p>
+      </section>
+      <script>
+      (function(){
+        var el=document.getElementById('xp-map-loc'); if(!el) return;
+        var lat=parseFloat(el.dataset.lat), lng=parseFloat(el.dataset.lng), started=false;
+        function load(cb){
+          if(window.maplibregl) return cb();
+          var css=document.createElement('link'); css.rel='stylesheet';
+          css.href='https://unpkg.com/maplibre-gl@${MAPLIBRE_V}/dist/maplibre-gl.css'; document.head.appendChild(css);
+          var s=document.createElement('script'); s.src='https://unpkg.com/maplibre-gl@${MAPLIBRE_V}/dist/maplibre-gl.js';
+          s.onload=cb; document.head.appendChild(s);
+        }
+        function init(){
+          if(started) return; started=true;
+          load(function(){
+            if(!window.maplibregl) return;
+            var map=new maplibregl.Map({container:el, style:'https://tiles.openfreemap.org/styles/bright', center:[lng,lat], zoom:4.5, attributionControl:true});
+            map.scrollZoom.disable();
+            map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+            map.on('load',function(){
+              var d=document.createElement('div'); d.style.cssText='width:26px;height:34px';
+              d.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 22 28" style="display:block"><path d="M11 27s9-9 9-16a9 9 0 1 0-18 0c0 7 9 16 9 16Z" fill="#d97757" stroke="#b85a3e" stroke-width="1"/><circle cx="11" cy="11" r="3.2" fill="#fff"/></svg>';
+              new maplibregl.Marker({element:d, anchor:'bottom'}).setLngLat([lng,lat]).addTo(map);
+            });
+          });
+        }
+        if('IntersectionObserver' in window){
+          var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){io.disconnect();init();}});},{rootMargin:'250px'});
+          io.observe(el);
+        } else { init(); }
+      })();
+      </script>`
 }
 
 // Horní navigační pilulka (jako v appce) — statické odkazy do sekcí appky.

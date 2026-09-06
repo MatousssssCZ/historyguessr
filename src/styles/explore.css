@@ -301,7 +301,9 @@ body.xp a { color: inherit; }
 .xp-map {
   width: 100%; height: 300px; border: 1px solid rgba(31,27,22,.12);
   border-radius: 14px; display: block; background: var(--hg-paper-sunk);
+  overflow: hidden; position: relative;
 }
+.xp-map .maplibregl-map { border-radius: 14px; }
 .xp-coords { margin-top: 10px; font-size: 13.5px; color: var(--hg-body-soft); }
 .xp-coords a { color: var(--hg-brand-text); font-weight: 600; }
 .xp-see p { max-width: 720px; font-size: 15px; line-height: 1.72; color: var(--hg-body); margin: 0 0 16px; }
