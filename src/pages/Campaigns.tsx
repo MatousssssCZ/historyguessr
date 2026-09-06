@@ -481,7 +481,7 @@ function CategoryView({ bundle, categoryId, isMobile, userId, onBack, onReload }
         : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: 186, gap: 12 }}>
         {visible.map(d => (
           <CampaignCard key={d.c.id} d={d} cat={cat} isMobile={isMobile} categoryStarsEarned={cs.earned}
-            img={campImage(bundle, d.c.id) || d.c.visual_url}
+            img={d.c.visual_url || campImage(bundle, d.c.id)}
             isContinue={d.c.id === continueId} busy={starting === d.c.id} onPlay={setIntro}/>
         ))}
       </div>
@@ -653,7 +653,7 @@ function CampaignIntro({ campaign, cat, bundle, busy, onStart, onClose }: {
 }) {
   const { t } = useTranslation()
   const color = cat.color || '#BE6240'
-  const introImg = campImage(bundle, campaign.id) || campaign.visual_url
+  const introImg = campaign.visual_url || campImage(bundle, campaign.id)
   const prog = bundle.progress[campaign.id]
   const played = !!prog?.completed_runs
 
