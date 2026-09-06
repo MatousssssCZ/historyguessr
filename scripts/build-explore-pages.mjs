@@ -370,7 +370,10 @@ function storyHtml(story, desc, t) {
 // Sekce „Kde se to stalo" — MapLibre mapa (stejný styl „bright" + oranžový pin
 // jako ve hře), líně načtená z CDN až při scrollu k ní (rychlost + SEO).
 // Přidává unikátní hodnotu (přesné místo + mapa), kterou textové heslo nemá.
-const MAPLIBRE_V = '6.6.0'
+// Pozn.: appka bundluje maplibre-gl 6.6.0, ale ta na veřejném CDN (unpkg) není;
+// pro statické stránky proto bereme stabilní veřejnou 5.x (API Map/Marker/
+// NavigationControl je kompatibilní, styl OpenFreeMap „bright" funguje stejně).
+const MAPLIBRE_V = '5.6.1'
 function mapSection(ev, t) {
   if (ev.lat == null || ev.lng == null) return ''
   const lat = ev.lat, lng = ev.lng
