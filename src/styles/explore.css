@@ -59,10 +59,10 @@ body.xp a { color: inherit; }
 .xp-hero-scrim { position: absolute; inset: 0; background: var(--hg-scrim); pointer-events: none; }
 .xp-topbar {
   position: relative; z-index: 1;
-  display: flex; align-items: center; justify-content: space-between;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   height: 74px; padding: 0 26px; gap: 16px;
 }
-.xp-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--hg-display); font-size: 19px; text-decoration: none; color: var(--hg-paper); }
+.xp-logo { justify-self: start; display: inline-flex; align-items: center; gap: 10px; font-family: var(--hg-display); font-size: 19px; text-decoration: none; color: var(--hg-paper); }
 .xp-logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--hg-brand); display: inline-block; }
 /* Horní navigační pilulka (jako v appce) */
 .xp-nav { display: flex; gap: 3px; padding: 5px; background: rgba(24,20,15,.5); border: 1px solid rgba(251,247,240,.16); border-radius: 15px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
