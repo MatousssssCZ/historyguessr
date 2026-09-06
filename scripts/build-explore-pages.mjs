@@ -776,9 +776,17 @@ function staticPath(locale, pageKey) {
   return `/${locale}/${STATIC[locale][pageKey].slug}`
 }
 
+// Popisky právních stránek pro patičku (crawler je díky tomu najde i ze statických stránek).
+const LEGAL_LABELS = {
+  cs: { privacy: 'Ochrana údajů', terms: 'Podmínky použití' },
+  en: { privacy: 'Privacy', terms: 'Terms of Use' },
+  de: { privacy: 'Datenschutz', terms: 'Nutzungsbedingungen' },
+}
+
 // Sdílená patička se stejnými odkazy na všech stránkách (prolinkování).
 function footerHtml(locale) {
   const t = UI[locale]
+  const legal = LEGAL_LABELS[locale] || LEGAL_LABELS.cs
   return `  <footer class="xp-footer">
     <nav class="xp-footer-links" aria-label="footer">
       <a href="${exploreListPath(locale)}">${escapeHtml(t.explore_cta)}</a>
@@ -786,6 +794,8 @@ function footerHtml(locale) {
       <a href="${staticPath(locale, 'daily')}">${escapeHtml(STATIC[locale].daily.title)}</a>
       <a href="${staticPath(locale, 'howto')}">${escapeHtml(STATIC[locale].howto.title)}</a>
       <a href="${staticPath(locale, 'about')}">${escapeHtml(STATIC[locale].about.title)}</a>
+      <a href="/privacy">${escapeHtml(legal.privacy)}</a>
+      <a href="/terms">${escapeHtml(legal.terms)}</a>
     </nav>
     <div class="xp-footer-brand"><a href="/menu">Historyguesser</a> · ${escapeHtml(t.tagline)}</div>
   </footer>`
