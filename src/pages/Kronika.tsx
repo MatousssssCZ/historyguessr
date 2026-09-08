@@ -52,9 +52,9 @@ export default function KronikaPage() {
         </div>
         {tab === 'relics' && <RelicsTab bundle={bundle} isMobile={isMobile} onOpen={setDetail} statsData={statsData}/>}
         {tab === 'badges' && (
-          <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px' }}>
             {statsData.loading ? <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
-              : <BadgesSections data={statsData}/>}
+              : <BadgesSections data={statsData} wide/>}
           </div>
         )}
       </div>

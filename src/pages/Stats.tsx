@@ -173,23 +173,28 @@ export function StatsSections({ data, onPlay }: { data: StatsData; onPlay?: () =
   )
 }
 
-/** Odznaky (tituly + relikvie z odměn) — bez shellu, s vlastním přepínačem. */
-export function BadgesSections({ data }: { data: StatsData }) {
+/** Odznaky (tituly + relikvie z odměn) — bez shellu, s vlastním přepínačem.
+ *  `wide` = širší layout Kroniky (tituly do dvou sloupců). */
+export function BadgesSections({ data, wide }: { data: StatsData; wide?: boolean }) {
   const { t } = useTranslation()
   const { stats, catHits, rewards } = data
   const [achTab, setAchTab] = useState<'titles' | 'relics'>('titles')
   if (!stats) return null
+  const earnedTitles = ACHIEVEMENTS.filter(cat => (catHits[cat.id] ?? 0) >= (cat.tiers[0]?.count ?? 1)).length
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('stats.achievements')}</span>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('stats.achievements')}</div>
+          <h3 style={{ margin: '8px 0 0', fontFamily: 'var(--font-serif)', fontSize: wide ? 26 : 22, color: 'var(--ink)', letterSpacing: '-0.02em' }}>{t('kron.badgesTitle')}</h3>
+        </div>
         <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 3, gap: 3 }}>
-          {([['titles', t('stats.tabTitles')], ['relics', `${t('stats.tabRelics')}${rewards.length ? ` · ${rewards.length}` : ''}`]] as const).map(([tab, lbl]) => {
+          {([['titles', `${t('stats.tabTitles')} · ${earnedTitles}/${ACHIEVEMENTS.length}`], ['relics', `${t('stats.tabRelics')}${rewards.length ? ` · ${rewards.length}` : ''}`]] as const).map(([tab, lbl]) => {
             const on = achTab === tab
             return (
               <button key={tab} onClick={() => setAchTab(tab)} style={{
-                border: 'none', padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5,
-                fontFamily: 'var(--font-sans)', fontWeight: on ? 600 : 500,
+                border: 'none', padding: '8px 15px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5,
+                fontFamily: 'var(--font-sans)', fontWeight: on ? 700 : 500,
                 background: on ? 'var(--surface)' : 'transparent', color: on ? 'var(--ink)' : 'var(--ink-3)',
                 boxShadow: on ? '0 1px 3px rgba(42,31,23,0.1)' : 'none',
               }}>{lbl}</button>
@@ -199,9 +204,11 @@ export function BadgesSections({ data }: { data: StatsData }) {
       </div>
       {achTab === 'titles' ? (
         <>
-          <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
-          <div style={{ marginBottom: 12 }}><StreakLadder streak={stats.dailyStreak} tone="light"/></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '16px 17px', marginBottom: 16 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 12 }}>{t('stats.achHowto')}</div>
+            <StreakLadder streak={stats.dailyStreak} tone="light"/>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: wide ? 'repeat(auto-fill, minmax(320px, 1fr))' : '1fr', gap: 12, alignItems: 'start' }}>
             {ACHIEVEMENTS.map(cat => <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>)}
           </div>
         </>
