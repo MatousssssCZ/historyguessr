@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   getReportOverview, getReportMultiplayer, getReportDailySeries, getReportCategories,
-  getReportEventsRanked, getReportDailyChallenge,
-  type DailySeriesRow, type CategoryRow, type RankedEvent, type DailyChallengeRow,
+  getReportEventsRanked, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview,
+  type DailySeriesRow, type CategoryRow, type RankedEvent, type DailyChallengeRow, type CampaignReportRow,
 } from '@/lib/supabase'
 
 const PERIODS = [7, 30, 90] as const
@@ -19,14 +19,16 @@ export default function AdminReportsPage() {
   const [cats, setCats] = useState<CategoryRow[]>([])
   const [events, setEvents] = useState<RankedEvent[]>([])
   const [daily, setDaily] = useState<DailyChallengeRow[]>([])
+  const [campOv, setCampOv] = useState<Record<string, number>>({})
+  const [camps, setCamps] = useState<CampaignReportRow[]>([])
   const [busy, setBusy] = useState(true)
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
   // Stálá data (nezávislá na období)
   useEffect(() => {
-    Promise.all([getReportOverview(), getReportMultiplayer(), getReportCategories(), getReportEventsRanked()])
-      .then(([o, m, c, e]) => { setOverview(o); setMp(m); setCats(c); setEvents(e) })
+    Promise.all([getReportOverview(), getReportMultiplayer(), getReportCategories(), getReportEventsRanked(), getReportCampaignsOverview(), getReportCampaigns()])
+      .then(([o, m, c, e, co, cr]) => { setOverview(o); setMp(m); setCats(c); setEvents(e); setCampOv(co); setCamps(cr) })
       .catch(() => {})
   }, [])
 
@@ -93,6 +95,18 @@ export default function AdminReportsPage() {
               ))}
             </div>
           )}
+        </Section>
+
+        {/* Kampaně — hraní */}
+        <Section title="Kampaně — hraní">
+          <Grid>
+            <Kpi label="Odehraných pokusů" value={campOv.attempts}/>
+            <Kpi label="Dokončení" value={campOv.completions} hl/>
+            <Kpi label="Hráčů" value={campOv.players}/>
+            <Kpi label="Hraných kampaní" value={campOv.campaigns_played}/>
+            <Kpi label="Na 3 hvězdy" value={campOv.perfect_runs}/>
+          </Grid>
+          <div style={{ marginTop: 14 }}><CampaignTable rows={camps}/></div>
         </Section>
 
         {/* Top / Bottom události */}
@@ -171,6 +185,46 @@ function EventList({ rows }: { rows: RankedEvent[] }) {
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>{e.play_count}×</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+function CampaignTable({ rows }: { rows: CampaignReportRow[] }) {
+  if (rows.length === 0) return <Empty/>
+  const maxComp = Math.max(1, ...rows.map(r => r.completions))
+  const th: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, padding: '0 8px', textAlign: 'right', whiteSpace: 'nowrap' }
+  const td: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--ink)', padding: '7px 8px', textAlign: 'right', whiteSpace: 'nowrap' }
+  return (
+    <div style={{ overflowX: 'auto', border: '1px solid var(--line)', borderRadius: 12 }}>
+      <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 640 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid var(--line)' }}>
+            <th style={{ ...th, textAlign: 'left', paddingLeft: 12 }}>Kampaň</th>
+            <th style={{ ...th, textAlign: 'left' }}>Kategorie</th>
+            <th style={th}>Pokusy</th>
+            <th style={th}>Dokončení</th>
+            <th style={th}>Hráči</th>
+            <th style={th}>Ø ★</th>
+            <th style={th}>Ø skóre</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.campaign_id} style={{ borderBottom: '1px solid var(--line)' }}>
+              <td style={{ padding: '7px 8px 7px 12px', fontSize: 13, color: 'var(--ink)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.campaign}</td>
+              <td style={{ padding: '7px 8px', fontSize: 12, color: 'var(--ink-3)', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.category}</td>
+              <td style={td}>{r.attempts}</td>
+              <td style={{ ...td, position: 'relative' }}>
+                <span style={{ position: 'relative', zIndex: 1, fontWeight: 700 }}>{r.completions}</span>
+                <span aria-hidden style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', height: 16, width: `${(r.completions / maxComp) * 70}%`, background: 'rgba(217,119,87,0.16)', borderRadius: 4 }}/>
+              </td>
+              <td style={td}>{r.players}</td>
+              <td style={td}>{r.avgStars != null ? r.avgStars.toFixed(2) : '—'}</td>
+              <td style={td}>{r.avgScore != null ? r.avgScore.toLocaleString('cs-CZ') : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

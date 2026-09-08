@@ -677,6 +677,21 @@ export async function getReportDailyChallenge(days: number): Promise<DailyChalle
   return (data ?? []) as DailyChallengeRow[]
 }
 
+export interface CampaignReportRow {
+  campaign_id: string; campaign: string; category: string
+  attempts: number; completions: number; players: number
+  avgStars: number | null; avgScore: number | null
+}
+export const getReportCampaignsOverview = () => reportKV('report_campaigns_overview')
+export async function getReportCampaigns(): Promise<CampaignReportRow[]> {
+  const { data } = await supabase.rpc('report_campaigns')
+  return ((data ?? []) as Record<string, unknown>[]).map(r => ({
+    campaign_id: String(r.campaign_id), campaign: String(r.campaign ?? ''), category: String(r.category ?? ''),
+    attempts: Number(r.attempts) || 0, completions: Number(r.completions) || 0, players: Number(r.players) || 0,
+    avgStars: r.avg_stars == null ? null : Number(r.avg_stars), avgScore: r.avg_score == null ? null : Number(r.avg_score),
+  }))
+}
+
 // ─── Ratings ──────────────────────────────────────────────
 
 export async function addEventRating(eventId: string, rating: number) {
