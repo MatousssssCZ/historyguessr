@@ -8,6 +8,7 @@ import {
   getEventById, setUserRole, releaseStaleTasks, type EventTask,
 } from '@/lib/editor'
 import EditorLeaderboard from '@/components/EditorLeaderboard'
+import { exportXLS } from '@/lib/xlsExport'
 import type { Event } from '@/types/database'
 
 export default function AdminEventTasksPage() {
@@ -97,6 +98,11 @@ export default function AdminEventTasksPage() {
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Administrace</button>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>📋 Zadání pro editory</h1>
+        <button className="btn btn-ghost" style={{ marginLeft: 'auto', padding: '7px 12px', fontSize: 13 }}
+          title="Export všech zadání do XLSX (název + rok)"
+          onClick={() => exportXLS('editor-zadani.xlsx', 'Zadání', [['Název události', 'Rok'], ...tasks.map(t => [t.title, t.year ?? ''] as (string | number)[])])}>
+          ⬇ Export XLS
+        </button>
       </header>
 
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '24px 24px 48px' }}>

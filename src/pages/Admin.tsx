@@ -7,6 +7,7 @@ import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished,
 import { formatYear } from '@/lib/scoring'
 import { encodePanoramaUrl } from '@/lib/panorama'
 import { generateEventDraft, generatePanorama, generateIllustration, generateStory } from '@/lib/ai'
+import { exportXLS } from '@/lib/xlsExport'
 import type { Event, EventStory } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
 
@@ -367,6 +368,15 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
             style={{ padding: '7px 12px', fontSize: 13, borderColor: needsFix ? 'var(--accent)' : undefined, color: needsFix ? 'var(--accent)' : undefined, fontWeight: needsFix ? 700 : undefined }}
           >
             ⚠ Ke opravě{attention.length > 0 ? ` (${attention.length})` : ''}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => exportXLS('udalosti.xlsx', 'Události', [['Název události', 'Rok'], ...shown.map(e => [e.title, e.year] as (string | number)[])])}
+            title="Export zobrazených událostí do XLSX (název + rok, př. n. l. se znaménkem −)"
+            style={{ padding: '7px 12px', fontSize: 13 }}
+          >
+            ⬇ Export XLS
           </button>
           <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>
             {shown.length} / {total}

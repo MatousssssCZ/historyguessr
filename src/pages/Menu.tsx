@@ -287,7 +287,7 @@ export default function MenuPage() {
     const nav: { label: string; onClick?: () => void; href?: string; active?: boolean }[] = [
       { label: t('menu.navHome'), onClick: () => {}, active: true },
       { label: t('menu.campaigns'), onClick: () => navigate('/campaigns') },
-      { label: t('menu.navBadges'), onClick: () => navigate('/stats') },
+      { label: t('menu.navKronika'), onClick: () => navigate('/kronika') },
       // Přátelé jsou jen pro registrované (host = hra bez registrace)
       ...(isAnonymous ? [] : [{ label: t('menu.navFriends'), onClick: () => navigate('/friends') }]),
       { label: t('menu.navExplore'), href: `/${eloc}/${exSeg}` },

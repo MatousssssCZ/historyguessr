@@ -1108,6 +1108,41 @@ export async function deleteCampaign(id: string) {
   return supabase.from('campaigns').delete().eq('id', id)
 }
 
+/** Řádky pro XLS export kampaní: [kategorie, kampaň, událost, popis události]. */
+export async function getCampaignsExport(): Promise<string[][]> {
+  const [catsRes, campsRes] = await Promise.all([
+    supabase.from('campaign_categories').select('id, title').order('seq'),
+    supabase.from('campaigns').select('id, title, category_id, seq').order('seq'),
+  ])
+  const cats = new Map((catsRes.data ?? []).map((c: { id: string; title: string }) => [c.id, c.title]))
+  const camps = (campsRes.data ?? []) as { id: string; title: string; category_id: string }[]
+  const rows: string[][] = []
+  if (!camps.length) return rows
+
+  const { data: links } = await supabase
+    .from('campaign_events')
+    .select('campaign_id, position, is_active, events(title, description)')
+    .in('campaign_id', camps.map(c => c.id))
+    .order('position')
+  type LinkRow = { campaign_id: string; position: number; is_active: boolean; events: { title: string; description: string | null } | { title: string; description: string | null }[] | null }
+  const byCamp = new Map<string, { pos: number; title: string; desc: string }[]>()
+  for (const l of (links ?? []) as unknown as LinkRow[]) {
+    if (l.is_active === false || !l.events) continue
+    const ev = Array.isArray(l.events) ? l.events[0] : l.events
+    if (!ev) continue
+    const arr = byCamp.get(l.campaign_id) ?? []
+    arr.push({ pos: l.position, title: ev.title, desc: ev.description ?? '' })
+    byCamp.set(l.campaign_id, arr)
+  }
+  for (const c of camps) {
+    const catName = cats.get(c.category_id) ?? ''
+    const evs = (byCamp.get(c.id) ?? []).sort((a, b) => a.pos - b.pos)
+    if (!evs.length) rows.push([catName, c.title, '', ''])
+    else for (const e of evs) rows.push([catName, c.title, e.title, e.desc])
+  }
+  return rows
+}
+
 /** Důvody, proč kampaň nelze publikovat (server, migrace 034). Prázdné = OK. */
 export async function getCampaignPublishErrors(campaignId: string): Promise<string[]> {
   const { data, error } = await supabase.rpc('campaign_publish_errors', { p_campaign_id: campaignId })

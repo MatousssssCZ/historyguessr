@@ -7,8 +7,9 @@ import {
   getAdminCampaignCategories, createCampaignCategory, updateCampaignCategory, deleteCampaignCategory,
   getAdminCampaigns, createCampaign, updateCampaign, deleteCampaign,
   getCampaignEvents, setCampaignEvents, getCampaignPublishErrors, duplicateCampaign,
-  uploadCategoryImage,
+  uploadCategoryImage, getCampaignsExport,
 } from '@/lib/supabase'
+import { exportXLS } from '@/lib/xlsExport'
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
 import {
@@ -122,9 +123,16 @@ function CategoryList({ categories, onOpen, onReload }: {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 10 }}>
         <p className="eyebrow" style={{ margin: 0 }}>Kategorie</p>
-        <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => setEditing('new')}>+ Nová kategorie</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost" style={{ fontSize: 13 }} title="Export všech kampaní do XLSX (kategorie · kampaň · událost · popis)"
+            onClick={async () => {
+              const data = await getCampaignsExport()
+              await exportXLS('kampane.xlsx', 'Kampaně', [['Název kategorie', 'Název kampaně', 'Název události', 'Popis události'], ...data])
+            }}>⬇ Export XLS</button>
+          <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => setEditing('new')}>+ Nová kategorie</button>
+        </div>
       </div>
 
       {categories.length === 0 && (
