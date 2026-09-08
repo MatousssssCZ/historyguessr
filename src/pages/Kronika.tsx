@@ -95,14 +95,14 @@ function KronikaHero({ bundle, isMobile }: { bundle: KronikaBundle; isMobile: bo
           <p style={{ margin: '8px 0 0', maxWidth: 520, fontSize: isMobile ? 13 : 14, lineHeight: 1.6, color: 'rgba(251,247,240,0.75)' }}>{t('kron.sub')}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
-          <div style={{ flex: isMobile ? '1 1 150px' : 'none', minWidth: 0, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ flex: isMobile ? '1 1 100%' : 'none', minWidth: 0, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
             <RingDial pct={pct} value={String(bundle.ownedTotal)} sub={`/${bundle.total}`} color={GOLD}/>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.15em', color: 'rgba(251,247,240,0.6)' }}>{t('kron.relics')}</div>
               <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4, whiteSpace: 'nowrap' }}>{t('kron.collectionPct', { n: pct })}</div>
             </div>
           </div>
-          <div style={{ flex: isMobile ? '1 1 150px' : 'none', minWidth: 0, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ flex: isMobile ? '1 1 100%' : 'none', minWidth: 0, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
             <RingDial pct={Math.round(lvl.pct * 100)} value={String(lvl.level)} color="#E9A183"/>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.15em', color: 'rgba(251,247,240,0.6)' }}>{t('menu.level')}</div>
