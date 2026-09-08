@@ -1,9 +1,18 @@
-// Kronika & relikvie — datová vrstva (handoff 32a–32e).
-// Čtení je defenzivní: dokud neproběhne migrace 20260908120000, funkce vrátí
-// prázdný balíček místo pádu (stejný vzor jako getCampaignBundle).
+// Kronika & relikvie — datová vrstva. Jedna relikvie na kampaň, 4 úrovně
+// vzácnosti (common→rare→epic→legendary) jako GLB modely. Čtení je defenzivní.
 import { supabase } from './supabase'
 
-export type RelicState = 'preserved' | 'perfect'
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
+export type RelicState = Rarity  // (zachován název kvůli importům)
+
+export const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary']
+export const RARITY_RANK: Record<Rarity, number> = { common: 1, rare: 2, epic: 3, legendary: 4 }
+export const RARITY_META: Record<Rarity, { tone: string; key: string }> = {
+  common:    { tone: '#8A7E6C', key: 'common' },
+  rare:      { tone: '#4E6E88', key: 'rare' },
+  epic:      { tone: '#7E4E7A', key: 'epic' },
+  legendary: { tone: '#B08040', key: 'legendary' },
+}
 
 export interface Relic {
   id: string
@@ -15,16 +24,16 @@ export interface Relic {
   category: string | null
   secret: boolean
   description: string | null
-  preserved_url: string | null
-  perfect_url: string | null
-  silhouette_url: string | null
-  model_url: string | null
+  model_common: string | null
+  model_rare: string | null
+  model_epic: string | null
+  model_legendary: string | null
   seq: number
 }
 
 export interface PlayerRelic {
   relic_id: string
-  state: RelicState
+  state: Rarity
   acquired_at: string
   showcased: boolean
 }
@@ -38,49 +47,59 @@ export interface RelicSet {
   seq: number
 }
 
-/** Odvozený stav dlaždice ve vitríně. */
-export type RelicTileState = 'perfect' | 'preserved' | 'locked' | 'secret'
+export type RelicTileState = Rarity | 'locked' | 'secret'
 
 export interface RelicView {
   relic: Relic
   state: RelicTileState
   owned: PlayerRelic | null
-  ownedPct: number           // podíl vlastníků (i u skryté)
-  bestScore: number          // z campaign progress
+  ownedPct: number
+  bestScore: number
   bestStars: number
-  maxScore: number           // rounds_count × 1000
+  maxScore: number
 }
 
 export interface KronikaBundle {
   relics: RelicView[]
   sets: { set: RelicSet; relics: RelicView[] }[]
-  showcase: RelicView[]      // vystavené (max 3)
+  showcase: RelicView[]
   byCategory: Record<string, { owned: number; total: number }>
   ownedTotal: number
   total: number
 }
 
-/** Newly-earned relikvie po dokončení kampaně (pro moment objevení 32c). */
 export interface RevealedRelic {
   relic: Relic
-  state: RelicState
+  state: Rarity
   stars: number
   score: number
   maxScore: number
 }
 
-function tileState(r: Relic, pr: PlayerRelic | null): RelicTileState {
-  if (pr) return pr.state === 'perfect' ? 'perfect' : 'preserved'
-  if (r.secret) return 'secret'
-  return 'locked'
+/** Vzácnost dle nejlepšího výkonu (legendary=plný počet bodů, epic=3★, rare=2★, common=dokončeno). */
+export function rarityFor(stars: number, score: number, maxScore: number): Rarity {
+  if (maxScore > 0 && score >= maxScore) return 'legendary'
+  if (stars >= 3) return 'epic'
+  if (stars >= 2) return 'rare'
+  return 'common'
 }
 
-/** Vhodný obrázek pro daný stav (fallback null → UI zobrazí ikonu). */
-export function relicImage(r: Relic, state: RelicTileState): string | null {
-  if (state === 'perfect') return r.perfect_url || r.preserved_url
-  if (state === 'preserved') return r.preserved_url || r.perfect_url
-  if (state === 'secret') return r.silhouette_url
-  return r.silhouette_url  // locked → silueta, jinak ikona
+function tileState(r: Relic, pr: PlayerRelic | null): RelicTileState {
+  if (pr) return pr.state
+  return r.secret ? 'secret' : 'locked'
+}
+
+/** GLB model pro danou vzácnost; fallback na nejbližší nižší dostupný, jinak null → UI zobrazí ikonu. */
+export function relicModel(r: Relic, rarity: Rarity): string | null {
+  const order: Rarity[] = ['legendary', 'epic', 'rare', 'common']
+  const start = order.indexOf(rarity)
+  for (let i = start < 0 ? 0 : start; i < order.length; i++) {
+    const url = r[`model_${order[i]}` as `model_${Rarity}`]
+    if (url) return url
+  }
+  // zkus i vyšší, kdyby nižší chyběly
+  for (const k of order) { const u = r[`model_${k}` as `model_${Rarity}`]; if (u) return u }
+  return null
 }
 
 const EMPTY: KronikaBundle = { relics: [], sets: [], showcase: [], byCategory: {}, ownedTotal: 0, total: 0 }
@@ -131,10 +150,7 @@ export async function getKronikaBundle(userId: string): Promise<KronikaBundle> {
       if (v.owned) b.owned++
     }
 
-    const setViews = sets.map(set => ({
-      set,
-      relics: views.filter(v => v.relic.set_id === set.id),
-    }))
+    const setViews = sets.map(set => ({ set, relics: views.filter(v => v.relic.set_id === set.id) }))
 
     return {
       relics: views,
@@ -145,19 +161,17 @@ export async function getKronikaBundle(userId: string): Promise<KronikaBundle> {
       total: views.length,
     }
   } catch (e) {
-    console.warn('[relics] getKronikaBundle selhalo (běží migrace 20260908120000?):', e)
+    console.warn('[relics] getKronikaBundle selhalo (běží migrace relikvií?):', e)
     return EMPTY
   }
 }
 
-/** Po dokončení kampaně: pokud padly 3★, vrať relikvii k odhalení (32c). */
+/** Po dokončení kampaně vrať relikvii k odhalení (32c) s vypočtenou vzácností. */
 export async function getRevealForCampaign(campaignId: string, stars: number, score: number, maxScore: number): Promise<RevealedRelic | null> {
-  if (stars < 3) return null
   try {
     const { data } = await supabase.from('relics').select('*').eq('campaign_id', campaignId).maybeSingle()
     if (!data) return null
-    const relic = data as Relic
-    return { relic, state: score >= maxScore ? 'perfect' : 'preserved', stars, score, maxScore }
+    return { relic: data as Relic, state: rarityFor(stars, score, maxScore), stars, score, maxScore }
   } catch {
     return null
   }
@@ -189,23 +203,14 @@ export async function upsertRelicForCampaign(campaignId: string, patch: Partial<
   return { data: (data as Relic) ?? null, error: error?.message ?? null }
 }
 
-/** Nahraje render relikvie do bucketu `relics` a vrátí veřejnou URL (s cache-busterem). */
-export async function uploadRelicAsset(file: File, slug: string, kind: 'preserved' | 'perfect' | 'silhouette'): Promise<{ url: string | null; error: string | null }> {
-  const path = `${slug}/${kind}.webp`
-  const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'image/webp' })
-  if (error) return { url: null, error: error.message }
-  const { data } = supabase.storage.from('relics').getPublicUrl(path)
-  return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }
-}
-
 export async function getRelicSets(): Promise<RelicSet[]> {
   const { data } = await supabase.from('relic_sets').select('*').order('seq')
   return (data ?? []) as RelicSet[]
 }
 
-/** Nahraje 3D model (GLB) relikvie do bucketu `relics`. GLB se nekomprimuje. */
-export async function uploadRelicModel(file: File, slug: string): Promise<{ url: string | null; error: string | null }> {
-  const path = `${slug}/model.glb`
+/** Nahraje GLB model dané vzácnosti do bucketu `relics`. Vrátí veřejnou URL (cache-buster). */
+export async function uploadRelicModel(file: File, slug: string, rarity: Rarity): Promise<{ url: string | null; error: string | null }> {
+  const path = `${slug}/${rarity}.glb`
   const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'model/gltf-binary' })
   if (error) return { url: null, error: error.message }
   const { data } = supabase.storage.from('relics').getPublicUrl(path)
@@ -213,14 +218,14 @@ export async function uploadRelicModel(file: File, slug: string): Promise<{ url:
 }
 
 /** Vystavené relikvie cizího hráče (read-only, pro profil). */
-export interface PublicRelic { relic: Relic; state: RelicState; ownedPct: number }
+export interface PublicRelic { relic: Relic; state: Rarity; ownedPct: number }
 export async function getPublicShowcase(userId: string): Promise<PublicRelic[]> {
   try {
     const { data } = await supabase
       .from('player_relics')
       .select('state, relics(*)')
       .eq('user_id', userId).eq('showcased', true)
-    const rows = (data ?? []) as unknown as { state: RelicState; relics: Relic | Relic[] | null }[]
+    const rows = (data ?? []) as unknown as { state: Rarity; relics: Relic | Relic[] | null }[]
     const relics = rows.map(r => (Array.isArray(r.relics) ? r.relics[0] : r.relics)).filter(Boolean) as Relic[]
     if (!relics.length) return []
     const { data: own } = await supabase.from('relic_ownership').select('relic_id, owned_pct').in('relic_id', relics.map(r => r.id))

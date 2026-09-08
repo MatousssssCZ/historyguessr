@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
-import { relicImage, type RevealedRelic } from '@/lib/relics'
+import { relicModel, RARITY_META, type RevealedRelic } from '@/lib/relics'
+import RelicViewer from '@/components/RelicViewer'
 
 const GOLD_LIGHT = '#E8C88A'
 
@@ -9,9 +10,10 @@ export default function RelicReveal({ reveal, panoramaUrl, onChronicle, onClose 
   reveal: RevealedRelic; panoramaUrl?: string | null; onChronicle: () => void; onClose: () => void
 }) {
   const { t } = useTranslation()
-  const { relic, state, stars } = reveal
-  const img = relicImage(relic, state === 'perfect' ? 'perfect' : 'preserved')
-  const perfect = state === 'perfect'
+  const { relic, state: rarity, stars } = reveal
+  const model = relicModel(relic, rarity)
+  const tone = RARITY_META[rarity].tone
+  const legendary = rarity === 'legendary'
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: '#100D0A', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -24,20 +26,23 @@ export default function RelicReveal({ reveal, panoramaUrl, onChronicle, onClose 
         <div style={{ position: 'relative', width: 190, height: 190, margin: '26px 0 4px', borderRadius: '50%', background: 'radial-gradient(circle at 50% 45%,rgba(232,200,138,.36),transparent 70%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 14, borderRadius: '50%', border: '1px solid rgba(232,200,138,.34)' }}/>
           <div style={{ position: 'absolute', inset: 30, borderRadius: '50%', border: '1px solid rgba(232,200,138,.2)' }}/>
-          {img
-            ? <img src={img} alt="" style={{ width: 120, height: 120, objectFit: 'contain' }}/>
-            : <span style={{ fontSize: 82, color: GOLD_LIGHT }}>🏺</span>}
+          <div style={{ position: 'relative', width: 150, height: 150 }}>
+            <RelicViewer modelUrl={model} glow="gold" fallback="🏺"/>
+          </div>
         </div>
 
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.24em', color: GOLD_LIGHT, marginTop: 22 }}>{t('kron.revealFound')}</div>
         <h3 style={{ margin: '12px 0 0', fontFamily: 'var(--font-serif)', fontSize: 40, lineHeight: 1.05, color: '#FBF7F0', letterSpacing: '-0.03em' }}>{relic.name}</h3>
-        <div style={{ fontSize: 13, color: 'rgba(251,247,240,0.72)', marginTop: 9 }}>{[relic.year_label, perfect ? t('kron.perfect') : t('kron.preserved')].filter(Boolean).join(' · ')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11 }}>
+          <span style={{ padding: '4px 11px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{t('kron.rar_' + rarity).toUpperCase()}</span>
+          {relic.year_label && <span style={{ fontSize: 13, color: 'rgba(251,247,240,0.72)' }}>{relic.year_label}</span>}
+        </div>
         {relic.description && <p style={{ margin: '20px 0 0', maxWidth: 400, fontSize: 13.5, lineHeight: 1.65, color: 'rgba(251,247,240,0.8)' }}>{relic.description}</p>}
 
-        {!perfect && (
+        {!legendary && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 16, padding: '9px 14px', borderRadius: 999, background: 'rgba(176,128,64,0.16)', border: '1px solid rgba(176,128,64,0.4)' }}>
             <span style={{ color: GOLD_LIGHT }}>✦</span>
-            <span style={{ fontSize: 12, color: 'rgba(251,247,240,0.86)' }}>{t('kron.revealPerfectHint')}</span>
+            <span style={{ fontSize: 12, color: 'rgba(251,247,240,0.86)' }}>{t('kron.revealNextHint')}</span>
           </div>
         )}
 

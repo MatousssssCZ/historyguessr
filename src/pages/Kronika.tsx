@@ -12,14 +12,15 @@ import Icon from '@/components/Icon'
 import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages/Stats'
 import RelicViewer from '@/components/RelicViewer'
 import {
-  getKronikaBundle, setRelicShowcase, relicImage,
-  type KronikaBundle, type RelicView,
+  getKronikaBundle, setRelicShowcase, relicModel, RARITY_META, RARITY_ORDER, RARITY_RANK,
+  type KronikaBundle, type RelicView, type Rarity,
 } from '@/lib/relics'
+
+const rarityLabel = (tf: (k: string) => string, r: Rarity) => tf(`kron.rar_${r}`)
 
 type KronTab = 'relics' | 'badges'
 
 const GOLD = '#B08040'
-const GOLD_LIGHT = '#E8C88A'
 const STONE = '#8A7E6C'
 
 export default function KronikaPage() {
@@ -149,8 +150,9 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData }: {
 
   const legend = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: 'var(--ink-2)' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: STONE }}/>{t('kron.preserved')} <span style={{ color: 'var(--ink-3)' }}>· {t('kron.preservedHint')}</span></span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: 'var(--ink-2)' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: GOLD }}/>{t('kron.perfect')} <span style={{ color: 'var(--ink-3)' }}>· {t('kron.perfectHint')}</span></span>
+      {RARITY_ORDER.map(r => (
+        <span key={r} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: 'var(--ink-2)' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: RARITY_META[r].tone }}/>{rarityLabel(t, r)}</span>
+      ))}
     </div>
   )
 
@@ -223,29 +225,26 @@ function FilterChip({ active, label, count, onClick }: { active: boolean; label:
 function RelicTile({ v, onOpen }: { v: RelicView; onOpen: (v: RelicView) => void }) {
   const { t } = useTranslation()
   const { relic, state } = v
-  const img = relicImage(relic, state)
-  const perfect = state === 'perfect'
-  const preserved = state === 'preserved'
-  const owned = perfect || preserved
+  const rarity: Rarity | null = v.owned?.state ?? null
+  const owned = !!rarity
   const clickable = owned
+  const tone = rarity ? RARITY_META[rarity].tone : STONE
+  const legendary = rarity === 'legendary'
 
-  const frame: React.CSSProperties = perfect
-    ? { border: `1.5px solid ${GOLD}`, background: 'linear-gradient(180deg,rgba(176,128,64,.14),rgba(176,128,64,.04))', boxShadow: '0 14px 30px -18px rgba(176,128,64,.7)' }
-    : preserved ? { border: '1px solid var(--line)', background: 'var(--paper-100, #F5F0E6)' }
+  const frame: React.CSSProperties = owned
+    ? { border: `1.5px solid ${tone}`, background: legendary ? 'linear-gradient(180deg,rgba(176,128,64,.14),rgba(176,128,64,.04))' : 'var(--surface)', boxShadow: legendary ? '0 14px 30px -18px rgba(176,128,64,.7)' : 'none' }
     : { border: state === 'secret' ? '1.5px dashed var(--line-strong)' : '1px solid var(--line)', background: 'var(--paper-300, #F3EDE2)' }
 
   return (
     <div role={clickable ? 'button' : undefined} onClick={() => clickable && onOpen(v)}
       style={{ borderRadius: 15, overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: clickable ? 'pointer' : 'default', ...frame }}>
-      <div style={{ position: 'relative', height: 104, display: 'flex', alignItems: 'center', justifyContent: 'center', background: perfect ? 'radial-gradient(circle at 50% 45%,rgba(176,128,64,.34),transparent 68%)' : owned ? 'transparent' : 'rgba(31,27,22,.05)' }}>
-        {img
-          ? <img src={img} alt="" style={{ width: '78%', height: '78%', objectFit: 'contain', filter: owned ? 'none' : 'grayscale(1) opacity(0.35)' }}/>
-          : <span style={{ fontSize: 40, color: perfect ? GOLD : preserved ? STONE : 'rgba(31,27,22,.16)' }}>{owned ? '🏺' : '❔'}</span>}
-        {owned && <span style={{ position: 'absolute', left: 9, top: 9, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: perfect ? GOLD : STONE, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.1em', color: '#FBF7F0' }}>{perfect ? `✦ ${t('kron.perfectBadge')}` : t('kron.preservedBadge')}</span>}
+      <div style={{ position: 'relative', height: 104, display: 'flex', alignItems: 'center', justifyContent: 'center', background: owned ? `radial-gradient(circle at 50% 45%, ${tone}33, transparent 68%)` : 'rgba(31,27,22,.05)' }}>
+        <span style={{ fontSize: 40, color: owned ? tone : 'rgba(31,27,22,.16)' }}>{owned ? '🏺' : '❔'}</span>
+        {owned && <span style={{ position: 'absolute', left: 9, top: 9, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.1em', color: '#FBF7F0' }}>{legendary ? '✦ ' : ''}{rarityLabel(t, rarity!).toUpperCase()}</span>}
         {state === 'locked' && <span style={{ position: 'absolute', fontSize: 17, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={17}/></span>}
       </div>
       <div style={{ padding: '11px 13px 13px', background: owned ? 'var(--surface)' : 'var(--paper-100, #F7F2E8)' }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)' }}>{owned || state === 'secret' ? relic.name : relic.name}</div>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)' }}>{relic.name}</div>
         {owned ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 7 }}>
             <span style={{ fontSize: 10.5, color: 'var(--ink-2)' }}>{v.bestScore.toLocaleString(currentLocale())} / {v.maxScore.toLocaleString(currentLocale())}</span>
@@ -275,10 +274,10 @@ function ShowcaseCard({ bundle }: { bundle: KronikaBundle }) {
         {slots.map(i => {
           const v = bundle.showcase[i]
           if (!v) return <div key={i} style={{ aspectRatio: '1', borderRadius: 13, border: '1.5px dashed rgba(251,247,240,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,0.5)', fontSize: 20 }}>+</div>
-          const img = relicImage(v.relic, v.state)
+          const tone = v.owned ? RARITY_META[v.owned.state].tone : STONE
           return (
-            <div key={i} title={v.relic.name} style={{ aspectRatio: '1', borderRadius: 13, border: `1.5px solid ${v.state === 'perfect' ? 'rgba(176,128,64,0.7)' : 'rgba(138,126,108,0.7)'}`, background: 'radial-gradient(circle at 50% 45%,rgba(176,128,64,.3),rgba(251,247,240,.04))', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {img ? <img src={img} alt="" style={{ width: '76%', height: '76%', objectFit: 'contain' }}/> : <span style={{ fontSize: 24, color: GOLD_LIGHT }}>🏺</span>}
+            <div key={i} title={v.relic.name} style={{ aspectRatio: '1', borderRadius: 13, border: `1.5px solid ${tone}b3`, background: `radial-gradient(circle at 50% 45%, ${tone}4d, rgba(251,247,240,.04))`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <span style={{ fontSize: 24, color: tone }}>🏺</span>
             </div>
           )
         })}
@@ -317,9 +316,11 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
   view: RelicView; userId?: string; onClose: () => void; onChanged: () => void; onReplay: (campId: string) => void
 }) {
   const { t } = useTranslation()
-  const { relic, state, owned } = view
-  const perfect = state === 'perfect'
-  const img = relicImage(relic, state)
+  const { relic, owned } = view
+  const rarity: Rarity = owned?.state ?? 'common'
+  const tone = RARITY_META[rarity].tone
+  const rank = RARITY_RANK[rarity]
+  const model = relicModel(relic, rarity)
   const [busy, setBusy] = useState(false)
   const pct = view.maxScore ? Math.round((view.bestScore / view.maxScore) * 100) : 0
 
@@ -336,9 +337,9 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(31,27,22,0.58)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 440, maxHeight: '92dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'scaleIn 240ms var(--ease-spring) both' }}>
         <div style={{ position: 'relative', height: 250, background: 'var(--ink-dark, #1A1611)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: perfect ? 'radial-gradient(circle at 50% 42%,rgba(232,200,138,.42),rgba(16,13,10,.9) 74%)' : 'radial-gradient(circle at 50% 42%,rgba(138,126,108,.42),rgba(16,13,10,.9) 74%)' }}/>
-          <RelicViewer modelUrl={relic.model_url} imageUrl={img} glow={perfect ? 'gold' : 'stone'}/>
-          <span style={{ position: 'absolute', left: 20, top: 20, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 999, background: perfect ? GOLD : STONE, fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{perfect ? t('kron.perfectRelic') : t('kron.preservedRelic')}</span>
+          <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 42%, ${tone}6b, rgba(16,13,10,.9) 74%)` }}/>
+          <RelicViewer modelUrl={model} glow={rank >= 3 ? 'gold' : 'stone'}/>
+          <span style={{ position: 'absolute', left: 20, top: 20, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{rarityLabel(t, rarity).toUpperCase()}</span>
           <button onClick={onClose} style={{ position: 'absolute', right: 20, top: 20, width: 32, height: 32, borderRadius: 10, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.2)', color: '#fff', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ padding: '22px 24px 24px', overflowY: 'auto' }}>
@@ -353,20 +354,24 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
             <Fact label={t('kron.stars')} value={'★'.repeat(view.bestStars) + '☆'.repeat(3 - view.bestStars)}/>
           </div>
 
-          <div style={{ marginTop: 16, padding: '15px 16px', border: '1px solid rgba(176,128,64,0.36)', background: 'var(--gold-band-bg, rgba(176,128,64,.12))', borderRadius: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', color: 'var(--gold-ink, #7A5A28)' }}>{t('kron.itemState')}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ padding: '3px 9px', borderRadius: 999, background: STONE, fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: '#FBF7F0' }}>{t('kron.preservedBadge')}</span>
-                <span style={{ color: 'var(--gold-ink, #7A5A28)' }}>→</span>
-                <span style={{ padding: '3px 9px', borderRadius: 999, border: perfect ? 'none' : '1px dashed rgba(122,90,40,0.5)', background: perfect ? GOLD : 'transparent', color: perfect ? '#FBF7F0' : 'var(--gold-ink, #7A5A28)', fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700 }}>{t('kron.perfectBadge')}</span>
-              </div>
+          <div style={{ marginTop: 16, padding: '15px 16px', border: `1px solid ${tone}5c`, background: `${tone}1f`, borderRadius: 14 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', color: 'var(--ink-3)', marginBottom: 10 }}>{t('kron.rarityPath')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {RARITY_ORDER.map((r, i) => {
+                const reached = RARITY_RANK[r] <= rank
+                return (
+                  <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                    <span style={{ flex: 1, textAlign: 'center', padding: '4px 4px', borderRadius: 999, background: reached ? RARITY_META[r].tone : 'transparent', border: reached ? 'none' : `1px dashed ${RARITY_META[r].tone}80`, color: reached ? '#FBF7F0' : RARITY_META[r].tone, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.04em' }}>{rarityLabel(t, r).toUpperCase()}</span>
+                    {i < RARITY_ORDER.length - 1 && <span style={{ color: 'var(--ink-3)', fontSize: 10 }}>›</span>}
+                  </div>
+                )
+              })}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 11 }}>
-              <div style={{ flex: 1, height: 7, borderRadius: 4, background: 'rgba(122,90,40,0.18)', overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: GOLD }}/></div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--gold-ink, #7A5A28)', whiteSpace: 'nowrap' }}>{view.bestScore.toLocaleString(currentLocale())} / {view.maxScore.toLocaleString(currentLocale())}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 12 }}>
+              <div style={{ flex: 1, height: 7, borderRadius: 4, background: 'rgba(31,27,22,0.1)', overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: tone }}/></div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>{view.bestScore.toLocaleString(currentLocale())} / {view.maxScore.toLocaleString(currentLocale())}</span>
             </div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)', marginTop: 10 }}>{perfect ? t('kron.stateDonePerfect') : t('kron.stateToPerfect')}</div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)', marginTop: 10 }}>{rarity === 'legendary' ? t('kron.rarityMax') : t('kron.rarityNext')}</div>
           </div>
 
           <div style={{ display: 'flex', gap: 9, marginTop: 18 }}>
