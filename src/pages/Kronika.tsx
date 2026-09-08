@@ -94,19 +94,19 @@ function KronikaHero({ bundle, isMobile }: { bundle: KronikaBundle; isMobile: bo
           <h1 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: isMobile ? 27 : 40, color: '#FBF7F0', letterSpacing: '-0.03em', lineHeight: 1.05 }}>{t('kron.title')}</h1>
           <p style={{ margin: '8px 0 0', maxWidth: 520, fontSize: isMobile ? 13 : 14, lineHeight: 1.6, color: 'rgba(251,247,240,0.75)' }}>{t('kron.sub')}</p>
         </div>
-        <div style={{ flex: 'none', display: 'flex', gap: 10 }}>
-          <div style={{ padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
+          <div style={{ flex: isMobile ? '1 1 150px' : 'none', minWidth: 0, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
             <RingDial pct={pct} value={String(bundle.ownedTotal)} sub={`/${bundle.total}`} color={GOLD}/>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.15em', color: 'rgba(251,247,240,0.6)' }}>{t('kron.relics')}</div>
-              <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4 }}>{t('kron.collectionPct', { n: pct })}</div>
+              <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4, whiteSpace: 'nowrap' }}>{t('kron.collectionPct', { n: pct })}</div>
             </div>
           </div>
-          <div style={{ padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ flex: isMobile ? '1 1 150px' : 'none', minWidth: 0, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
             <RingDial pct={Math.round(lvl.pct * 100)} value={String(lvl.level)} color="#E9A183"/>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.15em', color: 'rgba(251,247,240,0.6)' }}>{t('menu.level')}</div>
-              <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4 }}>{lvl.into.toLocaleString(currentLocale())} / {lvl.need.toLocaleString(currentLocale())} XP</div>
+              <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lvl.into.toLocaleString(currentLocale())} / {lvl.need.toLocaleString(currentLocale())} XP</div>
             </div>
           </div>
         </div>
@@ -188,9 +188,9 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData }: {
           <span style={{ color: GOLD }}>✦</span>{t('kron.perfectNote')}
         </div>
       )}
-      <StatsRail data={statsData}/>
-      {vitrina}
-      {sidebar}
+      {isMobile
+        ? <>{vitrina}{sidebar}<StatsRail data={statsData}/></>
+        : <><StatsRail data={statsData}/>{vitrina}{sidebar}</>}
     </div>
   )
 }

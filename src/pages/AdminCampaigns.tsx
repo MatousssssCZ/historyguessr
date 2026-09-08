@@ -10,6 +10,11 @@ import {
   uploadCategoryImage,
 } from '@/lib/supabase'
 import { compressIllustration } from '@/lib/imageCompression'
+import { slugify } from '@/lib/slugify'
+import {
+  getRelicForCampaign, upsertRelicForCampaign, uploadRelicAsset, getRelicSets,
+  RELIC_CATEGORIES, type Relic, type RelicSet,
+} from '@/lib/relics'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
 // Předvyplněný práh ★ pro novou kategorii dle pořadí: round(0.7·(k−1)·k)
@@ -567,6 +572,10 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
           </div>
         </div>
 
+        {campaign
+          ? <RelicSection campaignId={campaign.id} campaignTitle={f.title}/>
+          : <div style={{ background: 'var(--paper-100)', border: '1px dashed var(--line-strong)', borderRadius: 10, padding: '10px 12px', fontSize: 12.5, color: 'var(--ink-3)' }}>Relikvii kampaně nastavíš po prvním uložení.</div>}
+
         {pubErrors.length > 0 && (
           <div style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.3)', borderRadius: 10, padding: '10px 12px' }}>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent-deep)', marginBottom: 5 }}>
@@ -599,6 +608,113 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
         />
       )}
     </Modal>
+  )
+}
+
+// ═══════════════════ Relikvie kampaně ═══════════════════
+function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campaignTitle: string }) {
+  const [relic, setRelic] = useState<Relic | null>(null)
+  const [sets, setSets] = useState<RelicSet[]>([])
+  const [f, setF] = useState({ name: '', slug: '', year_label: '', category: 'war', secret: false, description: '', set_id: '' })
+  const [assets, setAssets] = useState({ preserved: '', perfect: '', silhouette: '' })
+  const [saving, setSaving] = useState(false)
+  const [busyKind, setBusyKind] = useState<string | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    getRelicForCampaign(campaignId).then(r => {
+      if (r) {
+        setRelic(r)
+        setF({ name: r.name, slug: r.slug, year_label: r.year_label ?? '', category: r.category ?? 'war', secret: r.secret, description: r.description ?? '', set_id: r.set_id ?? '' })
+        setAssets({ preserved: r.preserved_url ?? '', perfect: r.perfect_url ?? '', silhouette: r.silhouette_url ?? '' })
+      }
+    })
+    getRelicSets().then(setSets)
+  }, [campaignId])
+
+  const set = (k: keyof typeof f, v: unknown) => setF(s => ({ ...s, [k]: v }))
+  const slug = (f.slug || slugify(f.name)).trim()
+
+  async function saveRelic() {
+    if (!f.name.trim()) { setMsg('Vyplň název relikvie.'); return }
+    setSaving(true); setMsg(null)
+    const { data, error } = await upsertRelicForCampaign(campaignId, {
+      name: f.name.trim(), slug, year_label: f.year_label.trim() || null,
+      category: f.category, secret: f.secret, description: f.description.trim() || null,
+      set_id: f.set_id || null,
+    })
+    setSaving(false)
+    if (error) { setMsg('Chyba: ' + error); return }
+    if (data) setRelic(data)
+    setMsg('Uloženo ✓')
+  }
+
+  async function upload(kind: 'preserved' | 'perfect' | 'silhouette', file: File | null | undefined) {
+    if (!file) return
+    if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
+    setBusyKind(kind); setMsg(null)
+    try {
+      const compressed = await compressIllustration(file, 1024)
+      const { url, error } = await uploadRelicAsset(compressed, slug, kind)
+      if (error || !url) { setMsg('Upload selhal: ' + error); return }
+      setAssets(a => ({ ...a, [kind]: url }))
+      const patch: Partial<Relic> = { name: f.name.trim() || campaignTitle, slug }
+      patch[`${kind}_url` as 'preserved_url' | 'perfect_url' | 'silhouette_url'] = url
+      const { data } = await upsertRelicForCampaign(campaignId, patch)
+      if (data) setRelic(data)
+      setMsg('Obrázek nahrán ✓')
+    } finally { setBusyKind(null) }
+  }
+
+  const tile = (kind: 'preserved' | 'perfect' | 'silhouette', label: string) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 10.5, color: 'var(--ink-3)', marginBottom: 5, fontWeight: 600 }}>{label}</div>
+      <label style={{ display: 'block', position: 'relative', aspectRatio: '1', borderRadius: 12, border: '1px dashed var(--line-strong)', background: '#241d16', cursor: 'pointer', overflow: 'hidden' }}>
+        {assets[kind]
+          ? <img src={assets[kind]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', padding: 8 }}/>
+          : <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,.5)', fontSize: 22 }}>+</span>}
+        {busyKind === kind && <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.5)', color: '#fff', fontSize: 12 }}>…</span>}
+        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => upload(kind, e.target.files?.[0])}/>
+      </label>
+    </div>
+  )
+
+  return (
+    <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '13px 14px', background: 'var(--paper-100)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>🏺 Relikvie kampaně {relic ? '· 3★ ji odemkne' : '· zatím nevytvořena'}</span>
+        {msg && <span style={{ fontSize: 12, color: msg.includes('✓') ? 'var(--success)' : 'var(--danger)' }}>{msg}</span>}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+          <Field label="Název relikvie"><input className="input" value={f.name} onChange={e => set('name', e.target.value)} placeholder="např. Caesarův denár"/></Field>
+          <Field label="Rok (text)"><input className="input" value={f.year_label} onChange={e => set('year_label', e.target.value)} placeholder="44 př. n. l."/></Field>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Field label="Kategorie">
+            <select className="input" value={f.category} onChange={e => set('category', e.target.value)}>
+              {RELIC_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Sada (volitelné)">
+            <select className="input" value={f.set_id} onChange={e => set('set_id', e.target.value)}>
+              <option value="">— žádná —</option>
+              {sets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
+        </div>
+        <Field label="Popis (60–90 slov)"><textarea className="input" rows={3} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <label style={checkLabel}><input type="checkbox" checked={f.secret} onChange={e => set('secret', e.target.checked)}/> Skrytá (do dokončení jen silueta + % vlastníků)</label>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {tile('preserved', 'Zachovalá')}
+          {tile('perfect', 'Dokonalá')}
+          {tile('silhouette', 'Silueta')}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-accent" disabled={saving} onClick={saveRelic} style={{ fontSize: 13 }}>{saving ? 'Ukládám…' : (relic ? 'Uložit relikvii' : 'Vytvořit relikvii')}</button>
+        </div>
+      </div>
+    </div>
   )
 }
 

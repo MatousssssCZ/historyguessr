@@ -169,3 +169,35 @@ export async function setRelicShowcase(userId: string, relicId: string, showcase
   if (error) return { ok: false, error: error.message }
   return { ok: true }
 }
+
+// ─── Admin ────────────────────────────────────────────────
+export const RELIC_CATEGORIES = ['war', 'moments', 'places', 'inventions', 'art', 'sports', 'mysteries', 'disasters'] as const
+
+export async function getRelicForCampaign(campaignId: string): Promise<Relic | null> {
+  const { data } = await supabase.from('relics').select('*').eq('campaign_id', campaignId).maybeSingle()
+  return (data as Relic) ?? null
+}
+
+export async function upsertRelicForCampaign(campaignId: string, patch: Partial<Relic>): Promise<{ data: Relic | null; error: string | null }> {
+  const existing = await getRelicForCampaign(campaignId)
+  if (existing) {
+    const { data, error } = await supabase.from('relics').update(patch).eq('id', existing.id).select().maybeSingle()
+    return { data: (data as Relic) ?? null, error: error?.message ?? null }
+  }
+  const { data, error } = await supabase.from('relics').insert({ ...patch, campaign_id: campaignId }).select().maybeSingle()
+  return { data: (data as Relic) ?? null, error: error?.message ?? null }
+}
+
+/** Nahraje render relikvie do bucketu `relics` a vrátí veřejnou URL (s cache-busterem). */
+export async function uploadRelicAsset(file: File, slug: string, kind: 'preserved' | 'perfect' | 'silhouette'): Promise<{ url: string | null; error: string | null }> {
+  const path = `${slug}/${kind}.webp`
+  const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'image/webp' })
+  if (error) return { url: null, error: error.message }
+  const { data } = supabase.storage.from('relics').getPublicUrl(path)
+  return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }
+}
+
+export async function getRelicSets(): Promise<RelicSet[]> {
+  const { data } = await supabase.from('relic_sets').select('*').order('seq')
+  return (data ?? []) as RelicSet[]
+}
