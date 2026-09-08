@@ -270,7 +270,7 @@ function ShowcaseCard({ bundle }: { bundle: KronikaBundle }) {
   return (
     <div style={{ flex: '1 1 250px', minWidth: 0, background: 'var(--ink)', borderRadius: 18, padding: '18px 19px' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'rgba(251,247,240,0.6)' }}>{t('kron.showcase')}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9, marginTop: 13 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 9, marginTop: 13 }}>
         {slots.map(i => {
           const v = bundle.showcase[i]
           if (!v) return <div key={i} style={{ aspectRatio: '1', borderRadius: 13, border: '1.5px dashed rgba(251,247,240,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,0.5)', fontSize: 20 }}>+</div>

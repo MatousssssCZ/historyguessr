@@ -353,8 +353,10 @@ export function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits:
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
       <button onClick={() => setOpen(o => !o)} style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 9 }}>
-          <div style={{ fontSize: 23, width: 46, height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 13, background: current ? 'linear-gradient(150deg,#d97757,#b85a3e)' : 'var(--paper-300)', filter: current ? 'none' : 'grayscale(1)', opacity: current ? 1 : 0.5 }}>
-            {current ? current.icon : cat.icon}
+          <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0, borderRadius: '50%', background: `conic-gradient(var(--accent) ${Math.max(0, Math.min(100, pct)) * 3.6}deg, var(--line) 0)` }}>
+            <div style={{ position: 'absolute', inset: 3, borderRadius: '50%', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', background: current ? 'linear-gradient(150deg,#d97757,#b85a3e)' : 'var(--paper-300)', filter: current ? 'none' : 'grayscale(1)', opacity: current ? 1 : 0.55 }}>
+              {current ? current.icon : cat.icon}
+            </div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: current ? 'var(--ink)' : 'var(--ink-2)', letterSpacing: '-0.01em' }}>{current ? t('ach.' + cat.id + '.c' + current.count, current.name) : t('ach.' + cat.id + '.label', cat.label)}</div>
