@@ -65,7 +65,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
           <span onClick={() => setSheet(true)} style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 10.5, color: 'var(--accent)', cursor: 'pointer' }}>{t('menu.navPlay')}</span>
         </div>
         <div style={{ display: 'flex', gap: 38 }}>
-          {item('medal', t('menu.navBadges'), () => navigate('/stats'), 'badges')}
+          {item('medal', t('menu.navKronika'), () => navigate('/kronika'), 'badges')}
           {item('user', t('menu.navProfile'), () => navigate('/account'), 'profile', friendReqs)}
         </div>
       </div>

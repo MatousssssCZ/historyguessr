@@ -17,6 +17,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
 import { addEventRating, startCampaignAttempt, getEventsByIds, getEventById } from '@/lib/supabase'
+import RelicReveal from '@/components/RelicReveal'
+import { getRevealForCampaign, type RevealedRelic } from '@/lib/relics'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
@@ -69,6 +71,17 @@ export default function GamePage() {
     startGame, resumeGame, setGuessLocation, setGuessYear, submitRound, nextRound, resetGame, roundsCount
   } = useGame(user?.id)
   const [confirmQuit, setConfirmQuit] = useState(false)
+  const [reveal, setReveal] = useState<RevealedRelic | null>(null)
+  const [revealSeen, setRevealSeen] = useState(false)
+
+  // Po dokončení kampaně na 3★ → moment objevení relikvie (32c)
+  useEffect(() => {
+    if (state.phase !== 'finished' || !state.campaignId || revealSeen) return
+    if ((state.campaignStars ?? 0) < 3) return
+    const max = state.totalRounds * 1000
+    getRevealForCampaign(state.campaignId, state.campaignStars ?? 0, state.totalScore, max)
+      .then(r => { if (r) { setReveal(r); setRevealSeen(true) } })
+  }, [state.phase, state.campaignId, state.campaignStars, state.totalScore, state.totalRounds, revealSeen])
 
   useEffect(() => {
     if (state.phase !== 'idle') return
@@ -105,6 +118,10 @@ export default function GamePage() {
     }
   }
 
+  if (state.phase === 'finished' && reveal) return (
+    <RelicReveal reveal={reveal} panoramaUrl={state.events[0]?.panorama_url ?? null}
+      onChronicle={() => navigate('/kronika')} onClose={() => setReveal(null)}/>
+  )
   if (state.phase === 'finished') return (
     <FinishedScreen
       totalScore={state.totalScore}

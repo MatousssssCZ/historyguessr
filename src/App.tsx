@@ -25,6 +25,8 @@ import RoadmapPage from '@/pages/Roadmap'
 import DailyChallengePage from '@/pages/Daily'
 import ResetPasswordPage from '@/pages/ResetPassword'
 import StatsPage from '@/pages/Stats'
+import KronikaPage from '@/pages/Kronika'
+import YearStreakPage from '@/pages/YearStreak'
 import FriendsPage from '@/pages/Friends'
 import PrivacyPage from '@/pages/Privacy'
 import TermsPage from '@/pages/Terms'
@@ -155,6 +157,8 @@ export default function App() {
               <Route path="/premium" element={<RequireAuth><PremiumPage/></RequireAuth>}/>
               <Route path="/roadmap" element={<RequireAuth><RoadmapPage/></RequireAuth>}/>
               <Route path="/stats"   element={<RequireAuth><StatsPage/></RequireAuth>}/>
+              <Route path="/kronika" element={<RequireAuth><KronikaPage/></RequireAuth>}/>
+              <Route path="/streak"  element={<RequireAuth><YearStreakPage/></RequireAuth>}/>
               <Route path="/leaderboard" element={<RequireAuth><LeaderboardPage/></RequireAuth>}/>
               <Route path="/player/:userId" element={<RequireAuth><PlayerProfilePage/></RequireAuth>}/>
               <Route path="/friends" element={<RequireAuth><FriendsPage/></RequireAuth>}/>

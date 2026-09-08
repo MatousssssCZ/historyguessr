@@ -29,7 +29,7 @@ export default function AppHeader({ streak }: { streak?: number }) {
   const items: Item[] = [
     { label: t('menu.navHome'), to: '/menu', match: ['/menu'] },
     { label: t('menu.campaigns'), to: '/campaigns', match: ['/campaigns'] },
-    { label: t('menu.navBadges'), to: '/stats', match: ['/stats'] },
+    { label: t('menu.navKronika'), to: '/kronika', match: ['/kronika', '/stats'] },
     { label: t('menu.navFriends'), to: '/friends', match: ['/friends'] },
     { label: t('menu.navExplore'), to: `/${eloc}/${exSeg}`, match: [`/${eloc}/${exSeg}`], external: true },
   ]
