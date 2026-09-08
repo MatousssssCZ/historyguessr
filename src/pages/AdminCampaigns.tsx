@@ -12,7 +12,7 @@ import {
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
 import {
-  getRelicForCampaign, upsertRelicForCampaign, uploadRelicAsset, getRelicSets,
+  getRelicForCampaign, upsertRelicForCampaign, uploadRelicAsset, uploadRelicModel, getRelicSets,
   RELIC_CATEGORIES, type Relic, type RelicSet,
 } from '@/lib/relics'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
@@ -617,6 +617,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
   const [sets, setSets] = useState<RelicSet[]>([])
   const [f, setF] = useState({ name: '', slug: '', year_label: '', category: 'war', secret: false, description: '', set_id: '' })
   const [assets, setAssets] = useState({ preserved: '', perfect: '', silhouette: '' })
+  const [modelUrl, setModelUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [busyKind, setBusyKind] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
@@ -627,10 +628,25 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
         setRelic(r)
         setF({ name: r.name, slug: r.slug, year_label: r.year_label ?? '', category: r.category ?? 'war', secret: r.secret, description: r.description ?? '', set_id: r.set_id ?? '' })
         setAssets({ preserved: r.preserved_url ?? '', perfect: r.perfect_url ?? '', silhouette: r.silhouette_url ?? '' })
+        setModelUrl(r.model_url ?? '')
       }
     })
     getRelicSets().then(setSets)
   }, [campaignId])
+
+  async function uploadModel(file: File | null | undefined) {
+    if (!file) return
+    if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
+    setBusyKind('model'); setMsg(null)
+    try {
+      const { url, error } = await uploadRelicModel(file, slug)
+      if (error || !url) { setMsg('Upload GLB selhal: ' + error); return }
+      setModelUrl(url)
+      const { data } = await upsertRelicForCampaign(campaignId, { name: f.name.trim() || campaignTitle, slug, model_url: url })
+      if (data) setRelic(data)
+      setMsg('3D model nahrán ✓')
+    } finally { setBusyKind(null) }
+  }
 
   const set = (k: keyof typeof f, v: unknown) => setF(s => ({ ...s, [k]: v }))
   const slug = (f.slug || slugify(f.name)).trim()
@@ -709,6 +725,15 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
           {tile('preserved', 'Zachovalá')}
           {tile('perfect', 'Dokonalá')}
           {tile('silhouette', 'Silueta')}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '9px 12px' }}>
+          <span style={{ fontSize: 12.5, color: 'var(--ink-2)', flex: 1 }}>
+            🔄 3D model (GLB, volitelné){modelUrl ? ' · nahráno ✓' : ' — otáčení v detailu, jen pár vzácných kusů'}
+          </span>
+          <label className="btn btn-ghost" style={{ fontSize: 12, cursor: 'pointer' }}>
+            {busyKind === 'model' ? '…' : (modelUrl ? 'Nahradit' : 'Nahrát GLB')}
+            <input type="file" accept=".glb,model/gltf-binary" style={{ display: 'none' }} onChange={e => uploadModel(e.target.files?.[0])}/>
+          </label>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn btn-accent" disabled={saving} onClick={saveRelic} style={{ fontSize: 13 }}>{saving ? 'Ukládám…' : (relic ? 'Uložit relikvii' : 'Vytvořit relikvii')}</button>

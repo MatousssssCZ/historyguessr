@@ -18,6 +18,7 @@ export interface Relic {
   preserved_url: string | null
   perfect_url: string | null
   silhouette_url: string | null
+  model_url: string | null
   seq: number
 }
 
@@ -200,4 +201,35 @@ export async function uploadRelicAsset(file: File, slug: string, kind: 'preserve
 export async function getRelicSets(): Promise<RelicSet[]> {
   const { data } = await supabase.from('relic_sets').select('*').order('seq')
   return (data ?? []) as RelicSet[]
+}
+
+/** Nahraje 3D model (GLB) relikvie do bucketu `relics`. GLB se nekomprimuje. */
+export async function uploadRelicModel(file: File, slug: string): Promise<{ url: string | null; error: string | null }> {
+  const path = `${slug}/model.glb`
+  const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'model/gltf-binary' })
+  if (error) return { url: null, error: error.message }
+  const { data } = supabase.storage.from('relics').getPublicUrl(path)
+  return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }
+}
+
+/** Vystavené relikvie cizího hráče (read-only, pro profil). */
+export interface PublicRelic { relic: Relic; state: RelicState; ownedPct: number }
+export async function getPublicShowcase(userId: string): Promise<PublicRelic[]> {
+  try {
+    const { data } = await supabase
+      .from('player_relics')
+      .select('state, relics(*)')
+      .eq('user_id', userId).eq('showcased', true)
+    const rows = (data ?? []) as unknown as { state: RelicState; relics: Relic | Relic[] | null }[]
+    const relics = rows.map(r => (Array.isArray(r.relics) ? r.relics[0] : r.relics)).filter(Boolean) as Relic[]
+    if (!relics.length) return []
+    const { data: own } = await supabase.from('relic_ownership').select('relic_id, owned_pct').in('relic_id', relics.map(r => r.id))
+    const pct = new Map((own ?? []).map((o: { relic_id: string; owned_pct: number }) => [o.relic_id, Number(o.owned_pct) || 0]))
+    return rows.map(r => {
+      const relic = Array.isArray(r.relics) ? r.relics[0] : r.relics
+      return relic ? { relic, state: r.state, ownedPct: pct.get(relic.id) ?? 0 } : null
+    }).filter(Boolean) as PublicRelic[]
+  } catch {
+    return []
+  }
 }

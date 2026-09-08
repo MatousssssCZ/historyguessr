@@ -10,6 +10,7 @@ import AppHeader from '@/components/AppHeader'
 import CompassLoader from '@/components/CompassLoader'
 import Icon from '@/components/Icon'
 import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages/Stats'
+import RelicViewer from '@/components/RelicViewer'
 import {
   getKronikaBundle, setRelicShowcase, relicImage,
   type KronikaBundle, type RelicView,
@@ -336,7 +337,7 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 440, maxHeight: '92dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'scaleIn 240ms var(--ease-spring) both' }}>
         <div style={{ position: 'relative', height: 250, background: 'var(--ink-dark, #1A1611)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: perfect ? 'radial-gradient(circle at 50% 42%,rgba(232,200,138,.42),rgba(16,13,10,.9) 74%)' : 'radial-gradient(circle at 50% 42%,rgba(138,126,108,.42),rgba(16,13,10,.9) 74%)' }}/>
-          {img ? <img src={img} alt="" style={{ position: 'relative', width: '60%', height: '76%', objectFit: 'contain' }}/> : <span style={{ position: 'relative', fontSize: 76, color: perfect ? GOLD_LIGHT : '#D8CFBF' }}>🏺</span>}
+          <RelicViewer modelUrl={relic.model_url} imageUrl={img} glow={perfect ? 'gold' : 'stone'}/>
           <span style={{ position: 'absolute', left: 20, top: 20, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 999, background: perfect ? GOLD : STONE, fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{perfect ? t('kron.perfectRelic') : t('kron.preservedRelic')}</span>
           <button onClick={onClose} style={{ position: 'absolute', right: 20, top: 20, width: 32, height: 32, borderRadius: 10, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.2)', color: '#fff', cursor: 'pointer' }}>✕</button>
         </div>

@@ -5,6 +5,8 @@ import { currentLocale } from '@/i18n'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS } from '@/lib/achievements'
 import { getPublicProfile, getPublicCategoryHits, type PublicProfile } from '@/lib/supabase'
+import { getPublicShowcase, relicImage, type PublicRelic } from '@/lib/relics'
+import RelicViewer from '@/components/RelicViewer'
 import { PageShell, PageHeader } from '@/components/ui/Page'
 import { AchievementRow } from '@/pages/Stats'
 import MobileNav from '@/components/MobileNav'
@@ -20,13 +22,15 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [hits, setHits] = useState<Record<string, number>>({})
+  const [showcase, setShowcase] = useState<PublicRelic[]>([])
+  const [relicDetail, setRelicDetail] = useState<PublicRelic | null>(null)
 
   useEffect(() => {
     if (!userId) return
     let alive = true
     setLoading(true)
-    Promise.all([getPublicProfile(userId).catch(() => null), getPublicCategoryHits(userId).catch(() => ({}))])
-      .then(([p, h]) => { if (!alive) return; setProfile(p); setHits(h); setLoading(false) })
+    Promise.all([getPublicProfile(userId).catch(() => null), getPublicCategoryHits(userId).catch(() => ({})), getPublicShowcase(userId).catch(() => [])])
+      .then(([p, h, sc]) => { if (!alive) return; setProfile(p); setHits(h); setShowcase(sc as PublicRelic[]); setLoading(false) })
     return () => { alive = false }
   }, [userId])
 
@@ -67,6 +71,34 @@ export default function PlayerProfilePage() {
             <StatTile label={t('pp.rounds')} value={profile.rounds_played.toLocaleString(loc)}/>
           </div>
 
+          {/* Vystavené relikvie */}
+          {showcase.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '4px 0 12px' }}>{t('pp.showcase')}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
+                {showcase.map(pr => {
+                  const perfect = pr.state === 'perfect'
+                  const img = relicImage(pr.relic, perfect ? 'perfect' : 'preserved')
+                  return (
+                    <button key={pr.relic.id} onClick={() => setRelicDetail(pr)} style={{
+                      border: `1.5px solid ${perfect ? 'rgba(176,128,64,0.7)' : 'rgba(138,126,108,0.6)'}`, borderRadius: 15, overflow: 'hidden',
+                      background: 'var(--surface)', cursor: 'pointer', padding: 0, display: 'flex', flexDirection: 'column', textAlign: 'left',
+                    }}>
+                      <div style={{ position: 'relative', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', background: perfect ? 'radial-gradient(circle at 50% 45%,rgba(176,128,64,.28),transparent 70%)' : 'radial-gradient(circle at 50% 45%,rgba(138,126,108,.22),transparent 70%)' }}>
+                        {img ? <img src={img} alt="" style={{ width: '76%', height: '76%', objectFit: 'contain' }}/> : <span style={{ fontSize: 30, color: perfect ? '#B08040' : '#8A7E6C' }}>🏺</span>}
+                        {pr.relic.model_url && <span title="3D" style={{ position: 'absolute', top: 7, right: 7, fontSize: 11 }}>🔄</span>}
+                      </div>
+                      <div style={{ padding: '9px 11px 11px' }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pr.relic.name}</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 3 }}>{perfect ? t('kron.perfect') : t('kron.preserved')}</div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Odznaky */}
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '4px 0 12px' }}>{t('pp.achievements')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -74,8 +106,37 @@ export default function PlayerProfilePage() {
           </div>
         </>
       )}
+      {relicDetail && <PublicRelicModal pr={relicDetail} owner={name} onClose={() => setRelicDetail(null)}/>}
       <MobileNav active="home"/>
     </PageShell>
+  )
+}
+
+function PublicRelicModal({ pr, owner, onClose }: { pr: PublicRelic; owner: string; onClose: () => void }) {
+  const { t } = useTranslation()
+  const perfect = pr.state === 'perfect'
+  const img = relicImage(pr.relic, perfect ? 'perfect' : 'preserved')
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(31,27,22,0.58)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 420, maxHeight: '92dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'scaleIn 240ms var(--ease-spring) both' }}>
+        <div style={{ position: 'relative', height: 250, background: 'var(--ink-dark, #1A1611)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: perfect ? 'radial-gradient(circle at 50% 42%,rgba(232,200,138,.42),rgba(16,13,10,.9) 74%)' : 'radial-gradient(circle at 50% 42%,rgba(138,126,108,.42),rgba(16,13,10,.9) 74%)' }}/>
+          <RelicViewer modelUrl={pr.relic.model_url} imageUrl={img} glow={perfect ? 'gold' : 'stone'}/>
+          <span style={{ position: 'absolute', left: 20, top: 20, padding: '6px 12px', borderRadius: 999, background: perfect ? '#B08040' : '#8A7E6C', fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{perfect ? t('kron.perfectRelic') : t('kron.preservedRelic')}</span>
+          <button onClick={onClose} style={{ position: 'absolute', right: 20, top: 20, width: 32, height: 32, borderRadius: 10, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.2)', color: '#fff', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ padding: '20px 22px 22px', overflowY: 'auto' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{[pr.relic.year_label, pr.relic.category && t(`catShort.${pr.relic.category}`, { defaultValue: pr.relic.category })].filter(Boolean).join(' · ').toUpperCase()}</div>
+          <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{pr.relic.name}</h3>
+          {pr.relic.description && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{pr.relic.description}</p>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12.5, color: 'var(--ink-3)' }}>
+            <span>{t('pp.showcasedBy', { name: owner })}</span>
+            <span>·</span>
+            <span>{t('kron.ownedByPct', { n: pr.ownedPct })}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
