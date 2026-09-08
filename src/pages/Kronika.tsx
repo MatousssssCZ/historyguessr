@@ -8,23 +8,27 @@ import MobileNav from '@/components/MobileNav'
 import AppHeader from '@/components/AppHeader'
 import CompassLoader from '@/components/CompassLoader'
 import Icon from '@/components/Icon'
+import { useStatsData, StatsSections, BadgesSections, LevelBar } from '@/pages/Stats'
 import {
   getKronikaBundle, setRelicShowcase, relicImage,
   type KronikaBundle, type RelicView,
 } from '@/lib/relics'
+
+type KronTab = 'relics' | 'stats' | 'badges'
 
 const GOLD = '#B08040'
 const GOLD_LIGHT = '#E8C88A'
 const STONE = '#8A7E6C'
 
 export default function KronikaPage() {
-  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [bundle, setBundle] = useState<KronikaBundle | null>(null)
   const [loading, setLoading] = useState(true)
   const [detail, setDetail] = useState<RelicView | null>(null)
+  const [tab, setTab] = useState<KronTab>('relics')
+  const statsData = useStatsData()
 
   const reload = useCallback(async () => {
     if (!user) return
@@ -42,14 +46,43 @@ export default function KronikaPage() {
       {!isMobile && <AppHeader/>}
       <div style={{ paddingTop: isMobile ? 'var(--safe-top)' : 0, paddingBottom: isMobile ? 'var(--nav-space)' : 40 }}>
         <KronikaHero bundle={bundle} isMobile={isMobile}/>
-        <RelicsTab bundle={bundle} isMobile={isMobile}
-          onOpen={setDetail} onStats={() => navigate('/stats')} onBadges={() => navigate('/stats')}/>
+        <div style={{ maxWidth: 1240, margin: '0 auto', background: 'var(--paper-200)', padding: isMobile ? '18px 15px 0' : '24px 26px 0' }}>
+          <Switcher tab={tab} setTab={setTab} bundle={bundle} rewards={statsData.rewards.length}/>
+        </div>
+        {tab === 'relics' && <RelicsTab bundle={bundle} isMobile={isMobile} onOpen={setDetail}/>}
+        {tab === 'stats' && (
+          <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px' }}>
+            <div style={{ marginBottom: 18 }}><LevelBar/></div>
+            {statsData.loading ? <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
+              : <StatsSections data={statsData} onPlay={() => navigate('/play')}/>}
+          </div>
+        )}
+        {tab === 'badges' && (
+          <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px' }}>
+            {statsData.loading ? <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
+              : <BadgesSections data={statsData}/>}
+          </div>
+        )}
       </div>
       {detail && (
         <RelicDetailModal view={detail} userId={user?.id} onClose={() => setDetail(null)}
           onChanged={() => { reload() }} onReplay={() => navigate('/campaigns')}/>
       )}
       {isMobile && <MobileNav active="badges"/>}
+    </div>
+  )
+}
+
+// ── Přepínač Relikvie · Statistiky · Odznaky ────────────────
+function Switcher({ tab, setTab, bundle, rewards }: { tab: KronTab; setTab: (t: KronTab) => void; bundle: KronikaBundle; rewards: number }) {
+  const { t } = useTranslation()
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, padding: 5, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 15, flexWrap: 'wrap' }}>
+        <SwitchItem active={tab === 'relics'} label={t('kron.tabRelics')} icon="🏺" count={`${bundle.ownedTotal}/${bundle.total}`} onClick={() => setTab('relics')}/>
+        <SwitchItem active={tab === 'stats'} label={t('kron.tabStats')} icon="📊" onClick={() => setTab('stats')}/>
+        <SwitchItem active={tab === 'badges'} label={t('kron.tabBadges')} icon="🏅" count={rewards ? String(rewards) : undefined} onClick={() => setTab('badges')}/>
+      </div>
     </div>
   )
 }
@@ -99,24 +132,15 @@ function RingDial({ pct, value, sub, color }: { pct: number; value: string; sub?
   )
 }
 
-// ── Switcher + Relikvie tab ─────────────────────────────────
-function RelicsTab({ bundle, isMobile, onOpen, onStats, onBadges }: {
-  bundle: KronikaBundle; isMobile: boolean
-  onOpen: (v: RelicView) => void; onStats: () => void; onBadges: () => void
+// ── Relikvie tab ────────────────────────────────────────────
+function RelicsTab({ bundle, isMobile, onOpen }: {
+  bundle: KronikaBundle; isMobile: boolean; onOpen: (v: RelicView) => void
 }) {
   const { t } = useTranslation()
   const [cat, setCat] = useState<string>('all')
 
   const cats = Object.entries(bundle.byCategory)
   const visible = cat === 'all' ? bundle.relics : bundle.relics.filter(v => (v.relic.category ?? 'other') === cat)
-
-  const switcher = (
-    <div style={{ display: 'flex', gap: 6, padding: 5, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 15, flexWrap: 'wrap' }}>
-      <SwitchItem active label={t('kron.tabRelics')} icon="🏺" count={`${bundle.ownedTotal}/${bundle.total}`} onClick={() => {}}/>
-      <SwitchItem label={t('kron.tabStats')} icon="📊" onClick={onStats}/>
-      <SwitchItem label={t('kron.tabBadges')} icon="🏅" onClick={onBadges}/>
-    </div>
-  )
 
   const filters = (
     <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
@@ -163,11 +187,12 @@ function RelicsTab({ bundle, isMobile, onOpen, onStats, onBadges }: {
   )
 
   return (
-    <div style={{ background: 'var(--paper-200)', padding: isMobile ? '18px 15px 24px' : '24px 26px 34px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', maxWidth: 1240, margin: '0 auto' }}>
-      <div style={{ flex: '1 1 100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-        {switcher}
-        {!isMobile && <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12, color: 'var(--ink-2)' }}><span style={{ color: GOLD }}>✦</span>{t('kron.perfectNote')}</div>}
-      </div>
+    <div style={{ background: 'var(--paper-200)', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', maxWidth: 1240, margin: '0 auto' }}>
+      {!isMobile && (
+        <div style={{ flex: '1 1 100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9, fontSize: 12, color: 'var(--ink-2)' }}>
+          <span style={{ color: GOLD }}>✦</span>{t('kron.perfectNote')}
+        </div>
+      )}
       {vitrina}
       {sidebar}
     </div>

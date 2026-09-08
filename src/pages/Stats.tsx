@@ -86,15 +86,22 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
   }
 }
 
-export default function StatsPage() {
-  const { t } = useTranslation()
+export interface StatsData {
+  stats: Stats | null
+  catHits: Record<string, number>
+  dailyDates: Set<string>
+  rewards: EarnedReward[]
+  since: string | null
+  loading: boolean
+}
+
+/** Sdílené načtení dat pro /stats i záložky Kroniky. */
+export function useStatsData(): StatsData {
   const { user, profile } = useAuth()
-  const navigate = useNavigate()
   const [stats, setStats] = useState<Stats | null>(null)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
   const [dailyDates, setDailyDates] = useState<Set<string>>(new Set())
   const [rewards, setRewards] = useState<EarnedReward[]>([])
-  const [achTab, setAchTab] = useState<'titles' | 'relics'>('titles')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -111,102 +118,131 @@ export default function StatsPage() {
     return () => { alive = false }
   }, [user?.id, profile?.total_score])
 
+  return { stats, catHits, dailyDates, rewards, since: profile?.created_at ? localDateISO(new Date(profile.created_at)) : null, loading }
+}
+
+/** Statistiky (overview + přesnost + denní + kalendář + trend) — bez shellu. */
+export function StatsSections({ data, onPlay }: { data: StatsData; onPlay?: () => void }) {
+  const { t } = useTranslation()
+  const { stats, dailyDates, since } = data
+  const n = (v: number) => v.toLocaleString(currentLocale())
+  if (!stats) return null
+  return (
+    <>
+      {stats.roundsPlayed === 0 && onPlay && (
+        <div style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 26 }}>🗺️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{t('stats.noData')}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{t('stats.noDataSub')}</div>
+          </div>
+          <button onClick={onPlay} className="btn btn-accent" style={{ padding: '9px 16px', fontSize: 13, flexShrink: 0 }}>{t('stats.playCta')}</button>
+        </div>
+      )}
+      <Section label={t('stats.overview')}>
+        <Grid>
+          <Card icon="🎲" value={n(stats.roundsPlayed)} k={t('stats.rounds')}/>
+          <Card icon="🏆" value={n(stats.totalScore)} k={t('stats.totalScore')}/>
+          <Card icon="📊" value={n(stats.avgScore)} k={t('stats.avgScore')}/>
+          <Card icon="🎯" value={`${stats.bullseyes}×`} k={t('stats.bullseyes')} hl/>
+        </Grid>
+      </Section>
+      <Section label={t('stats.accuracy')}>
+        <Grid>
+          <Card icon="📍" value={n(stats.avgDistance)} unit={t('stats.unitKm')} k={t('stats.avgDistance')}/>
+          <Card icon="📅" value={n(stats.avgYearDiff)} unit={t('stats.unitYears')} k={t('stats.avgYear')}/>
+          <Card icon="🎯" value={String(stats.pctClose)} unit="%" k={t('stats.close')}/>
+          <Card icon="✓" value={String(stats.pctExactYear)} unit="%" k={t('stats.exactYear')}/>
+        </Grid>
+      </Section>
+      <Section label={t('stats.daily')}>
+        <Grid>
+          <Card icon="🔥" value={String(stats.dailyStreak)} unit={t('stats.unitDays')} k={t('stats.streak')}/>
+          <Card icon="📆" value={n(stats.dailyCount)} k={t('stats.dailyCount')}/>
+        </Grid>
+      </Section>
+      <Section label={t('stats.dailyCalendar')}>
+        <DailyYearCalendar played={dailyDates} since={since}/>
+      </Section>
+      <Section label={t('stats.trend')}>
+        <TrendChart scores={stats.gameScores} trendPct={stats.trendPct}/>
+      </Section>
+    </>
+  )
+}
+
+/** Odznaky (tituly + relikvie z odměn) — bez shellu, s vlastním přepínačem. */
+export function BadgesSections({ data }: { data: StatsData }) {
+  const { t } = useTranslation()
+  const { stats, catHits, rewards } = data
+  const [achTab, setAchTab] = useState<'titles' | 'relics'>('titles')
+  if (!stats) return null
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('stats.achievements')}</span>
+        <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 3, gap: 3 }}>
+          {([['titles', t('stats.tabTitles')], ['relics', `${t('stats.tabRelics')}${rewards.length ? ` · ${rewards.length}` : ''}`]] as const).map(([tab, lbl]) => {
+            const on = achTab === tab
+            return (
+              <button key={tab} onClick={() => setAchTab(tab)} style={{
+                border: 'none', padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5,
+                fontFamily: 'var(--font-sans)', fontWeight: on ? 600 : 500,
+                background: on ? 'var(--surface)' : 'transparent', color: on ? 'var(--ink)' : 'var(--ink-3)',
+                boxShadow: on ? '0 1px 3px rgba(42,31,23,0.1)' : 'none',
+              }}>{lbl}</button>
+            )
+          })}
+        </div>
+      </div>
+      {achTab === 'titles' ? (
+        <>
+          <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
+          <div style={{ marginBottom: 12 }}><StreakLadder streak={stats.dailyStreak} tone="light"/></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {ACHIEVEMENTS.map(cat => <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>)}
+          </div>
+        </>
+      ) : (
+        <RelicGallery rewards={rewards}/>
+      )}
+    </div>
+  )
+}
+
+/** Sdílený proužek úrovně (XP). */
+export function LevelBar() {
+  const { t } = useTranslation()
+  const { profile } = useAuth()
   const lvl = levelFromXp(profile?.xp ?? 0)
   const n = (v: number) => v.toLocaleString(currentLocale())
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+        <b style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t('menu.level')} {lvl.level}</b>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
+      </div>
+      <div style={{ height: 8, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #d89a54)' }}/>
+      </div>
+    </div>
+  )
+}
 
+export default function StatsPage() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const data = useStatsData()
   return (
     <PageShell maxWidth={640}>
-        <PageHeader eyebrow={t('menu.navBadges')} title={t('stats.title')} onBack={() => navigate('/menu')}/>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '14px 16px', marginBottom: 18 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-            <b style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t('menu.level')} {lvl.level}</b>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{n(lvl.into)} / {n(lvl.need)} XP</span>
-          </div>
-          <div style={{ height: 8, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #d89a54)' }}/>
-          </div>
-        </div>
-
-        {loading || !stats ? (
+        <PageHeader eyebrow={t('menu.navKronika')} title={t('stats.title')} onBack={() => navigate('/menu')}/>
+        <div style={{ marginBottom: 18 }}><LevelBar/></div>
+        {data.loading || !data.stats ? (
           <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
         ) : (
           <>
-            {stats.roundsPlayed === 0 && (
-              <div style={{ background: 'rgba(217,119,87,0.08)', border: '1px solid rgba(217,119,87,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ fontSize: 26 }}>🗺️</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{t('stats.noData')}</div>
-                  <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{t('stats.noDataSub')}</div>
-                </div>
-                <button onClick={() => navigate('/play')} className="btn btn-accent" style={{ padding: '9px 16px', fontSize: 13, flexShrink: 0 }}>{t('stats.playCta')}</button>
-              </div>
-            )}
-            <Section label={t('stats.overview')}>
-              <Grid>
-                <Card icon="🎲" value={n(stats.roundsPlayed)} k={t('stats.rounds')}/>
-                <Card icon="🏆" value={n(stats.totalScore)} k={t('stats.totalScore')}/>
-                <Card icon="📊" value={n(stats.avgScore)} k={t('stats.avgScore')}/>
-                <Card icon="🎯" value={`${stats.bullseyes}×`} k={t('stats.bullseyes')} hl/>
-              </Grid>
-            </Section>
-
-            <Section label={t('stats.accuracy')}>
-              <Grid>
-                <Card icon="📍" value={n(stats.avgDistance)} unit={t('stats.unitKm')} k={t('stats.avgDistance')}/>
-                <Card icon="📅" value={n(stats.avgYearDiff)} unit={t('stats.unitYears')} k={t('stats.avgYear')}/>
-                <Card icon="🎯" value={String(stats.pctClose)} unit="%" k={t('stats.close')}/>
-                <Card icon="✓" value={String(stats.pctExactYear)} unit="%" k={t('stats.exactYear')}/>
-              </Grid>
-            </Section>
-
-            <Section label={t('stats.daily')}>
-              <Grid>
-                <Card icon="🔥" value={String(stats.dailyStreak)} unit={t('stats.unitDays')} k={t('stats.streak')}/>
-                <Card icon="📆" value={n(stats.dailyCount)} k={t('stats.dailyCount')}/>
-              </Grid>
-            </Section>
-
-            <Section label={t('stats.dailyCalendar')}>
-              <DailyYearCalendar played={dailyDates} since={profile?.created_at ? localDateISO(new Date(profile.created_at)) : null}/>
-            </Section>
-
-            <Section label={t('stats.trend')}>
-              <TrendChart scores={stats.gameScores} trendPct={stats.trendPct}/>
-            </Section>
-
-            <div style={{ marginTop: 22 }}>
-              {/* Hlavička sekce s přepínačem Tituly / Relikvie */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('stats.achievements')}</span>
-                <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 3, gap: 3 }}>
-                  {([['titles', t('stats.tabTitles')], ['relics', `${t('stats.tabRelics')}${rewards.length ? ` · ${rewards.length}` : ''}`]] as const).map(([tab, lbl]) => {
-                    const on = achTab === tab
-                    return (
-                      <button key={tab} onClick={() => setAchTab(tab)} style={{
-                        border: 'none', padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5,
-                        fontFamily: 'var(--font-sans)', fontWeight: on ? 600 : 500,
-                        background: on ? 'var(--surface)' : 'transparent', color: on ? 'var(--ink)' : 'var(--ink-3)',
-                        boxShadow: on ? '0 1px 3px rgba(42,31,23,0.1)' : 'none',
-                      }}>{lbl}</button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {achTab === 'titles' ? (
-                <>
-                  <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '-2px 0 10px', lineHeight: 1.5 }}>{t('stats.achHowto')}</p>
-                  <div style={{ marginBottom: 12 }}><StreakLadder streak={stats.dailyStreak} tone="light"/></div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {ACHIEVEMENTS.map(cat => (
-                      <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <RelicGallery rewards={rewards}/>
-              )}
-            </div>
+            <StatsSections data={data} onPlay={() => navigate('/play')}/>
+            <div style={{ marginTop: 22 }}><BadgesSections data={data}/></div>
           </>
         )}
       <MobileNav active="badges"/>
