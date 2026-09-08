@@ -198,7 +198,7 @@ export const resources = {
     kron: {
       eyebrow: 'KRONIKA', title: 'Tvoje sbírka historie',
       sub: 'Za tři hvězdy v kampani objevíš relikvii. Za plný počet bodů dostaneš její dokonalou verzi — a tři kusy můžeš vystavit na profilu.',
-      relics: 'Relikvie', collectionPct: 'Sbírka z {{n}} %', streakLabel: 'SÉRIE', streakCta: 'Celý rok', myGame: 'TVÁ HRA', badgesTitle: 'Odznaky a tituly', roundsAbove950: 'Kola nad 950 bodů', to: 'do', last12w: 'Posledních 12 týdnů',
+      relics: 'Relikvie', collectionPct: 'Sbírka z {{n}} %', streakLabel: 'SÉRIE', streakCta: 'Celý rok', myGame: 'TVÁ HRA', badgesTitle: 'Odznaky a tituly', noTitle: 'Zatím bez titulu', roundsShort: 'KOL ≥950', titleNext1: 'Ještě', titleNext2: 'nad 950 →', titleMax: '✓ Nejvyšší hodnost', streakLead: 'Ještě', streakDays: '{{n}} dní', streakTail: 'do dalšího milníku', roundsAbove950: 'Kola nad 950 bodů', to: 'do', last12w: 'Posledních 12 týdnů',
       tabRelics: 'Relikvie', tabStats: 'Statistiky', tabBadges: 'Odznaky',
       showcaseCase: 'Vitrína', discovered: 'Objevené relikvie', empty: 'V tomto filtru zatím nic není.',
       preserved: 'Zachovalá', preservedHint: '3 ★ v kampani', perfect: 'Dokonalá', perfectHint: 'plný počet bodů',
@@ -539,7 +539,7 @@ export const resources = {
     kron: {
       eyebrow: 'CHRONICLE', title: 'Your collection of history',
       sub: 'Earn three stars in a campaign to discover a relic. A perfect score gives you its perfect version — and you can showcase three on your profile.',
-      relics: 'Relics', collectionPct: 'Collection {{n}} %', streakLabel: 'STREAK', streakCta: 'Whole year', myGame: 'YOUR GAME', badgesTitle: 'Badges & titles', roundsAbove950: 'Rounds above 950', to: 'to', last12w: 'Last 12 weeks',
+      relics: 'Relics', collectionPct: 'Collection {{n}} %', streakLabel: 'STREAK', streakCta: 'Whole year', myGame: 'YOUR GAME', badgesTitle: 'Badges & titles', noTitle: 'No title yet', roundsShort: 'ROUNDS ≥950', titleNext1: '', titleNext2: 'more ≥950 →', titleMax: '✓ Highest rank', streakLead: '', streakDays: '{{n}} days', streakTail: 'to next milestone', roundsAbove950: 'Rounds above 950', to: 'to', last12w: 'Last 12 weeks',
       tabRelics: 'Relics', tabStats: 'Stats', tabBadges: 'Badges',
       showcaseCase: 'Showcase', discovered: 'Discovered relics', empty: 'Nothing in this filter yet.',
       preserved: 'Preserved', preservedHint: '3 ★ in a campaign', perfect: 'Perfect', perfectHint: 'perfect score',
@@ -882,7 +882,7 @@ export const resources = {
     kron: {
       eyebrow: 'CHRONIK', title: 'Deine Sammlung der Geschichte',
       sub: 'Drei Sterne in einer Kampagne enthüllen ein Relikt. Für die volle Punktzahl bekommst du seine perfekte Version — und drei Stücke kannst du im Profil ausstellen.',
-      relics: 'Relikte', collectionPct: 'Sammlung {{n}} %', streakLabel: 'SERIE', streakCta: 'Ganzes Jahr', myGame: 'DEIN SPIEL', badgesTitle: 'Abzeichen & Titel', roundsAbove950: 'Runden über 950', to: 'bis', last12w: 'Letzte 12 Wochen',
+      relics: 'Relikte', collectionPct: 'Sammlung {{n}} %', streakLabel: 'SERIE', streakCta: 'Ganzes Jahr', myGame: 'DEIN SPIEL', badgesTitle: 'Abzeichen & Titel', noTitle: 'Noch kein Titel', roundsShort: 'RUNDEN ≥950', titleNext1: 'Noch', titleNext2: 'über 950 →', titleMax: '✓ Höchster Rang', streakLead: 'Noch', streakDays: '{{n}} Tage', streakTail: 'bis zum nächsten Meilenstein', roundsAbove950: 'Runden über 950', to: 'bis', last12w: 'Letzte 12 Wochen',
       tabRelics: 'Relikte', tabStats: 'Statistik', tabBadges: 'Abzeichen',
       showcaseCase: 'Vitrine', discovered: 'Entdeckte Relikte', empty: 'In diesem Filter noch nichts.',
       preserved: 'Erhalten', preservedHint: '3 ★ in einer Kampagne', perfect: 'Perfekt', perfectHint: 'volle Punktzahl',

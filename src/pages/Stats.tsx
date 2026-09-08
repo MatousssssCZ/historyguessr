@@ -3,10 +3,10 @@ import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getUserSessions, getUserDailyResults, getCategoryHits, getMyRewards, localDateISO, type SessionRow } from '@/lib/supabase'
+import { getUserSessions, getUserDailyResults, getCategoryHits, getMyRewards, getTitleOwnership, localDateISO, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS, tierProgress, type CategoryAchievements } from '@/lib/achievements'
-import StreakLadder from '@/components/StreakLadder'
+import Icon, { type IconName } from '@/components/Icon'
 import MobileNav from '@/components/MobileNav'
 import { rewardName, rewardDescription } from '@/lib/eventLocale'
 import { PageShell, PageHeader } from '@/components/ui/Page'
@@ -179,6 +179,18 @@ export function BadgesSections({ data, wide }: { data: StatsData; wide?: boolean
   const { t } = useTranslation()
   const { stats, catHits, rewards } = data
   const [achTab, setAchTab] = useState<'titles' | 'relics'>('titles')
+  const [ownership, setOwnership] = useState<Record<string, number>>({})
+
+  // % hráčů s aktuálním titulem (nebo vyšším) — práh = počet kol aktuální hodnosti.
+  useEffect(() => {
+    const thr: Record<string, number> = {}
+    for (const cat of ACHIEVEMENTS) {
+      const { current } = tierProgress(cat.tiers, catHits[cat.id] ?? 0)
+      thr[cat.id] = current?.count ?? cat.tiers[0]?.count ?? 1
+    }
+    getTitleOwnership(thr).then(setOwnership).catch(() => {})
+  }, [catHits])
+
   if (!stats) return null
   const earnedTitles = ACHIEVEMENTS.filter(cat => (catHits[cat.id] ?? 0) >= (cat.tiers[0]?.count ?? 1)).length
   return (
@@ -204,12 +216,9 @@ export function BadgesSections({ data, wide }: { data: StatsData; wide?: boolean
       </div>
       {achTab === 'titles' ? (
         <>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '16px 17px', marginBottom: 16 }}>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 12 }}>{t('stats.achHowto')}</div>
-            <StreakLadder streak={stats.dailyStreak} tone="light"/>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: wide ? 'repeat(auto-fill, minmax(320px, 1fr))' : '1fr', gap: 12, alignItems: 'start' }}>
-            {ACHIEVEMENTS.map(cat => <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0}/>)}
+          <div style={{ marginBottom: 16 }}><StreakMilestoneRail streak={stats.dailyStreak}/></div>
+          <div style={{ display: 'grid', gridTemplateColumns: wide ? 'repeat(auto-fill, minmax(310px, 1fr))' : '1fr', gap: 14, alignItems: 'start' }}>
+            {ACHIEVEMENTS.map(cat => <AchievementRow key={cat.id} cat={cat} hits={catHits[cat.id] ?? 0} ownedPct={ownership[cat.id]}/>)}
           </div>
         </>
       ) : (
@@ -341,60 +350,123 @@ export default function StatsPage() {
   )
 }
 
-export function AchievementRow({ cat, hits }: { cat: CategoryAchievements; hits: number }) {
+// Lišta milníků série (33a) — spojená linka, oranžová část = postup. Proklik na celoroční přehled.
+const STREAK_MILESTONES: { days: number; icon: IconName }[] = [
+  { days: 3, icon: 'flame' }, { days: 7, icon: 'calendar-check' }, { days: 14, icon: 'lightning' },
+  { days: 30, icon: 'calendar-star' }, { days: 60, icon: 'diamond' }, { days: 100, icon: 'trophy' }, { days: 365, icon: 'crown' },
+]
+export function StreakMilestoneRail({ streak }: { streak: number }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const { current, next } = tierProgress(cat.tiers, hits)
-  const target = next?.count ?? cat.tiers[cat.tiers.length - 1].count
-  const prevCount = current?.count ?? 0
-  const pct = next ? Math.round(((hits - prevCount) / (target - prevCount)) * 100) : 100
+  const ms = STREAK_MILESTONES
+  const n = ms.length
+  const nextIdx = ms.findIndex(m => streak < m.days)
+  const nextMs = nextIdx === -1 ? null : ms[nextIdx]
+  // Zlomek napříč tratí (mezi středy dlaždic): interpolace mezi sousedními milníky
+  let frac = 1
+  if (streak <= ms[0].days) frac = streak <= 0 ? 0 : (streak / ms[0].days) * (0.5 / (n - 1))
+  else if (streak < ms[n - 1].days) {
+    const k = ms.reduce((acc, m, i) => (streak >= m.days ? i : acc), 0)
+    const seg = (streak - ms[k].days) / (ms[k + 1].days - ms[k].days)
+    frac = (k + seg) / (n - 1)
+  }
+  const fillW = `calc((100% - 38px) * ${Math.max(0, Math.min(1, frac))})`
 
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: '12px 14px', textAlign: 'left' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 9 }}>
-          <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0, borderRadius: '50%', background: `conic-gradient(var(--accent) ${Math.max(0, Math.min(100, pct)) * 3.6}deg, var(--line) 0)` }}>
-            <div style={{ position: 'absolute', inset: 3, borderRadius: '50%', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', background: current ? 'linear-gradient(150deg,#d97757,#b85a3e)' : 'var(--paper-300)', filter: current ? 'none' : 'grayscale(1)', opacity: current ? 1 : 0.55 }}>
-              {current ? current.icon : cat.icon}
-            </div>
+    <Link to="/streak" style={{ display: 'block', textDecoration: 'none', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <div style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 15, background: 'rgba(190,98,64,0.13)', border: '1px solid rgba(190,98,64,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#BE6240' }}><Icon name="flame" size={23}/></div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.15em', color: 'var(--ink-3)' }}>{t('stats.daily').toUpperCase()}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 26, color: 'var(--ink)', letterSpacing: '-0.02em', marginTop: 3 }}>{t('streak.days', { n: streak })}</div>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: current ? 'var(--ink)' : 'var(--ink-2)', letterSpacing: '-0.01em' }}>{current ? t('ach.' + cat.id + '.c' + current.count, current.name) : t('ach.' + cat.id + '.label', cat.label)}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{t('ach.' + cat.id + '.label', cat.label)} · {hits}× ≥950</div>
+        </div>
+        {nextMs && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{t('kron.streakLead')} <b style={{ fontWeight: 700, color: 'var(--ink)' }}>{t('kron.streakDays', { n: nextMs.days - streak })}</b> {t('kron.streakTail')}</span>
+            <Icon name="arrow-right" size={12} style={{ color: 'var(--accent-deep, #A34E30)' }}/>
           </div>
-          {next
-            ? <div style={{ textAlign: 'right', flexShrink: 0 }}><div style={{ fontSize: 16, lineHeight: 1, opacity: 0.5 }}>{next.icon}</div><div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 2 }}>{hits}/{next.count}</div></div>
-            : <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓ max</span>}
-          <span style={{ fontSize: 11, color: 'var(--ink-3)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms', marginLeft: 2 }}>▾</span>
-        </div>
-        <div style={{ height: 4, background: 'var(--paper-200)', borderRadius: 999, overflow: 'hidden' }}>
-          <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: '100%', background: 'var(--accent)', borderRadius: 999 }}/>
-        </div>
-        {next && <div style={{ fontSize: 11, color: 'var(--accent-deep)', marginTop: 6 }}>{t('stats.achToNext', { n: next.count - hits, name: t('ach.' + cat.id + '.c' + next.count, next.name) })}</div>}
-      </button>
-
-      {open && (
-        <div style={{ borderTop: '1px solid var(--line)', padding: '4px 8px 8px' }}>
-          {cat.tiers.map(tier => {
-            const done = hits >= tier.count
-            const isNext = !done && next?.count === tier.count
+        )}
+      </div>
+      <div style={{ position: 'relative', marginTop: 20 }}>
+        <div style={{ position: 'absolute', left: 19, right: 19, top: 18, height: 2, background: 'rgba(31,27,22,0.1)' }}/>
+        <div style={{ position: 'absolute', left: 19, top: 18, width: fillW, height: 2, background: '#BE6240' }}/>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+          {ms.map((m, i) => {
+            const reached = streak >= m.days
+            const isNext = i === nextIdx
+            const bg = reached ? '#BE6240' : isNext ? 'rgba(190,98,64,0.13)' : 'rgba(31,27,22,0.06)'
+            const border = reached ? '#BE6240' : isNext ? '#BE6240' : 'rgba(31,27,22,0.12)'
+            const col = reached ? '#FBF7F0' : isNext ? '#BE6240' : 'rgba(31,27,22,0.28)'
             return (
-              <div key={tier.count} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, background: isNext ? 'rgba(217,119,87,0.08)' : 'transparent' }}>
-                <div style={{ fontSize: 18, width: 28, textAlign: 'center', filter: done || isNext ? 'none' : 'grayscale(1)', opacity: done || isNext ? 1 : 0.4 }}>{tier.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: done ? 500 : 400, color: done ? 'var(--ink)' : 'var(--ink-2)' }}>{t('ach.' + cat.id + '.c' + tier.count, tier.name)}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{tier.count}× ≥950</div>
-                </div>
-                {done
-                  ? <span style={{ fontSize: 11, color: '#1d6b3a' }}>✓ {t('stats.achDone')}</span>
-                  : isNext
-                    ? <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 500 }}>{t('stats.achRemain', { n: tier.count - hits })}</span>
-                    : <span style={{ fontSize: 12, opacity: 0.45 }}>🔒</span>}
+              <div key={m.days} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, border: `1.5px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: col }}><Icon name={m.icon} size={17}/></div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.08em', color: reached || isNext ? '#3E362C' : 'var(--ink-3)' }}>{m.days}</span>
               </div>
             )
           })}
         </div>
-      )}
+      </div>
+    </Link>
+  )
+}
+
+// Barva a ikona kategorie (33a). Záhady/legendy = tón zamčené.
+const TITLE_STYLE: Record<string, { tone: string; icon: IconName }> = {
+  war: { tone: '#BE6240', icon: 'swords' },
+  moments: { tone: '#8A6F4E', icon: 'archive' },
+  places: { tone: '#4E6E88', icon: 'compass' },
+  inventions: { tone: '#6F6455', icon: 'gear' },
+  art: { tone: '#7E4E7A', icon: 'palette' },
+  sports: { tone: '#4E6E4C', icon: 'medal' },
+  disasters: { tone: '#A34E30', icon: 'warning' },
+  mysteries: { tone: '#8A7E6C', icon: 'moon-stars' },
+}
+const LOCKED_TONE = '#8A7E6C'
+
+/** Karta titulu jedné kategorie (33a): ikona v barvě kategorie, hodnost, pruh, „Ještě N× → Další". */
+export function AchievementRow({ cat, hits, ownedPct }: { cat: CategoryAchievements; hits: number; ownedPct?: number }) {
+  const { t } = useTranslation()
+  const { current, next } = tierProgress(cat.tiers, hits)
+  const style = TITLE_STYLE[cat.id] ?? { tone: LOCKED_TONE, icon: 'star' as IconName }
+  const locked = !current
+  const tone = locked ? LOCKED_TONE : style.tone
+  const target = next?.count ?? current?.count ?? cat.tiers[cat.tiers.length - 1].count
+  const barPct = locked ? 0 : Math.min(100, Math.round((hits / Math.max(1, target)) * 100))
+  const currentName = current ? t('ach.' + cat.id + '.c' + current.count, current.name) : t('kron.noTitle')
+  const nextName = next ? t('ach.' + cat.id + '.c' + next.count, next.name) : null
+  const remaining = next ? next.count - hits : 0
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '17px 18px', display: 'flex', flexDirection: 'column', gap: 13 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
+        <div style={{ width: 42, height: 42, flexShrink: 0, borderRadius: 13, background: `${tone}1f`, border: `1px solid ${tone}4d`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: locked ? 'rgba(31,27,22,0.4)' : tone }}>
+          <Icon name={locked ? 'moon-stars' : style.icon} size={20}/>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('ach.' + cat.id + '.label', cat.label)}</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 21, color: locked ? 'var(--ink-2)' : 'var(--ink)', letterSpacing: '-0.02em', marginTop: 3 }}>{currentName}</div>
+        </div>
+        <div style={{ flexShrink: 0, textAlign: 'right' }}>
+          <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)', whiteSpace: 'nowrap' }}>{hits}<span style={{ fontWeight: 500, fontSize: 12, color: 'var(--ink-3)' }}>/{target}</span></div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.1em', color: 'var(--ink-3)', marginTop: 2 }}>{t('kron.roundsShort')}</div>
+          {ownedPct != null && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5, marginTop: 5, color: 'var(--ink-3)' }}>
+              <Icon name="users" size={11} style={{ color: '#8A7E6C' }}/>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, whiteSpace: 'nowrap' }}>{ownedPct} %</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ height: 8, borderRadius: 5, background: 'rgba(31,27,22,0.09)', overflow: 'hidden' }}>
+        <div style={{ width: `${barPct}%`, height: '100%', borderRadius: 5, background: locked ? 'rgba(31,27,22,0.22)' : tone }}/>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <Icon name="arrow-right" size={11} style={{ color: '#8A7E6C', flexShrink: 0 }}/>
+        {next
+          ? <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--ink-2)' }}>{t('kron.titleNext1')} <b style={{ fontWeight: 700, color: 'var(--ink)' }}>{remaining}×</b> {t('kron.titleNext2')} <b style={{ fontWeight: 700, color: 'var(--ink)' }}>{nextName}</b></span>
+          : <span style={{ flex: 1, fontSize: 12.5, color: 'var(--ink-2)' }}>{t('kron.titleMax')}</span>}
+      </div>
     </div>
   )
 }

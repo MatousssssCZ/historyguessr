@@ -554,6 +554,18 @@ export async function getCategoryHits(userId: string): Promise<Record<string, nu
   return m
 }
 
+/** % hráčů s daným titulem (nebo vyšším) po kategoriích — vstup: {kategorie: práh}. */
+export async function getTitleOwnership(thresholds: Record<string, number>): Promise<Record<string, number>> {
+  try {
+    const { data } = await supabase.rpc('title_ownership', { p_thresholds: thresholds })
+    const out: Record<string, number> = {}
+    for (const [k, v] of Object.entries((data ?? {}) as Record<string, unknown>)) out[k] = Number(v) || 0
+    return out
+  } catch {
+    return {}
+  }
+}
+
 // ─── Přátelé ──────────────────────────────────────────────
 
 export interface Friend { id: string; username: string | null; xp: number }
