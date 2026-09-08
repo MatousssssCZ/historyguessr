@@ -441,7 +441,7 @@ export function AchievementRow({ cat, hits, ownedPct }: { cat: CategoryAchieveme
     <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '17px 18px', display: 'flex', flexDirection: 'column', gap: 13 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
         <div style={{ width: 42, height: 42, flexShrink: 0, borderRadius: 13, background: `${tone}1f`, border: `1px solid ${tone}4d`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: locked ? 'rgba(31,27,22,0.4)' : tone }}>
-          <Icon name={locked ? 'moon-stars' : style.icon} size={20}/>
+          <Icon name={style.icon} size={20}/>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{t('ach.' + cat.id + '.label', cat.label)}</div>
