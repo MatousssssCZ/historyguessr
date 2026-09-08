@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { levelFromXp } from '@/lib/leveling'
 import { currentLocale } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -8,13 +9,13 @@ import MobileNav from '@/components/MobileNav'
 import AppHeader from '@/components/AppHeader'
 import CompassLoader from '@/components/CompassLoader'
 import Icon from '@/components/Icon'
-import { useStatsData, StatsSections, BadgesSections, LevelBar } from '@/pages/Stats'
+import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages/Stats'
 import {
   getKronikaBundle, setRelicShowcase, relicImage,
   type KronikaBundle, type RelicView,
 } from '@/lib/relics'
 
-type KronTab = 'relics' | 'stats' | 'badges'
+type KronTab = 'relics' | 'badges'
 
 const GOLD = '#B08040'
 const GOLD_LIGHT = '#E8C88A'
@@ -49,14 +50,7 @@ export default function KronikaPage() {
         <div style={{ maxWidth: 1240, margin: '0 auto', background: 'var(--paper-200)', padding: isMobile ? '18px 15px 0' : '24px 26px 0' }}>
           <Switcher tab={tab} setTab={setTab} bundle={bundle} rewards={statsData.rewards.length}/>
         </div>
-        {tab === 'relics' && <RelicsTab bundle={bundle} isMobile={isMobile} onOpen={setDetail}/>}
-        {tab === 'stats' && (
-          <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px' }}>
-            <div style={{ marginBottom: 18 }}><LevelBar/></div>
-            {statsData.loading ? <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
-              : <StatsSections data={statsData} onPlay={() => navigate('/play')}/>}
-          </div>
-        )}
+        {tab === 'relics' && <RelicsTab bundle={bundle} isMobile={isMobile} onOpen={setDetail} statsData={statsData}/>}
         {tab === 'badges' && (
           <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px' }}>
             {statsData.loading ? <div style={{ textAlign: 'center', padding: 40 }}><span className="spinner" style={{ width: 26, height: 26 }}/></div>
@@ -80,7 +74,6 @@ function Switcher({ tab, setTab, bundle, rewards }: { tab: KronTab; setTab: (t: 
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', gap: 6, padding: 5, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 15, flexWrap: 'wrap' }}>
         <SwitchItem active={tab === 'relics'} label={t('kron.tabRelics')} icon="🏺" count={`${bundle.ownedTotal}/${bundle.total}`} onClick={() => setTab('relics')}/>
-        <SwitchItem active={tab === 'stats'} label={t('kron.tabStats')} icon="📊" onClick={() => setTab('stats')}/>
         <SwitchItem active={tab === 'badges'} label={t('kron.tabBadges')} icon="🏅" count={rewards ? String(rewards) : undefined} onClick={() => setTab('badges')}/>
       </div>
     </div>
@@ -90,6 +83,8 @@ function Switcher({ tab, setTab, bundle, rewards }: { tab: KronTab; setTab: (t: 
 // ── Hero: prsten sbírky + level ─────────────────────────────
 function KronikaHero({ bundle, isMobile }: { bundle: KronikaBundle; isMobile: boolean }) {
   const { t } = useTranslation()
+  const { profile } = useAuth()
+  const lvl = levelFromXp(profile?.xp ?? 0)
   const pct = bundle.total ? Math.round((bundle.ownedTotal / bundle.total) * 100) : 0
   return (
     <div style={{ position: 'relative', background: 'var(--ink-dark, #1A1611)', padding: isMobile ? '24px 18px 22px' : '30px 34px 26px', overflow: 'hidden' }}>
@@ -107,13 +102,13 @@ function KronikaHero({ bundle, isMobile }: { bundle: KronikaBundle; isMobile: bo
               <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4 }}>{t('kron.collectionPct', { n: pct })}</div>
             </div>
           </div>
-          <Link to="/streak" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9, padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)' }}>
-            <span style={{ fontSize: 22 }}>🔥</span>
+          <div style={{ padding: '15px 19px', borderRadius: 16, background: 'rgba(251,247,240,0.06)', border: '1px solid rgba(251,247,240,0.14)', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <RingDial pct={Math.round(lvl.pct * 100)} value={String(lvl.level)} color="#E9A183"/>
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.15em', color: 'rgba(251,247,240,0.6)' }}>{t('kron.streakLabel')}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#FBF7F0', marginTop: 4 }}>{t('kron.streakCta')} →</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.15em', color: 'rgba(251,247,240,0.6)' }}>{t('menu.level')}</div>
+              <div style={{ fontSize: 12.5, color: 'rgba(251,247,240,0.85)', marginTop: 4 }}>{lvl.into.toLocaleString(currentLocale())} / {lvl.need.toLocaleString(currentLocale())} XP</div>
             </div>
-          </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -132,9 +127,9 @@ function RingDial({ pct, value, sub, color }: { pct: number; value: string; sub?
   )
 }
 
-// ── Relikvie tab ────────────────────────────────────────────
-function RelicsTab({ bundle, isMobile, onOpen }: {
-  bundle: KronikaBundle; isMobile: boolean; onOpen: (v: RelicView) => void
+// ── Relikvie tab (vitrína + statistiky vlevo + vystaveno/sady/tituly vpravo) ──
+function RelicsTab({ bundle, isMobile, onOpen, statsData }: {
+  bundle: KronikaBundle; isMobile: boolean; onOpen: (v: RelicView) => void; statsData: StatsData
 }) {
   const { t } = useTranslation()
   const [cat, setCat] = useState<string>('all')
@@ -193,6 +188,7 @@ function RelicsTab({ bundle, isMobile, onOpen }: {
           <span style={{ color: GOLD }}>✦</span>{t('kron.perfectNote')}
         </div>
       )}
+      <StatsRail data={statsData}/>
       {vitrina}
       {sidebar}
     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { currentLocale } from '@/i18n'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getUserSessions, getUserDailyResults, getCategoryHits, getMyRewards, localDateISO, type SessionRow } from '@/lib/supabase'
 import { levelFromXp } from '@/lib/leveling'
@@ -31,6 +31,7 @@ interface Stats {
   avgYearDiff: number
   pctClose: number           // % kol do 25 km
   pctExactYear: number       // % kol s přesným rokem
+  roundsAbove950: number     // počet kol se skóre ≥ 950
   dailyCount: number
   dailyStreak: number
   gameScores: number[]       // chronologicky, pro graf
@@ -45,6 +46,7 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
   const avgYearDiff = rounds.reduce((a, r) => a + (r.year_diff ?? 0), 0) / nR
   const pctClose = Math.round(rounds.filter(r => (r.distance_km ?? 1e9) <= 25).length / nR * 100)
   const pctExactYear = Math.round(rounds.filter(r => (r.year_diff ?? 1) === 0).length / nR * 100)
+  const roundsAbove950 = rounds.filter(r => (r.round_score ?? 0) >= 950).length + daily.filter(d => (d.score ?? 0) >= 950).length
 
   const gameScores = sessions.map(s => s.total_score ?? 0)
   // Trend: průměr 2. poloviny vs 1. poloviny
@@ -78,7 +80,7 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
     bullseyes,
     avgDistance: Math.round(avgDistance),
     avgYearDiff: Math.round(avgYearDiff),
-    pctClose, pctExactYear,
+    pctClose, pctExactYear, roundsAbove950,
     dailyCount: daily.length,
     dailyStreak,
     gameScores,
@@ -225,6 +227,88 @@ export function LevelBar() {
       <div style={{ height: 8, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: 'linear-gradient(90deg, #d97757, #d89a54)' }}/>
       </div>
+    </div>
+  )
+}
+
+/** Levý pruh Kroniky (32a): Tvá hra + Přesnost + série. */
+export function StatsRail({ data }: { data: StatsData }) {
+  const { t } = useTranslation()
+  const { stats, dailyDates } = data
+  const n = (v: number) => v.toLocaleString(currentLocale())
+  if (!stats) return null
+
+  const rows: [string, string, string?][] = [
+    [t('stats.rounds'), n(stats.roundsPlayed)],
+    [t('stats.totalScore'), n(stats.totalScore)],
+    [t('stats.avgScore'), n(stats.avgScore)],
+    [t('stats.avgDistance'), n(stats.avgDistance), t('stats.unitKm')],
+    [t('stats.avgYear'), n(stats.avgYearDiff), t('stats.unitYears')],
+  ]
+  const bars: [string, string, number, string][] = [
+    [t('stats.close'), `${stats.pctClose} %`, stats.pctClose, '#BE6240'],
+    [t('stats.exactYear'), `${stats.pctExactYear} %`, stats.pctExactYear, '#B08040'],
+    [t('kron.roundsAbove950'), n(stats.roundsAbove950), stats.roundsPlayed ? Math.round(stats.roundsAbove950 / stats.roundsPlayed * 100) : 0, '#4E6E88'],
+  ]
+
+  // Kompaktní mřížka posledních 12 týdnů (84 dní končících dnes)
+  const today = new Date()
+  const todayIso = localDateISO(today)
+  const cells: { iso: string; played: boolean; future: boolean }[] = []
+  for (let i = 83; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i)
+    const iso = localDateISO(d)
+    cells.push({ iso, played: dailyDates.has(iso), future: iso > todayIso })
+  }
+
+  const cardCss: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: '18px 19px' }
+  const label: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-3)' }
+
+  return (
+    <div style={{ flex: '1 1 250px', minWidth: 250, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={cardCss}>
+        <div style={label}>{t('kron.myGame')}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', marginTop: 12 }}>
+          {rows.map(([k, v, unit], i) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 'none' }}>
+              <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{k}</span>
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{v}{unit && <small style={{ fontWeight: 500, fontSize: 11, color: 'var(--ink-3)', marginLeft: 3 }}>{unit}</small>}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={cardCss}>
+        <div style={label}>{t('stats.accuracy')}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 13, marginTop: 13 }}>
+          {bars.map(([k, v, pct, col]) => (
+            <div key={k}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{k}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{v}</span>
+              </div>
+              <div style={{ height: 7, borderRadius: 4, background: 'var(--paper-300)', overflow: 'hidden' }}><div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: col }}/></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Link to="/streak" style={{ ...cardCss, textDecoration: 'none', display: 'block' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ fontSize: 18 }}>🔥</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{t('streak.days', { n: stats.dailyStreak })}</span>
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{stats.dailyStreak} {t('kron.to')} 100 →</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14,1fr)', gap: 4, marginTop: 14 }}>
+          {cells.map(c => <div key={c.iso} style={{ aspectRatio: '1', borderRadius: 3, background: c.played ? '#4E6E4C' : c.future ? 'rgba(31,27,22,.05)' : 'rgba(31,27,22,.09)', boxShadow: c.iso === todayIso ? '0 0 0 2px var(--ink)' : undefined }}/>)}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 11 }}>
+          <span style={{ fontSize: 11, color: 'var(--ink-2)' }}>{t('kron.last12w')}</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 11.5, color: 'var(--accent-deep, #A34E30)' }}>{t('kron.streakCta')}</span>
+        </div>
+      </Link>
     </div>
   )
 }
