@@ -78,13 +78,22 @@ export default function RelicBadge({ rarity, silhouetteUrl, iconUrl, size = 56, 
           }}/>
         )}
         {legendary && !dim && (
-          <div aria-hidden style={{
-            position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'soft-light', opacity: 0.55,
-            background: 'linear-gradient(110deg, transparent 20%, rgba(255,120,180,.9), rgba(120,200,255,.9), rgba(140,255,180,.9), rgba(255,225,120,.9), transparent 80%)',
-            backgroundSize: '220% 100%',
-            backgroundPosition: `${50 + shX * 50}% 50%`,
-            animation: 'holoShift 5s linear infinite',
-          }}/>
+          <>
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'overlay', opacity: 0.95,
+              background: 'linear-gradient(110deg, rgba(255,80,160,.95), rgba(90,190,255,.95), rgba(120,255,170,.95), rgba(255,220,90,.95), rgba(190,110,255,.95), rgba(255,80,160,.95))',
+              backgroundSize: '260% 100%',
+              backgroundPosition: `${50 + shX * 60}% 50%`,
+              animation: 'holoShift 4s linear infinite',
+            }}/>
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'color-dodge', opacity: 0.5,
+              background: 'linear-gradient(110deg, rgba(255,80,160,.7), rgba(90,190,255,.7), rgba(120,255,170,.7), rgba(255,220,90,.7), rgba(190,110,255,.7), rgba(255,80,160,.7))',
+              backgroundSize: '260% 100%',
+              backgroundPosition: `${50 - shX * 60}% 50%`,
+              animation: 'holoShift 6s linear infinite reverse',
+            }}/>
+          </>
         )}
       </div>
     </div>
