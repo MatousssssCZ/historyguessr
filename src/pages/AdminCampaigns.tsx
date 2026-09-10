@@ -742,8 +742,12 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
-          <Field label="Název relikvie"><input className="input" value={f.name} onChange={e => set('name', e.target.value)} placeholder="např. Caesarův denár"/></Field>
+          <Field label="Název relikvie (CZ)"><input className="input" value={f.name} onChange={e => set('name', e.target.value)} placeholder="např. Caesarův denár"/></Field>
           <Field label="Rok (text)"><input className="input" value={f.year_label} onChange={e => set('year_label', e.target.value)} placeholder="44 př. n. l."/></Field>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Field label="Název (EN)"><input className="input" value={f.name_en} onChange={e => set('name_en', e.target.value)}/></Field>
+          <Field label="Název (DE)"><input className="input" value={f.name_de} onChange={e => set('name_de', e.target.value)}/></Field>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <Field label="Kategorie">
@@ -758,7 +762,11 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
             </select>
           </Field>
         </div>
-        <Field label="Popis (60–90 slov)"><textarea className="input" rows={3} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <Field label="Popis (CZ — fallback, 60–90 slov)"><textarea className="input" rows={3} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Field label="Popis (EN)"><textarea className="input" rows={3} value={f.description_en} onChange={e => set('description_en', e.target.value)}/></Field>
+          <Field label="Popis (DE)"><textarea className="input" rows={3} value={f.description_de} onChange={e => set('description_de', e.target.value)}/></Field>
+        </div>
         <label style={checkLabel}><input type="checkbox" checked={f.secret} onChange={e => set('secret', e.target.checked)}/> Skrytá (do dokončení jen silueta + % vlastníků)</label>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px' }}>
