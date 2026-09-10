@@ -10,6 +10,7 @@ import {
   uploadCategoryImage, getCampaignsExport,
 } from '@/lib/supabase'
 import { exportXLS } from '@/lib/xlsExport'
+import RelicViewer from '@/components/RelicViewer'
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
 import {
@@ -623,7 +624,7 @@ function CampaignForm({ category, allCategories, campaign, defaultSeq, events, o
 function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campaignTitle: string }) {
   const [relic, setRelic] = useState<Relic | null>(null)
   const [sets, setSets] = useState<RelicSet[]>([])
-  const [f, setF] = useState({ name: '', slug: '', year_label: '', category: 'war', secret: false, description: '', set_id: '' })
+  const [f, setF] = useState({ name: '', name_en: '', name_de: '', slug: '', year_label: '', category: 'war', secret: false, description: '', description_en: '', description_de: '', set_id: '' })
   const RARITIES = [
     { k: 'common' as const, label: 'Common', hint: 'dokončeno' },
     { k: 'rare' as const, label: 'Rare', hint: '2★' },
@@ -639,7 +640,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     getRelicForCampaign(campaignId).then(r => {
       if (r) {
         setRelic(r)
-        setF({ name: r.name, slug: r.slug, year_label: r.year_label ?? '', category: r.category ?? 'war', secret: r.secret, description: r.description ?? '', set_id: r.set_id ?? '' })
+        setF({ name: r.name, name_en: r.name_en ?? '', name_de: r.name_de ?? '', slug: r.slug, year_label: r.year_label ?? '', category: r.category ?? 'war', secret: r.secret, description: r.description ?? '', description_en: r.description_en ?? '', description_de: r.description_de ?? '', set_id: r.set_id ?? '' })
         setModels({ common: r.model_common ?? '', rare: r.model_rare ?? '', epic: r.model_epic ?? '', legendary: r.model_legendary ?? '' })
       }
     })
@@ -653,8 +654,10 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     if (!f.name.trim()) { setMsg('Vyplň název relikvie.'); return }
     setSaving(true); setMsg(null)
     const { data, error } = await upsertRelicForCampaign(campaignId, {
-      name: f.name.trim(), slug, year_label: f.year_label.trim() || null,
-      category: f.category, secret: f.secret, description: f.description.trim() || null,
+      name: f.name.trim(), name_en: f.name_en.trim() || null, name_de: f.name_de.trim() || null,
+      slug, year_label: f.year_label.trim() || null,
+      category: f.category, secret: f.secret,
+      description: f.description.trim() || null, description_en: f.description_en.trim() || null, description_de: f.description_de.trim() || null,
       set_id: f.set_id || null,
     })
     setSaving(false)
@@ -670,10 +673,11 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     try {
       const { url, error } = await uploadRelicModel(file, slug, rarity)
       if (error || !url) { setMsg('Upload GLB selhal: ' + error); return }
-      setModels(m => ({ ...m, [rarity]: url }))
       const patch: Partial<Relic> = { name: f.name.trim() || campaignTitle, slug }
       patch[`model_${rarity}` as `model_${typeof rarity}`] = url
-      const { data } = await upsertRelicForCampaign(campaignId, patch)
+      const { data, error: dbErr } = await upsertRelicForCampaign(campaignId, patch)
+      if (dbErr) { setMsg('Uložení do DB selhalo: ' + dbErr); return }
+      setModels(m => ({ ...m, [rarity]: url }))
       if (data) setRelic(data)
       setMsg(`Model „${rarity}" nahrán ✓`)
     } finally { setBusyKind(null) }
@@ -709,6 +713,11 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {RARITIES.map(r => (
             <div key={r.k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '9px 12px' }}>
+              <div style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#241d16', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {models[r.k]
+                  ? <RelicViewer modelUrl={models[r.k]} glow="gold" fallback="🏺"/>
+                  : <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 18 }}>🏺</span>}
+              </div>
               <span style={{ fontSize: 12.5, color: 'var(--ink-2)', flex: 1 }}>
                 🔄 <b style={{ fontWeight: 600 }}>{r.label}</b> <span style={{ color: 'var(--ink-3)' }}>({r.hint})</span>{models[r.k] ? ' · nahráno ✓' : ''}
               </span>

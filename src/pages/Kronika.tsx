@@ -12,7 +12,7 @@ import Icon from '@/components/Icon'
 import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages/Stats'
 import RelicViewer from '@/components/RelicViewer'
 import {
-  getKronikaBundle, setRelicShowcase, relicModel, RARITY_META, RARITY_ORDER, RARITY_RANK,
+  getKronikaBundle, setRelicShowcase, relicModel, relicName, relicDesc, RARITY_META, RARITY_ORDER, RARITY_RANK,
   type KronikaBundle, type RelicView, type Rarity,
 } from '@/lib/relics'
 
@@ -244,7 +244,7 @@ function RelicTile({ v, onOpen }: { v: RelicView; onOpen: (v: RelicView) => void
         {state === 'locked' && <span style={{ position: 'absolute', fontSize: 17, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={17}/></span>}
       </div>
       <div style={{ padding: '11px 13px 13px', background: owned ? 'var(--surface)' : 'var(--paper-100, #F7F2E8)' }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)' }}>{relic.name}</div>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)' }}>{relicName(relic)}</div>
         {owned ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 7 }}>
             <span style={{ fontSize: 10.5, color: 'var(--ink-2)' }}>{v.bestScore.toLocaleString(currentLocale())} / {v.maxScore.toLocaleString(currentLocale())}</span>
@@ -276,7 +276,7 @@ function ShowcaseCard({ bundle }: { bundle: KronikaBundle }) {
           if (!v) return <div key={i} style={{ aspectRatio: '1', borderRadius: 13, border: '1.5px dashed rgba(251,247,240,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,0.5)', fontSize: 20 }}>+</div>
           const tone = v.owned ? RARITY_META[v.owned.state].tone : STONE
           return (
-            <div key={i} title={v.relic.name} style={{ aspectRatio: '1', borderRadius: 13, border: `1.5px solid ${tone}b3`, background: `radial-gradient(circle at 50% 45%, ${tone}4d, rgba(251,247,240,.04))`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <div key={i} title={relicName(v.relic)} style={{ aspectRatio: '1', borderRadius: 13, border: `1.5px solid ${tone}b3`, background: `radial-gradient(circle at 50% 45%, ${tone}4d, rgba(251,247,240,.04))`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               <span style={{ fontSize: 24, color: tone }}>🏺</span>
             </div>
           )
@@ -297,7 +297,7 @@ function SetCard({ set, relics }: { set: { id: string; name: string; reward_name
       <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 12 }}>
         {relics.map(r => (
           <div key={r.relic.id} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12, color: r.owned ? 'var(--ink-2)' : 'var(--ink-3)' }}>
-            <span style={{ color: r.owned ? 'var(--good, #4E6E4C)' : 'var(--gold-ink, #7A5A28)' }}>{r.owned ? '✓' : '🔒'}</span>{r.relic.name}
+            <span style={{ color: r.owned ? 'var(--good, #4E6E4C)' : 'var(--gold-ink, #7A5A28)' }}>{r.owned ? '✓' : '🔒'}</span>{relicName(r.relic)}
           </div>
         ))}
       </div>
@@ -344,8 +344,8 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
         </div>
         <div style={{ padding: '22px 24px 24px', overflowY: 'auto' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{[relic.year_label, relic.category && t(`catShort.${relic.category}`, { defaultValue: relic.category })].filter(Boolean).join(' · ').toUpperCase()}</div>
-          <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relic.name}</h3>
-          {relic.description && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{relic.description}</p>}
+          <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(relic)}</h3>
+          {relicDesc(relic) && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{relicDesc(relic)}</p>}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 18 }}>
             <Fact label={t('kron.acquired')} value={owned ? new Date(owned.acquired_at).toLocaleDateString(currentLocale()) : '—'}/>

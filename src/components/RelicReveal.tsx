@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
-import { relicModel, RARITY_META, type RevealedRelic } from '@/lib/relics'
+import { relicModel, relicName, relicDesc, RARITY_META, type RevealedRelic } from '@/lib/relics'
 import RelicViewer from '@/components/RelicViewer'
 
 const GOLD_LIGHT = '#E8C88A'
@@ -32,12 +32,12 @@ export default function RelicReveal({ reveal, panoramaUrl, onChronicle, onClose 
         </div>
 
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.24em', color: GOLD_LIGHT, marginTop: 22 }}>{t('kron.revealFound')}</div>
-        <h3 style={{ margin: '12px 0 0', fontFamily: 'var(--font-serif)', fontSize: 40, lineHeight: 1.05, color: '#FBF7F0', letterSpacing: '-0.03em' }}>{relic.name}</h3>
+        <h3 style={{ margin: '12px 0 0', fontFamily: 'var(--font-serif)', fontSize: 40, lineHeight: 1.05, color: '#FBF7F0', letterSpacing: '-0.03em' }}>{relicName(relic)}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11 }}>
           <span style={{ padding: '4px 11px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{t('kron.rar_' + rarity).toUpperCase()}</span>
           {relic.year_label && <span style={{ fontSize: 13, color: 'rgba(251,247,240,0.72)' }}>{relic.year_label}</span>}
         </div>
-        {relic.description && <p style={{ margin: '20px 0 0', maxWidth: 400, fontSize: 13.5, lineHeight: 1.65, color: 'rgba(251,247,240,0.8)' }}>{relic.description}</p>}
+        {relicDesc(relic) && <p style={{ margin: '20px 0 0', maxWidth: 400, fontSize: 13.5, lineHeight: 1.65, color: 'rgba(251,247,240,0.8)' }}>{relicDesc(relic)}</p>}
 
         {!legendary && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 16, padding: '9px 14px', borderRadius: 999, background: 'rgba(176,128,64,0.16)', border: '1px solid rgba(176,128,64,0.4)' }}>
@@ -50,7 +50,7 @@ export default function RelicReveal({ reveal, panoramaUrl, onChronicle, onClose 
           <button onClick={onChronicle} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 48, padding: '0 24px', borderRadius: 14, border: 'none', background: '#FBF7F0', color: '#1F1B16', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>{t('kron.revealToChronicle')} →</button>
           <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 9, height: 48, padding: '0 22px', borderRadius: 14, background: 'transparent', border: '1px solid rgba(251,247,240,0.34)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>{t('common.close')}</button>
         </div>
-        <span style={{ marginTop: 6, fontSize: 11, color: 'rgba(251,247,240,0.4)' }}>{relic.name} · {reveal.score.toLocaleString(currentLocale())} / {reveal.maxScore.toLocaleString(currentLocale())}</span>
+        <span style={{ marginTop: 6, fontSize: 11, color: 'rgba(251,247,240,0.4)' }}>{relicName(relic)} · {reveal.score.toLocaleString(currentLocale())} / {reveal.maxScore.toLocaleString(currentLocale())}</span>
       </div>
     </div>
   )

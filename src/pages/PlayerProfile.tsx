@@ -5,7 +5,7 @@ import { currentLocale } from '@/i18n'
 import { levelFromXp } from '@/lib/leveling'
 import { ACHIEVEMENTS } from '@/lib/achievements'
 import { getPublicProfile, getPublicCategoryHits, type PublicProfile } from '@/lib/supabase'
-import { getPublicShowcase, relicModel, RARITY_META, type PublicRelic } from '@/lib/relics'
+import { getPublicShowcase, relicModel, relicName, relicDesc, RARITY_META, type PublicRelic } from '@/lib/relics'
 import RelicViewer from '@/components/RelicViewer'
 import { PageShell, PageHeader } from '@/components/ui/Page'
 import { AchievementRow } from '@/pages/Stats'
@@ -89,7 +89,7 @@ export default function PlayerProfilePage() {
                         {has3d && <span title="3D" style={{ position: 'absolute', top: 7, right: 7, fontSize: 11 }}>🔄</span>}
                       </div>
                       <div style={{ padding: '9px 11px 11px' }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pr.relic.name}</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{relicName(pr.relic)}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 3 }}>{t('kron.rar_' + pr.state)}</div>
                       </div>
                     </button>
@@ -128,8 +128,8 @@ function PublicRelicModal({ pr, owner, onClose }: { pr: PublicRelic; owner: stri
         </div>
         <div style={{ padding: '20px 22px 22px', overflowY: 'auto' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{[pr.relic.year_label, pr.relic.category && t(`catShort.${pr.relic.category}`, { defaultValue: pr.relic.category })].filter(Boolean).join(' · ').toUpperCase()}</div>
-          <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{pr.relic.name}</h3>
-          {pr.relic.description && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{pr.relic.description}</p>}
+          <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 27, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(pr.relic)}</h3>
+          {relicDesc(pr.relic) && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{relicDesc(pr.relic)}</p>}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12.5, color: 'var(--ink-3)' }}>
             <span>{t('pp.showcasedBy', { name: owner })}</span>
             <span>·</span>

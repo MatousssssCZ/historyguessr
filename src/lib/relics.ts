@@ -1,6 +1,7 @@
 // Kronika & relikvie — datová vrstva. Jedna relikvie na kampaň, 4 úrovně
 // vzácnosti (common→rare→epic→legendary) jako GLB modely. Čtení je defenzivní.
 import { supabase } from './supabase'
+import i18n from '@/i18n'
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
 export type RelicState = Rarity  // (zachován název kvůli importům)
@@ -20,10 +21,14 @@ export interface Relic {
   campaign_id: string | null
   set_id: string | null
   name: string
+  name_en: string | null
+  name_de: string | null
   year_label: string | null
   category: string | null
   secret: boolean
   description: string | null
+  description_en: string | null
+  description_de: string | null
   model_common: string | null
   model_rare: string | null
   model_epic: string | null
@@ -74,6 +79,22 @@ export interface RevealedRelic {
   stars: number
   score: number
   maxScore: number
+}
+
+/** Lokalizovaný název relikvie (fallback na český). */
+export function relicName(r: Pick<Relic, 'name' | 'name_en' | 'name_de'>): string {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  if (lng === 'en') return r.name_en?.trim() || r.name
+  if (lng === 'de') return r.name_de?.trim() || r.name
+  return r.name
+}
+
+/** Lokalizovaný popis relikvie (fallback na český). */
+export function relicDesc(r: Pick<Relic, 'description' | 'description_en' | 'description_de'>): string | null {
+  const lng = (i18n.language || 'cs').slice(0, 2)
+  if (lng === 'en') return r.description_en?.trim() || r.description
+  if (lng === 'de') return r.description_de?.trim() || r.description
+  return r.description
 }
 
 /** Vzácnost dle nejlepšího výkonu (legendary=plný počet bodů, epic=3★, rare=2★, common=dokončeno). */
