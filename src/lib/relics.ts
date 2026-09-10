@@ -29,6 +29,7 @@ export interface Relic {
   description: string | null
   description_en: string | null
   description_de: string | null
+  icon_url: string | null
   model_common: string | null
   model_rare: string | null
   model_epic: string | null
@@ -227,6 +228,34 @@ export async function upsertRelicForCampaign(campaignId: string, patch: Partial<
 export async function getRelicSets(): Promise<RelicSet[]> {
   const { data } = await supabase.from('relic_sets').select('*').order('seq')
   return (data ?? []) as RelicSet[]
+}
+
+/** Nahraje 2D ikonu relikvie (WebP) do bucketu `relics`. */
+export async function uploadRelicIcon(file: File, slug: string): Promise<{ url: string | null; error: string | null }> {
+  const path = `${slug}/icon.webp`
+  const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'image/webp' })
+  if (error) return { url: null, error: error.message }
+  const { data } = supabase.storage.from('relics').getPublicUrl(path)
+  return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }
+}
+
+/** Vystavené relikvie pro víc hráčů najednou (žebříček). Klíč = user_id. */
+export async function getShowcaseForUsers(userIds: string[]): Promise<Record<string, PublicRelic[]>> {
+  const out: Record<string, PublicRelic[]> = {}
+  if (!userIds.length) return out
+  try {
+    const { data } = await supabase
+      .from('player_relics')
+      .select('user_id, state, relics(*)')
+      .in('user_id', userIds).eq('showcased', true)
+    const rows = (data ?? []) as unknown as { user_id: string; state: Rarity; relics: Relic | Relic[] | null }[]
+    for (const r of rows) {
+      const relic = Array.isArray(r.relics) ? r.relics[0] : r.relics
+      if (!relic) continue
+      ;(out[r.user_id] ??= []).push({ relic, state: r.state, ownedPct: 0 })
+    }
+  } catch { /* ignore */ }
+  return out
 }
 
 /** Nahraje GLB model dané vzácnosti do bucketu `relics`. Vrátí veřejnou URL (cache-buster). */

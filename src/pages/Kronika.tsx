@@ -11,6 +11,7 @@ import CompassLoader from '@/components/CompassLoader'
 import Icon from '@/components/Icon'
 import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages/Stats'
 import RelicViewer from '@/components/RelicViewer'
+import RelicBadge from '@/components/RelicBadge'
 import {
   getKronikaBundle, setRelicShowcase, relicModel, relicName, relicDesc, RARITY_META, RARITY_ORDER, RARITY_RANK,
   type KronikaBundle, type RelicView, type Rarity,
@@ -238,10 +239,12 @@ function RelicTile({ v, onOpen }: { v: RelicView; onOpen: (v: RelicView) => void
   return (
     <div role={clickable ? 'button' : undefined} onClick={() => clickable && onOpen(v)}
       style={{ borderRadius: 15, overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: clickable ? 'pointer' : 'default', ...frame }}>
-      <div style={{ position: 'relative', height: 104, display: 'flex', alignItems: 'center', justifyContent: 'center', background: owned ? `radial-gradient(circle at 50% 45%, ${tone}33, transparent 68%)` : 'rgba(31,27,22,.05)' }}>
-        <span style={{ fontSize: 40, color: owned ? tone : 'rgba(31,27,22,.16)' }}>{owned ? '🏺' : '❔'}</span>
+      <div style={{ position: 'relative', height: 116, display: 'flex', alignItems: 'center', justifyContent: 'center', background: owned ? `radial-gradient(circle at 50% 45%, ${tone}1f, transparent 70%)` : 'rgba(31,27,22,.04)' }}>
+        {state === 'secret'
+          ? <span style={{ fontSize: 40, color: 'rgba(31,27,22,.16)' }}>❔</span>
+          : <RelicBadge rarity={rarity} iconUrl={relic.icon_url} name={relicName(relic)} size={84} dim={!owned}/>}
         {owned && <span style={{ position: 'absolute', left: 9, top: 9, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.1em', color: '#FBF7F0' }}>{legendary ? '✦ ' : ''}{rarityLabel(t, rarity!).toUpperCase()}</span>}
-        {state === 'locked' && <span style={{ position: 'absolute', fontSize: 17, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={17}/></span>}
+        {state === 'locked' && <span style={{ position: 'absolute', right: 9, top: 9, fontSize: 15, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={15}/></span>}
       </div>
       <div style={{ padding: '11px 13px 13px', background: owned ? 'var(--surface)' : 'var(--paper-100, #F7F2E8)' }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)' }}>{relicName(relic)}</div>
@@ -274,10 +277,9 @@ function ShowcaseCard({ bundle }: { bundle: KronikaBundle }) {
         {slots.map(i => {
           const v = bundle.showcase[i]
           if (!v) return <div key={i} style={{ aspectRatio: '1', borderRadius: 13, border: '1.5px dashed rgba(251,247,240,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,0.5)', fontSize: 20 }}>+</div>
-          const tone = v.owned ? RARITY_META[v.owned.state].tone : STONE
           return (
-            <div key={i} title={relicName(v.relic)} style={{ aspectRatio: '1', borderRadius: 13, border: `1.5px solid ${tone}b3`, background: `radial-gradient(circle at 50% 45%, ${tone}4d, rgba(251,247,240,.04))`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <span style={{ fontSize: 24, color: tone }}>🏺</span>
+            <div key={i} title={relicName(v.relic)} style={{ aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <RelicBadge rarity={v.owned?.state ?? null} iconUrl={v.relic.icon_url} name={relicName(v.relic)} size={64}/>
             </div>
           )
         })}

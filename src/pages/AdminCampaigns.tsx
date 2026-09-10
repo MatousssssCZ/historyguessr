@@ -14,9 +14,10 @@ import RelicViewer from '@/components/RelicViewer'
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
 import {
-  getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, getRelicSets,
+  getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, getRelicSets,
   RELIC_CATEGORIES, type Relic, type RelicSet,
 } from '@/lib/relics'
+import { generateIllustration } from '@/lib/ai'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
 // Předvyplněný práh ★ pro novou kategorii dle pořadí: round(0.7·(k−1)·k)
@@ -632,6 +633,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     { k: 'legendary' as const, label: 'Legendary', hint: 'plný počet bodů' },
   ]
   const [models, setModels] = useState<Record<string, string>>({})
+  const [iconUrl, setIconUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [busyKind, setBusyKind] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
@@ -642,6 +644,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
         setRelic(r)
         setF({ name: r.name, name_en: r.name_en ?? '', name_de: r.name_de ?? '', slug: r.slug, year_label: r.year_label ?? '', category: r.category ?? 'war', secret: r.secret, description: r.description ?? '', description_en: r.description_en ?? '', description_de: r.description_de ?? '', set_id: r.set_id ?? '' })
         setModels({ common: r.model_common ?? '', rare: r.model_rare ?? '', epic: r.model_epic ?? '', legendary: r.model_legendary ?? '' })
+        setIconUrl(r.icon_url ?? '')
       }
     })
     getRelicSets().then(setSets)
@@ -664,6 +667,36 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     if (error) { setMsg('Chyba: ' + error); return }
     if (data) setRelic(data)
     setMsg('Uloženo ✓')
+  }
+
+  async function persistIcon(url: string) {
+    setIconUrl(url)
+    const { data, error } = await upsertRelicForCampaign(campaignId, { name: f.name.trim() || campaignTitle, slug, icon_url: url })
+    if (error) { setMsg('Uložení ikony selhalo: ' + error); return }
+    if (data) setRelic(data)
+    setMsg('Ikona uložena ✓')
+  }
+  async function generateIcon() {
+    if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
+    setBusyKind('icon'); setMsg(null)
+    try {
+      const img = await generateIllustration({ title: f.name.trim() || campaignTitle, description: `Ikona historické relikvie „${f.name.trim() || campaignTitle}" — jeden předmět uprostřed, muzejní 3D render, měkké studiové světlo, čtvercová kompozice, bez textu a pozadí.` })
+      const c = await compressIllustration(img, 512)
+      const { url, error } = await uploadRelicIcon(c, slug)
+      if (error || !url) { setMsg('Generování selhalo: ' + error); return }
+      await persistIcon(url)
+    } catch (e) { setMsg('Generování selhalo: ' + (e as Error).message) } finally { setBusyKind(null) }
+  }
+  async function uploadIcon(file: File | null | undefined) {
+    if (!file) return
+    if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
+    setBusyKind('icon'); setMsg(null)
+    try {
+      const c = await compressIllustration(file, 512)
+      const { url, error } = await uploadRelicIcon(c, slug)
+      if (error || !url) { setMsg('Upload ikony selhal: ' + error); return }
+      await persistIcon(url)
+    } finally { setBusyKind(null) }
   }
 
   async function uploadGlb(rarity: 'common' | 'rare' | 'epic' | 'legendary', file: File | null | undefined) {
@@ -709,6 +742,19 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
         </div>
         <Field label="Popis (60–90 slov)"><textarea className="input" rows={3} value={f.description} onChange={e => set('description', e.target.value)}/></Field>
         <label style={checkLabel}><input type="checkbox" checked={f.secret} onChange={e => set('secret', e.target.checked)}/> Skrytá (do dokončení jen silueta + % vlastníků)</label>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px' }}>
+          <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: '50%', overflow: 'hidden', background: '#241d16', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {iconUrl ? <img src={iconUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 20 }}>🏺</span>}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Ikona relikvie (2D)</div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>Odznak v žebříčku, dlaždicích a na profilu.</div>
+          </div>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'icon'} onClick={generateIcon}>{busyKind === 'icon' ? '…' : '✨ Vygenerovat (AI)'}</button>
+          <label className="btn btn-ghost" style={{ fontSize: 12, cursor: 'pointer' }}>Nahrát<input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => uploadIcon(e.target.files?.[0])}/></label>
+        </div>
+
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>3D modely (GLB) podle vzácnosti</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {RARITIES.map(r => (

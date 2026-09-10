@@ -7,6 +7,7 @@ import { ACHIEVEMENTS } from '@/lib/achievements'
 import { getPublicProfile, getPublicCategoryHits, type PublicProfile } from '@/lib/supabase'
 import { getPublicShowcase, relicModel, relicName, relicDesc, RARITY_META, type PublicRelic } from '@/lib/relics'
 import RelicViewer from '@/components/RelicViewer'
+import RelicBadge from '@/components/RelicBadge'
 import { PageShell, PageHeader } from '@/components/ui/Page'
 import { AchievementRow } from '@/pages/Stats'
 import MobileNav from '@/components/MobileNav'
@@ -77,18 +78,13 @@ export default function PlayerProfilePage() {
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase', margin: '4px 0 12px' }}>{t('pp.showcase')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
                 {showcase.map(pr => {
-                  const tone = RARITY_META[pr.state].tone
-                  const has3d = !!relicModel(pr.relic, pr.state)
                   return (
                     <button key={pr.relic.id} onClick={() => setRelicDetail(pr)} style={{
-                      border: `1.5px solid ${tone}b3`, borderRadius: 15, overflow: 'hidden',
-                      background: 'var(--surface)', cursor: 'pointer', padding: 0, display: 'flex', flexDirection: 'column', textAlign: 'left',
+                      border: '1px solid var(--line)', borderRadius: 15, overflow: 'hidden',
+                      background: 'var(--surface)', cursor: 'pointer', padding: '14px 11px 11px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, textAlign: 'center',
                     }}>
-                      <div style={{ position: 'relative', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `radial-gradient(circle at 50% 45%, ${tone}47, transparent 70%)` }}>
-                        <span style={{ fontSize: 30, color: tone }}>🏺</span>
-                        {has3d && <span title="3D" style={{ position: 'absolute', top: 7, right: 7, fontSize: 11 }}>🔄</span>}
-                      </div>
-                      <div style={{ padding: '9px 11px 11px' }}>
+                      <RelicBadge rarity={pr.state} iconUrl={pr.relic.icon_url} name={relicName(pr.relic)} size={72}/>
+                      <div style={{ minWidth: 0, width: '100%' }}>
                         <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{relicName(pr.relic)}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 3 }}>{t('kron.rar_' + pr.state)}</div>
                       </div>

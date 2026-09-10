@@ -5,6 +5,8 @@ import { currentLocale } from '@/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { levelFromXp } from '@/lib/leveling'
 import { getGlobalLeaderboard, getWorldSlice, getFriendsLeaderboard, type LeaderboardRow } from '@/lib/supabase'
+import { getShowcaseForUsers, relicName, type PublicRelic } from '@/lib/relics'
+import RelicBadge from '@/components/RelicBadge'
 import { PageShell, PageHeader } from '@/components/ui/Page'
 import MobileNav from '@/components/MobileNav'
 
@@ -12,7 +14,7 @@ const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 const GOLD = '#C89A3C'
 
 type Tab = 'world' | 'friends'
-type Entry = { rank: number; id: string; name: string; sub?: string; score: number; isMe: boolean }
+type Entry = { rank: number; id: string; name: string; sub?: string; score: number; isMe: boolean; relics?: PublicRelic[] }
 
 export default function LeaderboardPage() {
   const { t } = useTranslation()
@@ -25,6 +27,7 @@ export default function LeaderboardPage() {
   const [world, setWorld] = useState<LeaderboardRow[]>([])
   const [slice, setSlice] = useState<LeaderboardRow[]>([])
   const [friends, setFriends] = useState<LeaderboardRow[]>([])
+  const [showcase, setShowcase] = useState<Record<string, PublicRelic[]>>({})
 
   useEffect(() => {
     let alive = true
@@ -36,6 +39,8 @@ export default function LeaderboardPage() {
     ]).then(([w, s, f]) => {
       if (!alive) return
       setWorld(w); setSlice(s); setFriends(f); setLoading(false)
+      const ids = [...new Set([...w, ...s, ...f].map(r => r.user_id))]
+      getShowcaseForUsers(ids).then(sc => { if (alive) setShowcase(sc) }).catch(() => {})
     })
     return () => { alive = false }
   }, [isAnonymous])
@@ -43,18 +48,18 @@ export default function LeaderboardPage() {
   const worldEntries: Entry[] = world.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
-    score: r.xp, isMe: r.user_id === user?.id,
+    score: r.xp, isMe: r.user_id === user?.id, relics: showcase[r.user_id],
   }))
   const inTop = world.some(r => r.user_id === user?.id)
   const sliceEntries: Entry[] = (!inTop && slice.length) ? slice.map(r => ({
     rank: r.rank, id: r.user_id, name: r.username ?? '—',
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
-    score: r.xp, isMe: r.user_id === user?.id,
+    score: r.xp, isMe: r.user_id === user?.id, relics: showcase[r.user_id],
   })) : []
   const friendEntries: Entry[] = friends.map(r => ({
     rank: r.rank, id: r.user_id, name: r.user_id === user?.id ? t('round.you') : (r.username ?? '—'),
     sub: `${t('menu.level')} ${levelFromXp(r.xp).level}`,
-    score: r.xp, isMe: r.user_id === user?.id,
+    score: r.xp, isMe: r.user_id === user?.id, relics: showcase[r.user_id],
   }))
 
   const entries = tab === 'world' ? worldEntries : friendEntries
@@ -116,6 +121,11 @@ function Row({ e, loc, onOpen }: { e: Entry; loc: string; onOpen?: () => void })
         <div style={{ fontFamily: 'var(--font-sans)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</div>
         {e.sub && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>{e.sub}</div>}
       </div>
+      {e.relics && e.relics.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          {e.relics.slice(0, 3).map(pr => <RelicBadge key={pr.relic.id} rarity={pr.state} iconUrl={pr.relic.icon_url} name={relicName(pr.relic)} size={26}/>)}
+        </div>
+      )}
       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: e.isMe ? 'var(--accent)' : 'var(--ink)' }}>{e.score.toLocaleString(loc)} <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>XP</span></span>
       {onOpen && <span style={{ color: 'var(--ink-3)', fontSize: 16, flexShrink: 0 }}>›</span>}
     </div>
