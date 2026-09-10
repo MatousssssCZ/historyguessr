@@ -123,7 +123,7 @@ function Row({ e, loc, onOpen }: { e: Entry; loc: string; onOpen?: () => void })
       </div>
       {e.relics && e.relics.length > 0 && (
         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          {e.relics.slice(0, 3).map(pr => <RelicBadge key={pr.relic.id} rarity={pr.state} iconUrl={pr.relic.icon_url} name={relicName(pr.relic)} size={26}/>)}
+          {e.relics.slice(0, 3).map(pr => <RelicBadge key={pr.relic.id} rarity={pr.state} silhouetteUrl={pr.relic.silhouette_url} iconUrl={pr.relic.icon_url} name={relicName(pr.relic)} size={26}/>)}
         </div>
       )}
       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: e.isMe ? 700 : 600, fontSize: 14, color: e.isMe ? 'var(--accent)' : 'var(--ink)' }}>{e.score.toLocaleString(loc)} <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>XP</span></span>

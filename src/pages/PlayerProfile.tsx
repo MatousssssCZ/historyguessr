@@ -83,7 +83,7 @@ export default function PlayerProfilePage() {
                       border: '1px solid var(--line)', borderRadius: 15, overflow: 'hidden',
                       background: 'var(--surface)', cursor: 'pointer', padding: '14px 11px 11px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, textAlign: 'center',
                     }}>
-                      <RelicBadge rarity={pr.state} iconUrl={pr.relic.icon_url} name={relicName(pr.relic)} size={72}/>
+                      <RelicBadge rarity={pr.state} silhouetteUrl={pr.relic.silhouette_url} iconUrl={pr.relic.icon_url} name={relicName(pr.relic)} size={72}/>
                       <div style={{ minWidth: 0, width: '100%' }}>
                         <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{relicName(pr.relic)}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', marginTop: 3 }}>{t('kron.rar_' + pr.state)}</div>

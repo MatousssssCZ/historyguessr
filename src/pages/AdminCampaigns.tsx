@@ -11,10 +11,11 @@ import {
 } from '@/lib/supabase'
 import { exportXLS } from '@/lib/xlsExport'
 import RelicViewer from '@/components/RelicViewer'
+import RelicBadge from '@/components/RelicBadge'
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
 import {
-  getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, getRelicSets,
+  getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, uploadRelicSilhouette, getRelicSets,
   RELIC_CATEGORIES, type Relic, type RelicSet,
 } from '@/lib/relics'
 import { generateIllustration } from '@/lib/ai'
@@ -634,6 +635,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
   ]
   const [models, setModels] = useState<Record<string, string>>({})
   const [iconUrl, setIconUrl] = useState('')
+  const [silUrl, setSilUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [busyKind, setBusyKind] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
@@ -645,6 +647,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
         setF({ name: r.name, name_en: r.name_en ?? '', name_de: r.name_de ?? '', slug: r.slug, year_label: r.year_label ?? '', category: r.category ?? 'war', secret: r.secret, description: r.description ?? '', description_en: r.description_en ?? '', description_de: r.description_de ?? '', set_id: r.set_id ?? '' })
         setModels({ common: r.model_common ?? '', rare: r.model_rare ?? '', epic: r.model_epic ?? '', legendary: r.model_legendary ?? '' })
         setIconUrl(r.icon_url ?? '')
+        setSilUrl(r.silhouette_url ?? '')
       }
     })
     getRelicSets().then(setSets)
@@ -696,6 +699,21 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
       const { url, error } = await uploadRelicIcon(c, slug)
       if (error || !url) { setMsg('Upload ikony selhal: ' + error); return }
       await persistIcon(url)
+    } finally { setBusyKind(null) }
+  }
+
+  async function uploadSilhouette(file: File | null | undefined) {
+    if (!file) return
+    if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
+    setBusyKind('sil'); setMsg(null)
+    try {
+      const { url, error } = await uploadRelicSilhouette(file, slug)
+      if (error || !url) { setMsg('Upload siluety selhal: ' + error); return }
+      setSilUrl(url)
+      const { data, error: dbErr } = await upsertRelicForCampaign(campaignId, { name: f.name.trim() || campaignTitle, slug, silhouette_url: url })
+      if (dbErr) { setMsg('Uložení siluety selhalo: ' + dbErr); return }
+      if (data) setRelic(data)
+      setMsg('Silueta uložena ✓')
     } finally { setBusyKind(null) }
   }
 
@@ -753,6 +771,25 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
           </div>
           <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'icon'} onClick={generateIcon}>{busyKind === 'icon' ? '…' : '✨ Vygenerovat (AI)'}</button>
           <label className="btn btn-ghost" style={{ fontSize: 12, cursor: 'pointer' }}>Nahrát<input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => uploadIcon(e.target.files?.[0])}/></label>
+        </div>
+
+        {/* Silueta pro ražený kovový odznak */}
+        <div style={{ background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Silueta odznaku (PNG s průhledností)</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>Vyrazí se do kovové mince dle rarity (měď → stříbro → zlato → zlato+holo). Nejlépe jednoduchý bílý/černý tvar předmětu na průhledném pozadí.</div>
+            </div>
+            <label className="btn btn-ghost" style={{ fontSize: 12, cursor: 'pointer' }}>{busyKind === 'sil' ? '…' : 'Nahrát PNG'}<input type="file" accept="image/png" style={{ display: 'none' }} onChange={e => uploadSilhouette(e.target.files?.[0])}/></label>
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'center' }}>
+            {(['common', 'rare', 'epic', 'legendary'] as const).map(r => (
+              <div key={r} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <RelicBadge rarity={r} silhouetteUrl={silUrl || null} size={52} name={r}/>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{r}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>3D modely (GLB) podle vzácnosti</div>

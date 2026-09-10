@@ -30,6 +30,7 @@ export interface Relic {
   description_en: string | null
   description_de: string | null
   icon_url: string | null
+  silhouette_url: string | null
   model_common: string | null
   model_rare: string | null
   model_epic: string | null
@@ -234,6 +235,15 @@ export async function getRelicSets(): Promise<RelicSet[]> {
 export async function uploadRelicIcon(file: File, slug: string): Promise<{ url: string | null; error: string | null }> {
   const path = `${slug}/icon.webp`
   const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'image/webp' })
+  if (error) return { url: null, error: error.message }
+  const { data } = supabase.storage.from('relics').getPublicUrl(path)
+  return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }
+}
+
+/** Nahraje siluetu relikvie (PNG s průhledností) do bucketu `relics` — pro ražený odznak. */
+export async function uploadRelicSilhouette(file: File, slug: string): Promise<{ url: string | null; error: string | null }> {
+  const path = `${slug}/silhouette.png`
+  const { error } = await supabase.storage.from('relics').upload(path, file, { upsert: true, contentType: 'image/png' })
   if (error) return { url: null, error: error.message }
   const { data } = supabase.storage.from('relics').getPublicUrl(path)
   return { url: `${data.publicUrl}?t=${Date.now()}`, error: null }

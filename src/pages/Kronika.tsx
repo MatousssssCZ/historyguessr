@@ -242,7 +242,7 @@ function RelicTile({ v, onOpen }: { v: RelicView; onOpen: (v: RelicView) => void
       <div style={{ position: 'relative', height: 116, display: 'flex', alignItems: 'center', justifyContent: 'center', background: owned ? `radial-gradient(circle at 50% 45%, ${tone}1f, transparent 70%)` : 'rgba(31,27,22,.04)' }}>
         {state === 'secret'
           ? <span style={{ fontSize: 40, color: 'rgba(31,27,22,.16)' }}>❔</span>
-          : <RelicBadge rarity={rarity} iconUrl={relic.icon_url} name={relicName(relic)} size={84} dim={!owned}/>}
+          : <RelicBadge rarity={rarity} silhouetteUrl={relic.silhouette_url} iconUrl={relic.icon_url} name={relicName(relic)} size={84} dim={!owned}/>}
         {owned && <span style={{ position: 'absolute', left: 9, top: 9, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.1em', color: '#FBF7F0' }}>{legendary ? '✦ ' : ''}{rarityLabel(t, rarity!).toUpperCase()}</span>}
         {state === 'locked' && <span style={{ position: 'absolute', right: 9, top: 9, fontSize: 15, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={15}/></span>}
       </div>
@@ -279,7 +279,7 @@ function ShowcaseCard({ bundle }: { bundle: KronikaBundle }) {
           if (!v) return <div key={i} style={{ aspectRatio: '1', borderRadius: 13, border: '1.5px dashed rgba(251,247,240,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,0.5)', fontSize: 20 }}>+</div>
           return (
             <div key={i} title={relicName(v.relic)} style={{ aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <RelicBadge rarity={v.owned?.state ?? null} iconUrl={v.relic.icon_url} name={relicName(v.relic)} size={64}/>
+              <RelicBadge rarity={v.owned?.state ?? null} silhouetteUrl={v.relic.silhouette_url} iconUrl={v.relic.icon_url} name={relicName(v.relic)} size={64}/>
             </div>
           )
         })}
