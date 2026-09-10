@@ -51,11 +51,19 @@ export default function RelicBadge({ rarity, silhouetteUrl, iconUrl, size = 56, 
     <div title={name} style={{
       width: size, height: size, flex: 'none', borderRadius: '50%', padding: rim,
       background: dim ? '#b9b3a9' : `linear-gradient(145deg, ${metal.emboss}, ${metal.rim})`,
-      boxShadow: dim ? 'none' : `0 6px 16px -8px ${metal.glow}, inset 0 0 0 1px rgba(255,255,255,.15)`,
+      boxShadow: dim ? 'none' : legendary ? `0 0 18px -2px rgba(180,120,220,.6), 0 6px 16px -8px ${metal.glow}` : `0 6px 16px -8px ${metal.glow}, inset 0 0 0 1px rgba(255,255,255,.15)`,
       position: 'relative',
     }}>
+      {/* legendary: rotující duhový prstenec kolem mince */}
+      {legendary && !dim && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: -1, borderRadius: '50%', pointerEvents: 'none',
+          background: 'conic-gradient(from 0deg, #ff5f6d, #ffd36e, #47e0a0, #4ea0e0, #a06ad0, #ff5f6d)',
+          animation: 'holoRim 6s linear infinite', filter: 'saturate(1.3)', zIndex: 0,
+        }}/>
+      )}
       <div style={{
-        width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', position: 'relative',
+        width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', position: 'relative', zIndex: 1,
         background: faceGrad, boxShadow: 'inset 0 1px 2px rgba(255,255,255,.35), inset 0 -2px 5px rgba(0,0,0,.28)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
@@ -78,11 +86,21 @@ export default function RelicBadge({ rarity, silhouetteUrl, iconUrl, size = 56, 
           }}/>
         )}
         {legendary && !dim && (
-          <div aria-hidden style={{
-            position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'color-dodge', opacity: 0.42,
-            background: 'linear-gradient(115deg, rgba(255,0,128,.5), rgba(0,200,255,.5), rgba(120,255,120,.5), rgba(255,200,0,.5))',
-            backgroundSize: '260% 260%', backgroundPosition: `${50 + shX * 40}% ${50 + shY * 40}%`,
-          }}/>
+          <>
+            {/* stálý holografický přeliv — animovaný i bez náklonu, navíc reaguje na náklon */}
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'screen', opacity: 0.8,
+              background: 'linear-gradient(115deg, rgba(255,0,128,.7), rgba(0,200,255,.7), rgba(120,255,120,.7), rgba(255,220,0,.7), rgba(180,80,255,.7), rgba(255,0,128,.7))',
+              backgroundSize: '300% 100%',
+              backgroundPosition: `${50 + shX * 50}% 50%`,
+              animation: 'holoShift 4s linear infinite',
+            }}/>
+            {/* ostrý duhový pruh přes střed */}
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', mixBlendMode: 'color-dodge', opacity: 0.6,
+              background: `linear-gradient(${100 + shX * 40}deg, transparent 38%, rgba(120,220,255,.9) ${47 + shY * 8}%, rgba(255,140,220,.9) ${53 + shY * 8}%, transparent 62%)`,
+            }}/>
+          </>
         )}
       </div>
     </div>

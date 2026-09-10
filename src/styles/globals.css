@@ -146,6 +146,8 @@ body {
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 4px); } }
+@keyframes holoShift { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes holoRim { to { transform: rotate(360deg); } }
 
 /* Skeleton „shimmer" — zamaskuje čekání na data/obrázky, než dorazí. */
 @keyframes shimmer { 100% { transform: translateX(100%); } }
