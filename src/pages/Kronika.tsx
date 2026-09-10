@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { levelFromXp } from '@/lib/leveling'
@@ -324,7 +324,16 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
   const rank = RARITY_RANK[rarity]
   const model = relicModel(relic, rarity)
   const [busy, setBusy] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [moreBelow, setMoreBelow] = useState(false)
   const pct = view.maxScore ? Math.round((view.bestScore / view.maxScore) * 100) : 0
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (el) setMoreBelow(el.scrollTop + el.clientHeight < el.scrollHeight - 8)
+  }, [])
+  useEffect(() => { const id = setTimeout(checkScroll, 60); return () => clearTimeout(id) }, [checkScroll])
 
   async function toggleShowcase() {
     if (!userId || !owned) return
@@ -337,14 +346,17 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(31,27,22,0.58)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 440, maxHeight: '92dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'scaleIn 240ms var(--ease-spring) both' }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 440, maxHeight: '92dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'scaleIn 240ms var(--ease-spring) both' }}>
         <div style={{ position: 'relative', height: 250, background: 'var(--ink-dark, #1A1611)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 42%, ${tone}6b, rgba(16,13,10,.9) 74%)` }}/>
           <RelicViewer modelUrl={model} glow={rank >= 3 ? 'gold' : 'stone'}/>
           <span style={{ position: 'absolute', left: 20, top: 20, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{rarityLabel(t, rarity).toUpperCase()}</span>
           <button onClick={onClose} style={{ position: 'absolute', right: 20, top: 20, width: 32, height: 32, borderRadius: 10, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.2)', color: '#fff', cursor: 'pointer' }}>✕</button>
+          {model && (
+            <button onClick={() => setExpanded(true)} title={t('kron.expand')} style={{ position: 'absolute', right: 20, bottom: 16, display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 10, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.2)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12 }}>⤢ {t('kron.expand')}</button>
+          )}
         </div>
-        <div style={{ padding: '22px 24px 24px', overflowY: 'auto' }}>
+        <div ref={scrollRef} onScroll={checkScroll} style={{ padding: '22px 24px 26px', overflowY: 'auto' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{[relic.year_label, relic.category && t(`catShort.${relic.category}`, { defaultValue: relic.category })].filter(Boolean).join(' · ').toUpperCase()}</div>
           <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(relic)}</h3>
           {relicDesc(relic) && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{relicDesc(relic)}</p>}
@@ -383,7 +395,24 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
             {relic.campaign_id && <button onClick={() => onReplay(relic.campaign_id!)} style={{ flex: 'none', height: 48, padding: '0 20px', borderRadius: 14, background: 'var(--paper-50)', border: '1.5px solid var(--accent)', color: 'var(--accent-ink, #A34E30)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>{t('kron.replay')}</button>}
           </div>
         </div>
+        {/* Náznak scrollu */}
+        <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 46, pointerEvents: 'none', opacity: moreBelow ? 1 : 0, transition: 'opacity 180ms', background: 'linear-gradient(to top, var(--paper-50) 12%, transparent)' }}/>
+        {moreBelow && <div aria-hidden style={{ position: 'absolute', left: '50%', bottom: 8, transform: 'translateX(-50%)', pointerEvents: 'none', color: 'var(--ink-3)', fontSize: 16, animation: 'bob 1.2s ease-in-out infinite' }}>⌄</div>}
       </div>
+
+      {expanded && model && (
+        <div onClick={(e) => { e.stopPropagation(); setExpanded(false) }} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(16,13,10,0.94)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 45%, ${tone}55, rgba(16,13,10,.97) 70%)` }}/>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: 'min(88vw, 620px)', height: 'min(70vh, 620px)' }}>
+            <RelicViewer modelUrl={model} glow={rank >= 3 ? 'gold' : 'stone'}/>
+          </div>
+          <div style={{ position: 'relative', marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(251,247,240,0.75)' }}>
+            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18 }}>{relicName(relic)}</span>
+            <span style={{ fontSize: 12, color: 'rgba(251,247,240,0.5)' }}>· {t('kron.dragRotate')}</span>
+          </div>
+          <button onClick={(e) => { e.stopPropagation(); setExpanded(false) }} style={{ position: 'absolute', top: 'calc(16px + var(--safe-top))', right: 16, width: 40, height: 40, borderRadius: 12, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.24)', color: '#fff', cursor: 'pointer', fontSize: 15 }}>✕</button>
+        </div>
+      )}
     </div>
   )
 }
