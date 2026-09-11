@@ -34,6 +34,7 @@ interface Stats {
   roundsAbove950: number     // počet kol se skóre ≥ 950
   dailyCount: number
   dailyStreak: number
+  dailyStreakBest: number    // nejdelší série kdykoliv v historii
   gameScores: number[]       // chronologicky, pro graf
   trendPct: number           // % změna (2. půlka vs 1. půlka)
 }
@@ -68,6 +69,19 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
   if (!days.has(iso(d))) d.setDate(d.getDate() - 1) // pokud dnes nehrál, počítej od včera
   while (days.has(iso(d))) { dailyStreak++; d.setDate(d.getDate() - 1) }
 
+  // Nejdelší série: max po sobě jdoucích dnů kdykoliv v historii
+  let dailyStreakBest = 0, run = 0
+  let prev: Date | null = null
+  for (const isoStr of [...days].sort()) {
+    const [y, m, dd] = isoStr.split('-').map(Number)
+    const cur = new Date(y, m - 1, dd)
+    if (prev) { const nx = new Date(prev); nx.setDate(nx.getDate() + 1); run = iso(nx) === isoStr ? run + 1 : 1 }
+    else run = 1
+    if (run > dailyStreakBest) dailyStreakBest = run
+    prev = cur
+  }
+  dailyStreakBest = Math.max(dailyStreakBest, dailyStreak)
+
   const totalScore = profileScore || gameScores.reduce((a, b) => a + b, 0)
   // Průměr na KOLO ze surových kolových skóre (sólo + denní), ne na hru
   const roundsPlayed = rounds.length + daily.length
@@ -83,6 +97,7 @@ function computeStats(sessions: SessionRow[], daily: { score: number; date: stri
     pctClose, pctExactYear, roundsAbove950,
     dailyCount: daily.length,
     dailyStreak,
+    dailyStreakBest,
     gameScores,
     trendPct,
   }
@@ -317,7 +332,7 @@ export function StatsRail({ data, row }: { data: StatsData; row?: boolean }) {
             <span style={{ fontSize: 18 }}>🔥</span>
             <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{t('streak.days', { n: stats.dailyStreak })}</span>
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{stats.dailyStreak} {t('kron.to')} 100 →</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: 'var(--paper-200)', fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-2)', whiteSpace: 'nowrap' }} title={t('stats.streakBestTip')}>🏆 {t('stats.streakBest')}: <b style={{ color: 'var(--ink)' }}>{stats.dailyStreakBest}</b></span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14,1fr)', gap: 4, marginTop: 14 }}>
           {cells.map(c => <div key={c.iso} style={{ aspectRatio: '1', borderRadius: 3, background: c.played ? '#4E6E4C' : c.future ? 'rgba(31,27,22,.05)' : 'rgba(31,27,22,.09)', boxShadow: c.iso === todayIso ? '0 0 0 2px var(--ink)' : undefined }}/>)}
