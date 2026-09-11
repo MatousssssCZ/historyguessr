@@ -446,8 +446,7 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
           )}
         </div>
         <div ref={scrollRef} onScroll={checkScroll} style={{ padding: '14px 18px 16px', overflowY: 'auto' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{[relic.year_label, relic.category && t(`catShort.${relic.category}`, { defaultValue: relic.category })].filter(Boolean).join(' · ').toUpperCase()}</div>
-          <h3 style={{ margin: '5px 0 0', fontFamily: 'var(--font-serif)', fontSize: 24, lineHeight: 1.05, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(relic)}</h3>
+          <h3 style={{ margin: '2px 0 0', fontFamily: 'var(--font-serif)', fontSize: 24, lineHeight: 1.05, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(relic)}</h3>
           {relicDesc(relic) && <p style={{ margin: '7px 0 0', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>{relicDesc(relic)}</p>}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginTop: 11 }}>
