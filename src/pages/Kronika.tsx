@@ -274,7 +274,18 @@ function ShowcaseCard({ bundle, userId, onChanged, onOpen }: {
   const { t } = useTranslation()
   const slots = [0, 1, 2]
   const [picking, setPicking] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
   const canPick = !!userId && bundle.showcase.length < 3
+
+  async function unshowcase(v: RelicView) {
+    if (!userId) return
+    setBusyId(v.relic.id)
+    const res = await setRelicShowcase(userId, v.relic.id, false)
+    setBusyId(null)
+    if (!res.ok) { alert(res.error); return }
+    onChanged()
+  }
+
   return (
     <div style={{ flex: '1 1 250px', minWidth: 0, background: 'var(--ink)', borderRadius: 18, padding: '18px 19px' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'rgba(251,247,240,0.6)' }}>{t('kron.showcase')}</div>
@@ -285,9 +296,18 @@ function ShowcaseCard({ bundle, userId, onChanged, onOpen }: {
             <button key={i} onClick={() => canPick && setPicking(true)} disabled={!canPick} title={t('kron.showcaseAdd')} style={{ aspectRatio: '1', borderRadius: 13, border: '1.5px dashed rgba(251,247,240,0.28)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(251,247,240,0.5)', fontSize: 22, cursor: canPick ? 'pointer' : 'default' }}>+</button>
           )
           return (
-            <button key={i} onClick={() => onOpen(v)} title={relicName(v.relic)} style={{ aspectRatio: '1', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
-              <RelicBadge rarity={v.owned?.state ?? null} silhouetteUrl={v.relic.silhouette_url} iconUrl={v.relic.icon_url} name={relicName(v.relic)} size={64}/>
-            </button>
+            <div key={i} style={{ position: 'relative', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button onClick={() => onOpen(v)} title={relicName(v.relic)} style={{ border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                <RelicBadge rarity={v.owned?.state ?? null} silhouetteUrl={v.relic.silhouette_url} iconUrl={v.relic.icon_url} name={relicName(v.relic)} size={64}/>
+              </button>
+              {userId && (
+                <button onClick={(e) => { e.stopPropagation(); unshowcase(v) }} disabled={busyId === v.relic.id} title={t('kron.showcaseRemove')} aria-label={t('kron.showcaseRemove')} style={{
+                  position: 'absolute', top: -4, right: -4, width: 22, height: 22, borderRadius: '50%',
+                  background: 'rgba(20,16,10,0.92)', border: '1px solid rgba(251,247,240,0.35)', color: '#FBF7F0',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, lineHeight: 1, padding: 0,
+                }}>✕</button>
+              )}
+            </div>
           )
         })}
       </div>
@@ -445,7 +465,7 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
 
           <div style={{ display: 'flex', gap: 9, marginTop: 18 }}>
             <button onClick={toggleShowcase} disabled={busy || !owned} style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', cursor: owned ? 'pointer' : 'default', background: owned?.showcased ? 'var(--paper-200)' : 'var(--accent)', color: owned?.showcased ? 'var(--ink)' : '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14 }}>
-              {owned?.showcased ? t('kron.showcased') : `★ ${t('kron.showcaseCta')}`}
+              {owned?.showcased ? `✕ ${t('kron.showcaseRemove')}` : `★ ${t('kron.showcaseCta')}`}
             </button>
             {relic.campaign_id && <button onClick={() => onReplay(relic.campaign_id!)} style={{ flex: 'none', height: 48, padding: '0 20px', borderRadius: 14, background: 'var(--paper-50)', border: '1.5px solid var(--accent)', color: 'var(--accent-ink, #A34E30)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>{t('kron.replay')}</button>}
           </div>
