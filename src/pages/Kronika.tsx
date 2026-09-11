@@ -13,7 +13,7 @@ import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages
 import RelicViewer from '@/components/RelicViewer'
 import RelicBadge from '@/components/RelicBadge'
 import {
-  getKronikaBundle, setRelicShowcase, relicModel, relicName, relicDesc, RARITY_META, RARITY_ORDER, RARITY_RANK,
+  getKronikaBundle, setRelicShowcase, relicModel, relicName, relicDesc, RARITY_META, RARITY_DOT, RARITY_ORDER, RARITY_RANK,
   type KronikaBundle, type RelicView, type Rarity,
 } from '@/lib/relics'
 
@@ -223,6 +223,18 @@ function FilterChip({ active, label, count, onClick }: { active: boolean; label:
   )
 }
 
+// Malá „tečka" rarity (kov / holo) + procento vlastníků dané rarity, s tooltipem.
+function PctPill({ tip, label, dot }: { tip: string; label: string; dot?: Rarity }) {
+  return (
+    <span title={tip} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: 'var(--paper-200)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-2)', whiteSpace: 'nowrap', cursor: 'default' }}>
+      {dot
+        ? <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', background: RARITY_DOT[dot], boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12)' }}/>
+        : <span aria-hidden style={{ fontSize: 9, opacity: .7 }}>👥</span>}
+      {label}
+    </span>
+  )
+}
+
 // ── RelicTile ───────────────────────────────────────────────
 function RelicTile({ v, onOpen }: { v: RelicView; onOpen: (v: RelicView) => void }) {
   const { t } = useTranslation()
@@ -232,36 +244,38 @@ function RelicTile({ v, onOpen }: { v: RelicView; onOpen: (v: RelicView) => void
   const clickable = owned
   const tone = rarity ? RARITY_META[rarity].tone : STONE
   const legendary = rarity === 'legendary'
+  const rarPct = rarity ? (v.rarityPct[rarity] ?? 0) : 0
 
   const frame: React.CSSProperties = owned
     ? { border: `1.5px solid ${tone}`, background: legendary ? 'linear-gradient(180deg,rgba(176,128,64,.14),rgba(176,128,64,.04))' : 'var(--surface)', boxShadow: legendary ? '0 14px 30px -18px rgba(176,128,64,.7)' : 'none' }
-    : { border: state === 'secret' ? '1.5px dashed var(--line-strong)' : '1px solid var(--line)', background: 'var(--paper-300, #F3EDE2)' }
+    : { border: '1.5px dashed var(--line-strong)', background: 'var(--paper-300, #F3EDE2)' }
 
   return (
     <div role={clickable ? 'button' : undefined} onClick={() => clickable && onOpen(v)}
-      style={{ borderRadius: 15, overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: clickable ? 'pointer' : 'default', ...frame }}>
-      <div style={{ position: 'relative', height: 116, display: 'flex', alignItems: 'center', justifyContent: 'center', background: owned ? `radial-gradient(circle at 50% 45%, ${tone}1f, transparent 70%)` : 'rgba(31,27,22,.04)' }}>
-        {state === 'secret'
-          ? <span style={{ fontSize: 40, color: 'rgba(31,27,22,.16)' }}>❔</span>
-          : <RelicBadge rarity={rarity} silhouetteUrl={relic.silhouette_url} iconUrl={relic.icon_url} name={relicName(relic)} size={84} dim={!owned}/>}
+      style={{ borderRadius: 15, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', cursor: clickable ? 'pointer' : 'default', ...frame }}>
+      {/* Vizuál — jednotná výška pro skryté i odemčené */}
+      <div style={{ position: 'relative', height: 128, display: 'flex', alignItems: 'center', justifyContent: 'center', background: owned ? `radial-gradient(circle at 50% 45%, ${tone}1f, transparent 70%)` : 'rgba(31,27,22,.045)' }}>
+        {owned
+          ? <RelicBadge rarity={rarity} silhouetteUrl={relic.silhouette_url} iconUrl={relic.icon_url} name={relicName(relic)} size={88}/>
+          : <span style={{ fontSize: 40, color: 'rgba(31,27,22,.18)', fontFamily: 'var(--font-serif)' }}>?</span>}
         {owned && <span style={{ position: 'absolute', left: 9, top: 9, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.1em', color: '#FBF7F0' }}>{legendary ? '✦ ' : ''}{rarityLabel(t, rarity!).toUpperCase()}</span>}
-        {state === 'locked' && <span style={{ position: 'absolute', right: 9, top: 9, fontSize: 15, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={15}/></span>}
+        {state === 'locked' && <span title={t('kron.lockCampaign')} style={{ position: 'absolute', right: 9, top: 9, color: 'var(--gold-ink, #7A5A28)' }}><Icon name="lock" size={15}/></span>}
       </div>
-      <div style={{ padding: '11px 13px 13px', background: owned ? 'var(--surface)' : 'var(--paper-100, #F7F2E8)' }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)' }}>{relicName(relic)}</div>
-        {owned ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 7 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--ink-2)' }}>{v.bestScore.toLocaleString(currentLocale())} / {v.maxScore.toLocaleString(currentLocale())}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{v.ownedPct} %</span>
-          </div>
-        ) : state === 'secret' ? (
-          <div style={{ fontSize: 11, lineHeight: 1.45, color: 'var(--ink-2)', marginTop: 7 }}>{t('kron.secretHint')} <span style={{ color: 'var(--ink-3)' }}>· {v.ownedPct} %</span></div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, padding: '7px 9px', background: 'var(--gold-band-bg, rgba(176,128,64,.13))', border: '1px solid rgba(176,128,64,.32)', borderRadius: 9 }}>
-            <Icon name="lock" size={11}/>
-            <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 10.5, color: 'var(--gold-ink, #7A5A28)' }}>{t('kron.lockCampaign')}</span>
-          </div>
+
+      {/* Tělo — název nahoře (2 řádky), statistiky zarovnané dole */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '11px 13px 12px', background: owned ? 'var(--surface)' : 'var(--paper-100, #F7F2E8)' }}>
+        <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, lineHeight: 1.3, color: owned ? 'var(--ink)' : 'var(--ink-2)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 34 }}>{relicName(relic)}</div>
+
+        {owned && (
+          <div style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 6 }}>{v.bestScore.toLocaleString(currentLocale())} / {v.maxScore.toLocaleString(currentLocale())}</div>
         )}
+
+        {/* Zarovnaná spodní lišta se statistikami vlastnictví */}
+        <div style={{ marginTop: owned ? 8 : 'auto', paddingTop: owned ? 0 : 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <PctPill tip={t('kron.ownPctTip', { n: v.ownedPct })} label={`${v.ownedPct} %`}/>
+          {owned && rarity && <PctPill dot={rarity} tip={t('kron.rarPctTip', { n: rarPct })} label={`${rarPct} %`}/>}
+          {!owned && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>{state === 'locked' ? t('kron.lockCampaign') : t('kron.secretHint')}</span>}
+        </div>
       </div>
     </div>
   )

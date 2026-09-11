@@ -8,6 +8,14 @@ export type RelicState = Rarity  // (zachován název kvůli importům)
 
 export const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary']
 export const RARITY_RANK: Record<Rarity, number> = { common: 1, rare: 2, epic: 3, legendary: 4 }
+// Kovová barva „tečky" rarity (sladěno s odznakem RelicBadge). Legendary = holo → CSS gradient.
+export const RARITY_DOT: Record<Rarity, string> = {
+  common:    '#c9884f',  // měď
+  rare:      '#cfd4dc',  // stříbro
+  epic:      '#e3c356',  // zlato
+  legendary: 'conic-gradient(from 0deg,#ff5f6d,#ffd36e,#47e0a0,#4ea0e0,#a06ad0,#ff5f6d)',  // holo
+}
+
 export const RARITY_META: Record<Rarity, { tone: string; key: string }> = {
   common:    { tone: '#8A7E6C', key: 'common' },
   rare:      { tone: '#4E6E88', key: 'rare' },
@@ -61,6 +69,7 @@ export interface RelicView {
   state: RelicTileState
   owned: PlayerRelic | null
   ownedPct: number
+  rarityPct: Partial<Record<Rarity, number>>  // % hráčů vlastnících danou raritu této relikvie
   bestScore: number
   bestStars: number
   maxScore: number
@@ -129,10 +138,11 @@ const EMPTY: KronikaBundle = { relics: [], sets: [], showcase: [], byCategory: {
 
 export async function getKronikaBundle(userId: string): Promise<KronikaBundle> {
   try {
-    const [relicsRes, mineRes, ownRes, setsRes, progRes, campRes] = await Promise.all([
+    const [relicsRes, mineRes, ownRes, rarRes, setsRes, progRes, campRes] = await Promise.all([
       supabase.from('relics').select('*').order('seq'),
       supabase.from('player_relics').select('relic_id, state, acquired_at, showcased').eq('user_id', userId),
       supabase.from('relic_ownership').select('relic_id, owned_pct'),
+      supabase.from('relic_rarity_ownership').select('relic_id, state, pct'),
       supabase.from('relic_sets').select('*').order('seq'),
       supabase.from('user_campaign_progress').select('campaign_id, best_score, best_stars').eq('user_id', userId),
       supabase.from('campaigns').select('id, rounds_count'),
@@ -144,6 +154,10 @@ export async function getKronikaBundle(userId: string): Promise<KronikaBundle> {
     for (const p of (mineRes.data ?? []) as PlayerRelic[]) mine.set(p.relic_id, p)
     const pct = new Map<string, number>()
     for (const o of (ownRes.data ?? []) as { relic_id: string; owned_pct: number }[]) pct.set(o.relic_id, Number(o.owned_pct) || 0)
+    const rarPct = new Map<string, Partial<Record<Rarity, number>>>()
+    for (const o of (rarRes.data ?? []) as { relic_id: string; state: Rarity; pct: number }[]) {
+      const m = (rarPct.get(o.relic_id) ?? {}); m[o.state] = Number(o.pct) || 0; rarPct.set(o.relic_id, m)
+    }
     const prog = new Map<string, { best_score: number; best_stars: number }>()
     for (const p of (progRes.data ?? []) as { campaign_id: string; best_score: number; best_stars: number }[]) prog.set(p.campaign_id, p)
     const rounds = new Map<string, number>()
@@ -159,6 +173,7 @@ export async function getKronikaBundle(userId: string): Promise<KronikaBundle> {
         state: tileState(r, owned),
         owned,
         ownedPct: pct.get(r.id) ?? 0,
+        rarityPct: rarPct.get(r.id) ?? {},
         bestScore: p?.best_score ?? 0,
         bestStars: p?.best_stars ?? 0,
         maxScore: rc * 1000,
