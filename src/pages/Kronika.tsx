@@ -179,9 +179,13 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData, userId, onChanged }: {
     </div>
   )
 
-  const sidebar = (
-    <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: 14 }}>
+  const showcase = (
+    <div style={{ maxWidth: isMobile ? '100%' : 460, display: 'flex' }}>
       <ShowcaseCard bundle={bundle} userId={userId} onChanged={onChanged} onOpen={onOpen}/>
+    </div>
+  )
+  const setsRow = bundle.sets.length > 0 && (
+    <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: 14 }}>
       {bundle.sets.map(s => <SetCard key={s.set.id} set={s.set} relics={s.relics}/>)}
     </div>
   )
@@ -194,8 +198,8 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData, userId, onChanged }: {
         </div>
       )}
       {isMobile
-        ? <>{vitrina}{sidebar}<StatsRail data={statsData}/></>
-        : <><StatsRail data={statsData} row/>{vitrina}{sidebar}</>}
+        ? <>{showcase}{vitrina}{setsRow}<StatsRail data={statsData}/></>
+        : <><StatsRail data={statsData} row/>{showcase}{vitrina}{setsRow}</>}
     </div>
   )
 }
