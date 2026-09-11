@@ -691,6 +691,11 @@ export async function getReportEventsRated(minVotes = 3): Promise<{ best: RatedE
   const worst = [...sorted].reverse().filter(r => !bestIds.has(r.id)).slice(0, 6)
   return { best, worst }
 }
+export interface CampaignSeriesRow { day: string; events: number; attempts: number; completions: number }
+export async function getReportCampaignSeries(days: number): Promise<CampaignSeriesRow[]> {
+  const { data } = await supabase.rpc('report_campaign_series', { p_days: days })
+  return (data ?? []) as CampaignSeriesRow[]
+}
 export async function getReportDailyChallenge(days: number): Promise<DailyChallengeRow[]> {
   const { data } = await supabase.rpc('report_daily_challenge', { p_days: days })
   return (data ?? []) as DailyChallengeRow[]

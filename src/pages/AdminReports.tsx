@@ -4,8 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   getReportOverview, getReportMultiplayer, getReportDailySeries, getReportCategories,
-  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview,
-  type DailySeriesRow, type CategoryRow, type RankedEvent, type RatedEvent, type DailyChallengeRow, type CampaignReportRow,
+  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview, getReportCampaignSeries,
+  type DailySeriesRow, type CategoryRow, type RankedEvent, type RatedEvent, type DailyChallengeRow, type CampaignReportRow, type CampaignSeriesRow,
 } from '@/lib/supabase'
 
 const PERIODS = [7, 30, 90] as const
@@ -27,6 +27,7 @@ export default function AdminReportsPage() {
   const [cats, setCats] = useState<CategoryRow[]>([])
   const [events, setEvents] = useState<RankedEvent[]>([])
   const [daily, setDaily] = useState<DailyChallengeRow[]>([])
+  const [campSeries, setCampSeries] = useState<CampaignSeriesRow[]>([])
   const [campOv, setCampOv] = useState<Record<string, number>>({})
   const [camps, setCamps] = useState<CampaignReportRow[]>([])
   const [rated, setRated] = useState<{ best: RatedEvent[]; worst: RatedEvent[] }>({ best: [], worst: [] })
@@ -42,8 +43,8 @@ export default function AdminReportsPage() {
 
   const loadSeries = useCallback(async (d: number) => {
     setBusy(true)
-    const [s, dc] = await Promise.all([getReportDailySeries(d), getReportDailyChallenge(d)])
-    setSeries(s); setDaily(dc); setBusy(false)
+    const [s, dc, cs] = await Promise.all([getReportDailySeries(d), getReportDailyChallenge(d), getReportCampaignSeries(d).catch(() => [] as CampaignSeriesRow[])])
+    setSeries(s); setDaily(dc); setCampSeries(cs); setBusy(false)
   }, [])
   useEffect(() => { loadSeries(days) }, [days, loadSeries])
 
@@ -139,6 +140,10 @@ export default function AdminReportsPage() {
             </span>
           }>
             <CampaignBars rows={camps}/>
+          </Panel>
+
+          <Panel style={span(12)} title={`Kampaně — odehrané události za ${days} dní`}>
+            {busy ? <Spinner/> : <CampaignSeriesChart rows={campSeries}/>}
           </Panel>
 
           {/* ── Události — hranost + hodnocení ────────── */}
@@ -436,6 +441,54 @@ function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
             <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, margin: '2px 0' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }}/>{s.label}</span>
               <b style={{ fontFamily: 'var(--font-serif)' }}>{nf(Number(hv[s.key]))}</b>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Spojnicový graf denního vývoje odehrání kampaní
+const CS_SERIES = [
+  { key: 'events' as const, color: C_ACTIVE, label: 'Odehrané události' },
+  { key: 'completions' as const, color: C_ROUNDS, label: 'Dokončené kampaně' },
+]
+function CampaignSeriesChart({ rows }: { rows: CampaignSeriesRow[] }) {
+  const [hover, setHover] = useState<number | null>(null)
+  if (rows.length === 0 || rows.every(r => r.events === 0 && r.completions === 0)) return <Empty/>
+  const max = Math.max(1, ...rows.flatMap(r => [r.events, r.completions]))
+  const W = 100, H = 46, CH = 190, TOP = 27
+  const x = (i: number) => (rows.length === 1 ? W / 2 : (i / (rows.length - 1)) * W)
+  const y = (v: number) => H - (v / max) * (H - 3) - 1.5
+  const line = (k: 'events' | 'completions') => rows.map((r, i) => `${x(i)},${y(r[k])}`).join(' ')
+  const onMove = (e: MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const rel = (e.clientX - rect.left) / rect.width
+    setHover(Math.max(0, Math.min(rows.length - 1, Math.round(rel * (rows.length - 1)))))
+  }
+  const hv = hover != null ? rows[hover] : null
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{ display: 'flex', gap: 14, marginBottom: 8 }}>
+        {CS_SERIES.map(s => <Legend key={s.key} color={s.color} label={s.label}/>)}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" onMouseMove={onMove} onMouseLeave={() => setHover(null)} style={{ width: '100%', height: CH, overflow: 'visible', cursor: 'crosshair' }}>
+        {CS_SERIES.map(s => (
+          <polyline key={s.key} points={line(s.key)} fill="none" stroke={s.color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity={0.95}/>
+        ))}
+        {hover != null && <line x1={x(hover)} y1="0" x2={x(hover)} y2={H} stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="2 2" vectorEffect="non-scaling-stroke"/>}
+      </svg>
+      {hover != null && CS_SERIES.map(s => (
+        <span key={s.key} aria-hidden style={{ position: 'absolute', left: `${x(hover)}%`, top: `${TOP + (y(rows[hover][s.key]) / H) * CH}px`, width: 7, height: 7, borderRadius: '50%', background: s.color, border: '1.5px solid var(--surface)', transform: 'translate(-50%,-50%)', pointerEvents: 'none' }}/>
+      ))}
+      {hv && (
+        <div style={{ position: 'absolute', top: 24, left: `min(calc(${(hover! / Math.max(1, rows.length - 1)) * 100}%), calc(100% - 160px))`, pointerEvents: 'none', background: 'var(--ink-dark, #1a1611)', color: '#f5f1e8', borderRadius: 10, padding: '9px 11px', fontSize: 11.5, boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,.3))', minWidth: 150 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.6, marginBottom: 5 }}>{hv.day}</div>
+          {CS_SERIES.map(s => (
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, margin: '2px 0' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }}/>{s.label}</span>
+              <b style={{ fontFamily: 'var(--font-serif)' }}>{nf(hv[s.key])}</b>
             </div>
           ))}
         </div>
