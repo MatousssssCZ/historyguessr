@@ -318,8 +318,15 @@ function SeriesChart({ rows }: { rows: DailySeriesRow[] }) {
           <polyline key={s.key} points={line(s.key)} fill="none" stroke={s.color} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity={0.95}/>
         ))}
         {hover != null && <line x1={x(hover)} y1="0" x2={x(hover)} y2={H} stroke="var(--ink-3)" strokeWidth="0.5" strokeDasharray="2 2" vectorEffect="non-scaling-stroke"/>}
-        {hover != null && SERIES.map(s => <circle key={s.key} cx={x(hover)} cy={y(Number(rows[hover][s.key]))} r="2" fill={s.color} vectorEffect="non-scaling-stroke"/>)}
       </svg>
+      {/* Tečky jako HTML overlay — nezkreslí se roztažením SVG */}
+      {hover != null && SERIES.map(s => (
+        <span key={s.key} aria-hidden style={{
+          position: 'absolute', left: `${x(hover)}%`, top: `${27 + (y(Number(rows[hover][s.key])) / H) * 190}px`,
+          width: 7, height: 7, borderRadius: '50%', background: s.color, border: '1.5px solid var(--surface)',
+          transform: 'translate(-50%,-50%)', pointerEvents: 'none',
+        }}/>
+      ))}
       {hv && (
         <div style={{ position: 'absolute', top: 24, left: `min(calc(${(hover! / Math.max(1, rows.length - 1)) * 100}% ), calc(100% - 150px))`, pointerEvents: 'none', background: 'var(--ink-dark, #1a1611)', color: '#f5f1e8', borderRadius: 10, padding: '9px 11px', fontSize: 11.5, boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,.3))', minWidth: 140 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.6, marginBottom: 5 }}>{hv.day}</div>
