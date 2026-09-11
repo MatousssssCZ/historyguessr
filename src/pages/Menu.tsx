@@ -387,6 +387,9 @@ export default function MenuPage() {
 
               {/* Level / XP */}
               <button onClick={() => navigate('/leaderboard')} style={{ ...GLASS, padding: 18, textAlign: 'left', cursor: 'pointer', color: '#FBF7F0' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(233,161,131,.9)' }}>{t('menu.openLeaderboard')} →</span>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span style={{ fontFamily: 'var(--font-serif)', fontSize: 24, letterSpacing: '-0.02em' }}>{t('menu.level')} {lvl.level}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.6)' }}>{lvl.into.toLocaleString(loc)} / {lvl.need.toLocaleString(loc)} XP</span>
