@@ -488,8 +488,8 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
       </div>
 
       {expanded && model && (
-        <div onClick={(e) => { e.stopPropagation(); setExpanded(false) }} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(16,13,10,0.94)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 45%, ${tone}55, rgba(16,13,10,.97) 70%)` }}/>
+        <div onClick={(e) => { e.stopPropagation(); setExpanded(false) }} style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#100d0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 45%, ${tone}55, #100d0a 70%)` }}/>
           <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: 'min(88vw, 620px)', height: 'min(70vh, 620px)' }}>
             <RelicViewer modelUrl={model} glow={rank >= 3 ? 'gold' : 'stone'}/>
           </div>
