@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>OG template — HistoryGuesser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #1a120b; }
+  /* Přesně 1200×630 — vyexportuj tuto oblast jako og.png */
+  .og {
+    position: relative; width: 1200px; height: 630px; overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 78% 18%, rgba(217,119,87,.22), transparent 55%),
+      linear-gradient(150deg, #3d2f23 0%, #2a1f17 45%, #1a120b 100%);
+    font-family: 'Inter', system-ui, sans-serif; color: #f5f1e8;
+  }
+  /* Jemný „horizont“ + mřížka evokující 360° / street view */
+  .grid {
+    position: absolute; inset: 0; opacity: .10; mix-blend-mode: screen;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(245,241,232,.6) 0 1px, transparent 1px 80px),
+      repeating-linear-gradient(0deg, rgba(245,241,232,.35) 0 1px, transparent 1px 80px);
+    -webkit-mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 78%);
+            mask-image: radial-gradient(120% 80% at 50% 40%, #000 30%, transparent 78%);
+  }
+  .horizon { position: absolute; left: 0; right: 0; top: 315px; height: 1px; background: linear-gradient(90deg, transparent, rgba(217,119,87,.55), transparent); }
+
+  .wrap { position: relative; height: 100%; display: flex; align-items: center; padding: 0 74px; }
+
+  .left { max-width: 720px; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .logo { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(150deg, #d97757, #b85a3e);
+          display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px -10px rgba(217,119,87,.8); }
+  .brandname { font-family: 'JetBrains Mono', monospace; font-size: 17px; letter-spacing: .22em; text-transform: uppercase; color: #e8d9c4; }
+
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 82px; line-height: .98; letter-spacing: -.02em; color: #fdfaf4; }
+  body[data-lang="de"] h1 { font-size: 60px; }
+  body[data-lang="de"] .sub { font-size: 23px; }
+  h1 .accent { color: #ec9576; }
+  .sub { margin-top: 24px; font-size: 25px; font-weight: 500; color: rgba(245,241,232,.72); letter-spacing: .01em; }
+  .sub b { color: #f5f1e8; font-weight: 600; }
+
+  .chips { margin-top: 34px; display: flex; gap: 12px; }
+  .chip { font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: .04em;
+          padding: 9px 15px; border-radius: 999px; border: 1px solid rgba(245,241,232,.2);
+          background: rgba(245,241,232,.05); color: #e8dccb; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #d97757; }
+
+  /* Medailon vpravo: 360° prstenec + pin + rok */
+  .medal { position: absolute; right: 96px; top: 50%; transform: translateY(-50%); width: 300px; height: 300px; }
+  .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(232,201,165,.35);
+          box-shadow: inset 0 0 60px rgba(217,119,87,.18), 0 24px 60px -24px rgba(0,0,0,.7); }
+  .ring.r2 { inset: 30px; border-color: rgba(232,201,165,.22); border-style: dashed; }
+  .ring.r3 { inset: 66px; border-color: rgba(217,119,87,.5); }
+  .deg { position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+         font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: .18em; color: #e8d9c4;
+         background: #2a1f17; padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(232,201,165,.3); }
+  .core { position: absolute; inset: 66px; border-radius: 50%;
+          background: radial-gradient(circle at 50% 34%, #4a3928, #241a10 78%);
+          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  .pin { color: #ec9576; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); }
+  .year { font-family: 'Fraunces', serif; font-size: 30px; color: #f5e6cf; letter-spacing: .04em;
+          display: flex; align-items: center; gap: 9px; }
+  .year .q { color: #d97757; }
+</style>
+</head>
+<body>
+  <div class="og">
+    <div class="grid"></div>
+    <div class="horizon"></div>
+
+    <div class="wrap">
+      <div class="left">
+        <div class="brand">
+          <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>
+            </svg>
+          </div>
+          <div class="brandname">HistoryGuesser</div>
+        </div>
+
+        <h1 id="h1">Street&nbsp;View<br><span class="accent" id="claim">do minulosti</span></h1>
+
+        <div class="sub" id="sub">Rozhlédni se v <b>360° panoramatu</b> · urči místo · trefni rok</div>
+
+        <div class="chips" id="chips">
+          <span class="chip"><span class="dot"></span> Kde na světě</span>
+          <span class="chip"><span class="dot"></span> V jakém roce</span>
+          <span class="chip"><span class="dot"></span> Zdarma, bez registrace</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="medal">
+      <div class="ring"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="deg">360°</div>
+      <div class="core">
+        <svg class="pin" width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/>
+        </svg>
+        <div class="year"><span class="q">?</span> <span id="yr">rok</span> <span class="q">?</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const L = {
+      cs: { claim: 'do minulosti', sub: 'Rozhlédni se v <b>360° panoramatu</b> · urči místo · trefni rok',
+            chips: ['Kde na světě', 'V jakém roce', 'Zdarma, bez registrace'], yr: 'rok' },
+      en: { claim: 'into the Past', sub: 'Look around a <b>360° panorama</b> · pin the place · nail the year',
+            chips: ['Where in the world', 'In which year', 'Free, no sign-up'], yr: 'year' },
+      de: { claim: 'in die Vergangenheit', sub: 'Sieh dich im <b>360°-Panorama</b> um · finde den Ort · triff das Jahr',
+            chips: ['Wo auf der Welt', 'In welchem Jahr', 'Kostenlos, ohne Anmeldung'], yr: 'Jahr' },
+    };
+    const lang = new URLSearchParams(location.search).get('lang') || 'cs';
+    const d = L[lang] || L.cs;
+    document.body.dataset.lang = lang;
+    document.documentElement.lang = lang;
+    document.getElementById('claim').textContent = d.claim;
+    document.getElementById('sub').innerHTML = d.sub;
+    document.getElementById('yr').textContent = d.yr;
+    document.getElementById('chips').innerHTML = d.chips
+      .map(c => '<span class="chip"><span class="dot"></span> ' + c + '</span>').join('');
+  </script>
+</body>
+</html>

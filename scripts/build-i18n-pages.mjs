@@ -16,6 +16,7 @@ const L = {
     lang: 'en',
     path: '/en',
     ogLocale: 'en_US',
+    ogImage: '/og-en.png',
     title: 'Street View into the Past – History Guessing Game | HistoryGuesser',
     description: 'Street View into the past: explore a 360° panorama of a historic place and guess where — and when — you are. Play free, no sign-up required.',
     ogDescription: 'Street View into the past. Look around a 360° panorama and guess where in the world you are and what year the event happened.',
@@ -49,6 +50,7 @@ const L = {
     lang: 'de',
     path: '/de',
     ogLocale: 'de_DE',
+    ogImage: '/og-de.png',
     title: 'Street View in die Vergangenheit – Geschichtsquiz | HistoryGuesser',
     description: 'Street View in die Vergangenheit: Erkunde ein 360°-Panorama eines historischen Ortes und errate, wo — und wann — du bist. Kostenlos, ohne Anmeldung.',
     ogDescription: 'Street View in die Vergangenheit. Sieh dich im 360°-Panorama um und errate, wo auf der Welt du bist und in welchem Jahr das Ereignis geschah.',
@@ -142,6 +144,10 @@ for (const v of Object.values(L)) {
   html = html.replace(/(<meta property="og:title" content=")[\s\S]*?(" \/>)/, `$1${v.title}$2`)
   html = html.replace(/(<meta property="og:description" content=")[\s\S]*?(" \/>)/, `$1${v.ogDescription}$2`)
   html = html.replace(/(<meta property="og:url" content=")[\s\S]*?(" \/>)/, `$1${BASE}${v.path}$2`)
+  if (v.ogImage) {
+    html = html.replace(/(<meta property="og:image" content=")[\s\S]*?(" \/>)/, `$1${BASE}${v.ogImage}$2`)
+    html = html.replace(/(<meta name="twitter:image" content=")[\s\S]*?(" \/>)/, `$1${BASE}${v.ogImage}$2`)
+  }
   html = html.replace(/(<meta property="og:locale" content=")[\s\S]*?(" \/>)/, `$1${v.ogLocale}$2`)
   html = html.replace(/(<meta name="twitter:title" content=")[\s\S]*?(" \/>)/, `$1${v.title}$2`)
   html = html.replace(/(<meta name="twitter:description" content=")[\s\S]*?(" \/>)/, `$1${v.ogDescription}$2`)
