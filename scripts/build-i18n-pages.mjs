@@ -16,10 +16,10 @@ const L = {
     lang: 'en',
     path: '/en',
     ogLocale: 'en_US',
-    title: 'History Guessing Game – Guess the Place & Year | HistoryGuesser',
-    description: 'Can you guess where and when history happened? Explore 360° historical scenes, find clues and test your history knowledge. Play free, no sign-up required.',
-    ogDescription: 'You see a 360° panorama of a historical place. Can you guess where in the world it is and what year the event happened?',
-    jsonldDescription: 'An educational geolocation game like GeoGuessr, but for history. The player sees a 360° panorama of a historical place and guesses where in the world the event happened and in what year.',
+    title: 'Street View into the Past – History Guessing Game | HistoryGuesser',
+    description: 'Street View into the past: explore a 360° panorama of a historic place and guess where — and when — you are. Play free, no sign-up required.',
+    ogDescription: 'Street View into the past. Look around a 360° panorama and guess where in the world you are and what year the event happened.',
+    jsonldDescription: 'HistoryGuesser is “Street View into the past” — an educational geolocation game like GeoGuessr, but for history. The player sees a 360° panorama of a historical place and guesses where in the world the event happened and in what year.',
     faq: [
       ['What is Historyguesser?', 'Historyguesser is an educational game inspired by GeoGuessr, but focused on history. You stand in a 360° panorama of a historical place and guess where in the world the event happened and in what year.'],
       ['Is Historyguesser free?', 'Yes, you can play for free. An optional Premium subscription (CZK 99/month) adds ad-free play, all campaigns and advanced features.'],
@@ -28,7 +28,7 @@ const L = {
       ['What languages is Historyguesser in?', 'Historyguesser is available in Czech, English and German.'],
     ],
     noscript: `<main style="max-width:720px;margin:0 auto;padding:32px 20px;font-family:sans-serif;line-height:1.6;color:#26211C">
-          <h1>Historyguesser — GeoGuessr for history</h1>
+          <h1>Historyguesser — Street View into the past</h1>
           <p>Historyguesser is an educational geolocation game inspired by GeoGuessr, but focused on history. You stand in a 360° panorama of a historical place and guess <strong>where in the world</strong> the event happened and <strong>in what year</strong>. The closer to the real place and year, the more points.</p>
           <h2>How to play</h2>
           <ol>
@@ -49,10 +49,10 @@ const L = {
     lang: 'de',
     path: '/de',
     ogLocale: 'de_DE',
-    title: 'Geschichtsquiz – Errate Ort & Jahr | HistoryGuesser',
-    description: 'Errätst du, wo und wann es geschah? Erkunde historische 360°-Szenen, finde Hinweise und teste dein Geschichtswissen. Kostenlos und ohne Anmeldung.',
-    ogDescription: 'Du siehst ein 360°-Panorama eines historischen Ortes. Errätst du, wo auf der Welt es ist und in welchem Jahr das Ereignis geschah?',
-    jsonldDescription: 'Ein Lern- und Geolokationsspiel wie GeoGuessr, aber für Geschichte. Der Spieler sieht ein 360°-Panorama eines historischen Ortes und errät, wo auf der Welt das Ereignis geschah und in welchem Jahr.',
+    title: 'Street View in die Vergangenheit – Geschichtsquiz | HistoryGuesser',
+    description: 'Street View in die Vergangenheit: Erkunde ein 360°-Panorama eines historischen Ortes und errate, wo — und wann — du bist. Kostenlos, ohne Anmeldung.',
+    ogDescription: 'Street View in die Vergangenheit. Sieh dich im 360°-Panorama um und errate, wo auf der Welt du bist und in welchem Jahr das Ereignis geschah.',
+    jsonldDescription: 'HistoryGuesser ist „Street View in die Vergangenheit“ — ein Lern- und Geolokationsspiel wie GeoGuessr, aber für Geschichte. Der Spieler sieht ein 360°-Panorama eines historischen Ortes und errät, wo auf der Welt das Ereignis geschah und in welchem Jahr.',
     faq: [
       ['Was ist Historyguesser?', 'Historyguesser ist ein Lernspiel, inspiriert von GeoGuessr, aber mit Fokus auf Geschichte. Du stehst in einem 360°-Panorama eines historischen Ortes und errätst, wo auf der Welt das Ereignis geschah und in welchem Jahr.'],
       ['Ist Historyguesser kostenlos?', 'Ja, du kannst kostenlos spielen. Ein optionales Premium-Abo (99 CZK/Monat) bietet werbefreies Spielen, alle Kampagnen und erweiterte Funktionen.'],
@@ -61,7 +61,7 @@ const L = {
       ['In welchen Sprachen gibt es Historyguesser?', 'Historyguesser ist auf Tschechisch, Englisch und Deutsch verfügbar.'],
     ],
     noscript: `<main style="max-width:720px;margin:0 auto;padding:32px 20px;font-family:sans-serif;line-height:1.6;color:#26211C">
-          <h1>Historyguesser — GeoGuessr für Geschichte</h1>
+          <h1>Historyguesser — Street View in die Vergangenheit</h1>
           <p>Historyguesser ist ein Geolokations-Lernspiel, inspiriert von GeoGuessr, aber mit Fokus auf Geschichte. Du stehst in einem 360°-Panorama eines historischen Ortes und errätst, <strong>wo auf der Welt</strong> das Ereignis geschah und <strong>in welchem Jahr</strong>. Je näher am echten Ort und Jahr, desto mehr Punkte.</p>
           <h2>Spielablauf</h2>
           <ol>
