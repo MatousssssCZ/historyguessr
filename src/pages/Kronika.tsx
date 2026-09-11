@@ -436,7 +436,7 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(31,27,22,0.58)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'var(--paper-50)', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 440, maxHeight: '92dvh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)', animation: 'scaleIn 240ms var(--ease-spring) both' }}>
-        <div style={{ position: 'relative', height: 250, background: 'var(--ink-dark, #1A1611)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', height: 'min(30dvh, 208px)', flexShrink: 0, background: 'var(--ink-dark, #1A1611)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 42%, ${tone}6b, rgba(16,13,10,.9) 74%)` }}/>
           <RelicViewer modelUrl={model} glow={rank >= 3 ? 'gold' : 'stone'}/>
           <span style={{ position: 'absolute', left: 20, top: 20, display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 999, background: tone, fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em', color: '#FBF7F0' }}>{rarityLabel(t, rarity).toUpperCase()}</span>
@@ -445,43 +445,42 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
             <button onClick={() => setExpanded(true)} title={t('kron.expand')} style={{ position: 'absolute', right: 20, bottom: 16, display: 'flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 10, background: 'rgba(251,247,240,0.14)', border: '1px solid rgba(251,247,240,0.2)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12 }}>⤢ {t('kron.expand')}</button>
           )}
         </div>
-        <div ref={scrollRef} onScroll={checkScroll} style={{ padding: '22px 24px 26px', overflowY: 'auto' }}>
+        <div ref={scrollRef} onScroll={checkScroll} style={{ padding: '14px 18px 16px', overflowY: 'auto' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{[relic.year_label, relic.category && t(`catShort.${relic.category}`, { defaultValue: relic.category })].filter(Boolean).join(' · ').toUpperCase()}</div>
-          <h3 style={{ margin: '9px 0 0', fontFamily: 'var(--font-serif)', fontSize: 30, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(relic)}</h3>
-          {relicDesc(relic) && <p style={{ margin: '10px 0 0', fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink-2)' }}>{relicDesc(relic)}</p>}
+          <h3 style={{ margin: '5px 0 0', fontFamily: 'var(--font-serif)', fontSize: 24, lineHeight: 1.05, color: 'var(--ink)', letterSpacing: '-0.025em' }}>{relicName(relic)}</h3>
+          {relicDesc(relic) && <p style={{ margin: '7px 0 0', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)' }}>{relicDesc(relic)}</p>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginTop: 11 }}>
             <Fact label={t('kron.acquired')} value={owned ? new Date(owned.acquired_at).toLocaleDateString(currentLocale()) : '—'}/>
             <Fact label={t('kron.bestResult')} value={`${view.bestScore.toLocaleString(currentLocale())} b.`}/>
             <Fact label={t('kron.ownedBy')} value={t('kron.ownedByPct', { n: view.ownedPct })}/>
             <Fact label={t('kron.stars')} value={'★'.repeat(view.bestStars) + '☆'.repeat(3 - view.bestStars)}/>
           </div>
 
-          <div style={{ marginTop: 16, padding: '15px 16px', border: `1px solid ${tone}5c`, background: `${tone}1f`, borderRadius: 14 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', color: 'var(--ink-3)', marginBottom: 10 }}>{t('kron.rarityPath')}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ marginTop: 10, padding: '10px 12px', border: `1px solid ${tone}5c`, background: `${tone}1f`, borderRadius: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               {RARITY_ORDER.map((r, i) => {
                 const reached = RARITY_RANK[r] <= rank
                 return (
-                  <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <div key={r} style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1 }}>
                     <span style={{ flex: 1, textAlign: 'center', padding: '4px 4px', borderRadius: 999, background: reached ? RARITY_META[r].tone : 'transparent', border: reached ? 'none' : `1px dashed ${RARITY_META[r].tone}80`, color: reached ? '#FBF7F0' : RARITY_META[r].tone, fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.04em' }}>{rarityLabel(t, r).toUpperCase()}</span>
                     {i < RARITY_ORDER.length - 1 && <span style={{ color: 'var(--ink-3)', fontSize: 10 }}>›</span>}
                   </div>
                 )
               })}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 12 }}>
-              <div style={{ flex: 1, height: 7, borderRadius: 4, background: 'rgba(31,27,22,0.1)', overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: tone }}/></div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>{view.bestScore.toLocaleString(currentLocale())} / {view.maxScore.toLocaleString(currentLocale())}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 9 }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 4, background: 'rgba(31,27,22,0.1)', overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: tone }}/></div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>{view.bestScore.toLocaleString(currentLocale())} / {view.maxScore.toLocaleString(currentLocale())}</span>
             </div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-2)', marginTop: 10 }}>{rarity === 'legendary' ? t('kron.rarityMax') : t('kron.rarityNext')}</div>
+            <div style={{ fontSize: 11.5, lineHeight: 1.4, color: 'var(--ink-2)', marginTop: 7 }}>{rarity === 'legendary' ? t('kron.rarityMax') : t('kron.rarityNext')}</div>
           </div>
 
-          <div style={{ display: 'flex', gap: 9, marginTop: 18 }}>
-            <button onClick={toggleShowcase} disabled={busy || !owned} style={{ flex: 1, height: 48, borderRadius: 14, border: 'none', cursor: owned ? 'pointer' : 'default', background: owned?.showcased ? 'var(--paper-200)' : 'var(--accent)', color: owned?.showcased ? 'var(--ink)' : '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
+            <button onClick={toggleShowcase} disabled={busy || !owned} style={{ flex: 1, height: 44, borderRadius: 13, border: 'none', cursor: owned ? 'pointer' : 'default', background: owned?.showcased ? 'var(--paper-200)' : 'var(--accent)', color: owned?.showcased ? 'var(--ink)' : '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5 }}>
               {owned?.showcased ? `✕ ${t('kron.showcaseRemove')}` : `★ ${t('kron.showcaseCta')}`}
             </button>
-            {relic.campaign_id && <button onClick={() => onReplay(relic.campaign_id!)} style={{ flex: 'none', height: 48, padding: '0 20px', borderRadius: 14, background: 'var(--paper-50)', border: '1.5px solid var(--accent)', color: 'var(--accent-ink, #A34E30)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>{t('kron.replay')}</button>}
+            {relic.campaign_id && <button onClick={() => onReplay(relic.campaign_id!)} style={{ flex: 'none', height: 44, padding: '0 18px', borderRadius: 13, background: 'var(--paper-50)', border: '1.5px solid var(--accent)', color: 'var(--accent-ink, #A34E30)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}>{t('kron.replay')}</button>}
           </div>
         </div>
         {/* Náznak scrollu */}
@@ -508,9 +507,9 @@ function RelicDetailModal({ view, userId, onClose, onChanged, onReplay }: {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ padding: '12px 14px', background: 'var(--paper-300, #F3EDE2)', borderRadius: 12 }}>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: 'var(--ink-3)' }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13.5, color: 'var(--ink)', marginTop: 5 }}>{value}</div>
+    <div style={{ padding: '8px 12px', background: 'var(--paper-300, #F3EDE2)', borderRadius: 11 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.14em', color: 'var(--ink-3)' }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', marginTop: 3 }}>{value}</div>
     </div>
   )
 }
