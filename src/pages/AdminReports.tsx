@@ -93,10 +93,10 @@ export default function AdminReportsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 12 }}>
 
           {/* ── HERO KPI ───────────────────────────────── */}
-          <Hero style={span(3)} label="Aktivní dnes" value={overview.active_today} accent trend={trendOf('active_users')} spark={series.map(r => r.active_users)} sparkColor={C_ACTIVE}/>
-          <Hero style={span(3)} label={`Odehraná kola · ${days} dní`} value={sumRounds} trend={trendOf('rounds')} spark={series.map(r => r.rounds)} sparkColor={C_ROUNDS}/>
-          <Hero style={span(3)} label={`Noví uživatelé · ${days} dní`} value={sum('new_users')} trend={trendOf('new_users')} spark={series.map(r => r.new_users)} sparkColor={C_NEW}/>
-          <Hero style={span(3)} label="Dokončení kampaní" value={campOv.completions} sub={`${campCompletion} % pokusů`}/>
+          <Hero style={span(3)} label="Aktivní dnes" value={overview.active_today} accent trend={trendOf('active_users')} spark={series.map(r => r.active_users)} sparkLabels={series.map(r => r.day)} sparkColor={C_ACTIVE}/>
+          <Hero style={span(3)} label={`Odehraná kola · ${days} dní`} value={sumRounds} trend={trendOf('rounds')} spark={series.map(r => r.rounds)} sparkLabels={series.map(r => r.day)} sparkColor={C_ROUNDS}/>
+          <Hero style={span(3)} label={`Noví uživatelé · ${days} dní`} value={sum('new_users')} trend={trendOf('new_users')} spark={series.map(r => r.new_users)} sparkLabels={series.map(r => r.day)} sparkColor={C_NEW}/>
+          <Hero style={span(3)} label="Dokončení kampaní" value={campOv.completions} ringPct={campCompletion} ringLabel="pokusů dokončeno"/>
 
           {/* ── Vývoj (graf) + Poměry ─────────────────── */}
           <Panel style={span(8)} title={`Vývoj za ${days} dní`}>
@@ -176,8 +176,9 @@ function Panel({ title, right, children, style }: { title: string; right?: React
   )
 }
 
-function Hero({ label, value, sub, accent, trend, spark, sparkColor, style }: {
-  label: string; value?: number; sub?: string; accent?: boolean; trend?: number | null; spark?: number[]; sparkColor?: string; style?: CSSProperties
+function Hero({ label, value, sub, accent, trend, spark, sparkLabels, sparkColor, ringPct, ringLabel, style }: {
+  label: string; value?: number; sub?: string; accent?: boolean; trend?: number | null
+  spark?: number[]; sparkLabels?: string[]; sparkColor?: string; ringPct?: number; ringLabel?: string; style?: CSSProperties
 }) {
   return (
     <section style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '15px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
@@ -185,10 +186,32 @@ function Hero({ label, value, sub, accent, trend, spark, sparkColor, style }: {
         <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{label}</span>
         {trend != null && <Trend v={trend}/>}
       </div>
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, lineHeight: 1, letterSpacing: '-0.02em', color: accent ? 'var(--accent)' : 'var(--ink)' }}>{nf(value)}</div>
+      {ringPct != null ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, lineHeight: 1, letterSpacing: '-0.02em', color: accent ? 'var(--accent)' : 'var(--ink)' }}>{nf(value)}</div>
+          <Ring pct={ringPct} label={ringLabel}/>
+        </div>
+      ) : (
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 34, lineHeight: 1, letterSpacing: '-0.02em', color: accent ? 'var(--accent)' : 'var(--ink)' }}>{nf(value)}</div>
+      )}
       {sub && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)' }}>{sub}</div>}
-      {spark && spark.length > 1 && <Sparkline data={spark} color={sparkColor ?? 'var(--accent)'}/>}
+      {spark && spark.length > 1 && <Sparkline data={spark} labels={sparkLabels} color={sparkColor ?? 'var(--accent)'}/>}
     </section>
+  )
+}
+
+// Kruhový ukazatel procent (donut gauge)
+function Ring({ pct, label, size = 54 }: { pct: number; label?: string; size?: number }) {
+  const r = 20, C = 2 * Math.PI * r
+  const p = Math.max(0, Math.min(100, pct))
+  return (
+    <div title={label ? `${p} % ${label}` : `${p} %`} style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg viewBox="0 0 48 48" style={{ width: size, height: size, transform: 'rotate(-90deg)' }}>
+        <circle cx="24" cy="24" r={r} fill="none" stroke="var(--paper-300)" strokeWidth="5"/>
+        <circle cx="24" cy="24" r={r} fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - p / 100)}/>
+      </svg>
+      <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{p}%</span>
+    </div>
   )
 }
 
@@ -221,17 +244,36 @@ function MiniStat({ label, value }: { label: string; value?: number }) {
   )
 }
 
-function Sparkline({ data, color }: { data: number[]; color: string }) {
+function Sparkline({ data, labels, color }: { data: number[]; labels?: string[]; color: string }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const H_PX = 30
   const w = 100, h = 26, max = Math.max(1, ...data)
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * (h - 2) - 1}`).join(' ')
+  const xOf = (i: number) => (i / (data.length - 1)) * w
+  const yOf = (v: number) => h - (v / max) * (h - 2) - 1
+  const pts = data.map((v, i) => `${xOf(i)},${yOf(v)}`).join(' ')
   const area = `0,${h} ${pts} ${w},${h}`
   const gid = `sg-${color.replace(/[^a-z0-9]/gi, '')}`
+  const onMove = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const rel = (e.clientX - rect.left) / rect.width
+    setHover(Math.max(0, Math.min(data.length - 1, Math.round(rel * (data.length - 1)))))
+  }
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 26, marginTop: 2 }}>
-      <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.28"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
-      <polygon points={area} fill={`url(#${gid})`}/>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
-    </svg>
+    <div style={{ position: 'relative', marginTop: 2 }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: H_PX, display: 'block' }}>
+        <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.28"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
+        <polygon points={area} fill={`url(#${gid})`}/>
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
+      </svg>
+      {hover != null && (
+        <>
+          <span aria-hidden style={{ position: 'absolute', left: `${xOf(hover)}%`, top: `${(yOf(data[hover]) / h) * H_PX}px`, width: 6, height: 6, borderRadius: '50%', background: color, border: '1.5px solid var(--surface)', transform: 'translate(-50%,-50%)', pointerEvents: 'none' }}/>
+          <span style={{ position: 'absolute', left: `${xOf(hover)}%`, bottom: H_PX + 2, transform: 'translateX(-50%)', pointerEvents: 'none', whiteSpace: 'nowrap', background: 'var(--ink-dark, #1a1611)', color: '#f5f1e8', borderRadius: 7, padding: '3px 7px', fontFamily: 'var(--font-mono)', fontSize: 10, boxShadow: '0 4px 12px rgba(0,0,0,.3)', zIndex: 2 }}>
+            <b style={{ fontFamily: 'var(--font-serif)', fontSize: 12 }}>{nf(data[hover])}</b>{labels?.[hover] ? ` · ${labels[hover]}` : ''}
+          </span>
+        </>
+      )}
+    </div>
   )
 }
 
