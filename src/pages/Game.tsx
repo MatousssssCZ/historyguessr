@@ -18,7 +18,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useGame, type GameOptions } from '@/hooks/useGame'
 import { addEventRating, startCampaignAttempt, getEventsByIds, getEventById } from '@/lib/supabase'
 import RelicReveal from '@/components/RelicReveal'
-import { getRevealForCampaign, type RevealedRelic } from '@/lib/relics'
+import { getNewRelicReveal, type RevealedRelic } from '@/lib/relics'
 import { XP_BONUS_GAME } from '@/lib/leveling'
 import GameEvaluation from '@/components/GameEvaluation'
 import CompassLoader from '@/components/CompassLoader'
@@ -74,14 +74,24 @@ export default function GamePage() {
   const [reveal, setReveal] = useState<RevealedRelic | null>(null)
   const [revealSeen, setRevealSeen] = useState(false)
 
-  // Po dokončení kampaně na 3★ → moment objevení relikvie (32c)
+  // Po dokončení kampaně → moment objevení relikvie, ale JEN když je pro hráče nová
+  // (dosud ji neměl). Grant běží server-side; dáme mu chvíli a případně zkusíme znovu.
   useEffect(() => {
-    if (state.phase !== 'finished' || !state.campaignId || revealSeen) return
-    if ((state.campaignStars ?? 0) < 3) return
+    if (state.phase !== 'finished' || !state.campaignId || !user?.id || revealSeen) return
+    const campaignId = state.campaignId, uid = user.id
     const max = state.totalRounds * 1000
-    getRevealForCampaign(state.campaignId, state.campaignStars ?? 0, state.totalScore, max)
-      .then(r => { if (r) { setReveal(r); setRevealSeen(true) } })
-  }, [state.phase, state.campaignId, state.campaignStars, state.totalScore, state.totalRounds, revealSeen])
+    const stars = state.campaignStars ?? 0, score = state.totalScore
+    let alive = true, tries = 0
+    const attempt = () => {
+      getNewRelicReveal(campaignId, uid, stars, score, max).then(r => {
+        if (!alive) return
+        if (r) { setReveal(r); setRevealSeen(true) }
+        else if (++tries < 3) setTimeout(attempt, 900)  // grant možná ještě nedoběhl
+      })
+    }
+    attempt()
+    return () => { alive = false }
+  }, [state.phase, state.campaignId, state.campaignStars, state.totalScore, state.totalRounds, user?.id, revealSeen])
 
   useEffect(() => {
     if (state.phase !== 'idle') return

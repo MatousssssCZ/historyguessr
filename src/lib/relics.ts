@@ -200,6 +200,30 @@ export async function getRevealForCampaign(campaignId: string, stars: number, sc
   }
 }
 
+/**
+ * Vrátí relikvii k odhalení, jen když je pro hráče NOVÁ (dosud ji neměl).
+ * Grant běží server-side triggerem při dokončení, takže tu už relikvie existuje;
+ * novost poznáme podle čerstvého `acquired_at` (starší = měl ji už dřív → neodhalujeme).
+ * Vrací skutečně udělenou vzácnost z DB (ne přepočet), aby seděla s Kronikou.
+ */
+export async function getNewRelicReveal(
+  campaignId: string, userId: string, stars: number, score: number, maxScore: number, freshWithinMs = 180000,
+): Promise<RevealedRelic | null> {
+  try {
+    const { data: relic } = await supabase.from('relics').select('*').eq('campaign_id', campaignId).maybeSingle()
+    if (!relic) return null
+    const { data: pr } = await supabase
+      .from('player_relics').select('state, acquired_at')
+      .eq('user_id', userId).eq('relic_id', (relic as Relic).id).maybeSingle()
+    if (!pr) return null  // grant ještě nedoběhl nebo relikvie neudělena
+    const acquired = new Date((pr as { acquired_at: string }).acquired_at).getTime()
+    if (Number.isFinite(acquired) && Date.now() - acquired > freshWithinMs) return null  // měl ji už dřív
+    return { relic: relic as Relic, state: (pr as { state: Rarity }).state, stars, score, maxScore }
+  } catch {
+    return null
+  }
+}
+
 /** Přepne vystavení relikvie na profilu (server hlídá limit 3 triggerem). */
 export async function setRelicShowcase(userId: string, relicId: string, showcased: boolean): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.from('player_relics')
