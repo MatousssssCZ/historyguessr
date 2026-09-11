@@ -240,6 +240,13 @@ export async function getRelicForCampaign(campaignId: string): Promise<Relic | n
   return (data as Relic) ?? null
 }
 
+/** Množina campaign_id, které mají přiřazenou relikvii (pro přehled v adminu). */
+export async function getCampaignIdsWithRelic(campaignIds: string[]): Promise<Set<string>> {
+  if (!campaignIds.length) return new Set()
+  const { data } = await supabase.from('relics').select('campaign_id').in('campaign_id', campaignIds)
+  return new Set((data ?? []).map((r: { campaign_id: string | null }) => r.campaign_id).filter(Boolean) as string[])
+}
+
 export async function upsertRelicForCampaign(campaignId: string, patch: Partial<Relic>): Promise<{ data: Relic | null; error: string | null }> {
   const existing = await getRelicForCampaign(campaignId)
   if (existing) {

@@ -15,7 +15,7 @@ import RelicBadge from '@/components/RelicBadge'
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
 import {
-  getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, uploadRelicSilhouette, getRelicSets,
+  getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, uploadRelicSilhouette, getRelicSets, getCampaignIdsWithRelic,
   RELIC_CATEGORIES, type Relic, type RelicSet,
 } from '@/lib/relics'
 import { generateIllustration } from '@/lib/ai'
@@ -326,6 +326,7 @@ function CategoryDetail({ category, allCategories, events, onBack, onReloadCateg
 }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [relicSet, setRelicSet] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<Campaign | 'new' | null>(null)
   const [busy, setBusy] = useState(false)
   const [loadingC, setLoadingC] = useState(true)
@@ -336,6 +337,8 @@ function CategoryDetail({ category, allCategories, events, onBack, onReloadCateg
     // spočítej počet událostí na kampaň
     const entries = await Promise.all(list.map(async c => [c.id, (await getCampaignEvents(c.id)).length] as const))
     setCounts(Object.fromEntries(entries))
+    // které kampaně mají přiřazenou relikvii
+    setRelicSet(await getCampaignIdsWithRelic(list.map(c => c.id)))
     setLoadingC(false)
   }, [category.id])
 
@@ -395,6 +398,7 @@ function CategoryDetail({ category, allCategories, events, onBack, onReloadCateg
                     <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16 }}>{c.title}</span>
                     <span className="badge" style={{ background: n === c.rounds_count ? 'rgba(92,148,104,0.18)' : 'rgba(217,119,87,0.12)', color: n === c.rounds_count ? '#3f7a4d' : 'var(--accent-deep)', fontSize: 11 }}>{n}/{c.rounds_count} událostí</span>
                     <span className="badge" style={{ background: 'var(--paper-200)', color: 'var(--ink-2)', fontSize: 11 }}>⭐ {c.required_category_stars}</span>
+                    <span className="badge" title={relicSet.has(c.id) ? 'Relikvie přiřazena' : 'Bez relikvie'} style={{ fontSize: 11, background: relicSet.has(c.id) ? 'rgba(176,128,64,0.16)' : 'var(--paper-200)', color: relicSet.has(c.id) ? '#8a6d2f' : 'var(--ink-3)' }}>{relicSet.has(c.id) ? '🏺 relikvie' : '○ bez relikvie'}</span>
                     <StatusBadge status={c.status}/>
                   </div>
                 </div>
