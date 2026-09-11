@@ -132,6 +132,15 @@ export default function AdminReportsPage() {
             <CampaignTable rows={camps}/>
           </Panel>
 
+          <Panel style={span(12)} title="Kampaně — počet odehrání (porovnání)" right={
+            <span style={{ display: 'flex', gap: 14 }}>
+              <Legend color="rgba(217,119,87,0.28)" label="Pokusy"/>
+              <Legend color="var(--accent)" label="Dokončení"/>
+            </span>
+          }>
+            <CampaignBars rows={camps}/>
+          </Panel>
+
           {/* ── Události — hranost + hodnocení ────────── */}
           <Panel style={span(3)} title="Nejhranější události"><EventList rows={topEvents}/></Panel>
           <Panel style={span(3)} title="Nejméně hrané události"><EventList rows={bottomEvents}/></Panel>
@@ -312,6 +321,34 @@ function RatedList({ rows }: { rows: RatedEvent[] }) {
             <span style={{ flex: 1, fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>★ {e.avg.toFixed(1)}</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{e.count}×</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Vodorovné porovnání kampaní: délka = pokusy, tmavý úsek = dokončení, vpravo % dokončenosti
+function CampaignBars({ rows }: { rows: CampaignReportRow[] }) {
+  const played = rows.filter(r => r.attempts > 0)
+  if (played.length === 0) return <Empty/>
+  const top = [...played].sort((a, b) => b.attempts - a.attempts).slice(0, 12)
+  const max = Math.max(1, ...top.map(r => r.attempts))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {top.map(r => {
+        const rate = pct(r.completions, r.attempts)
+        return (
+          <div key={r.campaign_id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div title={r.campaign} style={{ width: 150, flexShrink: 0, fontSize: 12, color: 'var(--ink-2)', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.campaign}</div>
+            <div title={`${r.attempts} pokusů · ${r.completions} dokončení · ${rate} %`} style={{ position: 'relative', flex: 1, height: 20, background: 'var(--paper-100)', borderRadius: 5, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: 0, width: `${(r.attempts / max) * 100}%`, background: 'rgba(217,119,87,0.24)', borderRadius: 5 }}/>
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${(r.completions / max) * 100}%`, background: 'linear-gradient(90deg, var(--accent), var(--accent-deep))', borderRadius: 5 }}/>
+            </div>
+            <div style={{ width: 96, flexShrink: 0, display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+              <span style={{ color: 'var(--ink)', fontWeight: 700 }}>{r.attempts}</span>
+              <span style={{ color: 'var(--ink-3)', fontSize: 10 }}>{rate} %</span>
+            </div>
           </div>
         )
       })}
