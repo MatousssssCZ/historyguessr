@@ -685,7 +685,11 @@ export async function getReportEventsRated(minVotes = 3): Promise<{ best: RatedE
     .map(r => ({ id: r.id, title: r.title, count: Number(r.rating_count) || 0, avg: (Number(r.rating_count) ? Number(r.rating_sum) / Number(r.rating_count) : 0) }))
     .filter(r => r.count >= minVotes)
   const sorted = [...rows].sort((a, b) => b.avg - a.avg || b.count - a.count)
-  return { best: sorted.slice(0, 6), worst: [...sorted].reverse().slice(0, 6) }
+  const best = sorted.slice(0, 6)
+  const bestIds = new Set(best.map(r => r.id))
+  // „Nejhůř" nesmí duplikovat to, co je v „Nejlíp" (u malého počtu hodnocených událostí)
+  const worst = [...sorted].reverse().filter(r => !bestIds.has(r.id)).slice(0, 6)
+  return { best, worst }
 }
 export async function getReportDailyChallenge(days: number): Promise<DailyChallengeRow[]> {
   const { data } = await supabase.rpc('report_daily_challenge', { p_days: days })

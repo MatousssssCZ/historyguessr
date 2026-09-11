@@ -136,7 +136,7 @@ export default function AdminReportsPage() {
           <Panel style={span(3)} title="Nejhranější události"><EventList rows={topEvents}/></Panel>
           <Panel style={span(3)} title="Nejméně hrané události"><EventList rows={bottomEvents}/></Panel>
           <Panel style={span(3)} title="Nejlíp hodnocené"><RatedList rows={rated.best}/></Panel>
-          <Panel style={span(3)} title="Nejhůř hodnocené"><RatedList rows={rated.worst} worst/></Panel>
+          <Panel style={span(3)} title="Nejhůř hodnocené"><RatedList rows={rated.worst}/></Panel>
 
           {/* ── Kvalita obsahu ────────────────────────── */}
           <Panel style={span(12)} title="Obsah & kvalita dat">
@@ -301,17 +301,16 @@ function EventList({ rows }: { rows: RankedEvent[] }) {
   )
 }
 
-function RatedList({ rows, worst }: { rows: RatedEvent[]; worst?: boolean }) {
-  if (rows.length === 0) return <Empty/>
+function RatedList({ rows }: { rows: RatedEvent[] }) {
+  if (rows.length === 0) return <p style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>Zatím málo hodnocení.</p>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       {rows.map(e => {
-        const good = e.avg >= 4
-        const c = good ? 'var(--success-deep, #3f7a4d)' : e.avg < 3 ? 'var(--danger)' : 'var(--ink-2)'
+        const c = e.avg >= 4 ? 'var(--success-deep, #3f7a4d)' : e.avg < 3 ? 'var(--danger)' : 'var(--ink-2)'
         return (
           <div key={e.id} title={`${e.avg.toFixed(2)} ★ · ${e.count} hodnocení`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 11px', background: 'var(--paper-100)', borderRadius: 9 }}>
             <span style={{ flex: 1, fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: worst ? 'var(--danger)' : c, whiteSpace: 'nowrap' }}>★ {e.avg.toFixed(1)}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: c, whiteSpace: 'nowrap' }}>★ {e.avg.toFixed(1)}</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{e.count}×</span>
           </div>
         )
