@@ -199,7 +199,15 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData, userId, onChanged }: {
       )}
       {isMobile
         ? <>{showcase}{vitrina}{setsRow}<StatsRail data={statsData}/></>
-        : <><StatsRail data={statsData} row/>{showcase}{vitrina}{setsRow}</>}
+        : <>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div style={{ flex: '2 1 560px', minWidth: 0 }}><StatsRail data={statsData} row/></div>
+              <div style={{ flex: '1 1 330px', minWidth: 300, display: 'flex' }}>
+                <ShowcaseCard bundle={bundle} userId={userId} onChanged={onChanged} onOpen={onOpen}/>
+              </div>
+            </div>
+            {vitrina}{setsRow}
+          </>}
     </div>
   )
 }
