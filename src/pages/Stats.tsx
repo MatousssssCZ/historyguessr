@@ -248,7 +248,7 @@ export function LevelBar() {
 }
 
 /** Levý pruh Kroniky (32a): Tvá hra + Přesnost + série. */
-export function StatsRail({ data }: { data: StatsData }) {
+export function StatsRail({ data, row }: { data: StatsData; row?: boolean }) {
   const { t } = useTranslation()
   const { stats, dailyDates } = data
   const n = (v: number) => v.toLocaleString(currentLocale())
@@ -281,7 +281,9 @@ export function StatsRail({ data }: { data: StatsData }) {
   const label: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-3)' }
 
   return (
-    <div style={{ flex: '1 1 250px', minWidth: 250, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={row
+      ? { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 14, width: '100%' }
+      : { flex: '1 1 250px', minWidth: 250, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={cardCss}>
         <div style={label}>{t('kron.myGame')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 12 }}>

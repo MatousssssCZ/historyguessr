@@ -159,14 +159,14 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData, userId, onChanged }: {
   )
 
   const grid = (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 140 : 130}px, 1fr))`, gap: 11 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 140 : 158}px, 1fr))`, gap: 12 }}>
       {visible.map(v => <RelicTile key={v.relic.id} v={v} onOpen={onOpen}/>)}
       {visible.length === 0 && <p style={{ gridColumn: '1 / -1', color: 'var(--ink-3)', fontSize: 14, padding: '18px 2px' }}>{t('kron.empty')}</p>}
     </div>
   )
 
   const vitrina = (
-    <div style={{ flex: isMobile ? '1 1 100%' : '3 1 430px', minWidth: isMobile ? 0 : 'min(100%, 430px)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: isMobile ? '16px 15px 18px' : '20px 22px 22px' }}>
+    <div style={{ width: '100%', minWidth: 0, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: isMobile ? '16px 15px 18px' : '22px 24px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 18, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--ink-3)' }}>{t('kron.showcaseCase')}</div>
@@ -180,22 +180,22 @@ function RelicsTab({ bundle, isMobile, onOpen, statsData, userId, onChanged }: {
   )
 
   const sidebar = (
-    <div style={{ flex: isMobile ? '1 1 100%' : '1 1 250px', minWidth: isMobile ? 0 : 250, display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: 14 }}>
+    <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', gap: 14 }}>
       <ShowcaseCard bundle={bundle} userId={userId} onChanged={onChanged} onOpen={onOpen}/>
       {bundle.sets.map(s => <SetCard key={s.set.id} set={s.set} relics={s.relics}/>)}
     </div>
   )
 
   return (
-    <div style={{ background: 'var(--paper-200)', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', maxWidth: 1240, margin: '0 auto' }}>
+    <div style={{ background: 'var(--paper-200)', padding: isMobile ? '16px 15px 24px' : '20px 26px 34px', display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1240, margin: '0 auto' }}>
       {!isMobile && (
-        <div style={{ flex: '1 1 100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9, fontSize: 12, color: 'var(--ink-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 9, fontSize: 12, color: 'var(--ink-2)' }}>
           <span style={{ color: GOLD }}>✦</span>{t('kron.perfectNote')}
         </div>
       )}
       {isMobile
         ? <>{vitrina}{sidebar}<StatsRail data={statsData}/></>
-        : <><StatsRail data={statsData}/>{vitrina}{sidebar}</>}
+        : <><StatsRail data={statsData} row/>{vitrina}{sidebar}</>}
     </div>
   )
 }
