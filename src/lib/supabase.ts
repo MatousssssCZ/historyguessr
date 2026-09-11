@@ -222,7 +222,7 @@ export async function getCandidateEvents(filters?: EventFilters): Promise<Candid
     filters,
   )
     .order('year', { ascending: true })
-    .limit(500)
+    .limit(5000)
   return (data ?? []) as CandidateEvent[]
 }
 

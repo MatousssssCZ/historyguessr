@@ -11,7 +11,7 @@ import {
 import MobileNav from '@/components/MobileNav'
 import AppHeader from '@/components/AppHeader'
 import { PageShell, PageHeader } from '@/components/ui/Page'
-import Icon from '@/components/Icon'
+import Icon, { type IconName } from '@/components/Icon'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import CompassLoader from '@/components/CompassLoader'
 import { FREE_ENTITLEMENTS } from '@/lib/entitlements'
@@ -26,10 +26,29 @@ const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
 function campImage(bundle: CampaignBundle, campId: string): string | null {
   return bundle.campaignImages[campId] || null
 }
-function categoryImage(bundle: CampaignBundle, cat: CampaignCategory): string | null {
-  const camps = bundle.campaignsByCat[cat.id] ?? []
-  for (const c of camps) { const im = bundle.campaignImages[c.id]; if (im) return im }
-  return cat.hero_image_url || null
+// Paleta pro kategorie bez nastavené barvy (deterministicky dle id)
+const CAT_PALETTE = ['#BE6240', '#4E6E88', '#7E5A9E', '#3E7D6A', '#A6863C', '#9E4E5A', '#5A6E8C', '#8C5A3E']
+function hashId(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return h
+}
+// Ikona kategorie: preferuje emoji z adminu, jinak tematická SVG dle klíčových slov v názvu/slugu.
+function categoryIcon(cat: CampaignCategory): { emoji?: string; icon: IconName } {
+  if (cat.icon && cat.icon.trim()) return { emoji: cat.icon.trim(), icon: 'compass' }
+  const s = `${cat.slug ?? ''} ${cat.title} ${cat.title_en ?? ''}`.toLowerCase()
+  const has = (...w: string[]) => w.some(x => s.includes(x))
+  let icon: IconName = 'compass'
+  if (has('vál', 'bitv', 'war', 'battle')) icon = 'swords'
+  else if (has('věd', 'vynález', 'science', 'invent', 'tech')) icon = 'bolt'
+  else if (has('korun', 'trůn', 'crown', 'throne', 'monarch', 'král')) icon = 'crown'
+  else if (has('svět', 'objev', 'world', 'explor', 'cest', 'map')) icon = 'globe'
+  else if (has('stavb', 'budov', 'architektur', 'build', 'monument')) icon = 'archive'
+  else if (has('umění', 'art', 'kultur')) icon = 'palette'
+  else if (has('katastrof', 'disaster', 'pohrom')) icon = 'warning'
+  else if (has('sport', 'hra', 'game')) icon = 'trophy'
+  else if (has('záhad', 'myster', 'tajem')) icon = 'moon-stars'
+  return { icon }
 }
 
 // ── Kruhový ukazatel postupu (HVĚZDY / ODEMČENO / DOKONČENO) ──
@@ -195,8 +214,9 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
   const completedCount = camps.filter(c => (bundle.progress[c.id]?.completed_runs ?? 0) > 0).length
   const started = completedCount > 0
   const pct = camps.length ? (completedCount / camps.length) * 100 : 0
-  // Obrázek = panorama z první události kategorie (fallback hero_image_url)
-  const headerImg = categoryImage(bundle, cat)
+  // Barva kategorie (fallback: deterministicky z palety dle id) + tematická SVG ikona
+  const color = cat.color || CAT_PALETTE[hashId(cat.id) % CAT_PALETTE.length]
+  const glyph = categoryIcon(cat)
 
   return (
     <button onClick={() => {
@@ -212,23 +232,36 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
       background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18,
       transition: 'transform 140ms, box-shadow 140ms',
     }}
-      onMouseEnter={e => { if (!locked) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px -14px rgba(42,31,23,0.3)' } }}
+      onMouseEnter={e => { if (!locked) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 16px 34px -16px rgba(42,31,23,0.38)' } }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
 
-      {/* Panorama hlavička */}
+      {/* Grafická hlavička — barva kategorie + dekorativní motiv + ikona */}
       <div style={{
-        position: 'relative', height: 168, overflow: 'hidden',
-        background: '#1c150f',
+        position: 'relative', height: 146, overflow: 'hidden',
+        background: `linear-gradient(150deg, ${shade(color, 8)} 0%, ${color} 45%, ${shade(color, -26)} 100%)`,
+        filter: locked ? 'grayscale(0.7) brightness(0.82)' : 'none',
       }}>
-        {headerImg
-          ? <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url(${headerImg})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: locked ? 'grayscale(0.6) brightness(0.55)' : 'brightness(0.82)' }}/>
-          : <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(155deg, ${cat.color || '#BE6240'}, ${shade(cat.color || '#BE6240', -22)})`, filter: locked ? 'grayscale(0.6) brightness(0.6)' : 'none' }}/>}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,16,10,.5) 0%, rgba(20,16,10,.05) 45%, rgba(20,16,10,.45) 100%)' }}/>
+        {/* Dekorativní SVG motiv (soft-light kruhy) */}
+        <svg aria-hidden viewBox="0 0 260 146" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', mixBlendMode: 'soft-light', opacity: 0.5 }}>
+          <circle cx="210" cy="30" r="72" fill="none" stroke="#fff" strokeWidth="1.4"/>
+          <circle cx="210" cy="30" r="46" fill="none" stroke="#fff" strokeWidth="1.4"/>
+          <circle cx="30" cy="128" r="60" fill="none" stroke="#fff" strokeWidth="1.4"/>
+        </svg>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 50% 8%, rgba(255,255,255,.18), transparent 55%), linear-gradient(180deg, transparent 55%, rgba(20,16,10,.28) 100%)' }}/>
+
+        {/* Medailon s ikonou uprostřed */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.34)', boxShadow: '0 8px 22px -10px rgba(20,16,10,.5), inset 0 1px 0 rgba(255,255,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            {glyph.emoji
+              ? <span style={{ fontSize: 34, lineHeight: 1, filter: 'drop-shadow(0 2px 3px rgba(20,16,10,.35))' }}>{glyph.emoji}</span>
+              : <Icon name={glyph.icon} size={34} strokeWidth={1.6}/>}
+          </div>
+        </div>
 
         {/* Počet kampaní vlevo nahoře */}
         <span style={{
           position: 'absolute', top: 12, left: 12, display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'rgba(20,16,10,0.6)', backdropFilter: 'blur(6px)', color: '#fff',
+          background: 'rgba(20,16,10,0.4)', backdropFilter: 'blur(6px)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)',
           fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
           padding: '5px 10px', borderRadius: 999,
         }}><Icon name="swords" size={12}/> {t('camp.count', { count: camps.length })}</span>
@@ -239,15 +272,15 @@ function CategoryCard({ cat, bundle, userId, onOpen }: {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: GOLD, color: '#5a4527', fontFamily: 'var(--font-mono)', fontSize: 9.5, fontWeight: 700, padding: '4px 9px', borderRadius: 20 }}>♛ PREMIUM</span>
           )}
           {!locked && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(20,16,10,0.6)', backdropFilter: 'blur(6px)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(20,16,10,0.4)', backdropFilter: 'blur(6px)', color: '#fff', border: '1px solid rgba(255,255,255,0.16)', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20 }}>
               <span style={{ color: GOLD }}>★</span> {cs.earned}/{cs.max}
             </span>
           )}
         </div>
 
         {locked && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ width: 50, height: 50, borderRadius: '50%', background: 'rgba(20,16,10,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.9)' }}><Icon name="lock" size={22}/></span>
+          <div style={{ position: 'absolute', right: 12, bottom: 12 }}>
+            <span style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(20,16,10,0.5)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.92)' }}><Icon name="lock" size={17}/></span>
           </div>
         )}
       </div>
