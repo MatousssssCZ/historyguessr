@@ -4,8 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   getReportOverview, getReportMultiplayer, getReportDailySeries, getReportCategories,
-  getReportEventsRanked, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview,
-  type DailySeriesRow, type CategoryRow, type RankedEvent, type DailyChallengeRow, type CampaignReportRow,
+  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview,
+  type DailySeriesRow, type CategoryRow, type RankedEvent, type RatedEvent, type DailyChallengeRow, type CampaignReportRow,
 } from '@/lib/supabase'
 
 const PERIODS = [7, 30, 90] as const
@@ -29,13 +29,14 @@ export default function AdminReportsPage() {
   const [daily, setDaily] = useState<DailyChallengeRow[]>([])
   const [campOv, setCampOv] = useState<Record<string, number>>({})
   const [camps, setCamps] = useState<CampaignReportRow[]>([])
+  const [rated, setRated] = useState<{ best: RatedEvent[]; worst: RatedEvent[] }>({ best: [], worst: [] })
   const [busy, setBusy] = useState(true)
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
   useEffect(() => {
-    Promise.all([getReportOverview(), getReportMultiplayer(), getReportCategories(), getReportEventsRanked(), getReportCampaignsOverview(), getReportCampaigns()])
-      .then(([o, m, c, e, co, cr]) => { setOverview(o); setMp(m); setCats(c); setEvents(e); setCampOv(co); setCamps(cr) })
+    Promise.all([getReportOverview(), getReportMultiplayer(), getReportCategories(), getReportEventsRanked(), getReportCampaignsOverview(), getReportCampaigns(), getReportEventsRated()])
+      .then(([o, m, c, e, co, cr, rt]) => { setOverview(o); setMp(m); setCats(c); setEvents(e); setCampOv(co); setCamps(cr); setRated(rt) })
       .catch(() => {})
   }, [])
 
@@ -131,11 +132,15 @@ export default function AdminReportsPage() {
             <CampaignTable rows={camps}/>
           </Panel>
 
-          {/* ── Události + Kvalita ────────────────────── */}
-          <Panel style={span(4)} title="Nejhranější události"><EventList rows={topEvents}/></Panel>
-          <Panel style={span(4)} title="Nejméně hrané události"><EventList rows={bottomEvents}/></Panel>
-          <Panel style={span(4)} title="Obsah & kvalita dat">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {/* ── Události — hranost + hodnocení ────────── */}
+          <Panel style={span(3)} title="Nejhranější události"><EventList rows={topEvents}/></Panel>
+          <Panel style={span(3)} title="Nejméně hrané události"><EventList rows={bottomEvents}/></Panel>
+          <Panel style={span(3)} title="Nejlíp hodnocené"><RatedList rows={rated.best}/></Panel>
+          <Panel style={span(3)} title="Nejhůř hodnocené"><RatedList rows={rated.worst} worst/></Panel>
+
+          {/* ── Kvalita obsahu ────────────────────────── */}
+          <Panel style={span(12)} title="Obsah & kvalita dat">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
               <Rate label="Publikováno" value={nf(overview.events_published)}/>
               <Rate label="Skrytých" value={nf(overview.events_hidden)}/>
               <Rate label="Bez panoramatu" value={nf(overview.events_no_panorama)} warn={!!overview.events_no_panorama}/>
@@ -292,6 +297,25 @@ function EventList({ rows }: { rows: RankedEvent[] }) {
           <span style={{ position: 'relative', fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--ink-3)' }}>{e.play_count}×</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+function RatedList({ rows, worst }: { rows: RatedEvent[]; worst?: boolean }) {
+  if (rows.length === 0) return <Empty/>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {rows.map(e => {
+        const good = e.avg >= 4
+        const c = good ? 'var(--success-deep, #3f7a4d)' : e.avg < 3 ? 'var(--danger)' : 'var(--ink-2)'
+        return (
+          <div key={e.id} title={`${e.avg.toFixed(2)} ★ · ${e.count} hodnocení`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 11px', background: 'var(--paper-100)', borderRadius: 9 }}>
+            <span style={{ flex: 1, fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: worst ? 'var(--danger)' : c, whiteSpace: 'nowrap' }}>★ {e.avg.toFixed(1)}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{e.count}×</span>
+          </div>
+        )
+      })}
     </div>
   )
 }

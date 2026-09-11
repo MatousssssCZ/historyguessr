@@ -672,6 +672,21 @@ export async function getReportEventsRanked(): Promise<RankedEvent[]> {
   const { data } = await supabase.rpc('report_events_ranked')
   return (data ?? []) as RankedEvent[]
 }
+
+export interface RatedEvent { id: string; title: string; avg: number; count: number }
+/** Nejlíp/nejhůř hodnocené publikované události (min. hlasů kvůli spolehlivosti). */
+export async function getReportEventsRated(minVotes = 3): Promise<{ best: RatedEvent[]; worst: RatedEvent[] }> {
+  const { data } = await supabase
+    .from('events')
+    .select('id, title, rating_sum, rating_count')
+    .eq('published', true)
+    .gte('rating_count', minVotes)
+  const rows = ((data ?? []) as { id: string; title: string; rating_sum: number | null; rating_count: number | null }[])
+    .map(r => ({ id: r.id, title: r.title, count: Number(r.rating_count) || 0, avg: (Number(r.rating_count) ? Number(r.rating_sum) / Number(r.rating_count) : 0) }))
+    .filter(r => r.count >= minVotes)
+  const sorted = [...rows].sort((a, b) => b.avg - a.avg || b.count - a.count)
+  return { best: sorted.slice(0, 6), worst: [...sorted].reverse().slice(0, 6) }
+}
 export async function getReportDailyChallenge(days: number): Promise<DailyChallengeRow[]> {
   const { data } = await supabase.rpc('report_daily_challenge', { p_days: days })
   return (data ?? []) as DailyChallengeRow[]
