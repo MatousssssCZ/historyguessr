@@ -163,7 +163,7 @@ export function ResultMap({ guessLat, guessLng, truthLat, truthLng, radiusKm = 0
           // Asymetrický padding: nahoře místo pro pilulky (Tvůj tip / 360°) a špičky
           // pinů s popiskem, dole velká rezerva, protože výsledková karta překrývá
           // spodní část mapy. Jinak body vyjedou mimo viditelnou oblast.
-          map.fitBounds(b, { padding: { top: 96, bottom: 150, left: 56, right: 56 }, maxZoom: 9, animate: false })
+          map.fitBounds(b, { padding: { top: 120, bottom: 188, left: 70, right: 70 }, maxZoom: 9, animate: false })
         })
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
