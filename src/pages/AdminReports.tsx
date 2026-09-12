@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   getReportOverview, getReportMultiplayer, getReportDailySeries, getReportCategories,
-  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview, getReportCampaignSeries,
+  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview, getReportCampaignSeries, getReportInstalls,
   type DailySeriesRow, type CategoryRow, type RankedEvent, type RatedEvent, type DailyChallengeRow, type CampaignReportRow, type CampaignSeriesRow,
 } from '@/lib/supabase'
 
@@ -31,13 +31,14 @@ export default function AdminReportsPage() {
   const [campOv, setCampOv] = useState<Record<string, number>>({})
   const [camps, setCamps] = useState<CampaignReportRow[]>([])
   const [rated, setRated] = useState<{ best: RatedEvent[]; worst: RatedEvent[] }>({ best: [], worst: [] })
+  const [installs, setInstalls] = useState<Record<string, number>>({})
   const [busy, setBusy] = useState(true)
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
   useEffect(() => {
-    Promise.all([getReportOverview(), getReportMultiplayer(), getReportCategories(), getReportEventsRanked(), getReportCampaignsOverview(), getReportCampaigns(), getReportEventsRated()])
-      .then(([o, m, c, e, co, cr, rt]) => { setOverview(o); setMp(m); setCats(c); setEvents(e); setCampOv(co); setCamps(cr); setRated(rt) })
+    Promise.all([getReportOverview(), getReportMultiplayer(), getReportCategories(), getReportEventsRanked(), getReportCampaignsOverview(), getReportCampaigns(), getReportEventsRated(), getReportInstalls().catch(() => ({}))])
+      .then(([o, m, c, e, co, cr, rt, ins]) => { setOverview(o); setMp(m); setCats(c); setEvents(e); setCampOv(co); setCamps(cr); setRated(rt); setInstalls(ins) })
       .catch(() => {})
   }, [])
 
@@ -110,6 +111,7 @@ export default function AdminReportsPage() {
               <Rate label="Aktivace" value={`${activation} %`} hint="aktivní 30 d / registr."/>
               <Rate label="Dokončenost kampaní" value={`${campCompletion} %`} hint="dokončení / pokusy"/>
               <Rate label="Podíl na 3 ★" value={`${perfectShare} %`} hint="z dokončení"/>
+              <Rate label="Uloženo na plochu" value={nf(installs.installed_users)} hint={`${pct(installs.installed_users ?? 0, overview.registered ?? 0)} % registrovaných`}/>
             </div>
           </Panel>
 

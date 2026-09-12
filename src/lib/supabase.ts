@@ -659,6 +659,7 @@ async function reportKV(fn: string): Promise<Record<string, number>> {
 
 export const getReportOverview = () => reportKV('report_overview')
 export const getReportMultiplayer = () => reportKV('report_multiplayer')
+export const getReportInstalls = () => reportKV('report_installs')
 
 export async function getReportDailySeries(days: number): Promise<DailySeriesRow[]> {
   const { data } = await supabase.rpc('report_daily_series', { p_days: days })

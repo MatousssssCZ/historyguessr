@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { prefetchMenuHero } from '@/lib/preload'
 import { prewarmMap } from '@/lib/mapTiles'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
+import { track } from '@/lib/supabase'
+import { isStandalone, detectPlatform } from '@/lib/pwaInstall'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import UsernameSetup from '@/components/UsernameSetup'
 import CompassLoader from '@/components/CompassLoader'
@@ -115,6 +117,27 @@ function GuestRoute() {
   return <GuestSetupPage/>
 }
 
+// ── Eviduje, že hráč appku používá jako nainstalovanou (z plochy) ──
+// Zaznamená 'app_installed' jednou na uživatele/zařízení, ať report umí spočítat
+// unikátní hráče s ikonou na ploše. Plus reálná událost `appinstalled`.
+function InstallTracker() {
+  const { user } = useAuth()
+  useEffect(() => {
+    const uid = user?.id
+    if (!uid || !isStandalone()) return
+    const key = `hg_installed_${uid}`
+    try { if (localStorage.getItem(key) === '1') return } catch { /* ignore */ }
+    track('app_installed', { platform: detectPlatform() }, uid)
+    try { localStorage.setItem(key, '1') } catch { /* ignore */ }
+  }, [user?.id])
+  useEffect(() => {
+    const onInstalled = () => { if (user?.id) track('app_installed', { via: 'appinstalled', platform: detectPlatform() }, user.id) }
+    window.addEventListener('appinstalled', onInstalled)
+    return () => window.removeEventListener('appinstalled', onInstalled)
+  }, [user?.id])
+  return null
+}
+
 // ── Full screen spinner ───────────────────────────────────
 function FullScreenSpinner() {
   return (
@@ -139,6 +162,7 @@ export default function App() {
         <BrowserRouter>
           <UpdateWatcher/>
           <EnvBadge/>
+          <InstallTracker/>
           <GameInviteListener/>
           <Suspense fallback={<FullScreenSpinner/>}>
             <Routes>
