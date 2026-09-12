@@ -21,7 +21,9 @@ async function loadXLSX(): Promise<any> {
   return (window as any).XLSX
 }
 
-const COLS = ['campaign_slug', 'slug', 'name', 'name_en', 'name_de', 'year_label', 'category', 'secret', 'description', 'description_en', 'description_de'] as const
+// campaign_id + campaign se ve staženém souboru PŘEDVYPLNÍ (řádek na kampaň) —
+// párování jde přes neměnné campaign_id, ne přes název. Ostatní sloupce vyplní admin.
+const COLS = ['campaign_id', 'campaign', 'slug', 'name', 'name_en', 'name_de', 'year_label', 'category', 'secret', 'description', 'description_en', 'description_de'] as const
 
 type ImportResult = { slug: string; name: string; ok: boolean; error?: string; campaign?: string }
 type GlbResult = { file: string; ok: boolean; slug?: string; rarity?: Rarity; error?: string }
@@ -51,13 +53,17 @@ export default function AdminRelicsImportPage() {
     setMsg(null)
     const XLSX = await loadXLSX()
     if (!XLSX) { setMsg('Nepodařilo se načíst XLSX knihovnu.'); return }
-    const example = ['napoleonuv-vzestup', 'napoleonuv-klobouk', 'Napoleonův klobouk', "Napoleon's Hat", 'Napoleons Hut', '1800–1815', 'war', 'ano', 'Napoleonův černý dvourohý klobouk…', 'Napoleon\'s black bicorne hat…', 'Napoleons schwarzer Zweispitz…']
-    const ws = XLSX.utils.aoa_to_sheet([[...COLS], example])
+    // Předvyplněný řádek na každou kampaň: campaign_id + název, zbytek prázdný k vyplnění.
+    const rows = campaigns.map(c => [c.id, c.title, '', '', '', '', '', '', '', '', '', ''])
+    const ws = XLSX.utils.aoa_to_sheet([[...COLS], ...rows])
     const help = [
       ['Nápověda k importu relikvií'],
       [''],
-      ['campaign_slug', 'POVINNÉ — technický slug kampaně, ke které relikvie patří (viz seznam níže). 1 relikvie = 1 kampaň.'],
-      ['slug', 'Slug relikvie (bez diakritiky, malá písmena, pomlčky). Když necháš prázdné, vytvoří se z názvu. Používá se i pro názvy GLB souborů.'],
+      ['Jak to funguje', 'Soubor má jeden řádek na každou existující kampaň. Vyplň relikvii jen u těch kampaní, kde ji chceš — prázdné řádky (bez name) se ignorují.'],
+      [''],
+      ['campaign_id', 'NEMĚNIT — technické ID kampaně (párování jede přes něj). Je předvyplněné.'],
+      ['campaign', 'Jen pro tvou orientaci (název kampaně). Nepoužívá se k párování.'],
+      ['slug', 'Slug relikvie (bez diakritiky, malá písmena, pomlčky). Prázdné = vytvoří se z názvu. Používá se pro názvy GLB souborů.'],
       ['name / name_en / name_de', 'Název relikvie CZ / EN / DE (EN, DE nepovinné — fallback na CZ).'],
       ['year_label', 'Datace jako text, např. „44 př. n. l." nebo „1800–1815".'],
       ['category', 'Jedna z: ' + RELIC_CATEGORIES.join(', ') + '.'],
@@ -66,9 +72,6 @@ export default function AdminRelicsImportPage() {
       [''],
       ['GLB modely', 'Po importu nahraj GLB soubory. Název = <slug-relikvie>_<rarita>.glb'],
       ['', 'Rarita = jedna z: ' + RARITY_ORDER.join(', ') + '. Příklad: napoleonuv-klobouk_epic.glb'],
-      [''],
-      ['Dostupné kampaně (slug — název):'],
-      ...campaigns.map(c => [c.slug ?? '(bez slugu)', c.title]),
     ]
     const wsHelp = XLSX.utils.aoa_to_sheet(help)
     const wb = XLSX.utils.book_new()
@@ -88,17 +91,22 @@ export default function AdminRelicsImportPage() {
       const data = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Record<string, unknown>[]
       const rows = data
         .map(r => { const o: Record<string, string> = {}; Object.entries(r).forEach(([k, v]) => { o[k.trim()] = String(v ?? '').trim() }); return o })
-        .filter(r => (r.name || r.slug || r.campaign_slug))
-      if (!rows.length) { setMsg('Soubor je prázdný nebo nemá sloupec „name" / „campaign_slug".'); return }
+        .filter(r => r.name && r.name.trim())  // vyplňujeme jen řádky s názvem relikvie
+      if (!rows.length) { setMsg('Nenašel jsem žádný řádek s vyplněným sloupcem „name".'); return }
 
+      const byId = new Map(campaigns.map(c => [c.id, c]))
       const bySlug = new Map(campaigns.filter(c => c.slug).map(c => [c.slug as string, c]))
+      const byTitle = new Map(campaigns.map(c => [c.title.trim().toLowerCase(), c]))
       const out: ImportResult[] = []
       for (const r of rows) {
         const name = r.name?.trim()
         const relicSlug = (r.slug?.trim() || slugify(name || '')).trim()
-        const camp = bySlug.get(r.campaign_slug?.trim())
+        // Párování: primárně přes neměnné campaign_id, jinak slug, jinak název (fallback)
+        const camp = byId.get(r.campaign_id?.trim())
+          || bySlug.get((r.campaign_slug || '').trim())
+          || byTitle.get((r.campaign || '').trim().toLowerCase())
         if (!name) { out.push({ slug: relicSlug, name: name || '(bez názvu)', ok: false, error: 'Chybí name' }); continue }
-        if (!camp) { out.push({ slug: relicSlug, name, ok: false, error: `Kampaň se slugem „${r.campaign_slug}" nenalezena` }); continue }
+        if (!camp) { out.push({ slug: relicSlug, name, ok: false, error: `Kampaň nenalezena (campaign_id „${r.campaign_id || '—'}")` }); continue }
         const cat = r.category?.trim().toLowerCase()
         const patch: Partial<Relic> = {
           slug: relicSlug,
@@ -166,14 +174,14 @@ export default function AdminRelicsImportPage() {
         {/* Krok 1 — šablona */}
         <div style={box}>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: '0 0 6px' }}><span style={num}>1</span>Stáhni šablonu</h2>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', paddingLeft: 33 }}>XLSX se sloupci relikvií a listem „Nápověda" (včetně seznamu {campaigns.length} kampaní a jejich slugů).</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', paddingLeft: 33 }}>XLSX má <b>předvyplněný řádek pro každou z {campaigns.length} kampaní</b> (sloupce <code>campaign_id</code> + <code>campaign</code>). Vyplníš jen data relikvií u kampaní, kde je chceš.</p>
           <div style={{ paddingLeft: 33 }}><button className="btn btn-accent" onClick={downloadTemplate}>⬇ Stáhnout šablonu (XLSX)</button></div>
         </div>
 
         {/* Krok 2 — nahraj vyplněnou */}
         <div style={box}>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: '0 0 6px' }}><span style={num}>2</span>Nahraj vyplněnou šablonu</h2>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', paddingLeft: 33 }}>Relikvie se založí nebo aktualizují podle <code>campaign_slug</code> (1 relikvie na kampaň).</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', paddingLeft: 33 }}>Relikvie se založí/aktualizují a spárují přes <code>campaign_id</code> (1 relikvie na kampaň). Prázdné řádky bez <code>name</code> se přeskočí.</p>
           <div style={{ paddingLeft: 33 }}>
             <label className="btn btn-ghost" style={{ cursor: 'pointer' }}>{busy ? 'Zpracovávám…' : 'Vybrat XLSX soubor'}<input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} disabled={busy} onChange={e => importFile(e.target.files?.[0])}/></label>
           </div>
