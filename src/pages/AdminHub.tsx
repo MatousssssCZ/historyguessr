@@ -20,6 +20,7 @@ const GROUPS: Group[] = [
     label: 'Hra',
     tiles: [
       { icon: '🏛', title: 'Kampaně', sub: 'Kategorie, kampaně, odemykání za ★', to: '/admin/campaigns' },
+      { icon: '🏺', title: 'Import relikvií', sub: 'Šablona XLSX + hromadné GLB modely', to: '/admin/relics-import' },
       { icon: '📅', title: 'Denní výzvy', sub: 'Kalendář „Tento den v historii"', to: '/admin/daily' },
     ],
   },

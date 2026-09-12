@@ -39,6 +39,7 @@ const AdminDailyChallengePage = lazy(() => import('@/pages/AdminDailyChallenge')
 const AdminReportsPage = lazy(() => import('@/pages/AdminReports'))
 const AdminBulkAIPage = lazy(() => import('@/pages/AdminBulkAI'))
 const AdminCampaignsPage = lazy(() => import('@/pages/AdminCampaigns'))
+const AdminRelicsImportPage = lazy(() => import('@/pages/AdminRelicsImport'))
 const AdminContinentsPage = lazy(() => import('@/pages/AdminContinents'))
 const AdminRoadmapPage = lazy(() => import('@/pages/AdminRoadmap'))
 const AdminFeedbackPage = lazy(() => import('@/pages/AdminFeedback'))
@@ -169,6 +170,7 @@ export default function App() {
               <Route path="/admin/reports" element={<RequireAdmin><AdminReportsPage/></RequireAdmin>}/>
               <Route path="/admin/bulk-ai" element={<RequireAdmin><AdminBulkAIPage/></RequireAdmin>}/>
               <Route path="/admin/campaigns" element={<RequireAdmin><AdminCampaignsPage/></RequireAdmin>}/>
+              <Route path="/admin/relics-import" element={<RequireAdmin><AdminRelicsImportPage/></RequireAdmin>}/>
               <Route path="/admin/continents" element={<RequireAdmin><AdminContinentsPage/></RequireAdmin>}/>
               <Route path="/admin/panorama-repair" element={<RequireAdmin><AdminPanoramaRepairPage/></RequireAdmin>}/>
               <Route path="/admin/roadmap" element={<RequireAdmin><AdminRoadmapPage/></RequireAdmin>}/>

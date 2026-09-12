@@ -272,6 +272,27 @@ export async function upsertRelicForCampaign(campaignId: string, patch: Partial<
   return { data: (data as Relic) ?? null, error: error?.message ?? null }
 }
 
+// ── Hromadný import ───────────────────────────────────────
+export interface CampaignBrief { id: string; slug: string | null; title: string }
+export async function getCampaignBriefs(): Promise<CampaignBrief[]> {
+  const { data } = await supabase.from('campaigns').select('id, slug, title').order('seq')
+  return (data ?? []) as CampaignBrief[]
+}
+
+export interface RelicBrief { id: string; slug: string; campaign_id: string | null }
+export async function getAllRelicBriefs(): Promise<RelicBrief[]> {
+  const { data } = await supabase.from('relics').select('id, slug, campaign_id')
+  return (data ?? []) as RelicBrief[]
+}
+
+/** Uloží URL GLB modelu dané rarity k relikvii (podle id). */
+export async function setRelicModelUrl(relicId: string, rarity: Rarity, url: string): Promise<{ error: string | null }> {
+  const patch: Partial<Relic> = {}
+  patch[`model_${rarity}` as `model_${Rarity}`] = url
+  const { error } = await supabase.from('relics').update(patch).eq('id', relicId)
+  return { error: error?.message ?? null }
+}
+
 export async function getRelicSets(): Promise<RelicSet[]> {
   const { data } = await supabase.from('relic_sets').select('*').order('seq')
   return (data ?? []) as RelicSet[]
