@@ -53,8 +53,11 @@ export default function AdminRelicsImportPage() {
     setMsg(null)
     const XLSX = await loadXLSX()
     if (!XLSX) { setMsg('Nepodařilo se načíst XLSX knihovnu.'); return }
-    // Předvyplněný řádek na každou kampaň: campaign_id + název, zbytek prázdný k vyplnění.
-    const rows = campaigns.map(c => [c.id, c.title, '', '', '', '', '', '', '', '', '', ''])
+    // Do šablony jdou jen kampaně BEZ přiřazené relikvie — právě ty potřebuješ doplnit.
+    const withRelic = new Set(relics.map(r => r.campaign_id).filter(Boolean) as string[])
+    const missing = campaigns.filter(c => !withRelic.has(c.id))
+    if (missing.length === 0) { setMsg('Všechny kampaně už mají relikvii — není co exportovat.'); return }
+    const rows = missing.map(c => [c.id, c.title, '', '', '', '', '', '', '', '', '', ''])
     const ws = XLSX.utils.aoa_to_sheet([[...COLS], ...rows])
     const help = [
       ['Nápověda k importu relikvií'],
@@ -158,6 +161,8 @@ export default function AdminRelicsImportPage() {
     setBusy(false)
   }
 
+  const withRelicIds = new Set(relics.map(r => r.campaign_id).filter(Boolean) as string[])
+  const missingCount = campaigns.filter(c => !withRelicIds.has(c.id)).length
   const box: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '18px 20px', marginBottom: 16 }
   const num: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, marginRight: 9 }
 
@@ -174,7 +179,7 @@ export default function AdminRelicsImportPage() {
         {/* Krok 1 — šablona */}
         <div style={box}>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 18, margin: '0 0 6px' }}><span style={num}>1</span>Stáhni šablonu</h2>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', paddingLeft: 33 }}>XLSX má <b>předvyplněný řádek pro každou z {campaigns.length} kampaní</b> (sloupce <code>campaign_id</code> + <code>campaign</code>). Vyplníš jen data relikvií u kampaní, kde je chceš.</p>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', paddingLeft: 33 }}>XLSX má <b>předvyplněný řádek pro každou kampaň bez relikvie</b> ({missingCount} z {campaigns.length}) — sloupce <code>campaign_id</code> + <code>campaign</code>. Kampaně, které už relikvii mají, se do exportu nedávají.</p>
           <div style={{ paddingLeft: 33 }}><button className="btn btn-accent" onClick={downloadTemplate}>⬇ Stáhnout šablonu (XLSX)</button></div>
         </div>
 
