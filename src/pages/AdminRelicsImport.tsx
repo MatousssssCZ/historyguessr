@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { slugify } from '@/lib/slugify'
 import {
-  RELIC_CATEGORIES, RARITY_ORDER,
+  RARITY_ORDER,
   getCampaignBriefs, getAllRelicBriefs, upsertRelicForCampaign, uploadRelicModel, setRelicModelUrl,
   type CampaignBrief, type RelicBrief, type Rarity, type Relic,
 } from '@/lib/relics'
@@ -21,14 +21,13 @@ async function loadXLSX(): Promise<any> {
   return (window as any).XLSX
 }
 
-// campaign_id + campaign se ve staženém souboru PŘEDVYPLNÍ (řádek na kampaň) —
-// párování jde přes neměnné campaign_id, ne přes název. Ostatní sloupce vyplní admin.
-const COLS = ['campaign_id', 'campaign', 'slug', 'name', 'name_en', 'name_de', 'year_label', 'category', 'secret', 'description', 'description_en', 'description_de'] as const
+// campaign_id + campaign se ve staženém souboru PŘEDVYPLNÍ (řádek na kampaň).
+// campaign_id = párování (neměnné), campaign = jen orientační název pro admina.
+// Slug relikvie (kvůli názvům GLB) se odvodí z názvu automaticky.
+const COLS = ['campaign_id', 'campaign', 'name', 'name_en', 'name_de', 'description', 'description_en', 'description_de', 'year_label'] as const
 
 type ImportResult = { slug: string; name: string; ok: boolean; error?: string; campaign?: string }
 type GlbResult = { file: string; ok: boolean; slug?: string; rarity?: Rarity; error?: string }
-
-const truthy = (v: string) => ['ano', 'true', '1', 'yes', 'ano ', 'x'].includes(v.trim().toLowerCase())
 
 export default function AdminRelicsImportPage() {
   const { isAdmin, loading } = useAuth()
@@ -57,23 +56,21 @@ export default function AdminRelicsImportPage() {
     const withRelic = new Set(relics.map(r => r.campaign_id).filter(Boolean) as string[])
     const missing = campaigns.filter(c => !withRelic.has(c.id))
     if (missing.length === 0) { setMsg('Všechny kampaně už mají relikvii — není co exportovat.'); return }
-    const rows = missing.map(c => [c.id, c.title, '', '', '', '', '', '', '', '', '', ''])
+    const rows = missing.map(c => [c.id, c.title, '', '', '', '', '', '', ''])
     const ws = XLSX.utils.aoa_to_sheet([[...COLS], ...rows])
     const help = [
       ['Nápověda k importu relikvií'],
       [''],
-      ['Jak to funguje', 'Soubor má jeden řádek na každou existující kampaň. Vyplň relikvii jen u těch kampaní, kde ji chceš — prázdné řádky (bez name) se ignorují.'],
+      ['Jak to funguje', 'Soubor má jeden řádek na každou kampaň bez relikvie. Vyplň relikvii jen tam, kde ji chceš — prázdné řádky (bez name) se ignorují.'],
       [''],
       ['campaign_id', 'NEMĚNIT — technické ID kampaně (párování jede přes něj). Je předvyplněné.'],
       ['campaign', 'Jen pro tvou orientaci (název kampaně). Nepoužívá se k párování.'],
-      ['slug', 'Slug relikvie (bez diakritiky, malá písmena, pomlčky). Prázdné = vytvoří se z názvu. Používá se pro názvy GLB souborů.'],
       ['name / name_en / name_de', 'Název relikvie CZ / EN / DE (EN, DE nepovinné — fallback na CZ).'],
+      ['description / _en / _de', 'Popis relikvie CZ / EN / DE (nepovinné).'],
       ['year_label', 'Datace jako text, např. „44 př. n. l." nebo „1800–1815".'],
-      ['category', 'Jedna z: ' + RELIC_CATEGORIES.join(', ') + '.'],
-      ['secret', 'Skrytá do dokončení kampaně? ano / ne.'],
-      ['description / _en / _de', 'Popis CZ / EN / DE.'],
       [''],
       ['GLB modely', 'Po importu nahraj GLB soubory. Název = <slug-relikvie>_<rarita>.glb'],
+      ['', 'Slug relikvie se tvoří automaticky z názvu (uvidíš ho po importu u každé relikvie).'],
       ['', 'Rarita = jedna z: ' + RARITY_ORDER.join(', ') + '. Příklad: napoleonuv-klobouk_epic.glb'],
     ]
     const wsHelp = XLSX.utils.aoa_to_sheet(help)
@@ -110,15 +107,12 @@ export default function AdminRelicsImportPage() {
           || byTitle.get((r.campaign || '').trim().toLowerCase())
         if (!name) { out.push({ slug: relicSlug, name: name || '(bez názvu)', ok: false, error: 'Chybí name' }); continue }
         if (!camp) { out.push({ slug: relicSlug, name, ok: false, error: `Kampaň nenalezena (campaign_id „${r.campaign_id || '—'}")` }); continue }
-        const cat = r.category?.trim().toLowerCase()
         const patch: Partial<Relic> = {
           slug: relicSlug,
           name,
           name_en: r.name_en?.trim() || null,
           name_de: r.name_de?.trim() || null,
           year_label: r.year_label?.trim() || null,
-          category: cat && (RELIC_CATEGORIES as readonly string[]).includes(cat) ? cat : null,
-          secret: truthy(r.secret || ''),
           description: r.description?.trim() || null,
           description_en: r.description_en?.trim() || null,
           description_de: r.description_de?.trim() || null,
