@@ -168,7 +168,7 @@ export default function AdminRelicsImportPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 'calc(14px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) 14px max(24px, env(safe-area-inset-left, 0px))', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 19, margin: 0 }}>🏺 Hromadný import relikvií</h1>
         {msg && <span style={{ marginLeft: 'auto', fontSize: 13, color: msg.includes('selhal') || msg.includes('prázdn') || msg.includes('Nepodařilo') ? 'var(--danger)' : 'var(--success-deep, #3f7a4d)' }}>{msg}</span>}

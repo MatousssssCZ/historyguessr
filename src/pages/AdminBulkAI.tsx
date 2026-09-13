@@ -180,7 +180,7 @@ export default function AdminBulkAIPage() {
   const label = 'label'
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(16px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 16px max(20px, env(safe-area-inset-left, 0px))', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Hromadné AI zadávání</h1>

@@ -71,7 +71,7 @@ export default function AdminEventTasksPage() {
   if (review) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
-        <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 'calc(16px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 16px max(20px, env(safe-area-inset-left, 0px))', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
           <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => { setReview(null); load() }}>← Zpět</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Schválení: {review.task.title}</h1>
         </header>
@@ -95,7 +95,7 @@ export default function AdminEventTasksPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 'calc(16px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 16px max(20px, env(safe-area-inset-left, 0px))', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
         <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Administrace</button>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>📋 Zadání pro editory</h1>
         <button className="btn btn-ghost" style={{ marginLeft: 'auto', padding: '7px 12px', fontSize: 13 }}
