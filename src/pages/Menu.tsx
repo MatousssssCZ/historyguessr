@@ -13,6 +13,8 @@ import { ACHIEVEMENTS, tierProgress } from '@/lib/achievements'
 import { loadResume, RESUME_TTL, type ResumeState } from '@/lib/resume'
 import { getMenuHeroImages } from '@/lib/preload'
 import { getPendingInvites } from '@/lib/invites'
+import { getMenuCampaignCard, type MenuCampaignCard } from '@/lib/relics'
+import RelicBadge from '@/components/RelicBadge'
 import { useTranslation } from 'react-i18next'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -43,6 +45,31 @@ function Flame({ size = 13 }: { size?: number }) {
   )
 }
 
+// Karta „Kampaně / další relikvie" — odznak relikvie + stav sbírky, klik → /campaigns
+function RelicCampaignCard({ card, t, onClick }: { card: MenuCampaignCard; t: (k: string, o?: Record<string, unknown>) => string; onClick: () => void }) {
+  const n = card.next
+  const label = n ? t('menu.relicCardNext') : t('menu.relicCardAll')
+  const title = n ? n.relicName : t('menu.campaigns')
+  const sub = n
+    ? t('menu.relicRoundsLeft', { n: n.roundsCount, cat: n.categoryTitle })
+    : t('menu.relicOwnedOf', { owned: card.relicsOwned, total: card.relicsTotal })
+  return (
+    <button onClick={onClick} style={{
+      background: 'rgba(20,16,12,.55)', backdropFilter: 'blur(18px) saturate(140%)', WebkitBackdropFilter: 'blur(18px) saturate(140%)',
+      border: '1px solid rgba(251,247,240,.14)', borderRadius: 20, padding: '13px 15px',
+      display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer', color: '#FBF7F0',
+    }}>
+      <RelicBadge rarity={n?.rarity ?? null} silhouetteUrl={n?.silhouetteUrl} iconUrl={n?.iconUrl} name={title} size={52} dim={!n?.rarity}/>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>{label} · {card.relicsOwned}/{card.relicsTotal}</span>
+        <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
+        <span style={{ display: 'block', fontSize: 12, color: 'rgba(251,247,240,.6)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</span>
+      </span>
+      <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18, flexShrink: 0 }}>→</span>
+    </button>
+  )
+}
+
 // Krátkodobá in-memory cache dat menu — drží se mezi překliky v rámci session
 // (nikoli po reloadu). Klíč obsahuje xp + datum registrace, takže po odehrání
 // (změna xp) se data automaticky obnoví. TTL zabrání zbytečným dotazům při
@@ -56,6 +83,7 @@ interface MenuData {
   world: { rank: number; total: number } | null
   rankDelta: number
   catHits: Record<string, number>
+  campaignCard: MenuCampaignCard | null
 }
 let menuCache: { key: string; ts: number; data: MenuData } | null = null
 const MENU_TTL = 60_000
@@ -98,6 +126,7 @@ export default function MenuPage() {
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
   const [rankDelta, setRankDelta] = useState(0)
   const [catHits, setCatHits] = useState<Record<string, number>>({})
+  const [campaignCard, setCampaignCard] = useState<MenuCampaignCard | null>(null)
   const [resume, setResume] = useState<ResumeState | null>(null)
   const [heroImgs, setHeroImgs] = useState<string[]>([])
   const [showHowTo, setShowHowTo] = useState(false)
@@ -146,6 +175,7 @@ export default function MenuPage() {
       setWorld(d.world)
       setRankDelta(d.rankDelta)
       setCatHits(d.catHits)
+      setCampaignCard(d.campaignCard)
     }
     if (menuCache && menuCache.key === key && Date.now() - menuCache.ts < MENU_TTL) {
       apply(menuCache.data)
@@ -159,7 +189,8 @@ export default function MenuPage() {
       getFriendRequests().catch(() => [] as unknown[]),
       isAnonymous ? Promise.resolve(null) : getWorldRank().catch(() => null),  // žebříček jen pro registrované
       getCategoryHits(user.id).catch(() => ({} as Record<string, number>)),
-    ]).then(([res, rows, reqs, w, hits]) => {
+      getMenuCampaignCard(user.id).catch(() => null),
+    ]).then(([res, rows, reqs, w, hits, campCard]) => {
       if (!alive) return
 
       // Streak + ✓/✕ za posledních 7 dní (jen ode dne registrace)
@@ -204,6 +235,7 @@ export default function MenuPage() {
         world: w,
         rankDelta,
         catHits: hits,
+        campaignCard: campCard,
       }
       menuCache = { key, ts: Date.now(), data }
       apply(data)
@@ -411,15 +443,19 @@ export default function MenuPage() {
                 </div>
               </button>
 
-              {/* Pokračuj v kampani */}
-              <button onClick={() => navigate('/campaigns')} style={{ ...GLASS, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13, cursor: 'pointer', textAlign: 'left', color: '#FBF7F0' }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.08)', color: '#E9A183' }}><Icon name="swords" size={19}/></span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ ...cardLabel, display: 'block' }}>{t('menu.contCampaign')}</span>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, marginTop: 3 }}>{t('menu.campaigns')}</span>
-                </span>
-                <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18 }}>→</span>
-              </button>
+              {/* Kampaně / další relikvie */}
+              {campaignCard && campaignCard.relicsTotal > 0
+                ? <RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/>
+                : (
+                  <button onClick={() => navigate('/campaigns')} style={{ ...GLASS, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13, cursor: 'pointer', textAlign: 'left', color: '#FBF7F0' }}>
+                    <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.08)', color: '#E9A183' }}><Icon name="swords" size={19}/></span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ ...cardLabel, display: 'block' }}>{t('menu.contCampaign')}</span>
+                      <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, marginTop: 3 }}>{t('menu.campaigns')}</span>
+                    </span>
+                    <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18 }}>→</span>
+                  </button>
+                )}
             </aside>
           </div>
 
@@ -631,14 +667,31 @@ export default function MenuPage() {
               <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 14 }}>›</span>
             </button>
           )}
+          {campaignCard && campaignCard.relicsTotal > 0 && (
+            <div style={{ marginBottom: 12 }}><RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/></div>
+          )}
+
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 16px' }}>{t('menu.heroQuestion')}</h1>
 
-          {/* Denní výzva — primární akce (jako na desktopu) */}
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E9A183', marginBottom: 8 }}>{t('menu.dailyLabel')} · {dateStr}</div>
-          <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: dailyState === 'done' ? SUCCESS_GRAD : ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: dailyState === 'done' ? '0 18px 40px -22px rgba(63,107,69,.9)' : '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
-            <Icon name={dailyState === 'done' ? 'chart' : 'bolt'} size={17}/> {dailyState === 'done' ? t('menu.showResults') : t('menu.playChallenge')}
-          </button>
+          {/* Denní výzva — primární akce (jako na desktopu); po odehrání decentní zelená karta */}
+          {dailyState === 'done' ? (
+            <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 14px', borderRadius: 15, cursor: 'pointer', background: 'rgba(63,107,69,.16)', border: '1.5px solid rgba(95,157,104,.5)', color: '#FBF7F0', textAlign: 'left', marginBottom: 16 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(95,157,104,.22)', color: '#9fd6a6' }}><Icon name="chart" size={18}/></span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(159,214,166,.9)' }}>{t('menu.dailyLabel')} · {t('menu.done')}</span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, marginTop: 2 }}>{t('menu.showResults')}</span>
+              </span>
+              <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18, flexShrink: 0 }}>→</span>
+            </button>
+          ) : (
+            <>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E9A183', marginBottom: 8 }}>{t('menu.dailyLabel')} · {dateStr}</div>
+              <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
+                <Icon name="bolt" size={17}/> {t('menu.playChallenge')}
+              </button>
+            </>
+          )}
 
           <button onClick={() => setShowQuick(true)} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, cursor: 'pointer',

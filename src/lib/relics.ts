@@ -1,6 +1,8 @@
 // Kronika & relikvie — datová vrstva. Jedna relikvie na kampaň, 4 úrovně
 // vzácnosti (common→rare→epic→legendary) jako GLB modely. Čtení je defenzivní.
-import { supabase } from './supabase'
+import { supabase, getCampaignBundle } from './supabase'
+import { categoryAccess, campaignAccess, categoryStars } from './campaignLogic'
+import { localizedTitle } from './eventLocale'
 import i18n from '@/i18n'
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -245,6 +247,58 @@ export async function setRelicShowcase(userId: string, relicId: string, showcase
     .update({ showcased }).eq('user_id', userId).eq('relic_id', relicId)
   if (error) return { ok: false, error: error.message }
   return { ok: true }
+}
+
+// ── Karta „další relikvie z kampaní" pro menu ─────────────
+export interface MenuCampaignCard {
+  hasAny: boolean          // hráč už nějakou kampaň rozehrál/dohrál
+  relicsOwned: number
+  relicsTotal: number
+  next: {
+    campaignId: string
+    relicName: string      // název relikvie, jinak název kampaně
+    categoryTitle: string
+    roundsCount: number    // „za N kol"
+    silhouetteUrl: string | null
+    iconUrl: string | null
+    rarity: Rarity | null  // null = ještě nevlastní (silueta)
+  } | null
+}
+
+/** Spočítá kartu pro menu: kolik relikvií hráč má a která kampaň je „na řadě". */
+export async function getMenuCampaignCard(userId: string): Promise<MenuCampaignCard> {
+  try {
+    const [cb, kb] = await Promise.all([getCampaignBundle(userId), getKronikaBundle(userId)])
+    const relicByCampaign = new Map<string, RelicView>()
+    for (const v of kb.relics) if (v.relic.campaign_id) relicByCampaign.set(v.relic.campaign_id, v)
+    const hasAny = Object.keys(cb.progress).length > 0
+
+    let next: MenuCampaignCard['next'] = null
+    for (const cat of cb.categories) {
+      if (!categoryAccess(cat, cb.totalStars, cb.entitlements).isUnlocked) continue
+      const camps = cb.campaignsByCat[cat.id] ?? []
+      const cs = categoryStars(camps, cb.progress)
+      for (const c of camps) {
+        if ((cb.progress[c.id]?.completed_runs ?? 0) > 0) continue          // dohrané přeskoč
+        if (!campaignAccess(c, cs.earned, cb.entitlements, cat).isUnlocked) continue
+        const rv = relicByCampaign.get(c.id) ?? null
+        next = {
+          campaignId: c.id,
+          relicName: rv ? relicName(rv.relic) : localizedTitle(c),
+          categoryTitle: localizedTitle(cat),
+          roundsCount: c.rounds_count ?? 5,
+          silhouetteUrl: rv?.relic.silhouette_url ?? null,
+          iconUrl: rv?.relic.icon_url ?? null,
+          rarity: rv?.owned?.state ?? null,
+        }
+        break
+      }
+      if (next) break
+    }
+    return { hasAny, relicsOwned: kb.ownedTotal, relicsTotal: kb.total, next }
+  } catch {
+    return { hasAny: false, relicsOwned: 0, relicsTotal: 0, next: null }
+  }
 }
 
 // ─── Admin ────────────────────────────────────────────────
