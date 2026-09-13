@@ -116,6 +116,8 @@ export default function AdminRelicsImportPage() {
           description: r.description?.trim() || null,
           description_en: r.description_en?.trim() || null,
           description_de: r.description_de?.trim() || null,
+          category: camp.categorySlug,   // zděděno z kampaně
+          secret: true,                  // relikvie je vždy skrytá do dokončení kampaně
         }
         const { error } = await upsertRelicForCampaign(camp.id, patch)
         out.push({ slug: relicSlug, name, ok: !error, error: error ?? undefined, campaign: camp.title })

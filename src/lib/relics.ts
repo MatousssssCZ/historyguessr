@@ -327,10 +327,14 @@ export async function upsertRelicForCampaign(campaignId: string, patch: Partial<
 }
 
 // ── Hromadný import ───────────────────────────────────────
-export interface CampaignBrief { id: string; slug: string | null; title: string }
+export interface CampaignBrief { id: string; slug: string | null; title: string; categorySlug: string | null }
 export async function getCampaignBriefs(): Promise<CampaignBrief[]> {
-  const { data } = await supabase.from('campaigns').select('id, slug, title').order('seq')
-  return (data ?? []) as CampaignBrief[]
+  const { data } = await supabase.from('campaigns').select('id, slug, title, category:campaign_categories(slug)').order('seq')
+  type Row = { id: string; slug: string | null; title: string; category: { slug: string | null } | { slug: string | null }[] | null }
+  return ((data ?? []) as unknown as Row[]).map(r => {
+    const cat = Array.isArray(r.category) ? r.category[0] : r.category
+    return { id: r.id, slug: r.slug, title: r.title, categorySlug: cat?.slug ?? null }
+  })
 }
 
 export interface RelicBrief { id: string; slug: string; campaign_id: string | null }
