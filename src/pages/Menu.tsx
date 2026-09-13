@@ -648,24 +648,6 @@ export default function MenuPage() {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.7)' }}><Flame size={11}/> {t('menu.streakDays', { n: dailyStreak })}</span>
             <span style={{ display: 'flex', gap: 4 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
           </div>
-          {world && (
-            <button onClick={() => navigate('/leaderboard')} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', marginBottom: 12, padding: '8px 12px', borderRadius: 12, background: 'rgba(251,247,240,.05)', border: '1px solid rgba(251,247,240,.1)', cursor: 'pointer', textAlign: 'left' }}>
-              <span style={{ display: 'flex', color: 'rgba(251,247,240,.55)' }}><Icon name="globe" size={15}/></span>
-              <span style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>{t('menu.worldRank')}</span>
-              {rankDelta !== 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: rankDelta > 0 ? '#7ec98a' : '#e5928c' }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{rankDelta > 0 ? <path d="M12 4l9 14H3z"/> : <path d="M12 20L3 6h18z"/>}</svg>
-                  {Math.abs(rankDelta)}
-                </span>
-              )}
-              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'rgba(251,247,240,.9)' }}>#{world.rank.toLocaleString(menuLoc)}</span>
-              <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 14 }}>›</span>
-            </button>
-          )}
-          {campaignCard && campaignCard.relicsTotal > 0 && (
-            <div style={{ marginBottom: 12 }}><RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/></div>
-          )}
-
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 16px' }}>{t('menu.heroQuestion')}</h1>
 
@@ -697,6 +679,25 @@ export default function MenuPage() {
           }}>
             <Icon name="bolt" size={17}/> {t('menu.quickBtn')}
           </button>
+
+          {/* Pořadí ve světě + další relikvie z kampaní (dole) */}
+          {world && (
+            <button onClick={() => navigate('/leaderboard')} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', marginBottom: 12, padding: '8px 12px', borderRadius: 12, background: 'rgba(251,247,240,.05)', border: '1px solid rgba(251,247,240,.1)', cursor: 'pointer', textAlign: 'left' }}>
+              <span style={{ display: 'flex', color: 'rgba(251,247,240,.55)' }}><Icon name="globe" size={15}/></span>
+              <span style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>{t('menu.worldRank')}</span>
+              {rankDelta !== 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: rankDelta > 0 ? '#7ec98a' : '#e5928c' }}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{rankDelta > 0 ? <path d="M12 4l9 14H3z"/> : <path d="M12 20L3 6h18z"/>}</svg>
+                  {Math.abs(rankDelta)}
+                </span>
+              )}
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'rgba(251,247,240,.9)' }}>#{world.rank.toLocaleString(menuLoc)}</span>
+              <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 14 }}>›</span>
+            </button>
+          )}
+          {campaignCard && campaignCard.relicsTotal > 0 && (
+            <div style={{ marginBottom: 12 }}><RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/></div>
+          )}
 
           {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto). Herní režimy
               (rychlá/klasická/multiplayer) jsou na mobilu skryté — jsou v dolní navigaci. */}
