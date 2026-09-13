@@ -614,11 +614,6 @@ export default function MenuPage() {
 
   // ═══════════════════ MOBIL (27a) ═══════════════════
   const mDot = (on: boolean) => ({ width: 7, height: 7, borderRadius: '50%', background: on ? '#E8C88A' : 'rgba(251,247,240,.28)' })
-  const mModes: { icon: IconName; title: string; sub: string; onClick: () => void; primary?: boolean }[] = [
-    { icon: 'bolt', title: t('menu.quickGame'), sub: t('menu.quickGameSubShort'), onClick: goQuick },
-    { icon: 'sliders', title: t('menu.classicGame'), sub: t('menu.classicGameSubShort'), onClick: goClassic },
-    { icon: 'swords', title: t('menu.multiplayer'), sub: t('menu.multiplayerSub'), onClick: goMP },
-  ]
   const mSeg = { ex: exSeg, jk: eloc === 'en' ? 'how-to-play' : eloc === 'de' ? 'spielanleitung' : 'jak-hrat', ab: eloc === 'en' ? 'about' : eloc === 'de' ? 'ueber-uns' : 'o-projektu' }
   const mKick = { fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#6F6455' }
   return (
@@ -703,8 +698,9 @@ export default function MenuPage() {
             <Icon name="bolt" size={17}/> {t('menu.quickBtn')}
           </button>
 
-          {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto) → jinak herní režimy */}
-          {(!isStandalone() && !installTileHidden) ? (
+          {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto). Herní režimy
+              (rychlá/klasická/multiplayer) jsou na mobilu skryté — jsou v dolní navigaci. */}
+          {(!isStandalone() && !installTileHidden) && (
             <button onClick={() => setShowInstall(true)} style={{
               display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
               padding: '14px 15px', borderRadius: 14,
@@ -718,26 +714,6 @@ export default function MenuPage() {
               </span>
               <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>›</span>
             </button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {mModes.map((m) => (
-                <button key={m.title} onClick={m.onClick} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', cursor: 'pointer',
-                  padding: '12px 14px', borderRadius: 14,
-                  background: 'rgba(20,16,12,.5)',
-                  backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-                  border: `1px solid ${m.primary ? 'rgba(233,161,131,.4)' : 'rgba(251,247,240,.14)'}`,
-                }}>
-                  <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.primary ? 'rgba(190,98,64,.85)' : 'rgba(251,247,240,.1)', color: '#FBF7F0' }}><Icon name={m.icon} size={17}/></span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14.5, color: '#FBF7F0' }}>{m.title}</span>
-                    <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.62)', marginTop: 1 }}>{m.sub}</span>
-                  </span>
-                  {m.icon === 'swords' && inviteCount > 0 && <span style={{ flexShrink: 0, background: '#e23b3b', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{inviteCount}</span>}
-                  <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 16 }}>→</span>
-                </button>
-              ))}
-            </div>
           )}
 
           {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
