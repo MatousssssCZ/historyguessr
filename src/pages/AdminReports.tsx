@@ -16,11 +16,37 @@ const C_NEW = '#4e8c5a'
 const nf = (n?: number) => (n != null ? n.toLocaleString('cs-CZ') : '—')
 const pct = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 100) : 0)
 
+// Seskupí denní řady do týdnů (pondělní start). sumKeys se sčítají, avgKeys průměrují.
+function toWeekly<T extends { day: string }>(rows: T[], sumKeys: (keyof T)[], avgKeys: (keyof T)[] = []): T[] {
+  const map = new Map<string, { row: Record<string, unknown>; n: number }>()
+  const order: string[] = []
+  for (const r of rows) {
+    const d = new Date(r.day + 'T00:00:00')
+    const dow = (d.getDay() + 6) % 7            // 0 = pondělí
+    const mon = new Date(d); mon.setDate(d.getDate() - dow)
+    const key = `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, '0')}-${String(mon.getDate()).padStart(2, '0')}`
+    if (!map.has(key)) {
+      const base: Record<string, unknown> = { ...r, day: key }
+      for (const k of [...sumKeys, ...avgKeys]) base[k as string] = 0
+      map.set(key, { row: base, n: 0 }); order.push(key)
+    }
+    const e = map.get(key)!; e.n++
+    for (const k of sumKeys) e.row[k as string] = (Number(e.row[k as string]) || 0) + (Number(r[k]) || 0)
+    for (const k of avgKeys) e.row[k as string] = (Number(e.row[k as string]) || 0) + (Number(r[k]) || 0)
+  }
+  return order.map(k => {
+    const e = map.get(k)!
+    for (const ak of avgKeys) e.row[ak as string] = e.n ? Math.round(Number(e.row[ak as string]) / e.n) : 0
+    return e.row as T
+  })
+}
+
 export default function AdminReportsPage() {
   const { isAdmin, loading } = useAuth()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [days, setDays] = useState<number>(30)
+  const [gran, setGran] = useState<'day' | 'week'>('day')
   const [overview, setOverview] = useState<Record<string, number>>({})
   const [mp, setMp] = useState<Record<string, number>>({})
   const [series, setSeries] = useState<DailySeriesRow[]>([])
@@ -61,7 +87,13 @@ export default function AdminReportsPage() {
   const perfectShare = pct(campOv.perfect_runs ?? 0, campOv.completions ?? 0)
   const activation = pct(overview.active_30d ?? 0, overview.registered ?? 0)
   const mpFinish = pct(mp.rooms_finished ?? 0, mp.rooms_total ?? 0)
-  const avgDaily = daily.length ? Math.round(daily.reduce((a, r) => a + (r.players || 0), 0) / daily.length) : 0
+
+  // Grafy: buď denní řady, nebo týdenní agregace
+  const weekly = gran === 'week'
+  const chartSeries = weekly ? toWeekly(series, ['new_users', 'active_users', 'rounds']) : series
+  const chartCamp = weekly ? toWeekly(campSeries, ['events', 'attempts', 'completions']) : campSeries
+  const chartDaily = weekly ? toWeekly(daily, ['players'], ['avg_score']) : daily
+  const avgDailyView = chartDaily.length ? Math.round(chartDaily.reduce((a, r) => a + (r.players || 0), 0) / chartDaily.length) : 0
 
   // Trend: druhá polovina období vs první polovina
   const half = Math.floor(series.length / 2)
@@ -82,13 +114,23 @@ export default function AdminReportsPage() {
           <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 19, margin: 0 }}>Reporting</h1>
         </div>
-        <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 4, gap: 4 }}>
-          {PERIODS.map(p => (
-            <button key={p} onClick={() => setDays(p)} style={{
-              border: 'none', padding: '6px 13px', borderRadius: 7, cursor: 'pointer', fontSize: 13,
-              background: days === p ? 'var(--accent)' : 'transparent', color: days === p ? '#fff' : 'var(--ink-2)', fontWeight: days === p ? 700 : 500,
-            }}>{p} dní</button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 4, gap: 4 }}>
+            {PERIODS.map(p => (
+              <button key={p} onClick={() => setDays(p)} style={{
+                border: 'none', padding: '6px 13px', borderRadius: 7, cursor: 'pointer', fontSize: 13,
+                background: days === p ? 'var(--accent)' : 'transparent', color: days === p ? '#fff' : 'var(--ink-2)', fontWeight: days === p ? 700 : 500,
+              }}>{p} dní</button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', background: 'var(--paper-200)', borderRadius: 10, padding: 4, gap: 4 }}>
+            {(['day', 'week'] as const).map(g => (
+              <button key={g} onClick={() => setGran(g)} style={{
+                border: 'none', padding: '6px 13px', borderRadius: 7, cursor: 'pointer', fontSize: 13,
+                background: gran === g ? 'var(--accent)' : 'transparent', color: gran === g ? '#fff' : 'var(--ink-2)', fontWeight: gran === g ? 700 : 500,
+              }}>{g === 'day' ? 'Dny' : 'Týdny'}</button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -102,8 +144,8 @@ export default function AdminReportsPage() {
           <Hero style={span(3)} label="Dokončení kampaní" value={campOv.completions} ringPct={campCompletion} ringLabel="pokusů dokončeno"/>
 
           {/* ── Vývoj (graf) + Poměry ─────────────────── */}
-          <Panel style={span(8)} title={`Vývoj za ${days} dní`}>
-            {busy ? <Spinner/> : <SeriesChart rows={series}/>}
+          <Panel style={span(8)} title={`Vývoj za ${days} dní · ${weekly ? 'po týdnech' : 'po dnech'}`}>
+            {busy ? <Spinner/> : <SeriesChart rows={chartSeries}/>}
           </Panel>
           <Panel style={span(4)} title="Poměry & zapojení">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -144,8 +186,8 @@ export default function AdminReportsPage() {
             <CampaignBars rows={camps}/>
           </Panel>
 
-          <Panel style={span(12)} title={`Kampaně — odehrané události za ${days} dní`}>
-            {busy ? <Spinner/> : <CampaignSeriesChart rows={campSeries}/>}
+          <Panel style={span(12)} title={`Kampaně — odehrané události za ${days} dní · ${weekly ? 'po týdnech' : 'po dnech'}`}>
+            {busy ? <Spinner/> : <CampaignSeriesChart rows={chartCamp}/>}
           </Panel>
 
           {/* ── Události — hranost + hodnocení ────────── */}
@@ -167,8 +209,8 @@ export default function AdminReportsPage() {
           </Panel>
 
           {/* ── Denní výzva + Multiplayer ─────────────── */}
-          <Panel style={span(8)} title={`Denní výzva — účast (${days} dní)`} right={<MiniStat label="ø/den" value={avgDaily}/>}>
-            {busy ? <Spinner/> : <DailyChart rows={daily}/>}
+          <Panel style={span(8)} title={`Denní výzva — účast (${days} dní · ${weekly ? 'po týdnech' : 'po dnech'})`} right={<MiniStat label={weekly ? 'ø/týden' : 'ø/den'} value={avgDailyView}/>}>
+            {busy ? <Spinner/> : <DailyChart rows={chartDaily}/>}
           </Panel>
           <Panel style={span(4)} title="Multiplayer">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
