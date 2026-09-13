@@ -109,7 +109,7 @@ export default function AdminReportsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
-      <header style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '13px 24px', background: 'color-mix(in srgb, var(--surface) 86%, transparent)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--line)' }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: 'calc(13px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) 13px max(24px, env(safe-area-inset-left, 0px))', background: 'color-mix(in srgb, var(--surface) 86%, transparent)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 19, margin: 0 }}>Reporting</h1>
@@ -134,7 +134,7 @@ export default function AdminReportsPage() {
         </div>
       </header>
 
-      <div style={{ maxWidth: 1360, margin: '0 auto', padding: isMobile ? '14px 12px 40px' : '18px 22px 48px' }}>
+      <div style={{ maxWidth: 1360, margin: '0 auto', padding: isMobile ? '14px 12px calc(40px + env(safe-area-inset-bottom, 0px))' : '18px 22px 48px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 12 }}>
 
           {/* ── HERO KPI ───────────────────────────────── */}
