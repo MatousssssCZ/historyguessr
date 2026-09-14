@@ -692,6 +692,12 @@ export async function getReportEventsRated(minVotes = 3): Promise<{ best: RatedE
   const worst = [...sorted].reverse().filter(r => !bestIds.has(r.id)).slice(0, 6)
   return { best, worst }
 }
+export interface PageViewRow { path: string; views: number; visitors: number }
+export async function getReportPageViews(days: number): Promise<PageViewRow[]> {
+  const { data } = await supabase.rpc('report_page_views', { p_days: days })
+  return ((data ?? []) as { path: string; views: number; visitors: number }[])
+    .map(r => ({ path: r.path, views: Number(r.views), visitors: Number(r.visitors) }))
+}
 export interface CampaignSeriesRow { day: string; events: number; attempts: number; completions: number }
 export async function getReportCampaignSeries(days: number): Promise<CampaignSeriesRow[]> {
   const { data } = await supabase.rpc('report_campaign_series', { p_days: days })

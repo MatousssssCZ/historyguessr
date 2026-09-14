@@ -4,8 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   getReportOverview, getReportMultiplayer, getReportDailySeries, getReportCategories,
-  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview, getReportCampaignSeries, getReportInstalls,
-  type DailySeriesRow, type CategoryRow, type RankedEvent, type RatedEvent, type DailyChallengeRow, type CampaignReportRow, type CampaignSeriesRow,
+  getReportEventsRanked, getReportEventsRated, getReportDailyChallenge, getReportCampaigns, getReportCampaignsOverview, getReportCampaignSeries, getReportInstalls, getReportPageViews,
+  type DailySeriesRow, type CategoryRow, type RankedEvent, type RatedEvent, type DailyChallengeRow, type CampaignReportRow, type CampaignSeriesRow, type PageViewRow,
 } from '@/lib/supabase'
 
 const PERIODS = [7, 30, 90] as const
@@ -54,6 +54,7 @@ export default function AdminReportsPage() {
   const [events, setEvents] = useState<RankedEvent[]>([])
   const [daily, setDaily] = useState<DailyChallengeRow[]>([])
   const [campSeries, setCampSeries] = useState<CampaignSeriesRow[]>([])
+  const [pageViews, setPageViews] = useState<PageViewRow[]>([])
   const [campOv, setCampOv] = useState<Record<string, number>>({})
   const [camps, setCamps] = useState<CampaignReportRow[]>([])
   const [rated, setRated] = useState<{ best: RatedEvent[]; worst: RatedEvent[] }>({ best: [], worst: [] })
@@ -70,8 +71,8 @@ export default function AdminReportsPage() {
 
   const loadSeries = useCallback(async (d: number) => {
     setBusy(true)
-    const [s, dc, cs] = await Promise.all([getReportDailySeries(d), getReportDailyChallenge(d), getReportCampaignSeries(d).catch(() => [] as CampaignSeriesRow[])])
-    setSeries(s); setDaily(dc); setCampSeries(cs); setBusy(false)
+    const [s, dc, cs, pv] = await Promise.all([getReportDailySeries(d), getReportDailyChallenge(d), getReportCampaignSeries(d).catch(() => [] as CampaignSeriesRow[]), getReportPageViews(d).catch(() => [] as PageViewRow[])])
+    setSeries(s); setDaily(dc); setCampSeries(cs); setPageViews(pv); setBusy(false)
   }, [])
   useEffect(() => { loadSeries(days) }, [days, loadSeries])
 
@@ -188,6 +189,11 @@ export default function AdminReportsPage() {
 
           <Panel style={span(12)} title={`Kampaně — odehrané události za ${days} dní · ${weekly ? 'po týdnech' : 'po dnech'}`}>
             {busy ? <Spinner/> : <CampaignSeriesChart rows={chartCamp}/>}
+          </Panel>
+
+          {/* ── Nejčastější stránky ───────────────────── */}
+          <Panel style={span(12)} title={`Nejčastější stránky (${days} dní)`}>
+            {busy ? <Spinner/> : <PageViewsList rows={pageViews}/>}
           </Panel>
 
           {/* ── Události — hranost + hodnocení ────────── */}
@@ -401,6 +407,27 @@ function CampaignBars({ rows }: { rows: CampaignReportRow[] }) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function PageViewsList({ rows }: { rows: PageViewRow[] }) {
+  if (rows.length === 0) return <Empty/>
+  const max = Math.max(1, ...rows.map(r => r.views))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {rows.map(r => (
+        <div key={r.path} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <code style={{ width: 200, flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>{r.path}</code>
+          <div style={{ flex: 1, height: 18, background: 'var(--paper-100)', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ width: `${(r.views / max) * 100}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent), var(--accent-deep))', borderRadius: 5 }}/>
+          </div>
+          <div title={`${nf(r.visitors)} návštěvníků`} style={{ width: 108, flexShrink: 0, display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+            <span style={{ color: 'var(--ink)', fontWeight: 700 }}>{nf(r.views)}</span>
+            <span style={{ color: 'var(--ink-3)', fontSize: 10 }}>· {nf(r.visitors)} 👤</span>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

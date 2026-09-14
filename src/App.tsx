@@ -138,6 +138,22 @@ function InstallTracker() {
   return null
 }
 
+// ── Sledování zobrazení stránek (pro reporting „Nejčastější stránky") ──
+// Normalizuje dynamické části cesty (UUID, kódy místností), ať se nesčítá tříští.
+function normalizePath(p: string): string {
+  return p.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id') || '/'
+}
+function PageViewTracker() {
+  const { pathname } = useLocation()
+  const { user } = useAuth()
+  useEffect(() => {
+    const path = normalizePath(pathname)
+    const id = setTimeout(() => { track('page_view', { path }, user?.id) }, 300)
+    return () => clearTimeout(id)
+  }, [pathname, user?.id])
+  return null
+}
+
 // ── Full screen spinner ───────────────────────────────────
 function FullScreenSpinner() {
   return (
@@ -163,6 +179,7 @@ export default function App() {
           <UpdateWatcher/>
           <EnvBadge/>
           <InstallTracker/>
+          <PageViewTracker/>
           <GameInviteListener/>
           <Suspense fallback={<FullScreenSpinner/>}>
             <Routes>
