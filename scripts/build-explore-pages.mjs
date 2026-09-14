@@ -39,7 +39,7 @@ const UI = {
     listMeta: 'Objevuj stovky historických okamžiků na Historyguesser: kde se staly a v jakém roce.',
     listSeoTitle: 'Historické události na mapě světa | HistoryGuesser',
     listSeoDesc: 'Prozkoumej stovky historických událostí na interaktivní mapě světa. Objevuj války, vynálezy, katastrofy, objevy, umění, sport a další.',
-    eventSeoTail: 'místo, historie a zajímavosti', eventSeoDesc: 'Zjisti, kde a kdy se odehrála událost {name}, co jí předcházelo a proč byla důležitá. Prozkoumej místo a zahraj si ji v HistoryGuesser.',
+    eventSeoTail: 'kde a kdy se to stalo?', eventSeoDesc: 'Kde a kdy se stala událost {name}? Poznej místo a odhadni rok ve 360° panoramatu — historická hra jako GeoGuessr, zdarma a bez registrace.',
     campListH1: 'Historické kampaně', campListSub: 'Tematické série událostí — cestuj dějinami po epochách a regionech.',
     campSeoTitle: 'Historické kampaně – zahraj si dějiny | HistoryGuesser', campSeoDesc: 'Projdi tematické kampaně od starověku po moderní dějiny. Poznávej historické události, získávej hvězdy a odemykej další kapitoly.',
     allEvents: 'Všechny události', allCats: 'Vše', filterBy: 'Kategorie',
@@ -76,7 +76,7 @@ const UI = {
     listMeta: 'Explore hundreds of historical moments on Historyguesser: where they happened and in what year.',
     listSeoTitle: 'Explore Historical Events Around the World | HistoryGuesser',
     listSeoDesc: 'Explore hundreds of historical events on an interactive world map. Discover battles, inventions, disasters, discoveries, art, sports and more.',
-    eventSeoTail: 'History, Location & Facts', eventSeoDesc: 'Discover where and when {name} happened, what led to it and why it mattered. Explore the location and experience the event in HistoryGuesser.',
+    eventSeoTail: 'where & when did it happen?', eventSeoDesc: 'Where and when did {name} happen? Guess the place and year in a 360° panorama — a history game like GeoGuessr, free and no sign-up.',
     campListH1: 'History campaigns', campListSub: 'Themed sets of events — travel through history by era and region.',
     campSeoTitle: 'History Campaigns – Play Through Historical Eras', campSeoDesc: 'Play themed history campaigns from ancient civilizations to modern history. Complete events, earn stars and unlock new chapters of the past.',
     allEvents: 'All events', allCats: 'All', filterBy: 'Category',
@@ -113,7 +113,7 @@ const UI = {
     listMeta: 'Entdecke Hunderte historischer Momente auf Historyguesser: wo sie geschahen und in welchem Jahr.',
     listSeoTitle: 'Historische Ereignisse auf der Weltkarte | HistoryGuesser',
     listSeoDesc: 'Entdecke Hunderte historischer Ereignisse auf einer interaktiven Weltkarte: Schlachten, Erfindungen, Katastrophen, Entdeckungen, Kunst, Sport und mehr.',
-    eventSeoTail: 'Ort, Geschichte & Fakten', eventSeoDesc: 'Erfahre, wo und wann {name} geschah, was dazu führte und warum es wichtig war. Erkunde den Ort und spiele es in HistoryGuesser.',
+    eventSeoTail: 'wo & wann geschah es?', eventSeoDesc: 'Wo und wann geschah {name}? Errate Ort und Jahr im 360°-Panorama — ein Geschichtsspiel wie GeoGuessr, kostenlos und ohne Anmeldung.',
     campListH1: 'Historische Kampagnen', campListSub: 'Thematische Ereignisreihen — reise durch Epochen und Regionen.',
     campSeoTitle: 'Historische Kampagnen – Spiele durch die Epochen | HistoryGuesser', campSeoDesc: 'Spiele thematische Kampagnen von der Antike bis zur Neuzeit. Erlebe historische Ereignisse, sammle Sterne und schalte neue Kapitel frei.',
     allEvents: 'Alle Ereignisse', allCats: 'Alle', filterBy: 'Kategorie',
@@ -479,7 +479,7 @@ function renderEvent(ev, locale, all) {
     : yearLabel
   const img = imgFor(ev)
   // SEO pro událost: „{Název} ({rok}) – místo, historie a zajímavosti" + šablona popisu.
-  const metaTitle = `${title} (${yearLabel}) – ${t.eventSeoTail}`
+  const metaTitle = `${title} (${yearLabel}) – ${t.eventSeoTail} | ${t.metaSuffix}`
   const metaDesc = t.eventSeoDesc.replace('{name}', title).slice(0, 300)
 
   // hreflang: každá jazyková varianta má vlastní slug
