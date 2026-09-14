@@ -14,6 +14,7 @@ import InstallGuide from '@/components/InstallGuide'
 import { isStandalone } from '@/lib/pwaInstall'
 import { DownloadIcon } from '@/components/BrowserIcons'
 import FeedbackModal from '@/components/FeedbackModal'
+import { isPushSupported, isPushSubscribed, subscribePush, unsubscribePush } from '@/lib/push'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
 const fieldLabel: React.CSSProperties = { fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: 'var(--ink-2)', margin: '0 0 6px' }
@@ -34,6 +35,27 @@ export default function AccountPage() {
   const premium = isPremiumUser(ent)
   const [friendReqs, setFriendReqs] = useState(0)
   useEffect(() => { getFriendRequests().then(r => setFriendReqs(r.length)).catch(() => {}) }, [])
+
+  // Push notifikace (opt-in)
+  const [pushOn, setPushOn] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushMsg, setPushMsg] = useState<string | null>(null)
+  const pushSupported = isPushSupported()
+  useEffect(() => { if (pushSupported) isPushSubscribed().then(setPushOn).catch(() => {}) }, [pushSupported])
+
+  async function togglePush() {
+    if (!user) return
+    setPushBusy(true); setPushMsg(null)
+    if (pushOn) {
+      const r = await unsubscribePush()
+      if (r.ok) setPushOn(false); else setPushMsg(t('account.pushErr'))
+    } else {
+      const r = await subscribePush(user.id)
+      if (r.ok) setPushOn(true)
+      else setPushMsg(r.error === 'denied' ? t('account.pushDenied') : t('account.pushErr'))
+    }
+    setPushBusy(false)
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -134,6 +156,26 @@ export default function AccountPage() {
             <ThemeToggle/>
           </div>
         </div>
+
+        {/* Notifikace */}
+        {pushSupported && !isAnonymous && (
+          <div style={cardStyle}>
+            <p style={eyebrow}>{t('account.notifications')}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{t('account.pushDaily')}</span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>{t('account.pushDailySub')}</span>
+              </span>
+              <button onClick={togglePush} disabled={pushBusy} aria-pressed={pushOn} style={{
+                flexShrink: 0, width: 50, height: 30, borderRadius: 999, border: 'none', cursor: pushBusy ? 'default' : 'pointer',
+                background: pushOn ? 'var(--accent)' : 'var(--paper-300)', position: 'relative', transition: 'background 160ms',
+              }}>
+                <span style={{ position: 'absolute', top: 3, left: pushOn ? 23 : 3, width: 24, height: 24, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.3)', transition: 'left 160ms' }}/>
+              </button>
+            </div>
+            {pushMsg && <p style={{ margin: '10px 0 0', fontSize: 11.5, color: 'var(--danger)' }}>{pushMsg}</p>}
+          </div>
+        )}
 
         {/* Nápověda */}
         <button onClick={() => setShowHowTo(true)} style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 13 }}>
