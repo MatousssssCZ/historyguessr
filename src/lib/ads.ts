@@ -45,25 +45,39 @@ export function shouldShowAdAt(
 
 /**
  * Publisher ID z AdSense (`ca-pub-…`). Žije jen v env — na produkci
- * ve Vercelu. Dokud není nastaven, reklamy jsou globálně vypnuté.
+ * ve Vercelu. Dokud není nastaven, AdSense je vypnutý.
  */
 export const ADSENSE_CLIENT = (import.meta.env.VITE_ADSENSE_CLIENT as string | undefined) || ''
 
-/**
- * Přepínač pro celou appku. Reklamy se zapnou automaticky, jakmile je
- * v env vyplněn `VITE_ADSENSE_CLIENT` (tj. po schválení AdSense).
- */
-export const AD_ENABLED = !!ADSENSE_CLIENT
+/** Nitro (NitroPay) site ID. Skript se načítá jako `ads-<SITE_ID>.js`. */
+export const NITRO_SITE_ID = (import.meta.env.VITE_NITRO_SITE_ID as string | undefined) || ''
 
-/** Slot ID pro dané umístění (z AdSense → Ad units). Prázdné = nezobrazí se. */
+/** Který poskytovatel je nakonfigurovaný. Nitro má přednost, když je nastaven. */
+export type AdProvider = 'nitro' | 'adsense'
+export const AD_PROVIDER: AdProvider | null = NITRO_SITE_ID ? 'nitro' : (ADSENSE_CLIENT ? 'adsense' : null)
+
+/**
+ * Přepínač pro celou appku. Reklamy se zapnou automaticky, jakmile je v env
+ * vyplněn některý poskytovatel (`VITE_NITRO_SITE_ID` nebo `VITE_ADSENSE_CLIENT`).
+ */
+export const AD_ENABLED = AD_PROVIDER !== null
+
+/** Slot/Ad-unit ID pro dané umístění u AKTUÁLNÍHO poskytovatele. Prázdné = nezobrazí se. */
 export function adSlotId(placement: AdPlacement): string {
-  const map: Record<AdPlacement, string | undefined> = {
-    after_game_finished: import.meta.env.VITE_ADSENSE_SLOT_AFTER_GAME as string | undefined,
-    after_campaign_finished: import.meta.env.VITE_ADSENSE_SLOT_AFTER_CAMPAIGN as string | undefined,
-    overview_screen: import.meta.env.VITE_ADSENSE_SLOT_OVERVIEW as string | undefined,
-    before_next_game: import.meta.env.VITE_ADSENSE_SLOT_BEFORE_NEXT as string | undefined,
+  const env = import.meta.env as Record<string, string | undefined>
+  const adsense: Record<AdPlacement, string | undefined> = {
+    after_game_finished: env.VITE_ADSENSE_SLOT_AFTER_GAME,
+    after_campaign_finished: env.VITE_ADSENSE_SLOT_AFTER_CAMPAIGN,
+    overview_screen: env.VITE_ADSENSE_SLOT_OVERVIEW,
+    before_next_game: env.VITE_ADSENSE_SLOT_BEFORE_NEXT,
   }
-  return map[placement] || ''
+  const nitro: Record<AdPlacement, string | undefined> = {
+    after_game_finished: env.VITE_NITRO_UNIT_AFTER_GAME,
+    after_campaign_finished: env.VITE_NITRO_UNIT_AFTER_CAMPAIGN,
+    overview_screen: env.VITE_NITRO_UNIT_OVERVIEW,
+    before_next_game: env.VITE_NITRO_UNIT_BEFORE_NEXT,
+  }
+  return (AD_PROVIDER === 'nitro' ? nitro[placement] : adsense[placement]) || ''
 }
 
 const ALLOWED_PLACEMENTS: ReadonlySet<AdPlacement> = new Set<AdPlacement>([
