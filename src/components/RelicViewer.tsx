@@ -40,6 +40,10 @@ export default function RelicViewer({ modelUrl, imageUrl, glow, fallback }: {
       'camera-controls': true,
       'touch-action': 'pan-y',
       'interaction-prompt': 'none',
+      // Omez zoom: min radius drží model za near-clip rovinou (jinak se při
+      // velkém přiblížení ořezávají okraje), max zabrání přílišnému oddálení.
+      'min-camera-orbit': 'auto auto 65%',
+      'max-camera-orbit': 'auto auto 200%',
       'shadow-intensity': '0.8',
       exposure: '1.05',
       'environment-image': 'neutral',
