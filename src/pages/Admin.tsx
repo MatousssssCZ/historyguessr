@@ -441,13 +441,18 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
         </thead>
         <tbody>
           {shown.map((ev, i) => (
-            <tr key={ev.id} style={{ borderBottom: '1px solid var(--line)', background: needsFix && priorityOf(ev) > 0 ? 'rgba(217,119,87,0.06)' : i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
+            <tr key={ev.id} className="admin-evrow" style={{ borderBottom: '1px solid var(--line)', background: needsFix && priorityOf(ev) > 0 ? 'rgba(217,119,87,0.06)' : i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
               <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-3)' }}>
                 {ev.seq != null ? `#${ev.seq}` : '—'}
               </td>
-              <td style={{ padding: '12px 16px' }}>
-                <div style={{ fontWeight: 500, marginBottom: 2 }}>{ev.title}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{ev.category ?? '—'}</div>
+              <td style={{ padding: '10px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <EventThumb ev={ev}/>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 2, color: 'var(--ink)' }}>{ev.title}</div>
+                    <span style={{ display: 'inline-block', fontSize: 10.5, color: 'var(--ink-2)', background: 'var(--paper-200)', borderRadius: 7, padding: '2px 7px' }}>{ev.category ?? '—'}</span>
+                  </div>
+                </div>
               </td>
               <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
                 {(ev.year_from ?? ev.year) < 0 ? `${Math.abs(ev.year_from ?? ev.year)} př.` : (ev.year_from ?? ev.year)}
@@ -516,6 +521,18 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
   )
 }
 
+// Miniatura události (preview → obrázek → placeholder).
+function EventThumb({ ev, size = 46 }: { ev: Event; size?: number }) {
+  const url = ev.preview_url || ev.event_image_url || null
+  return (
+    <div style={{ width: size, height: size, borderRadius: 10, flexShrink: 0, overflow: 'hidden', background: 'var(--paper-200)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {url
+        ? <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+        : <span style={{ fontSize: Math.round(size * 0.42), opacity: 0.35 }}>🏛</span>}
+    </div>
+  )
+}
+
 // ── Karta události pro mobil (nahrazuje tabulku na úzkých obrazovkách) ──
 function EventCardRow({ ev, sizes, onEdit, onToggle, onDelete, onPlay }: {
   ev: Event
@@ -533,10 +550,13 @@ function EventCardRow({ ev, sizes, onEdit, onToggle, onDelete, onPlay }: {
   const act: React.CSSProperties = { padding: '7px 12px', fontSize: 12.5, flex: '1 1 auto', whiteSpace: 'nowrap' }
   return (
     <div style={{ borderBottom: '1px solid var(--line)', padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{ev.seq != null ? `#${ev.seq}` : '—'}</span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
+        <EventThumb ev={ev} size={52}/>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.25 }}>{ev.title}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)' }}>{ev.seq != null ? `#${ev.seq}` : '—'}</span>
+            <span style={{ fontWeight: 600, fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.25 }}>{ev.title}</span>
+          </div>
           <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{ev.category ?? '—'}</div>
         </div>
         <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`} style={{ flexShrink: 0 }}>{ev.published ? 'Publik.' : 'Skrytá'}</span>

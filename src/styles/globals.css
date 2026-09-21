@@ -146,6 +146,8 @@ body {
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 4px); } }
+.admin-evrow { transition: background 120ms; }
+.admin-evrow:hover { background: var(--paper-200) !important; }
 @keyframes holoShift { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 
 /* Skeleton „shimmer" — zamaskuje čekání na data/obrázky, než dorazí. */
