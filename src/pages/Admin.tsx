@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import CompassLoader from '@/components/CompassLoader'
 import { compressPanorama, compressIllustration, generatePreview, generatePreviewFromBlob, formatFileSize } from '@/lib/imageCompression'
 import { getAdminEvents, createEvent, updateEvent, deleteEvent, togglePublished, uploadPanorama, uploadEventImage, uploadPanoramaWithCleanup, uploadPanoramaPreview, downloadPanoramaBlob, downloadEventImageBlob, recompressEventImage, getEventFileSizes, track } from '@/lib/supabase'
@@ -202,14 +203,14 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper-200)' }}>
 
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(16px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 16px max(20px, env(safe-area-inset-left, 0px))', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: 'calc(16px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 16px max(20px, env(safe-area-inset-left, 0px))', background: 'var(--surface)', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', minWidth: 0 }}>
           <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }} onClick={() => navigate('/admin')}>← Admin</button>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, margin: 0 }}>Správa událostí</h1>
           <span className="badge badge-neutral">{events.length} událostí</span>
         </div>
         {panel === 'list' && (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={regen?.running} onClick={() => handleRegeneratePreviews(false)} title="Vytvoří malý náhled z každého panoramatu pro okamžité zobrazení ve hře">
               {regen?.running ? `♻ ${regen.done}/${regen.total}…` : '♻ Přegenerovat náhledy'}
             </button>
@@ -306,6 +307,9 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
   setStatusFilter: (s: '' | 'published' | 'draft') => void
   clearFilters: () => void
 }) {
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const playOne = (id: string) => navigate(`/game?event=${id}`)
   const hasFilters = !!search || categoryFilters.length > 0 || !!statusFilter
 
   // „Ke opravě" — priorita = jak špatné hodnocení × jak moc se to hraje.
@@ -413,9 +417,19 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
         </div>
       )}
 
-      {shown.length > 0 && (
-      <div className="scroll-x">
-      <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 13 }}>
+      {/* Mobil: karty (nic se neořízne) */}
+      {shown.length > 0 && isMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {shown.map(ev => (
+            <EventCardRow key={ev.id} ev={ev} sizes={sizes} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete} onPlay={playOne}/>
+          ))}
+        </div>
+      )}
+
+      {/* Desktop: tabulka s vodorovným scrollem */}
+      {shown.length > 0 && !isMobile && (
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <table style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
             {['ID', 'Název', 'Rok', 'Radius', 'Obtížnost', 'Soubory', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
@@ -483,9 +497,10 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
                 </span>
               </td>
               <td style={{ padding: '12px 16px' }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => onEdit(ev)}>Editovat</button>
-                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => onToggle(ev.id, ev.published)}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }} onClick={() => onEdit(ev)}>Editovat</button>
+                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--accent-deep, #A34E30)' }} title="Zahrát si toto kolo (se skóre a XP)" onClick={() => playOne(ev.id)}>▶ 1 kolo</button>
+                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }} onClick={() => onToggle(ev.id, ev.published)}>
                     {ev.published ? 'Skrýt' : 'Publikovat'}
                   </button>
                   <button className="btn btn-danger" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => onDelete(ev.id)}>Smazat</button>
@@ -497,6 +512,49 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
       </table>
       </div>
       )}
+    </div>
+  )
+}
+
+// ── Karta události pro mobil (nahrazuje tabulku na úzkých obrazovkách) ──
+function EventCardRow({ ev, sizes, onEdit, onToggle, onDelete, onPlay }: {
+  ev: Event
+  sizes: Map<string, { panorama: number | null; illustration: number | null }>
+  onEdit: (e: Event) => void
+  onToggle: (id: string, published: boolean) => void
+  onDelete: (id: string) => void
+  onPlay: (id: string) => void
+}) {
+  const yFrom = ev.year_from ?? ev.year
+  const yearText = `${yFrom < 0 ? `${Math.abs(yFrom)} př.` : yFrom}${ev.year_from !== ev.year_to && ev.year_to ? ` — ${ev.year_to < 0 ? `${Math.abs(ev.year_to)} př.` : ev.year_to}` : ''}`
+  const avg = ev.rating_count > 0 ? (ev.rating_sum / ev.rating_count) : null
+  const s = sizes.get(ev.id)
+  const chip: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-2)', background: 'var(--paper-200)', borderRadius: 8, padding: '3px 8px', whiteSpace: 'nowrap' }
+  const act: React.CSSProperties = { padding: '7px 12px', fontSize: 12.5, flex: '1 1 auto', whiteSpace: 'nowrap' }
+  return (
+    <div style={{ borderBottom: '1px solid var(--line)', padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{ev.seq != null ? `#${ev.seq}` : '—'}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.25 }}>{ev.title}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{ev.category ?? '—'}</div>
+        </div>
+        <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`} style={{ flexShrink: 0 }}>{ev.published ? 'Publik.' : 'Skrytá'}</span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <span style={chip}>{yearText}</span>
+        <span style={chip}>{ev.location_radius_km > 0 ? `${ev.location_radius_km} km` : '—'}</span>
+        <span style={chip}>{'★'.repeat(ev.difficulty)}{'☆'.repeat(3 - ev.difficulty)}</span>
+        <span style={chip}>{avg != null ? `★ ${avg.toFixed(1)} (${ev.rating_count}×)` : 'bez hodnocení'}</span>
+        <span style={chip}>{ev.play_count ?? 0}× odehráno</span>
+        {s && <span style={chip}>🖼 {s.panorama != null ? formatFileSize(s.panorama) : '—'}</span>}
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost" style={act} onClick={() => onEdit(ev)}>Editovat</button>
+        <button className="btn btn-ghost" style={{ ...act, color: 'var(--accent-deep, #A34E30)' }} onClick={() => onPlay(ev.id)}>▶ 1 kolo</button>
+        <button className="btn btn-ghost" style={act} onClick={() => onToggle(ev.id, ev.published)}>{ev.published ? 'Skrýt' : 'Publikovat'}</button>
+        <button className="btn btn-danger" style={act} onClick={() => onDelete(ev.id)}>Smazat</button>
+      </div>
     </div>
   )
 }
