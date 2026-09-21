@@ -7,6 +7,7 @@ export type IconName =
   | 'chart' | 'globe' | 'star' | 'save' | 'roadmap' | 'flame' | 'help' | 'bug' | 'link' | 'plus' | 'lock' | 'share'
   | 'archive' | 'compass' | 'gear' | 'palette' | 'medal' | 'warning' | 'moon-stars'
   | 'calendar-check' | 'lightning' | 'calendar-star' | 'diamond' | 'crown' | 'users' | 'arrow-right'
+  | 'edit' | 'play' | 'eye' | 'eye-off' | 'trash'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   home: <><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></>,
@@ -47,6 +48,11 @@ const PATHS: Record<IconName, React.ReactNode> = {
   crown: <path d="M4 8l3.5 3L12 5l4.5 6L20 8l-1.4 10.5H5.4z"/>,
   users: <><circle cx="8.5" cy="9" r="2.6"/><path d="M3.8 18a4.7 4.7 0 0 1 9.4 0"/><circle cx="16" cy="9" r="2.2"/><path d="M14.5 14.4A4.6 4.6 0 0 1 20.2 18"/></>,
   'arrow-right': <path d="M5 12h14M13 6l6 6-6 6"/>,
+  edit: <><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M13.5 6.5l3 3"/></>,
+  play: <path d="M7 5v14l11-7z"/>,
+  eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></>,
+  'eye-off': <><path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-3.2 4.1"/><path d="M6.2 6.2A17.7 17.7 0 0 0 2 12s3.5 7 10 7a10.6 10.6 0 0 0 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></>,
+  trash: <><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></>,
 }
 
 export default function Icon({ name, size = 20, strokeWidth = 1.7, style }: {

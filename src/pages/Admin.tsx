@@ -11,6 +11,7 @@ import { generateEventDraft, generatePanorama, generateIllustration, generateSto
 import { exportXLS } from '@/lib/xlsExport'
 import type { Event, EventStory } from '@/types/database'
 import AdminMap from '@/components/AdminMap'
+import Icon, { type IconName } from '@/components/Icon'
 
 type Panel = 'list' | 'new' | 'edit'
 
@@ -421,7 +422,7 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
       {shown.length > 0 && isMobile && (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {shown.map(ev => (
-            <EventCardRow key={ev.id} ev={ev} sizes={sizes} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete} onPlay={playOne}/>
+            <EventCardRow key={ev.id} ev={ev} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete} onPlay={playOne}/>
           ))}
         </div>
       )}
@@ -429,90 +430,48 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
       {/* Desktop: tabulka s vodorovným scrollem */}
       {shown.length > 0 && !isMobile && (
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      <table style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse', fontSize: 13 }}>
+      <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
-          <tr style={{ background: 'var(--paper-100)', borderBottom: '1px solid var(--line)' }}>
-            {['ID', 'Název', 'Rok', 'Radius', 'Obtížnost', 'Soubory', 'Hodnocení', 'Ø skóre', 'Stav', 'Akce'].map(h => (
-              <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>
-                {h}
-              </th>
+          <tr style={{ borderBottom: '1px solid var(--line)' }}>
+            {['Událost', 'Hodnocení', 'Obtížnost', 'Stav', ''].map(h => (
+              <th key={h} style={{ padding: '8px 14px', textAlign: 'left', fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 500 }}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {shown.map((ev, i) => (
-            <tr key={ev.id} className="admin-evrow" style={{ borderBottom: '1px solid var(--line)', background: needsFix && priorityOf(ev) > 0 ? 'rgba(217,119,87,0.06)' : i % 2 === 0 ? 'var(--surface)' : 'var(--paper-100)' }}>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-3)' }}>
-                {ev.seq != null ? `#${ev.seq}` : '—'}
-              </td>
-              <td style={{ padding: '10px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                  <EventThumb ev={ev}/>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, marginBottom: 2, color: 'var(--ink)' }}>{ev.title}</div>
-                    <span style={{ display: 'inline-block', fontSize: 10.5, color: 'var(--ink-2)', background: 'var(--paper-200)', borderRadius: 7, padding: '2px 7px' }}>{ev.category ?? '—'}</span>
-                  </div>
+          {shown.map((ev) => {
+            const flagged = needsFix && priorityOf(ev) > 0
+            return (
+            <tr key={ev.id} className="admin-evrow" style={{ borderBottom: '1px solid var(--line)', background: flagged ? 'rgba(217,119,87,0.06)' : 'transparent' }}>
+              <td style={{ padding: '9px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{ev.seq != null ? `#${ev.seq}` : '—'}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{ev.title}</span>
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', marginTop: 2, paddingLeft: 26 }}>
+                  {ev.category ?? '—'} · {eventYearLabel(ev)}
                 </div>
               </td>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                {(ev.year_from ?? ev.year) < 0 ? `${Math.abs(ev.year_from ?? ev.year)} př.` : (ev.year_from ?? ev.year)}
-                {ev.year_from !== ev.year_to && ev.year_to && (
-                  <span style={{ color: 'var(--ink-3)' }}>
-                    {' '}— {ev.year_to < 0 ? `${Math.abs(ev.year_to)} př.` : ev.year_to}
-                  </span>
-                )}
+              <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>
+                {ev.rating_count > 0
+                  ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: flagged ? 'var(--accent-deep)' : 'var(--ink-2)', fontWeight: flagged ? 700 : 400 }}>★ {(ev.rating_sum / ev.rating_count).toFixed(1)} <span style={{ color: 'var(--ink-3)' }}>({ev.rating_count})</span>{flagged ? ' ⚠' : ''}</span>
+                  : <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>–</span>}
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{ev.play_count ?? 0}× odehráno</div>
               </td>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                {ev.location_radius_km > 0 ? `${ev.location_radius_km} km` : '—'}
+              <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}><EventScoreStat ev={ev}/></td>
+              <td style={{ padding: '9px 14px' }}>
+                <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`}>{ev.published ? 'Publik.' : 'Skrytá'}</span>
               </td>
-              <td style={{ padding: '12px 16px' }}>{'★'.repeat(ev.difficulty)}{'☆'.repeat(3 - ev.difficulty)}</td>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
-                {(() => {
-                  const s = sizes.get(ev.id)
-                  if (!s) return <span style={{ opacity: 0.5 }}>…</span>
-                  return (
-                    <div style={{ lineHeight: 1.5 }}>
-                      <div>🖼 {s.panorama != null ? formatFileSize(s.panorama) : '—'}</div>
-                      <div>🎨 {s.illustration != null ? formatFileSize(s.illustration) : '—'}</div>
-                    </div>
-                  )
-                })()}
-              </td>
-              <td style={{ padding: '12px 16px' }}>
-                {ev.rating_count > 0 ? (
-                  <div style={{ lineHeight: 1.5 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ color: priorityOf(ev) > 0 ? 'var(--accent)' : '#d97757', fontSize: 14 }}>{'★'.repeat(Math.max(1, Math.round(ev.rating_sum / ev.rating_count)))}</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: priorityOf(ev) > 0 ? 'var(--accent-deep)' : 'var(--ink-3)', fontWeight: priorityOf(ev) > 0 ? 700 : 400 }}>
-                        {(ev.rating_sum / ev.rating_count).toFixed(1)} ({ev.rating_count}×){priorityOf(ev) > 0 ? ' ⚠' : ''}
-                      </span>
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)' }}>{ev.play_count ?? 0}× odehráno</div>
-                  </div>
-                ) : (
-                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>– <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>({ev.play_count ?? 0}×)</span></span>
-                )}
-              </td>
-              <td style={{ padding: '12px 16px' }}>
-                <EventScoreStat ev={ev}/>
-              </td>
-              <td style={{ padding: '12px 16px' }}>
-                <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`}>
-                  {ev.published ? 'Publikováno' : 'Skrytá'}
-                </span>
-              </td>
-              <td style={{ padding: '12px 16px' }}>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }} onClick={() => onEdit(ev)}>Editovat</button>
-                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--accent-deep, #A34E30)' }} title="Zahrát si toto kolo (se skóre a XP)" onClick={() => playOne(ev.id)}>▶ 1 kolo</button>
-                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }} onClick={() => onToggle(ev.id, ev.published)}>
-                    {ev.published ? 'Skrýt' : 'Publikovat'}
-                  </button>
-                  <button className="btn btn-danger" style={{ padding: '5px 10px', fontSize: 12 }} onClick={() => onDelete(ev.id)}>Smazat</button>
+              <td style={{ padding: '9px 14px' }}>
+                <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                  <IconAct icon="edit" label="Editovat" onClick={() => onEdit(ev)}/>
+                  <IconAct icon="play" label="Zahrát 1 kolo (se skóre a XP)" accent onClick={() => playOne(ev.id)}/>
+                  <IconAct icon={ev.published ? 'eye-off' : 'eye'} label={ev.published ? 'Skrýt' : 'Publikovat'} onClick={() => onToggle(ev.id, ev.published)}/>
+                  <IconAct icon="trash" label="Smazat" danger onClick={() => onDelete(ev.id)}/>
                 </div>
               </td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
       </div>
@@ -521,59 +480,60 @@ function EventList({ events: filtered, total, sizes, onEdit, onToggle, onDelete,
   )
 }
 
-// Miniatura události (preview → obrázek → placeholder).
-function EventThumb({ ev, size = 46 }: { ev: Event; size?: number }) {
-  const url = ev.preview_url || ev.event_image_url || null
+// Datace jako text (rozsah se znaménkem př. n. l.).
+function eventYearLabel(ev: Event): string {
+  const yFrom = ev.year_from ?? ev.year
+  const f = yFrom < 0 ? `${Math.abs(yFrom)} př.` : String(yFrom)
+  if (ev.year_from !== ev.year_to && ev.year_to) {
+    const t = ev.year_to < 0 ? `${Math.abs(ev.year_to)} př.` : String(ev.year_to)
+    return `${f} — ${t}`
+  }
+  return f
+}
+
+// Kompaktní ikonové tlačítko akce (popisek při najetí).
+function IconAct({ icon, label, onClick, danger, accent }: {
+  icon: IconName; label: string; onClick: () => void; danger?: boolean; accent?: boolean
+}) {
   return (
-    <div style={{ width: size, height: size, borderRadius: 10, flexShrink: 0, overflow: 'hidden', background: 'var(--paper-200)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {url
-        ? <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
-        : <span style={{ fontSize: Math.round(size * 0.42), opacity: 0.35 }}>🏛</span>}
-    </div>
+    <button type="button" title={label} aria-label={label} onClick={onClick} style={{
+      width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      border: '1px solid transparent', borderRadius: 8, background: 'transparent', cursor: 'pointer',
+      color: danger ? 'var(--danger)' : accent ? 'var(--accent-deep, #A34E30)' : 'var(--ink-2)',
+    }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'var(--paper-200)'; e.currentTarget.style.borderColor = 'var(--line)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
+      <Icon name={icon} size={16}/>
+    </button>
   )
 }
 
 // ── Karta události pro mobil (nahrazuje tabulku na úzkých obrazovkách) ──
-function EventCardRow({ ev, sizes, onEdit, onToggle, onDelete, onPlay }: {
+function EventCardRow({ ev, onEdit, onToggle, onDelete, onPlay }: {
   ev: Event
-  sizes: Map<string, { panorama: number | null; illustration: number | null }>
   onEdit: (e: Event) => void
   onToggle: (id: string, published: boolean) => void
   onDelete: (id: string) => void
   onPlay: (id: string) => void
 }) {
-  const yFrom = ev.year_from ?? ev.year
-  const yearText = `${yFrom < 0 ? `${Math.abs(yFrom)} př.` : yFrom}${ev.year_from !== ev.year_to && ev.year_to ? ` — ${ev.year_to < 0 ? `${Math.abs(ev.year_to)} př.` : ev.year_to}` : ''}`
   const avg = ev.rating_count > 0 ? (ev.rating_sum / ev.rating_count) : null
-  const s = sizes.get(ev.id)
-  const chip: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-2)', background: 'var(--paper-200)', borderRadius: 8, padding: '3px 8px', whiteSpace: 'nowrap' }
-  const act: React.CSSProperties = { padding: '7px 12px', fontSize: 12.5, flex: '1 1 auto', whiteSpace: 'nowrap' }
   return (
-    <div style={{ borderBottom: '1px solid var(--line)', padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-        <EventThumb ev={ev} size={52}/>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)' }}>{ev.seq != null ? `#${ev.seq}` : '—'}</span>
-            <span style={{ fontWeight: 600, fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.25 }}>{ev.title}</span>
-          </div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{ev.category ?? '—'}</div>
+    <div style={{ borderBottom: '1px solid var(--line)', padding: '11px 15px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)' }}>{ev.seq != null ? `#${ev.seq}` : '—'}</span>
+          <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</span>
+          {!ev.published && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-3)', border: '1px solid var(--line-strong)', borderRadius: 6, padding: '1px 5px' }}>skrytá</span>}
         </div>
-        <span className={`badge ${ev.published ? 'badge-success' : 'badge-neutral'}`} style={{ flexShrink: 0 }}>{ev.published ? 'Publik.' : 'Skrytá'}</span>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-3)', marginTop: 2 }}>
+          {ev.category ?? '—'} · {eventYearLabel(ev)} · {avg != null ? `★ ${avg.toFixed(1)}` : 'bez hodn.'} · {ev.play_count ?? 0}×
+        </div>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        <span style={chip}>{yearText}</span>
-        <span style={chip}>{ev.location_radius_km > 0 ? `${ev.location_radius_km} km` : '—'}</span>
-        <span style={chip}>{'★'.repeat(ev.difficulty)}{'☆'.repeat(3 - ev.difficulty)}</span>
-        <span style={chip}>{avg != null ? `★ ${avg.toFixed(1)} (${ev.rating_count}×)` : 'bez hodnocení'}</span>
-        <span style={chip}>{ev.play_count ?? 0}× odehráno</span>
-        {s && <span style={chip}>🖼 {s.panorama != null ? formatFileSize(s.panorama) : '—'}</span>}
-      </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <button className="btn btn-ghost" style={act} onClick={() => onEdit(ev)}>Editovat</button>
-        <button className="btn btn-ghost" style={{ ...act, color: 'var(--accent-deep, #A34E30)' }} onClick={() => onPlay(ev.id)}>▶ 1 kolo</button>
-        <button className="btn btn-ghost" style={act} onClick={() => onToggle(ev.id, ev.published)}>{ev.published ? 'Skrýt' : 'Publikovat'}</button>
-        <button className="btn btn-danger" style={act} onClick={() => onDelete(ev.id)}>Smazat</button>
+      <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+        <IconAct icon="edit" label="Editovat" onClick={() => onEdit(ev)}/>
+        <IconAct icon="play" label="Zahrát 1 kolo" accent onClick={() => onPlay(ev.id)}/>
+        <IconAct icon={ev.published ? 'eye-off' : 'eye'} label={ev.published ? 'Skrýt' : 'Publikovat'} onClick={() => onToggle(ev.id, ev.published)}/>
+        <IconAct icon="trash" label="Smazat" danger onClick={() => onDelete(ev.id)}/>
       </div>
     </div>
   )
