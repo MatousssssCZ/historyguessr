@@ -609,9 +609,18 @@ export function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSub
 export function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
   const { t } = useTranslation()
   const MIN = -3000; const MAX = 2025
-  const TOTAL = MAX - MIN  // 5025
-  const pct = ((value - MIN) / TOTAL) * 100
-  const zeroPct = ((0 - MIN) / TOTAL) * 100  // 59.7%
+  // Po částech lineární měřítko: úsek př. n. l. (MIN..0) dostane jen S šířky,
+  // n. l. (0..MAX) zbytek — protože událostí př. n. l. je málo. Přesné zadání
+  // přes číselník/pole zůstává, warpuje se jen slider.
+  const S = 0.33
+  const yearToPos = (y: number) => y <= 0
+    ? S * (y - MIN) / (0 - MIN)
+    : S + (1 - S) * (y / MAX)
+  const posToYear = (p: number) => p <= S
+    ? Math.round(MIN + (p / S) * (0 - MIN))
+    : Math.round(((p - S) / (1 - S)) * MAX)
+  const pct = yearToPos(value) * 100
+  const zeroPct = S * 100  // 33 %
 
   // Lokální koncept psaní — umožní začít znakem „−" i prázdné pole
   const [draft, setDraft] = useState<string | null>(null)
@@ -684,12 +693,12 @@ export function YearPicker({ value, onChange }: { value: number; onChange: (y: n
           }}/>
           {/* Invisible range input — velké dotykové pole + bez posunu stránky */}
           <input
-            type="range" min={MIN} max={MAX} value={value}
+            type="range" min={0} max={10000} value={Math.round(yearToPos(value) * 10000)}
             step={1}
             onChange={e => {
-              let v = parseInt(e.target.value)
+              let v = posToYear(parseInt(e.target.value) / 10000)
               if (v === 0) v = -1
-              onChange(v)
+              onChange(Math.max(MIN, Math.min(MAX, v)))
             }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: 48, opacity: 0, cursor: 'pointer', margin: 0, touchAction: 'none' }}
           />
