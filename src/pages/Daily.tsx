@@ -12,6 +12,7 @@ import {
   getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup, getUserDailyResults, localDateISO,
 } from '@/lib/supabase'
 import { computeDailyStreak } from '@/lib/streak'
+import { YEAR_MIN, YEAR_MAX, ZERO_PCT, yearToPos, posToYear } from '@/lib/yearAxis'
 import { streakUnlocks, type UnlockedTier } from '@/lib/achievements'
 import StreakLadder from '@/components/StreakLadder'
 import { haversineKm, roundScore, yearDiff, formatYear, formatDistance } from '@/lib/scoring'
@@ -564,9 +565,9 @@ function PanoramaViewer({ url }: { url: string }) {
 // ── Year picker ───────────────────────────────────────────
 function YearPickerInline({ value, onChange }: { value: number; onChange: (y: number) => void }) {
   const { t } = useTranslation()
-  const MIN = -3000, MAX = 2025, TOTAL = MAX - MIN
-  const pct = ((value - MIN) / TOTAL) * 100
-  const zeroPct = ((0 - MIN) / TOTAL) * 100
+  const MIN = YEAR_MIN, MAX = YEAR_MAX
+  const pct = yearToPos(value) * 100
+  const zeroPct = ZERO_PCT
   function step(d: number) { let n = value + d; if (n === 0) n = d > 0 ? 1 : -1; onChange(Math.max(MIN, Math.min(MAX, n))) }
   const [draft, setDraft] = useState<string | null>(null)
   const sign = value < 0 ? -1 : 1
@@ -590,12 +591,12 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
         </div>
         <div style={{ position: 'absolute', top: 15, left: `${zeroPct}%`, width: 2, height: 18, background: 'rgba(42,31,23,0.3)', transform: 'translateX(-50%)', pointerEvents: 'none' }}/>
         <div style={{ position: 'absolute', top: 9, left: `${pct}%`, transform: 'translateX(-50%)', width: 30, height: 30, borderRadius: '50%', background: 'var(--paper-50)', border: `3px solid ${value < 0 ? '#7aa8cc' : '#d97757'}`, boxShadow: `0 0 0 4px ${value < 0 ? 'rgba(90,143,181,0.2)' : 'rgba(217,119,87,0.2)'}`, pointerEvents: 'none' }}/>
-        <input type="range" min={MIN} max={MAX} value={value} step={1} onChange={e => { let v = parseInt(e.target.value); if (v === 0) v = -1; onChange(v) }} style={{ position: 'absolute', inset: 0, width: '100%', height: 48, opacity: 0, cursor: 'pointer', margin: 0, touchAction: 'none' }}/>
+        <input type="range" min={0} max={10000} value={Math.round(yearToPos(value) * 10000)} step={1} onChange={e => { let v = posToYear(parseInt(e.target.value) / 10000); if (v === 0) v = -1; onChange(Math.max(MIN, Math.min(MAX, v))) }} style={{ position: 'absolute', inset: 0, width: '100%', height: 48, opacity: 0, cursor: 'pointer', margin: 0, touchAction: 'none' }}/>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
-        <span style={{ color: '#7aa8cc' }}>{t('game.bcAxis')}</span>
-        <span style={{ color: 'var(--ink-3)' }}>0</span>
-        <span style={{ color: '#d97757' }}>2025</span>
+      <div style={{ position: 'relative', height: 14, fontSize: 10, fontFamily: 'var(--font-mono)' }}>
+        <span style={{ position: 'absolute', left: 0, color: '#7aa8cc' }}>{t('game.bcAxis')}</span>
+        <span style={{ position: 'absolute', left: `${zeroPct}%`, transform: 'translateX(-50%)', color: 'var(--ink-3)' }}>0</span>
+        <span style={{ position: 'absolute', right: 0, color: '#d97757' }}>2025</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
         {([-10,-1,1,10] as const).map(d => (

@@ -11,6 +11,7 @@ import RoundResultDesktop from '@/components/round/RoundResultDesktop'
 import RoundReveal from '@/components/round/RoundReveal'
 import EventRating from '@/components/EventRating'
 import { formatYear } from '@/lib/scoring'
+import { YEAR_MIN, YEAR_MAX, ZERO_PCT, yearToPos, posToYear } from '@/lib/yearAxis'
 import { buildChallengeUrl, shareChallenge } from '@/lib/challenge'
 import Icon from '@/components/Icon'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -608,19 +609,9 @@ export function GuessPanel({ guessLat, guessLng, guessYear, guessYearSet, canSub
 // ── Year picker — barevný slider + numerický input ───────
 export function YearPicker({ value, onChange }: { value: number; onChange: (y: number) => void }) {
   const { t } = useTranslation()
-  const MIN = -3000; const MAX = 2025
-  // Po částech lineární měřítko: úsek př. n. l. (MIN..0) dostane jen S šířky,
-  // n. l. (0..MAX) zbytek — protože událostí př. n. l. je málo. Přesné zadání
-  // přes číselník/pole zůstává, warpuje se jen slider.
-  const S = 0.33
-  const yearToPos = (y: number) => y <= 0
-    ? S * (y - MIN) / (0 - MIN)
-    : S + (1 - S) * (y / MAX)
-  const posToYear = (p: number) => p <= S
-    ? Math.round(MIN + (p / S) * (0 - MIN))
-    : Math.round(((p - S) / (1 - S)) * MAX)
+  const MIN = YEAR_MIN; const MAX = YEAR_MAX
   const pct = yearToPos(value) * 100
-  const zeroPct = S * 100  // 33 %
+  const zeroPct = ZERO_PCT
 
   // Lokální koncept psaní — umožní začít znakem „−" i prázdné pole
   const [draft, setDraft] = useState<string | null>(null)
