@@ -18,7 +18,7 @@ import {
   getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, uploadRelicSilhouette, getRelicSets, getCampaignIdsWithRelic,
   RELIC_CATEGORIES, type Relic, type RelicSet,
 } from '@/lib/relics'
-import { generateIllustration } from '@/lib/ai'
+import { generateIllustration, generateCampaignDraft, type AiCampaignDraft } from '@/lib/ai'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
 // Předvyplněný práh ★ pro novou kategorii dle pořadí: round(0.7·(k−1)·k)
@@ -328,6 +328,7 @@ function CategoryDetail({ category, allCategories, events, onBack, onReloadCateg
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [relicSet, setRelicSet] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<Campaign | 'new' | null>(null)
+  const [aiOpen, setAiOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [loadingC, setLoadingC] = useState(true)
 
@@ -379,10 +380,14 @@ function CategoryDetail({ category, allCategories, events, onBack, onReloadCateg
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
         <p className="eyebrow" style={{ margin: 0 }}>Kampaně</p>
-        <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => setEditing('new')}>+ Nová kampaň</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setAiOpen(true)}>✨ AI kampaň z názvu</button>
+          <button className="btn btn-accent" style={{ fontSize: 13 }} onClick={() => setEditing('new')}>+ Nová kampaň</button>
+        </div>
       </div>
+      {aiOpen && <AiCampaignModal category={category} onClose={() => setAiOpen(false)} onCreated={async () => { setAiOpen(false); await reload(); await onReloadCategories() }}/>}
 
       {loadingC ? <span className="spinner"/> : campaigns.length === 0 ? (
         <p style={{ color: 'var(--ink-3)', fontSize: 14, padding: '16px 0' }}>Zatím žádné kampaně.</p>
@@ -930,6 +935,149 @@ function EventPicker({ events, usedIds, onPick, onClose }: {
 }
 
 // ═══════════════════ Sdílené UI ═══════════════════
+// ── AI generátor kampaně z názvu ──────────────────────────
+function AiCampaignModal({ category, onClose, onCreated }: {
+  category: CampaignCategory; onClose: () => void; onCreated: () => void
+}) {
+  const [name, setName] = useState('')
+  const [phase, setPhase] = useState<'input' | 'review'>('input')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [draft, setDraft] = useState<AiCampaignDraft | null>(null)
+
+  const [title, setTitle] = useState('')
+  const [descCs, setDescCs] = useState('')
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [relicName, setRelicName] = useState('')
+  const [relicDesc, setRelicDesc] = useState('')
+  const [relicYear, setRelicYear] = useState('')
+  const [iconUrl, setIconUrl] = useState('')
+  const [iconBusy, setIconBusy] = useState(false)
+
+  async function generate() {
+    if (!name.trim()) return
+    setBusy(true); setMsg(null)
+    try {
+      const d = await generateCampaignDraft(name.trim(), 5)
+      setDraft(d)
+      setTitle(name.trim())
+      setDescCs(d.description_cs ?? '')
+      setPicked(new Set(d.events.map(e => e.id)))
+      setRelicName(d.relic.name_cs ?? '')
+      setRelicDesc(d.relic.description_cs ?? '')
+      setRelicYear(d.relic.year_label ?? '')
+      setPhase('review')
+    } catch (e) { setMsg((e as Error).message) } finally { setBusy(false) }
+  }
+
+  async function genIcon() {
+    if (!draft) return
+    setIconBusy(true); setMsg(null)
+    try {
+      const img = await generateIllustration({ title: relicName || title, description: draft.relic.icon_prompt || `Ikona historické relikvie „${relicName || title}" — jeden předmět uprostřed, muzejní 3D render, měkké studiové světlo, bez textu a pozadí.` })
+      const c = await compressIllustration(img, 512)
+      const { url, error } = await uploadRelicIcon(c, slugify(relicName || title))
+      if (error || !url) { setMsg('Ikona selhala: ' + error); return }
+      setIconUrl(url)
+    } catch (e) { setMsg('Ikona: ' + (e as Error).message) } finally { setIconBusy(false) }
+  }
+
+  async function create() {
+    if (!draft) return
+    const ids = draft.events.filter(e => picked.has(e.id)).map(e => e.id)
+    if (!title.trim()) { setMsg('Vyplň název kampaně.'); return }
+    setBusy(true); setMsg(null)
+    try {
+      const existing = await getAdminCampaigns(category.id)
+      const seq = (existing.reduce((m, c) => Math.max(m, c.seq ?? 0), 0)) + 1
+      const { data: camp, error } = await createCampaign({
+        category_id: category.id, title: title.trim(),
+        title_en: draft.title_en, title_de: draft.title_de,
+        description: descCs.trim() || null, description_en: draft.description_en, description_de: draft.description_de,
+        rounds_count: Math.max(1, ids.length), status: 'draft', seq,
+      })
+      if (error || !camp) { setMsg('Kampaň: ' + (error?.message || '?')); return }
+      if (ids.length) await setCampaignEvents(camp.id, ids)
+      await upsertRelicForCampaign(camp.id, {
+        slug: slugify(relicName || title),
+        name: relicName.trim() || title.trim(),
+        name_en: draft.relic.name_en, name_de: draft.relic.name_de,
+        description: relicDesc.trim() || null, description_en: draft.relic.description_en, description_de: draft.relic.description_de,
+        year_label: relicYear.trim() || null, category: category.slug, secret: true,
+        icon_url: iconUrl || null,
+      })
+      onCreated()
+    } catch (e) { setMsg('Chyba: ' + (e as Error).message) } finally { setBusy(false) }
+  }
+
+  const yl = (y: number | null) => y == null ? '?' : (y < 0 ? `${Math.abs(y)} př. n. l.` : String(y))
+  const lbl: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 5px' }
+
+  return (
+    <Modal title="✨ AI kampaň z názvu" onClose={onClose} wide>
+      {phase === 'input' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>Zadej název kampaně. AI navrhne popis (CZ/EN/DE), vybere vhodné <b>existující</b> události a relikvii.</p>
+          <input className="input" autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="např. Vzestup Římské republiky" onKeyDown={e => { if (e.key === 'Enter' && !busy) generate() }}/>
+          {msg && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{msg}</p>}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button className="btn btn-ghost" onClick={onClose}>Zrušit</button>
+            <button className="btn btn-accent" disabled={busy || !name.trim()} onClick={generate}>{busy ? 'Generuji…' : '✨ Vygenerovat návrh'}</button>
+          </div>
+        </div>
+      ) : draft && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <p style={lbl}>Název kampaně</p>
+            <input className="input" value={title} onChange={e => setTitle(e.target.value)}/>
+          </div>
+          <div>
+            <p style={lbl}>Popis (CZ)</p>
+            <textarea className="input" rows={3} value={descCs} onChange={e => setDescCs(e.target.value)}/>
+          </div>
+          <div>
+            <p style={lbl}>Vybrané události ({picked.size})</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+              {draft.events.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>AI nenašla vhodné existující události. Můžeš přidat ručně po vytvoření.</p>}
+              {draft.events.map(e => {
+                const on = picked.has(e.id)
+                return (
+                  <label key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', borderRadius: 10, border: '1px solid var(--line)', background: on ? 'var(--surface)' : 'var(--paper-100)', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={on} onChange={() => setPicked(p => { const n = new Set(p); n.has(e.id) ? n.delete(e.id) : n.add(e.id); return n })}/>
+                    <span style={{ flex: 1, fontSize: 13 }}>{e.title}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{yl(e.year)}{e.category ? ` · ${e.category}` : ''}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '12px 13px', background: 'var(--paper-100)' }}>
+            <p style={lbl}>🏺 Relikvie kampaně</p>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ width: 70, height: 70, flexShrink: 0, borderRadius: 12, overflow: 'hidden', background: '#241d16', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {iconUrl ? <img src={iconUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 24 }}>🏺</span>}
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input className="input" value={relicName} onChange={e => setRelicName(e.target.value)} placeholder="Název relikvie"/>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input className="input" style={{ width: 150 }} value={relicYear} onChange={e => setRelicYear(e.target.value)} placeholder="Datace"/>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={iconBusy} onClick={genIcon}>{iconBusy ? '…' : '✨ Ikona (AI)'}</button>
+                </div>
+                <textarea className="input" rows={2} value={relicDesc} onChange={e => setRelicDesc(e.target.value)} placeholder="Popis relikvie"/>
+              </div>
+            </div>
+          </div>
+          {msg && <p style={{ color: 'var(--danger)', fontSize: 12, margin: 0 }}>{msg}</p>}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+            <button className="btn btn-ghost" disabled={busy} onClick={() => setPhase('input')}>← Zpět</button>
+            <button className="btn btn-accent" disabled={busy} onClick={create}>{busy ? 'Vytvářím…' : 'Vytvořit kampaň (koncept)'}</button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
 function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(42,31,23,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
