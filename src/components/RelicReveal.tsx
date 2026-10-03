@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { currentLocale } from '@/i18n'
 import { relicModel, relicName, relicDesc, RARITY_META, type RevealedRelic } from '@/lib/relics'
-import RelicViewer from '@/components/RelicViewer'
+import RelicViewer from '@/components/RelicViewer3D'
 
 const GOLD_LIGHT = '#E8C88A'
 

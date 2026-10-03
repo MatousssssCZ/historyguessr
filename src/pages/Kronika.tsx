@@ -10,7 +10,7 @@ import AppHeader from '@/components/AppHeader'
 import CompassLoader from '@/components/CompassLoader'
 import Icon from '@/components/Icon'
 import { useStatsData, StatsRail, BadgesSections, type StatsData } from '@/pages/Stats'
-import RelicViewer from '@/components/RelicViewer'
+import RelicViewer from '@/components/RelicViewer3D'
 import RelicBadge from '@/components/RelicBadge'
 import {
   getKronikaBundle, setRelicShowcase, relicModel, relicName, relicDesc, RARITY_META, RARITY_DOT, RARITY_ORDER, RARITY_RANK,
