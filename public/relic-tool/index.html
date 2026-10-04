@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="cs"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HistoryGuessr · 3D export karet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/afd9266d-3810-4939-bc34-22f5e3257476.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/6851678e-e37a-4b59-a7be-336c06848d41.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/51d74b37-3ec4-411f-a02a-378fc5772a96.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/3c92a566-ba8c-46a5-851e-72d081ab274c.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/afd9266d-3810-4939-bc34-22f5e3257476.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/6851678e-e37a-4b59-a7be-336c06848d41.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/51d74b37-3ec4-411f-a02a-378fc5772a96.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/3c92a566-ba8c-46a5-851e-72d081ab274c.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/afd9266d-3810-4939-bc34-22f5e3257476.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/6851678e-e37a-4b59-a7be-336c06848d41.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/51d74b37-3ec4-411f-a02a-378fc5772a96.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/3c92a566-ba8c-46a5-851e-72d081ab274c.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/afd9266d-3810-4939-bc34-22f5e3257476.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/6851678e-e37a-4b59-a7be-336c06848d41.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/51d74b37-3ec4-411f-a02a-378fc5772a96.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/3c92a566-ba8c-46a5-851e-72d081ab274c.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/732fec2b-3239-49d9-829b-5e0acd8ef430.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/b0e34e1a-a694-431b-8180-72841f795464.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/59a7345d-1115-44d8-ab55-6ebe54bd6ac1.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/65ccbc0a-a0dd-4ba6-b0b4-ee0b0d8a575c.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/685207bf-00d2-4c81-a88f-b80e11544613.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/282efca7-ae1d-4dde-9785-591a78207d95.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/732fec2b-3239-49d9-829b-5e0acd8ef430.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/b0e34e1a-a694-431b-8180-72841f795464.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/59a7345d-1115-44d8-ab55-6ebe54bd6ac1.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/65ccbc0a-a0dd-4ba6-b0b4-ee0b0d8a575c.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/685207bf-00d2-4c81-a88f-b80e11544613.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/282efca7-ae1d-4dde-9785-591a78207d95.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/732fec2b-3239-49d9-829b-5e0acd8ef430.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/b0e34e1a-a694-431b-8180-72841f795464.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/59a7345d-1115-44d8-ab55-6ebe54bd6ac1.woff2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/65ccbc0a-a0dd-4ba6-b0b4-ee0b0d8a575c.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/685207bf-00d2-4c81-a88f-b80e11544613.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/282efca7-ae1d-4dde-9785-591a78207d95.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url("fonts/440e3320-498e-45a1-915e-e8b4c6a4d3e6.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url("fonts/8f78a7d8-0c29-4710-8f37-6a30f74432f3.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url("fonts/ef0513c6-35a4-4ebf-95ab-afb901a617e0.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+
+
+
+
+
+
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0A0806;color:#E8DECD;font-family:'Hanken Grotesk',sans-serif;overflow:hidden}
+  #app{display:flex;height:100%}
+  #panel{flex:none;width:330px;height:100%;overflow-y:auto;border-right:1px solid rgba(232,222,205,.1);background:linear-gradient(180deg,#100D0A,#0A0806);padding:16px 20px 18px}
+  #view{position:relative;flex:1;min-width:0}
+  #canvasWrap{position:absolute;inset:0}
+  canvas{display:block;width:100%;height:100%}
+  h1{margin:0 0 4px;font:400 18px 'Newsreader',serif;letter-spacing:-.01em}
+  .sub{font:400 12px/1.5 'Hanken Grotesk';color:rgba(232,222,205,.62);margin-bottom:22px}
+  .eyebrow{font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.2em;color:rgba(232,222,205,.68);margin:14px 0 7px}
+  #drop{border:1px dashed rgba(201,162,106,.45);border-radius:12px;padding:13px 16px;text-align:center;cursor:pointer;transition:.18s;background:rgba(201,162,106,.05)}
+  #drop:hover,#drop.hot{background:rgba(201,162,106,.13);border-color:#C9A26A}
+  #drop b{display:block;font:600 12.5px 'Hanken Grotesk';color:#E8DECD;margin-bottom:5px}
+  #drop span{font:400 11.5px/1.5 'Hanken Grotesk';color:rgba(232,222,205,.6)}
+  #thumb{display:none;margin-top:12px;width:100%;height:120px;border-radius:10px;border:1px solid rgba(232,222,205,.14);background:#15110C center/contain no-repeat}
+  label.f{display:block;margin-bottom:7px}
+  label.f i{display:block;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(232,222,205,.62);font-style:normal;margin-bottom:5px}
+  input[type=text],select{width:100%;padding:6px 10px;border-radius:9px;border:1px solid rgba(232,222,205,.16);background:#15110C;color:#E8DECD;font:400 13px 'Hanken Grotesk';outline:none}
+  input[type=text]:focus,select:focus{border-color:#C9A26A}
+  label.f i b{float:right;font:500 10.5px 'JetBrains Mono',monospace;color:#C9A26A;font-weight:500}
+  input[type=range]{width:100%;accent-color:#C9A26A;background:transparent}
+  .row{display:flex;gap:9px}
+  .row>*{flex:1}
+  .chk{display:flex;align-items:center;gap:9px;font:400 12.5px 'Hanken Grotesk';color:rgba(232,222,205,.8);margin-bottom:5px;cursor:pointer}
+  .chk input{accent-color:#C9A26A;width:15px;height:15px}
+  button{width:100%;padding:8px 14px;border-radius:10px;border:1px solid rgba(232,222,205,.18);background:rgba(232,222,205,.07);color:#E8DECD;font:600 12.5px 'Hanken Grotesk';cursor:pointer;transition:.16s;margin-bottom:5px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  button:hover{background:rgba(232,222,205,.14);border-color:rgba(232,222,205,.32)}
+  button.primary{background:linear-gradient(180deg,#E8C88A,#C9A26A);color:#1A130A;border-color:#E8C88A;justify-content:center}
+  button.primary:hover{background:linear-gradient(180deg,#F4DCA8,#D9B478)}
+  button em{font:500 10px 'JetBrains Mono',monospace;font-style:normal;opacity:.6}
+  .hint{font:400 11.5px/1.55 'Hanken Grotesk';color:rgba(232,222,205,.5);margin-top:14px}
+  #toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);opacity:0;transition:.25s;padding:10px 18px;border-radius:999px;background:rgba(16,13,10,.94);border:1px solid rgba(201,162,106,.4);font:500 12.5px 'Hanken Grotesk';color:#E8DECD;pointer-events:none;white-space:nowrap}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  #legend{position:absolute;left:0;right:0;bottom:0;display:flex;pointer-events:none}
+  #legend div{flex:1;text-align:center;padding-bottom:16px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.22em}
+  #hud{position:absolute;top:16px;right:18px;font:400 11.5px 'Hanken Grotesk';color:rgba(232,222,205,.45);pointer-events:none}
+  #bulkOverlay{position:absolute;inset:0;background:#0A0806;z-index:20;padding:26px 30px;overflow-y:auto;display:none;flex-direction:column}
+  #bulkHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex:none}
+  #bulkTitle{font:400 19px 'Newsreader',serif;color:#E8DECD}
+  #bulkTitle span{font:400 12px 'Hanken Grotesk';color:rgba(232,222,205,.5);margin-left:8px}
+  #bulkActions{display:flex;gap:10px}
+  #bulkActions button{width:auto;margin:0}
+  #bulkGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;align-content:start}
+  .bulkTile{background:#15110C;border:1px solid rgba(232,222,205,.14);border-radius:12px;padding:12px}
+  .bulkTile.drag{border-color:#C9A26A;background:rgba(201,162,106,.12)}
+  .bulkTile .drop{width:100%;aspect-ratio:1;border:1px dashed rgba(201,162,106,.45);border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;background-size:cover;background-position:center;cursor:pointer;margin-bottom:9px;font:400 11px/1.4 'Hanken Grotesk';color:rgba(232,222,205,.5);padding:8px}
+  .bulkTile b{display:block;font:600 12.5px 'Hanken Grotesk';color:#E8DECD;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bulkTile i{display:block;font:400 10.5px 'JetBrains Mono',monospace;color:rgba(232,222,205,.5);font-style:normal}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <h1>3D export karet</h1>
+    <div class="eyebrow">1 · RELIKVIE</div>
+    <div id="drop">
+      <b>Přetáhni obrázek</b>
+    </div>
+    <div id="thumb"></div>
+    <input type="file" id="file" accept="image/*" hidden="">
+
+    <div style="display:flex;gap:8px;margin:18px 0 4px">
+      <button type="button" id="tabBtnCard" style="flex:1;margin:0">Karta</button>
+      <button type="button" id="tabBtnBulk" style="flex:1;margin:0;opacity:.55">Hromadný import</button>
+    </div>
+
+    <div id="tabCard">
+    <div class="eyebrow">2 · POPIS</div>
+    <label class="f" style="display:none"><i>KAMPAŇ</i>
+      <select id="campaign"></select>
+    </label>
+    <label class="f"><i>NÁZEV RELIKVIE</i>
+      <input type="text" id="name">
+    </label>
+    <div class="row">
+      <label class="f"><i>DATACE</i><input type="text" id="year"></label>
+      <label class="f" style="display:none"><i>MONOGRAM</i><input type="text" id="mono"></label>
+    </div>
+    <div class="row">
+      <label class="f"><i>ČÍSLO KUSU</i><input type="number" id="editionNum" min="1" value="1"></label>
+      <label class="f"><i>Z KOLIKA KUSŮ</i><input type="number" id="editionTotal" min="1" value="500"></label>
+    </div>
+
+    <div class="eyebrow">3 · KATEGORIE, ZNAK A LEM</div>
+    <label class="f" style="display:none"><i>KATEGORIE KAMPANĚ</i>
+      <select id="category"></select>
+    </label>
+    <div class="row">
+      <label class="f"><i>BOČNÍ LEM</i><select id="side"></select></label>
+      <label class="f"><i>ZNAK NAD RELIKVIÍ</i><select id="emblem"></select></label>
+    </div>
+    <div class="row">
+      <label class="f"><i>VELIKOST LEMU <b id="sideScaleOut"></b></i><input type="range" id="sideScale" min="60" max="150" step="5" value="100"></label>
+      <label class="f"><i>POČET LISTŮ <b id="leafCountOut"></b></i><input type="range" id="leafCount" min="4" max="11" step="1" value="7"></label>
+    </div>
+    <div class="row">
+      <label class="f"><i>VELIKOST ZNAKU <b id="emblemScaleOut"></b></i><input type="range" id="emblemScale" min="60" max="160" step="5" value="100"></label>
+      <label class="f"><i>VELIKOST NÁZVU <b id="nameScaleOut"></b></i><input type="range" id="nameScale" min="70" max="150" step="5" value="100"></label>
+    </div>
+    <label class="f"><i>VELIKOST DATACE <b id="dateScaleOut"></b></i><input type="range" id="dateScale" min="70" max="150" step="5" value="100"></label>
+    <label class="chk"><input type="checkbox" id="sideAll"> Boční lem už od rare</label>
+    <label class="chk"><input type="checkbox" id="emblemAll"> Znak na všech raritách</label>
+    <button id="resetOrnament"><span>Vrátit podle kategorie</span><em>reset</em></button>
+
+    <div class="eyebrow">4 · POVRCH</div>
+    <label class="f"><i>STYL KARTY</i>
+      <select id="cardStyle">
+        <option value="photoreal" selected>Fotorealistický (kov, folie)</option>
+        <option value="flat">Minimalistický (plochý)</option>
+      </select>
+    </label>
+    <label class="chk"><input type="checkbox" id="ornament" checked=""> Ornamentální vrstva (voluty, lem)</label>
+    <label class="chk"><input type="checkbox" id="gems" checked=""> Emailové kabošony u legendary</label>
+    <label class="chk"><input type="checkbox" id="holo" checked=""> Holografická folie u legendary</label>
+    <label class="chk"><input type="checkbox" id="transparentCard"> Průhledná karta (kromě common)</label>
+    <label class="f"><i>TLOUŠŤKA KARTY <b id="thicknessOut"></b></i>
+      <input type="range" id="thickness" min="1" max="5" step="0.1" value="2.8">
+    </label>
+    <label class="chk"><input type="checkbox" id="spin"> Rotovat scénu</label>
+
+    <div class="eyebrow">5 · EXPORT GLB</div>
+    <div id="exports"></div>
+    <button class="primary" id="exportAll">Exportovat všechny čtyři</button>
+    </div>
+
+    <div id="tabBulk" style="display:none">
+      <div class="eyebrow">HROMADNÝ IMPORT</div>
+      <button id="bulkImportBtn">Nahrát XLS s kartami</button>
+      <input type="file" id="bulkXlsFile" accept=".xlsx,.xls" hidden>
+    </div>
+
+    <div class="eyebrow">6 · NASTAVENÍ</div>
+    <button id="saveSettings">Uložit nastavení (soubor)</button>
+    <button id="loadSettingsBtn" type="button">Načíst nastavení ze souboru</button>
+    <input type="file" id="loadSettingsFile" accept="application/json" hidden>
+
+    <script>
+      (function(){
+        var bc=document.getElementById("tabBtnCard"), bb=document.getElementById("tabBtnBulk"), tc=document.getElementById("tabCard"), tb=document.getElementById("tabBulk");
+        if(bc&&bb&&tc&&tb){
+          bc.addEventListener("click",function(){tc.style.display="";tb.style.display="none";bc.style.opacity="1";bb.style.opacity=".55";});
+          bb.addEventListener("click",function(){tb.style.display="";tc.style.display="none";bb.style.opacity="1";bc.style.opacity=".55";});
+        }
+      })();
+    </script>
+  </aside>
+
+  <div id="view">
+    <div id="canvasWrap"></div>
+    <div id="bulkOverlay">
+      <div id="bulkHeader">
+        <div id="bulkTitle">Hromadná editace <span id="bulkCount"></span></div>
+        <div id="bulkActions">
+          <button class="primary" id="bulkExportZip">Exportovat vše (ZIP)</button>
+          <button id="bulkClose">Zavřít</button>
+        </div>
+      </div>
+      <div id="bulkGrid"></div>
+    </div>
+    <div id="legend">
+      <div style="color:#A98554">COMMON</div>
+      <div style="color:#C3CEDA">RARE</div>
+      <div style="color:#E8C88A">EPIC</div>
+      <div style="color:#FFD98A">LEGENDARY</div>
+    </div>
+    <div id="hud">tažením otáčíš · kolečkem přiblížíš</div>
+    <div id="toast"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/controls/OrbitControls.js": "./vendor/OrbitControls.js",
+    "three/addons/exporters/GLTFExporter.js": "./vendor/GLTFExporter.js"
+  }
+}
+</script>
+<script type="module" src="appScript.js"></script>
+
+
+</body></html>
