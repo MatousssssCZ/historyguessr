@@ -24,6 +24,7 @@ interface Props {
   distribution: Distribution
   story: React.ReactNode        // „O události" — popis/příběh
   xpSection?: React.ReactNode   // XP bar přes celou šířku
+  extra?: React.ReactNode       // volitelný blok pod žebříčkem (např. „Ještě nehráli" v denní výzvě)
   onBack: () => void            // zpět na „Moje skóre"
   onChallenge?: () => void      // „Vyzvi kamaráda" v přepínači
   onShare?: () => void          // „Sdílet výsledek" (v žebříčku)
@@ -62,6 +63,7 @@ export default function RoundDetail(p: Props) {
             {p.leaderboard.map((e, i) => <LeaderRow key={e.id} e={e} rank={i + 1} youLabel={t('round.you')}/>)}
             {p.xpSection && <div style={{ marginTop: 5 }}>{p.xpSection}</div>}
             <DistributionCard dist={p.distribution} t={t}/>
+            {p.extra}
           </>
         ) : (
           <div style={{ padding: '4px 0 10px' }}>{p.story}</div>

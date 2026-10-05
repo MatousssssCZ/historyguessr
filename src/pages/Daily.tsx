@@ -10,7 +10,9 @@ import {
   getDailyChallenge, getTodayDailyResult,
   submitDailyResult, startDailyChallenge, getDailyStart, getDailyGlobalLeaderboard, getDailyAllScores, recordEventScore, recordCategoryHit, track,
   getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup, getUserDailyResults, localDateISO,
+  getFriends, type Friend,
 } from '@/lib/supabase'
+import { sendMessenger, getMessengersSentToday } from '@/lib/messenger'
 import { computeDailyStreak } from '@/lib/streak'
 import { YEAR_MIN, YEAR_MAX, ZERO_PCT, yearToPos, posToYear } from '@/lib/yearAxis'
 import { streakUnlocks, type UnlockedTier } from '@/lib/achievements'
@@ -620,6 +622,65 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 // Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
 
 // ── Výsledek denní výzvy (redesign 17e) ───────────────────
+// „Ještě nehráli" — přátelé, kteří dnes ještě nehráli denní výzvu; pošli jim posla (push).
+function MessengerSection({ playedTodayIds }: { playedTodayIds: Set<string> }) {
+  const { t } = useTranslation()
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [sent, setSent] = useState<Set<string>>(new Set())
+  const [busy, setBusy] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    Promise.all([getFriends().catch(() => []), getMessengersSentToday().catch(() => new Set<string>())])
+      .then(([fr, s]) => { if (!alive) return; setFriends(fr); setSent(s); setLoaded(true) })
+    return () => { alive = false }
+  }, [])
+
+  const notPlayed = friends.filter(f => !playedTodayIds.has(f.id))
+  if (!loaded || notPlayed.length === 0) return null
+
+  async function nudge(f: Friend) {
+    setBusy(f.id); setNote(null)
+    try {
+      const r = await sendMessenger(f.id)
+      setSent(prev => new Set(prev).add(f.id))
+      if (r.sent === false && r.no_subscription) setNote(t('messenger.noSub', { name: f.username ?? '' }))
+    } catch (e) { setNote((e as Error).message) } finally { setBusy(null) }
+  }
+
+  const initial = (name: string | null) => (name?.trim()?.charAt(0) || '?').toUpperCase()
+
+  return (
+    <div style={{ marginTop: 10, border: '1px dashed var(--line-strong)', borderRadius: 14, padding: '12px 14px', background: 'var(--surface)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 10 }}>{t('messenger.title')}</div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {notPlayed.map((f, i) => {
+          const done = sent.has(f.id)
+          return (
+            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderTop: i === 0 ? 0 : '1px solid var(--line)' }}>
+              <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: '50%', background: 'linear-gradient(150deg,#cbbfae,#a99a86)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-serif)', fontSize: 15 }}>{initial(f.username)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username ?? t('daily.player')}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>{t('messenger.notYet')}</div>
+              </div>
+              {done ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 999, background: 'rgba(76,122,80,.14)', color: 'var(--success, #4c7a50)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>✓ {t('messenger.sent')}</span>
+              ) : (
+                <button type="button" disabled={busy === f.id} onClick={() => nudge(f)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999, border: '1px solid var(--line-strong)', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', opacity: busy === f.id ? 0.6 : 1 }}>
+                  <Icon name="bolt" size={13}/> {busy === f.id ? '…' : t('messenger.send')}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {note && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 8 }}>{note}</div>}
+    </div>
+  )
+}
+
 function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderboard, allScores, userId, alreadyPlayed, isMakeup = false, makeupCount = 0, onMakeup, streakBadges, challengeTarget, challengeBy, onMenu }: {
   event: Event; result: { distKm: number; locScore: number; yrScore: number; totalScore: number; yrDiff: number; xpMult: number }
   guessLat: number; guessLng: number; guessYear: number
@@ -664,6 +725,8 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
     yearOff: r.guess_year != null ? yearDiff(r.guess_year, event.year_from, event.year_to) : 0,
     isMe: r.user_id === userId,
   }))
+  const playedTodayIds = new Set(leaderboard.map(r => r.user_id))
+  const messengerExtra = (!isMakeup && userId) ? <MessengerSection playedTodayIds={playedTodayIds}/> : undefined
 
   const BINS = 9
   const bins = Array(BINS).fill(0) as number[]
@@ -738,7 +801,7 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
           title={eventTitle(event)}
           subtitle={`${result.totalScore.toLocaleString(loc)} ${t('common.pts')} · ${formatYear(event.year)}`}
           leaderboard={entries} playersToday={entries.length} distribution={distribution}
-          story={story} xpSection={xpSection}
+          story={story} xpSection={xpSection} extra={messengerExtra}
           onChallenge={isMakeup ? undefined : doChallenge}
           onShare={isMakeup ? undefined : () => setShowShare(true)}
           onBack={() => setDetailTab(null)} ctaLabel={t('daily.menu')} onCta={onMenu}
