@@ -12,7 +12,7 @@ import {
   getDailyChallengeForDate, getDailyMakeupStatus, submitDailyMakeup, getUserDailyResults, localDateISO,
   getFriends, type Friend,
 } from '@/lib/supabase'
-import { sendMessenger, getMessengersSentToday } from '@/lib/messenger'
+import { sendMessenger, getMessengersSentToday, getFriendsWithPush } from '@/lib/messenger'
 import { isPushSupported, pushPermission, isPushSubscribed, subscribePush } from '@/lib/push'
 import { isStandalone, detectPlatform } from '@/lib/pwaInstall'
 import InstallGuide from '@/components/InstallGuide'
@@ -686,18 +686,24 @@ function MessengerSection({ playedTodayIds }: { playedTodayIds: Set<string> }) {
   const { t } = useTranslation()
   const [friends, setFriends] = useState<Friend[]>([])
   const [sent, setSent] = useState<Set<string>>(new Set())
+  const [withPush, setWithPush] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let alive = true
-    Promise.all([getFriends().catch(() => []), getMessengersSentToday().catch(() => new Set<string>())])
-      .then(([fr, s]) => { if (!alive) return; setFriends(fr); setSent(s); setLoaded(true) })
+    Promise.all([
+      getFriends().catch(() => []),
+      getMessengersSentToday().catch(() => new Set<string>()),
+      getFriendsWithPush().catch(() => new Set<string>()),
+    ]).then(([fr, s, wp]) => { if (!alive) return; setFriends(fr); setSent(s); setWithPush(wp); setLoaded(true) })
     return () => { alive = false }
   }, [])
 
+  // Nejdřív přátelé, kterým posel reálně dorazí (mají notifikace), pak ostatní.
   const notPlayed = friends.filter(f => !playedTodayIds.has(f.id))
+    .sort((a, b) => Number(withPush.has(b.id)) - Number(withPush.has(a.id)))
   if (!loaded || notPlayed.length === 0) return null
 
   async function nudge(f: Friend) {
@@ -717,19 +723,24 @@ function MessengerSection({ playedTodayIds }: { playedTodayIds: Set<string> }) {
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {notPlayed.map((f, i) => {
           const done = sent.has(f.id)
+          const canReceive = withPush.has(f.id)
           return (
-            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderTop: i === 0 ? 0 : '1px solid var(--line)' }}>
+            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderTop: i === 0 ? 0 : '1px solid var(--line)', opacity: canReceive || done ? 1 : 0.6 }}>
               <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: '50%', background: 'linear-gradient(150deg,#cbbfae,#a99a86)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-serif)', fontSize: 15 }}>{initial(f.username)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username ?? t('daily.player')}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>{t('messenger.notYet')}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>{canReceive ? t('messenger.notYet') : t('messenger.noPush')}</div>
               </div>
               {done ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 999, background: 'rgba(76,122,80,.14)', color: 'var(--success, #4c7a50)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>✓ {t('messenger.sent')}</span>
-              ) : (
+              ) : canReceive ? (
                 <button type="button" disabled={busy === f.id} onClick={() => nudge(f)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 999, border: '1px solid var(--line-strong)', background: 'var(--surface)', color: 'var(--ink)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', opacity: busy === f.id ? 0.6 : 1 }}>
                   <Icon name="bolt" size={13}/> {busy === f.id ? '…' : t('messenger.send')}
                 </button>
+              ) : (
+                <span style={{ flexShrink: 0, color: 'var(--ink-3)', opacity: 0.5, display: 'flex' }} title={t('messenger.noPush')}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-9.3-5"/><path d="M6 8c0 7-3 9-3 9h13"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path d="M2 2l20 20"/></svg>
+                </span>
               )}
             </div>
           )

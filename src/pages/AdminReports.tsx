@@ -155,6 +155,7 @@ export default function AdminReportsPage() {
               <Rate label="Dokončenost kampaní" value={`${campCompletion} %`} hint="dokončení / pokusy"/>
               <Rate label="Podíl na 3 ★" value={`${perfectShare} %`} hint="z dokončení"/>
               <Rate label="Uloženo na plochu" value={nf(installs.installed_users)} hint={`${pct(installs.installed_users ?? 0, overview.registered ?? 0)} % registrovaných`}/>
+              <Rate label="Notifikace zapnuté" value={nf(installs.push_enabled_users)} hint={`${pct(installs.push_enabled_users ?? 0, overview.registered ?? 0)} % registrovaných`}/>
             </div>
           </Panel>
 

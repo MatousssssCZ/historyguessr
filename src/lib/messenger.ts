@@ -33,3 +33,13 @@ export async function getMessengersSentToday(): Promise<Set<string>> {
   for (const r of ids) out.add(typeof r === 'string' ? r : r.messengers_sent_today)
   return out
 }
+
+/** Kteří přátelé mají zapnuté notifikace (appka na ploše + povolené noti) —
+ *  jen jim má smysl posílat posla. */
+export async function getFriendsWithPush(): Promise<Set<string>> {
+  const { data } = await supabase.rpc('friends_push_enabled')
+  const ids = (data as Array<string | { friends_push_enabled: string }> | null) ?? []
+  const out = new Set<string>()
+  for (const r of ids) out.add(typeof r === 'string' ? r : r.friends_push_enabled)
+  return out
+}
