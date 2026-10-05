@@ -241,18 +241,22 @@ export default function MenuPage() {
 
       // Předchozí série + den přerušení: `d` teď ukazuje na první NEhraný den
       // před aktuální sérií. To je den, kdy se série přerušila.
+      // POZOR: smyčky musí být ohraničené (floor = registrace / strop lookbacku),
+      // jinak při absenci dřívější série běží donekonečna a zaseknou načítání.
       let prevStreak = 0
       let breakDayIdx: number | null = null
       {
+        const floor = regIso ?? '1970-01-01'
         const b = new Date(d)
         const bIso = localDateISO(b)
-        // jen pokud ten den už měl padnout (není v budoucnu) a je po registraci
-        if ((!regIso || bIso >= regIso) && bIso < todayIso) {
+        if (bIso >= floor && bIso < todayIso) {
           breakDayIdx = b.getDay()
-          // přeskoč případné další nehrané dny a spočítej délku předchozí série
           const p = new Date(b)
-          while (!played.has(localDateISO(p))) p.setDate(p.getDate() - 1)
-          while (played.has(localDateISO(p))) { prevStreak++; p.setDate(p.getDate() - 1) }
+          let guard = 0
+          // najdi konec předchozí série (nejbližší odehraný den před přerušením)
+          while (!played.has(localDateISO(p)) && localDateISO(p) >= floor && guard < 800) { p.setDate(p.getDate() - 1); guard++ }
+          // spočítej délku předchozí série
+          while (played.has(localDateISO(p)) && localDateISO(p) >= floor && guard < 1600) { prevStreak++; p.setDate(p.getDate() - 1); guard++ }
         }
       }
 
