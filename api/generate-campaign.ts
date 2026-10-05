@@ -51,9 +51,11 @@ export default async function handler(req: any, res: any) {
     `Vyber ${rounds} událostí, které spolu tematicky i chronologicky nejlépe tvoří kampaň „${name}"; seřaď je CHRONOLOGICKY (nejstarší první). ` +
     `Pokud je vhodných méně, vrať méně. ` +
     `Napiš poutavý, fakticky přesný popis kampaně (cca 40–70 slov, bez markdownu) a přelož název i popis do EN a DE. ` +
-    `Navrhni jednu sběratelskou RELIKVII, která kampaň symbolizuje (konkrétní historický předmět, ne abstraktní): ` +
-    `název + popis (60–90 slov) CZ/EN/DE, dataci jako text (např. „480 př. n. l."), a stručný ANGLICKÝ prompt pro vygenerování ikony relikvie ` +
-    `(jeden předmět uprostřed, muzejní 3D render, měkké studiové světlo, bez textu a pozadí).`
+    `Navrhni jednu sběratelskou RELIKVII, která kampaň symbolizuje. Relikvie MUSÍ být SKUTEČNÝ a DOLOŽENÝ předmět — buď konkrétní dochovaný artefakt, ` +
+    `nebo dobře doložený typ dobového předmětu spjatý s událostmi; nikdy si předmět, jeho jméno ani fakta nevymýšlej a použij přesný, uznávaný (muzejní/odborný) ` +
+    `název ve všech jazycích. Popis (60–90 slov) musí být fakticky přesný a zároveň čtivý (co předmět je, jak vznikl, proč je významný, jedna ověřitelná poutavá okolnost; ` +
+    `legendu označ jako legendu, žádné smyšlené detaily). Dej dataci jako text (např. „480 př. n. l.") a stručný ANGLICKÝ prompt pro vygenerování ikony relikvie ` +
+    `(jeden reálný předmět uprostřed, věrný tvar/materiál, muzejní 3D render, měkké studiové světlo, bez textu a pozadí).`
 
   const userMsg = `NÁZEV KAMPANĚ: "${name}"\n\n` +
     `KATALOG UDÁLOSTÍ (vybírej indexy odtud):\n${catalog || '(katalog prázdný)'}\n\n` +

@@ -64,13 +64,21 @@ export default async function handler(req: any, res: any) {
   } catch { /* bez seznamu aspoň něco navrhne */ }
   const uniqNames = Array.from(new Set(existingNames))
 
-  const sys = `Jsi kurátor vzdělávací historické hry. Pro zadanou kampaň navrhni JEDNU sběratelskou RELIKVII — ` +
-    `konkrétní, skutečný historický předmět (ne abstraktní pojem), který kampaň nejlépe symbolizuje a tematicky i časově k ní sedí. ` +
-    `Relikvie MUSÍ být unikátní: nesmí se shodovat ani být zjevnou variantou žádného z již použitých názvů (dodané v seznamu). ` +
-    `Pokud by se nejlepší nápad kryl s existující relikvií, zvol jiný vhodný předmět. ` +
-    `Napiš název + poutavý fakticky přesný popis (60–90 slov) v CZ, EN i DE, dataci jako text (např. „480 př. n. l."), ` +
-    `a stručný ANGLICKÝ prompt pro vygenerování obrázku relikvie (jeden předmět uprostřed, muzejní 3D render, měkké studiové světlo, ` +
-    `izolovaný na průhledném pozadí, bez textu). Vrať pouze JSON.`
+  const sys = `Jsi historik a kurátor muzejní sbírky pro vzdělávací historickou hru. Pro zadanou kampaň navrhni JEDEN sběratelský PŘEDMĚT — relikvii.\n\n` +
+    `NEJDŮLEŽITĚJŠÍ PRAVIDLA (dodrž bezpodmínečně):\n` +
+    `1) PŘEDMĚT MUSÍ BÝT SKUTEČNÝ A DOLOŽENÝ — buď konkrétní dochovaný artefakt (např. „Rosettská deska", „Tutanchamonova pohřební maska"), ` +
+    `nebo dobře doložený typ dobového předmětu spjatý s událostí (např. „Řecká hoplítská přilba korintského typu"). NIKDY si předmět, jeho jméno, ` +
+    `nález ani provenienci nevymýšlej. Pokud si nejsi jistý existencí nebo fakty, zvol jiný, prokazatelně doložený předmět.\n` +
+    `2) SPRÁVNÉ OZNAČENÍ — použij přesný, běžně uznávaný (muzejní/odborný) název předmětu ve všech jazycích. Neoznačuj předmět jako něco, čím není ` +
+    `(nezaměňuj kopii za originál, repliku za artefakt, mylně nedatuj ani nepřisuzuj majiteli, pokud to není doloženo).\n` +
+    `3) PRAVDIVÝ A ZAJÍMAVÝ TEXT — popis (60–90 slov) musí být fakticky přesný a zároveň čtivý: uveď, co předmět je, z čeho a jak vznikl, ` +
+    `proč je pro danou událost/kampaň významný, a jednu konkrétní, ověřitelnou a poutavou okolnost (kde je dnes, kdo/kdy ho našel, k čemu sloužil). ` +
+    `Žádné vycucané superlativy, žádné nejisté či smyšlené detaily, žádné legendy vydávané za fakt (legendu označ jako legendu).\n` +
+    `4) UNIKÁTNOST — předmět se nesmí shodovat ani být zjevnou variantou žádného z již použitých názvů (viz seznam). Pokud by se nejlepší nápad kryl, zvol jiný vhodný doložený předmět.\n` +
+    `5) ČASOVÁ A TEMATICKÁ SHODA — předmět musí sedět k událostem a období kampaně.\n\n` +
+    `Výstup: název + popis v CZ, EN i DE (ekvivalentní obsah, správné odborné názvy v každém jazyce), dataci jako text (např. „480 př. n. l."), ` +
+    `a stručný ANGLICKÝ prompt pro vygenerování obrázku předmětu (jeden reálný předmět uprostřed, věrný tvar/materiál, muzejní 3D render, ` +
+    `měkké studiové světlo, izolovaný na průhledném pozadí, bez textu). Vrať pouze JSON.`
 
   const userMsg = `KAMPAŇ: "${campaignTitle || '(bez názvu)'}"\n\n` +
     `UDÁLOSTI KAMPANĚ:\n${evLines.length ? evLines.join('\n') : '(žádné přiřazené události)'}\n\n` +
@@ -78,14 +86,14 @@ export default async function handler(req: any, res: any) {
     `Vrať JSON:\n{\n` +
     `"name_cs":"...","name_en":"...","name_de":"...",\n` +
     `"description_cs":"...","description_en":"...","description_de":"...",\n` +
-    `"year_label":"...","icon_prompt":"...","reason_cs":"krátké zdůvodnění proč sedí"\n}`
+    `"year_label":"...","icon_prompt":"...","reason_cs":"krátké zdůvodnění proč je předmět doložený a proč sedí"\n}`
 
   try {
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
       body: JSON.stringify({
-        model: 'gpt-4o', temperature: 0.7, response_format: { type: 'json_object' },
+        model: 'gpt-4o', temperature: 0.35, response_format: { type: 'json_object' },
         messages: [{ role: 'system', content: sys }, { role: 'user', content: userMsg }],
       }),
     })
