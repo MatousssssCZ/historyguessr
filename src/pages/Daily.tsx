@@ -14,6 +14,8 @@ import {
 } from '@/lib/supabase'
 import { sendMessenger, getMessengersSentToday } from '@/lib/messenger'
 import { isPushSupported, pushPermission, isPushSubscribed, subscribePush } from '@/lib/push'
+import { isStandalone, detectPlatform } from '@/lib/pwaInstall'
+import InstallGuide from '@/components/InstallGuide'
 import { computeDailyStreak } from '@/lib/streak'
 import { YEAR_MIN, YEAR_MAX, ZERO_PCT, yearToPos, posToYear } from '@/lib/yearAxis'
 import { streakUnlocks, type UnlockedTier } from '@/lib/achievements'
@@ -623,49 +625,59 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 // Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
 
 // ── Výsledek denní výzvy (redesign 17e) ───────────────────
-// Připomínka denní výzvy — nenásilná nabídka zapnutí notifikací po dohrání.
-// Zmizí napořád, jakmile ji zapneš nebo zavřeš (localStorage), ať neotravuje.
+// Připomínka denní výzvy — nenásilná nabídka notifikací po dohrání.
+// Flow: 1) podporuje prohlížeč push? 2) má appku na plochu? (na iOS je to pro
+// push nutnost) → když ne, nejdřív „Přidat" (návod). 3) teprve pak „Zapnout".
+// Zmizí napořád, jakmile notifikace zapneš nebo banner zavřeš (localStorage).
 const NOTIFY_DISMISS_KEY = 'hg_daily_notify_dismissed'
 function DailyNotifyReminder({ userId }: { userId?: string }) {
   const { t } = useTranslation()
-  const [show, setShow] = useState(false)
+  const [mode, setMode] = useState<'hidden' | 'install' | 'enable'>('hidden')
   const [busy, setBusy] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
 
   useEffect(() => {
     let alive = true
     if (!userId || !isPushSupported() || pushPermission() === 'denied') return
     try { if (localStorage.getItem(NOTIFY_DISMISS_KEY)) return } catch { /* ignore */ }
-    isPushSubscribed().then(sub => { if (alive && !sub) setShow(true) }).catch(() => {})
+    const iosNeedsInstall = detectPlatform().startsWith('ios') && !isStandalone()
+    isPushSubscribed().then(sub => {
+      if (!alive || sub) return
+      setMode(iosNeedsInstall ? 'install' : 'enable')
+    }).catch(() => {})
     return () => { alive = false }
   }, [userId])
 
   const dismiss = () => {
     try { localStorage.setItem(NOTIFY_DISMISS_KEY, '1') } catch { /* ignore */ }
-    setShow(false)
+    setMode('hidden')
   }
   const enable = async () => {
     if (!userId) return
     setBusy(true)
     try {
       const r = await subscribePush(userId)
-      if (r.ok) dismiss()           // povoleno → schovej napořád
-      else if (r.error === 'denied') dismiss()   // uživatel zakázal → už nenabízej
+      if (r.ok || r.error === 'denied') dismiss()   // zapnuto / zakázáno → už nenabízej
     } finally { setBusy(false) }
   }
 
-  if (!show) return null
+  if (mode === 'hidden') return null
+  const install = mode === 'install'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', borderRadius: 14, background: 'rgba(217,119,87,0.1)', border: '1px solid rgba(217,119,87,0.32)' }}>
-      <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: 'rgba(217,119,87,0.18)', color: 'var(--accent, #d97757)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{t('daily.notifyTitle')}</span>
-        <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{t('daily.notifySub')}</span>
-      </span>
-      <button type="button" onClick={enable} disabled={busy} style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 999, border: 'none', background: 'var(--accent, #d97757)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? '…' : t('daily.notifyCta')}</button>
-      <button type="button" onClick={dismiss} aria-label={t('common.close')} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 15 }}>✕</button>
-    </div>
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', borderRadius: 14, background: 'rgba(217,119,87,0.1)', border: '1px solid rgba(217,119,87,0.32)' }}>
+        <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: 'rgba(217,119,87,0.18)', color: 'var(--accent, #d97757)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{t('daily.notifyTitle')}</span>
+          <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{install ? t('daily.notifyInstallSub') : t('daily.notifySub')}</span>
+        </span>
+        <button type="button" onClick={install ? () => setShowGuide(true) : enable} disabled={busy} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, border: 'none', background: 'var(--accent, #d97757)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? '…' : (install ? t('daily.notifyInstall') : t('daily.notifyCta'))}</button>
+        <button type="button" onClick={dismiss} aria-label={t('common.close')} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 15 }}>✕</button>
+      </div>
+      {showGuide && <InstallGuide onClose={() => setShowGuide(false)}/>}
+    </>
   )
 }
 
