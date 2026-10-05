@@ -145,6 +145,7 @@ export default function MenuPage() {
   const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
   const [prevStreak, setPrevStreak] = useState(0)
   const [breakDayIdx, setBreakDayIdx] = useState<number | null>(null)
+  const [ready, setReady] = useState(false)
   const [, setCountdown] = useState('')
   const [, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
@@ -186,7 +187,7 @@ export default function MenuPage() {
   }, [])
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) { setReady(true); return }   // host bez účtu — není co načítat
     const key = `${user.id}:${profile?.xp ?? 0}:${profile?.created_at ?? ''}`
 
     // Cache hit — hydratuj stav bez dotazu na API
@@ -202,6 +203,7 @@ export default function MenuPage() {
       setRankDelta(d.rankDelta)
       setCatHits(d.catHits)
       setCampaignCard(d.campaignCard)
+      setReady(true)
     }
     if (menuCache && menuCache.key === key && Date.now() - menuCache.ts < MENU_TTL) {
       apply(menuCache.data)
@@ -677,15 +679,6 @@ export default function MenuPage() {
             <span style={{ fontFamily: 'var(--font-serif)', fontSize: 17 }}>Historyguesser</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {world && !isAnonymous && (
-              <button onClick={() => navigate('/leaderboard')} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 34, padding: '0 11px', borderRadius: 999, border: '1px solid rgba(251,247,240,.14)', background: 'rgba(251,247,240,.07)', cursor: 'pointer', color: '#E8C88A' }}>
-                <Icon name="trophy" size={14}/>
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.05 }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: '#FBF7F0' }}>{t('menu.worldRankInline', { rank: world.rank.toLocaleString(menuLoc) })}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.08em', color: 'rgba(251,247,240,.55)' }}>LVL {lvl.level}</span>
-                </span>
-              </button>
-            )}
             {isEditor && !isAdmin && <button onClick={() => navigate('/editor')} aria-label="Editor" style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(251,247,240,.16)', cursor: 'pointer', background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="save" size={16}/></button>}
             {isAdmin && <button onClick={() => navigate('/admin')} aria-label={t('menu.admin')} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(251,247,240,.16)', cursor: 'pointer', background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="admin" size={16}/></button>}
             <LanguageSwitcher variant="glass"/>
@@ -698,7 +691,38 @@ export default function MenuPage() {
         {/* Hero obsah (dole) */}
         <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px calc(var(--nav-space) + 14px)' }}>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 18px' }}>{t('menu.heroQuestion')}</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 16px' }}>{t('menu.heroQuestion')}</h1>
+
+          {/* Pořadí + úroveň — elegantní lišta (klik → žebříček) */}
+          {world && !isAnonymous && (
+            <button onClick={() => navigate('/leaderboard')} style={{ display: 'flex', alignItems: 'stretch', gap: 0, width: '100%', marginBottom: 16, padding: 0, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(251,247,240,.12)', background: 'rgba(251,247,240,.06)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', cursor: 'pointer', textAlign: 'left' }}>
+              {/* Pořadí */}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', flex: 1, minWidth: 0 }}>
+                <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(232,200,138,.16)', color: '#E8C88A' }}><Icon name="trophy" size={16}/></span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 19, lineHeight: 1, color: '#FBF7F0' }}>#{world.rank.toLocaleString(menuLoc)}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)', marginTop: 3 }}>
+                    {t('menu.worldRank')}
+                    {rankDelta !== 0 && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1, fontWeight: 700, color: rankDelta > 0 ? '#7ec98a' : '#e5928c' }}>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{rankDelta > 0 ? <path d="M12 4l9 14H3z"/> : <path d="M12 20L3 6h18z"/>}</svg>{Math.abs(rankDelta)}
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </span>
+              {/* Úroveň + XP pruh */}
+              <span style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 5, padding: '11px 14px', minWidth: 118, borderLeft: '1px solid rgba(251,247,240,.1)', background: 'rgba(251,247,240,.03)' }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>LVL</span>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 18, lineHeight: 1, color: '#E9A183' }}>{lvl.level}</span>
+                </span>
+                <span style={{ display: 'block', height: 4, borderRadius: 999, background: 'rgba(251,247,240,.12)', overflow: 'hidden' }}>
+                  <span style={{ display: 'block', height: '100%', width: `${Math.round(lvl.pct * 100)}%`, background: ACCENT_GRAD, borderRadius: 999 }}/>
+                </span>
+              </span>
+            </button>
+          )}
 
           {/* Denní výzva — bohatá karta: série, týdenní pruh, TOP %, hlavní akce */}
           {(() => {
@@ -710,11 +734,15 @@ export default function MenuPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 12 }}>
                   <span style={{ width: 54, height: 54, borderRadius: 14, flexShrink: 0, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 22px -12px rgba(190,98,64,.9)' }}><Flame size={26}/></span>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 34, lineHeight: 1, color: '#FBF7F0' }}>{dailyStreak}</span>
-                      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'rgba(251,247,240,.82)' }}>{streakUnit(dailyStreak, menuLoc)}</span>
-                    </div>
-                    {prevStreak > 0 && breakDayIdx != null && (
+                    {ready ? (
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 34, lineHeight: 1, color: '#FBF7F0' }}>{dailyStreak}</span>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'rgba(251,247,240,.82)' }}>{streakUnit(dailyStreak, menuLoc)}</span>
+                      </div>
+                    ) : (
+                      <div className="skeleton" style={{ width: 150, height: 30, borderRadius: 8, opacity: 0.4 }}/>
+                    )}
+                    {ready && prevStreak > 0 && breakDayIdx != null && (
                       <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'rgba(251,247,240,.55)', marginTop: 4 }}>{t('menu.prevStreak', { days: daysLabel(prevStreak, menuLoc), day: weekdayWhen(breakDayIdx, menuLoc) })}</div>
                     )}
                   </div>
