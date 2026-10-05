@@ -44,11 +44,31 @@ export async function getFriendsWithPush(): Promise<Set<string>> {
   return out
 }
 
-export interface IncomingNudge { senderId: string; username: string | null }
+export interface AppNotification {
+  senderId: string
+  username: string | null
+  day: string
+  senderScore: number | null
+  createdAt: string
+}
 
-/** Kdo mi dnes poslal posla (pro in-app upozornění, hlavně bez push notifikací). */
-export async function getIncomingNudgesToday(): Promise<IncomingNudge[]> {
-  const { data } = await supabase.rpc('incoming_nudges_today')
-  return ((data ?? []) as Array<{ sender_id: string; username: string | null }>)
-    .map(r => ({ senderId: r.sender_id, username: r.username }))
+/** Notifikační centrum: poslové + skóre odesílatele v ten den (nejnovější první). */
+export async function getNotifications(): Promise<AppNotification[]> {
+  const { data } = await supabase.rpc('my_notifications')
+  return ((data ?? []) as Array<{ sender_id: string; username: string | null; day: string; sender_score: number | null; created_at: string }>)
+    .map(r => ({ senderId: r.sender_id, username: r.username, day: r.day, senderScore: r.sender_score, createdAt: r.created_at }))
+}
+
+// Kdy jsem naposledy viděl notifikace (pro odznak „nepřečtené") — per zařízení.
+const NOTIF_SEEN_KEY = 'hg_notif_seen_at'
+export function getNotifSeenAt(): number {
+  try { return Number(localStorage.getItem(NOTIF_SEEN_KEY) || 0) } catch { return 0 }
+}
+export function markNotifSeen(): void {
+  try { localStorage.setItem(NOTIF_SEEN_KEY, String(Date.now())) } catch { /* ignore */ }
+}
+/** Počet nepřečtených (novějších než poslední zobrazení). */
+export function unreadCount(list: AppNotification[]): number {
+  const seen = getNotifSeenAt()
+  return list.filter(n => new Date(n.createdAt).getTime() > seen).length
 }

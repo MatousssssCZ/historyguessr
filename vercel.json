@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/cron-daily-reminder", "schedule": "0 17 * * *" }
+  ],
   "rewrites": [
     { "source": "/en", "destination": "/en/index.html" },
     { "source": "/de", "destination": "/de/index.html" },

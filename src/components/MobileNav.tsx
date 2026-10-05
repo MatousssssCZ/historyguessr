@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 import { getFriendRequests, signOut } from '@/lib/supabase'
+import { getNotifications, unreadCount } from '@/lib/messenger'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 const ACCENT_GRAD = 'linear-gradient(150deg,#d97757,#b85a3e)'
@@ -19,8 +20,10 @@ export default function MobileNav({ active }: { active?: Tab }) {
   const navigate = useNavigate()
   const [sheet, setSheet] = useState(false)
   const [friendReqs, setFriendReqs] = useState(0)
+  const [notifUnread, setNotifUnread] = useState(0)
 
   useEffect(() => { getFriendRequests().then(r => setFriendReqs(r.length)).catch(() => {}) }, [])
+  useEffect(() => { getNotifications().then(n => setNotifUnread(unreadCount(n))).catch(() => {}) }, [active])
 
   if (!isMobile) return null
 
@@ -66,7 +69,7 @@ export default function MobileNav({ active }: { active?: Tab }) {
         </div>
         <div style={{ display: 'flex', gap: 38 }}>
           {item('medal', t('menu.navKronika'), () => navigate('/kronika'), 'badges')}
-          {item('user', t('menu.navProfile'), () => navigate('/account'), 'profile', friendReqs)}
+          {item('user', t('menu.navProfile'), () => navigate('/account'), 'profile', friendReqs + notifUnread)}
         </div>
       </div>
 

@@ -3,7 +3,6 @@ import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getTodayDailyResult, getUserDailyResults, getFriendRequests, getWorldRank, getCategoryHits, localDateISO, getMyEntitlements, getHomeTeaser, type DailyResult, type TeaserEvent, type TeaserCampaign } from '@/lib/supabase'
-import { getIncomingNudgesToday, type IncomingNudge } from '@/lib/messenger'
 import { slugify } from '@/lib/slugify'
 import { eventTitle, eventDescription, localizedTitle } from '@/lib/eventLocale'
 import { eventPath, campaignPath, CATEGORIES, isCategoryKey, type ExploreLocale } from '@/lib/exploreUrls'
@@ -147,8 +146,6 @@ export default function MenuPage() {
   const [prevStreak, setPrevStreak] = useState(0)
   const [breakDayIdx, setBreakDayIdx] = useState<number | null>(null)
   const [ready, setReady] = useState(false)
-  const [nudges, setNudges] = useState<IncomingNudge[]>([])
-  const [nudgeHidden, setNudgeHidden] = useState(false)
   const [, setCountdown] = useState('')
   const [, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
@@ -302,15 +299,6 @@ export default function MenuPage() {
     return () => { alive = false }
   }, [user?.id, profile?.xp, profile?.created_at])
 
-  // Kdo mi dnes poslal posla (in-app upozornění příjemce — hlavně bez push)
-  useEffect(() => {
-    if (!user?.id || isAnonymous) { setNudges([]); return }
-    try { setNudgeHidden(localStorage.getItem(`hg_nudge_seen_${localDateISO()}`) === '1') } catch { /* ignore */ }
-    let alive = true
-    getIncomingNudgesToday().then(n => { if (alive) setNudges(n) }).catch(() => {})
-    return () => { alive = false }
-  }, [user?.id, isAnonymous])
-
   // Odpočet do další výzvy (do půlnoci) — tiká jen když je dnešní odehraná
   useEffect(() => {
     if (dailyState !== 'done') return
@@ -356,11 +344,6 @@ export default function MenuPage() {
   const goQuick = () => user ? navigate('/game', { state: { rounds: 1 } }) : ensurePlay('/play')
   const goClassic = () => ensurePlay('/play')
   const goDaily = () => ensurePlay('/daily')
-  const dismissNudge = () => {
-    try { localStorage.setItem(`hg_nudge_seen_${localDateISO()}`, '1') } catch { /* ignore */ }
-    setNudgeHidden(true)
-  }
-  const showNudge = !nudgeHidden && nudges.length > 0 && dailyState !== 'done'
   const goMP = () => navigate('/multiplayer/lobby')  // MP host jen registrovaný (řeší guard/zámek)
   const goResume = () => navigate('/game', { state: { resume: true } })
   const isGuest = !user || isAnonymous   // host (bez účtu i anonymní) → nabídni registraci
@@ -748,25 +731,6 @@ export default function MenuPage() {
                 </span>
               </span>
             </button>
-          )}
-
-          {/* Posel od kamaráda — in-app upozornění (přijde i bez push notifikací) */}
-          {showNudge && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', marginBottom: 14, padding: '11px 13px', borderRadius: 15, background: 'rgba(217,119,87,0.16)', border: '1px solid rgba(233,161,131,.5)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
-              <span style={{ width: 36, height: 36, flexShrink: 0, borderRadius: '50%', background: ACCENT_GRAD, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-              </span>
-              <button onClick={() => { dismissNudge(); goDaily() }} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: '#FBF7F0' }}>
-                  {nudges.length === 1
-                    ? t('menu.nudgeOne', { name: nudges[0].username ?? t('daily.player') })
-                    : t('menu.nudgeMany', { name: nudges[0].username ?? t('daily.player'), n: nudges.length - 1 })}
-                </span>
-                <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(251,247,240,.7)', marginTop: 1 }}>{t('menu.nudgeSub')}</span>
-              </button>
-              <button onClick={() => { dismissNudge(); goDaily() }} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, border: 'none', background: '#FBF7F0', color: '#1F1B16', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>{t('menu.nudgePlay')}</button>
-              <button onClick={dismissNudge} aria-label={t('common.close')} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 8, border: 'none', background: 'transparent', color: 'rgba(251,247,240,.6)', cursor: 'pointer', fontSize: 15 }}>✕</button>
-            </div>
           )}
 
           {/* Denní výzva — bohatá karta: série, týdenní pruh, TOP %, hlavní akce */}

@@ -11,7 +11,9 @@ import { PageShell, PageHeader } from '@/components/ui/Page'
 import Icon from '@/components/Icon'
 import HowToPlay from '@/components/HowToPlay'
 import InstallGuide from '@/components/InstallGuide'
-import { isStandalone } from '@/lib/pwaInstall'
+import { isStandalone, detectPlatform } from '@/lib/pwaInstall'
+import { getNotifications, markNotifSeen, type AppNotification } from '@/lib/messenger'
+import { currentLocale } from '@/i18n'
 import { DownloadIcon } from '@/components/BrowserIcons'
 import FeedbackModal from '@/components/FeedbackModal'
 import { isPushSupported, isPushSubscribed, subscribePush, unsubscribePush } from '@/lib/push'
@@ -39,9 +41,16 @@ export default function AccountPage() {
   // Push notifikace (opt-in)
   const [pushOn, setPushOn] = useState(false)
   const [pushBusy, setPushBusy] = useState(false)
+  const [notifs, setNotifs] = useState<AppNotification[]>([])
   const [pushMsg, setPushMsg] = useState<string | null>(null)
   const pushSupported = isPushSupported()
   useEffect(() => { if (pushSupported) isPushSubscribed().then(setPushOn).catch(() => {}) }, [pushSupported])
+  useEffect(() => {
+    if (isAnonymous || !user?.id) return
+    let alive = true
+    getNotifications().then(n => { if (alive) { setNotifs(n); markNotifSeen() } }).catch(() => {})
+    return () => { alive = false }
+  }, [isAnonymous, user?.id])
 
   async function togglePush() {
     if (!user) return
@@ -88,9 +97,44 @@ export default function AccountPage() {
     window.location.assign('/')
   }
 
+  const loc = currentLocale()
+  const needsInstall = detectPlatform().startsWith('ios') && !isStandalone()
+  const relTime = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.toLocaleDateString(loc, { day: 'numeric', month: 'short' })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`
+  }
+
   return (
     <PageShell maxWidth={640}>
         <PageHeader eyebrow={t('menu.navProfile')} title={t('account.title')} onBack={() => navigate('/menu')}/>
+
+        {/* Notifikační centrum — poslové od kamarádů (+ skóre), i bez push */}
+        {!isAnonymous && notifs.length > 0 && (
+          <div style={cardStyle}>
+            <p style={eyebrow}>{t('account.notifications')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {notifs.map((n, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderTop: i === 0 ? 0 : '1px solid var(--line)' }}>
+                  <span style={{ width: 36, height: 36, flexShrink: 0, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'var(--ink)' }}>{t('account.notifPosel', { name: n.username ?? t('daily.player') })}</span>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>
+                      {(n.senderScore != null ? t('account.notifScore', { score: n.senderScore }) : t('account.notifNoScore'))} · {relTime(n.createdAt)}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+            {pushSupported && !pushOn && (
+              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(217,119,87,.1)', border: '1px solid rgba(217,119,87,.3)', borderRadius: 12, padding: '10px 12px' }}>
+                <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--ink-2)' }}>{t('account.notifLockHint')}</span>
+                <button onClick={needsInstall ? () => setShowInstall(true) : togglePush} disabled={pushBusy} style={{ flexShrink: 0, padding: '7px 13px', borderRadius: 999, border: 'none', background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, cursor: 'pointer', opacity: pushBusy ? 0.6 : 1 }}>{needsInstall ? t('account.notifInstall') : t('account.notifEnable')}</button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Profil */}
         <form onSubmit={handleSave} style={cardStyle}>
