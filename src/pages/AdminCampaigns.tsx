@@ -18,7 +18,7 @@ import {
   getRelicForCampaign, upsertRelicForCampaign, uploadRelicModel, uploadRelicIcon, uploadRelicSilhouette, getRelicSets, getCampaignIdsWithRelic,
   RELIC_CATEGORIES, type Relic, type RelicSet,
 } from '@/lib/relics'
-import { generateIllustration, generateCampaignDraft, type AiCampaignDraft } from '@/lib/ai'
+import { generateIllustration, generateCampaignDraft, generateRelicDraft, type AiCampaignDraft } from '@/lib/ai'
 import { buildRelicGlbs, urlToDataURL } from '@/lib/relicGlb'
 import type { CampaignCategory, Campaign, Event, ContentStatus } from '@/types/database'
 
@@ -650,6 +650,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
   const [busyKind, setBusyKind] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ url: string; label: string } | null>(null)
+  const [iconPrompt, setIconPrompt] = useState('')
 
   useEffect(() => {
     getRelicForCampaign(campaignId).then(r => {
@@ -690,11 +691,33 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     if (data) setRelic(data)
     setMsg('Ikona uložena ✓')
   }
+  // AI návrh relikvie pro tuto kampaň (unikátní napříč kampaněmi) → vyplní pole
+  async function suggestRelic() {
+    setBusyKind('suggest'); setMsg('Hledám nejvhodnější relikvii…')
+    try {
+      const d = await generateRelicDraft(campaignId, f.name.trim() || campaignTitle)
+      setF(s => ({
+        ...s,
+        name: d.name_cs || s.name,
+        name_en: d.name_en || s.name_en,
+        name_de: d.name_de || s.name_de,
+        year_label: d.year_label || s.year_label,
+        description: d.description_cs || s.description,
+        description_en: d.description_en || s.description_en,
+        description_de: d.description_de || s.description_de,
+      }))
+      if (d.icon_prompt) setIconPrompt(d.icon_prompt)
+      setMsg(d.reason_cs ? `Návrh: ${d.reason_cs}` : 'Relikvie navržena ✓')
+    } catch (e) { setMsg('Návrh selhal: ' + (e as Error).message) } finally { setBusyKind(null) }
+  }
+
+  // Vygeneruje PNG relikvie BEZ pozadí (na kartu + jako odznak)
   async function generateIcon() {
     if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
-    setBusyKind('icon'); setMsg(null)
+    setBusyKind('icon'); setMsg('Generuji obrázek relikvie (bez pozadí)…')
     try {
-      const img = await generateIllustration({ title: f.name.trim() || campaignTitle, description: `Ikona historické relikvie „${f.name.trim() || campaignTitle}" — jeden předmět uprostřed, muzejní 3D render, měkké studiové světlo, čtvercová kompozice, bez textu a pozadí.` })
+      const desc = iconPrompt || [f.name.trim(), f.year_label.trim(), f.description.trim()].filter(Boolean).join('. ')
+      const img = await generateIllustration({ title: f.name.trim() || campaignTitle, description: desc, transparent: true })
       const c = await compressIllustration(img, 512)
       const { url, error } = await uploadRelicIcon(c, slug)
       if (error || !url) { setMsg('Generování selhalo: ' + error); return }
@@ -754,7 +777,8 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
       // 1) grafika: použij stávající ikonu, jinak ji vygeneruj
       let art = iconUrl
       if (!art) {
-        const img = await generateIllustration({ title: f.name.trim(), description: `Ikona historické relikvie „${f.name.trim()}" — jeden předmět uprostřed, muzejní 3D render, měkké studiové světlo, čtvercová kompozice, bez textu a pozadí.` })
+        const desc = iconPrompt || [f.name.trim(), f.year_label.trim(), f.description.trim()].filter(Boolean).join('. ')
+        const img = await generateIllustration({ title: f.name.trim(), description: desc, transparent: true })
         const c = await compressIllustration(img, 512)
         const up = await uploadRelicIcon(c, slug)
         if (up.error || !up.url) { setMsg('Generování grafiky selhalo: ' + up.error); return }
@@ -787,7 +811,10 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '13px 14px', background: 'var(--paper-100)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>🏺 Relikvie kampaně {relic ? '· vzácnost dle výkonu' : '· zatím nevytvořena'}</span>
-        {msg && <span style={{ fontSize: 12, color: msg.includes('✓') ? 'var(--success)' : 'var(--danger)' }}>{msg}</span>}
+        {msg && <span style={{ fontSize: 12, color: /selhal|Chyba/i.test(msg) ? 'var(--danger)' : (msg.includes('✓') ? 'var(--success)' : 'var(--ink-3)') }}>{msg}</span>}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+        <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'suggest'} onClick={suggestRelic} title="AI navrhne relikvii, která nejlépe sedí ke kampani a není v žádné jiné">{busyKind === 'suggest' ? '…' : '✨ Navrhnout relikvii (AI)'}</button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
@@ -823,10 +850,10 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
             {iconUrl ? <img src={iconUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 20 }}>🏺</span>}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Ikona relikvie (2D)</div>
-            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>Odznak v žebříčku, dlaždicích a na profilu.</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>Obrázek relikvie (PNG bez pozadí)</div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2 }}>Grafika na kartu (3D model) + odznak v žebříčku a na profilu.</div>
           </div>
-          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'icon'} onClick={generateIcon}>{busyKind === 'icon' ? '…' : '✨ Vygenerovat (AI)'}</button>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'icon'} onClick={generateIcon} title="AI vygeneruje izolovaný předmět na průhledném pozadí">{busyKind === 'icon' ? '…' : '✨ Vygenerovat (bez pozadí)'}</button>
           <label className="btn btn-ghost" style={{ fontSize: 12, cursor: 'pointer' }}>Nahrát<input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => uploadIcon(e.target.files?.[0])}/></label>
         </div>
 

@@ -22,6 +22,20 @@ STYLE & ACCURACY
 - No text, watermarks, logos, captions or borders. No modern elements out of period.`
 }
 
+// Prompt pro RELIKVII — jeden izolovaný předmět na průhledném pozadí (na kartu).
+function buildRelicPrompt(p: { title: string; description: string }): string {
+  return `Create a product-style 3D render of a SINGLE historical relic / artifact, isolated on a fully transparent background (no scene, no floor, no shadow plane).
+
+RELIC: ${p.title || '(neuvedeno)'}
+DETAILS: ${p.description || '(neuvedeno)'}
+
+STYLE & ACCURACY
+- One object only, centered, filling most of the frame, shown at a slight 3/4 angle.
+- Museum-quality, photorealistic materials; soft studio lighting; crisp focus.
+- Historically accurate shape, material and ornament for the artifact.
+- Transparent background (alpha), clean cut-out edges. No text, watermarks, logos, captions, borders, people, hands or background objects.`
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return }
 
@@ -47,17 +61,24 @@ export default async function handler(req: any, res: any) {
   const title = String(body.title || '').trim()
   if (!title) { res.status(400).json({ error: 'missing_title' }); return }
 
-  const model = body.model === 'gpt-image-1' ? 'gpt-image-1' : 'gpt-image-2'
-  const prompt = buildPrompt({
-    title,
-    date: String(body.event_date || '').trim(),
-    period: String(body.period || '').trim(),
-    location: String(body.location || '').trim(),
-    description: String(body.description || '').trim(),
-  })
+  const transparent = body.transparent === true
+  // Pro průhledný výstup (relikvie na kartu) používáme gpt-image-1, který umí
+  // background:transparent + PNG. Jinak zůstává původní editorial JPEG.
+  const model = transparent ? 'gpt-image-1' : (body.model === 'gpt-image-1' ? 'gpt-image-1' : 'gpt-image-2')
+  const prompt = transparent
+    ? buildRelicPrompt({ title, description: String(body.description || '').trim() })
+    : buildPrompt({
+      title,
+      date: String(body.event_date || '').trim(),
+      period: String(body.period || '').trim(),
+      location: String(body.location || '').trim(),
+      description: String(body.description || '').trim(),
+    })
 
   try {
-    const payload: any = { model, prompt, size: '1536x1024', quality: String(body.quality || 'medium'), n: 1, output_format: 'jpeg', output_compression: 90 }
+    const payload: any = transparent
+      ? { model, prompt, size: '1024x1024', quality: String(body.quality || 'high'), n: 1, background: 'transparent', output_format: 'png' }
+      : { model, prompt, size: '1536x1024', quality: String(body.quality || 'medium'), n: 1, output_format: 'jpeg', output_compression: 90 }
     const aiRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
@@ -70,7 +91,7 @@ export default async function handler(req: any, res: any) {
     const data = await aiRes.json()
     let b64 = data?.data?.[0]?.b64_json
     const url = data?.data?.[0]?.url
-    let mime = 'image/jpeg'
+    let mime = transparent ? 'image/png' : 'image/jpeg'
     if (!b64 && url) {
       const imgRes = await fetch(url)
       if (!imgRes.ok) { res.status(502).json({ error: 'image_fetch_failed' }); return }

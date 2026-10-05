@@ -108,6 +108,34 @@ export type PanoramaParams = {
   location?: string
   description?: string
   model?: 'gpt-image-1' | 'gpt-image-2'
+  transparent?: boolean   // relikvie: izolovaný předmět na průhledném PNG (na kartu)
+  quality?: string
+}
+
+export type AiRelicDraft = {
+  name_cs: string | null; name_en: string | null; name_de: string | null
+  description_cs: string | null; description_en: string | null; description_de: string | null
+  year_label: string | null; icon_prompt: string | null; reason_cs: string | null
+}
+
+/** Navrhne relikvii, která nejlépe sedí ke kampani a není v žádné jiné kampani. */
+export async function generateRelicDraft(campaignId: string, campaignTitle: string): Promise<AiRelicDraft> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Nejsi přihlášený.')
+  const res = await fetch('/api/generate-relic', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ campaignId, campaignTitle }),
+  })
+  if (!res.ok) {
+    let detail = ''
+    try { const j = await res.json(); detail = j.detail || j.error || '' } catch { /* ignore */ }
+    if (res.status === 403) throw new Error('Přístup jen pro administrátory.')
+    if (res.status === 500 && detail === 'missing_openai_key') throw new Error('Na serveru chybí OPENAI_API_KEY.')
+    throw new Error(`Návrh relikvie selhal (${res.status}). ${detail}`)
+  }
+  return res.json()
 }
 
 /** Zavolá /api/generate-panorama, vrátí PNG jako File pro upload pipeline. */
@@ -202,5 +230,5 @@ export async function generateIllustration(params: PanoramaParams): Promise<File
     throw new Error(`Generování ilustrace selhalo (${res.status}). ${detail}`)
   }
   const { image } = await res.json() as { image: string }
-  return dataUrlToFile(image, 'ai-ilustrace')
+  return dataUrlToFile(image, params.transparent ? 'ai-relikvie' : 'ai-ilustrace')
 }
