@@ -10,7 +10,6 @@ import {
   uploadCategoryImage, getCampaignsExport,
 } from '@/lib/supabase'
 import { exportXLS } from '@/lib/xlsExport'
-import RelicViewer from '@/components/RelicViewer'
 import RelicViewer3D from '@/components/RelicViewer3D'
 import RelicBadge from '@/components/RelicBadge'
 import { compressIllustration } from '@/lib/imageCompression'
@@ -860,7 +859,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
             <div key={r.k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '9px 12px' }}>
               {models[r.k] ? (
                 <button type="button" onClick={() => setPreview({ url: models[r.k], label: r.label })} title="Prohlédnout ve velkém" style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#241d16', border: 0, padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <RelicViewer modelUrl={models[r.k]} glow="gold" fallback="🏺"/>
+                  <RelicViewer3D modelUrl={models[r.k]} glow="gold" fallback="🏺"/>
                 </button>
               ) : (
                 <div style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#241d16', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
