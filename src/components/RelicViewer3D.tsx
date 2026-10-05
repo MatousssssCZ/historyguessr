@@ -74,7 +74,7 @@ const HOLO_FRAG = `
 `
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Mods = { THREE: any; GLTFLoader: any; OrbitControls: any; RoomEnvironment: any }
+type Mods = { THREE: any; GLTFLoader: any; OrbitControls: any }
 let modsPromise: Promise<Mods | null> | null = null
 function loadThree(): Promise<Mods | null> {
   if (modsPromise) return modsPromise
@@ -83,12 +83,11 @@ function loadThree(): Promise<Mods | null> {
       // specifiery přes proměnné → Vite/TS je neřeší staticky, resolvují se
       // runtime přes importmap v index.html (three + three/addons z unpkg)
       const sThree = 'three', sGltf = 'three/addons/loaders/GLTFLoader.js'
-      const sOrbit = 'three/addons/controls/OrbitControls.js', sRoom = 'three/addons/environments/RoomEnvironment.js'
+      const sOrbit = 'three/addons/controls/OrbitControls.js'
       const THREE = await import(/* @vite-ignore */ sThree)
       const { GLTFLoader } = await import(/* @vite-ignore */ sGltf)
       const { OrbitControls } = await import(/* @vite-ignore */ sOrbit)
-      const { RoomEnvironment } = await import(/* @vite-ignore */ sRoom)
-      return { THREE, GLTFLoader, OrbitControls, RoomEnvironment }
+      return { THREE, GLTFLoader, OrbitControls }
     } catch { return null }
   })()
   return modsPromise
@@ -123,7 +122,7 @@ export default function RelicViewer3D({ modelUrl, imageUrl, glow, fallback }: {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function initScene(M: Mods, wrap: HTMLDivElement, url: string, gold: boolean): () => void {
-  const { THREE, GLTFLoader, OrbitControls, RoomEnvironment } = M
+  const { THREE, GLTFLoader, OrbitControls } = M
   const W = wrap.clientWidth || 300, H = wrap.clientHeight || 300
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -134,11 +133,36 @@ function initScene(M: Mods, wrap: HTMLDivElement, url: string, gold: boolean): (
   wrap.appendChild(renderer.domElement)
 
   const scene = new THREE.Scene()
-  const pmrem = new THREE.PMREMGenerator(renderer)
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35))
-  const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(2, 3, 4); scene.add(key)
-  if (gold) { const warm = new THREE.PointLight(0xffd9a0, 0.6, 20); warm.position.set(-2, 1, 3); scene.add(warm) }
+  // Světla a prostředí 1:1 jako v nástroji „3D export karet" — aby legendary
+  // karta (kov, folie, holo) vypadala stejně jako tam.
+  scene.add(new THREE.HemisphereLight(0xE8DECD, 0x120E0A, 0.55))
+  const key = new THREE.DirectionalLight(0xFFF3DC, 2.2); key.position.set(0.16, 0.28, 0.3); scene.add(key)
+  const fill = new THREE.DirectionalLight(0xBFD2E6, 0.75); fill.position.set(-0.3, 0.1, 0.2); scene.add(fill)
+  const rim = new THREE.DirectionalLight(0xFFD98A, 1); rim.position.set(-0.1, 0.3, -0.3); scene.add(rim)
+  // Prostředí: stejný gradientní equirect „studiový" HDRI (teplé horní světlo,
+  // tmavé dno) → stejné odlesky na kovovém rámu.
+  ;(() => {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 256
+    const ctx = c.getContext('2d'); if (!ctx) return
+    const g = ctx.createLinearGradient(0, 0, 0, 256)
+    g.addColorStop(0, '#FFF6E4'); g.addColorStop(0.42, '#8B7C66'); g.addColorStop(0.55, '#2A231B'); g.addColorStop(1, '#0B0907')
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 256)
+    const soft = (x: number, y: number, rx: number, ry: number, col: string) => {
+      const rg = ctx.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry))
+      rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, ry / Math.max(rx, ry)); ctx.translate(-x, -y)
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, Math.max(rx, ry), 0, Math.PI * 2); ctx.fill(); ctx.restore()
+    }
+    soft(150, 55, 150, 78, 'rgba(255,255,255,.9)')
+    soft(390, 85, 120, 66, 'rgba(255,228,186,.55)')
+    soft(280, 195, 200, 90, 'rgba(120,105,88,.35)')
+    const t = new THREE.CanvasTexture(c)
+    t.mapping = THREE.EquirectangularReflectionMapping
+    t.colorSpace = THREE.SRGBColorSpace
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    scene.environment = pmrem.fromEquirectangular(t).texture
+    pmrem.dispose(); t.dispose()
+  })()
 
   const camera = new THREE.PerspectiveCamera(32, W / H, 0.01, 100)
 
@@ -183,7 +207,9 @@ function initScene(M: Mods, wrap: HTMLDivElement, url: string, gold: boolean): (
     root.position.sub(center)
     const radius = Math.max(size.x, size.y, size.z) * 0.5
     const dist = radius / Math.sin((camera.fov * Math.PI / 180) / 2) * 1.25
-    camera.position.set(0, 0, dist)
+    // mírná elevace jako v nástroji (kamera nad středem) → folie je nakloněná
+    // a holo spektrum je vidět i v klidu, nejen při rotaci
+    camera.position.set(0, dist * 0.16, dist * 0.985)
     camera.near = dist / 100; camera.far = dist * 10; camera.updateProjectionMatrix()
     controls.target.set(0, 0, 0)
     controls.minDistance = dist * 0.65
