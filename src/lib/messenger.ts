@@ -43,3 +43,12 @@ export async function getFriendsWithPush(): Promise<Set<string>> {
   for (const r of ids) out.add(typeof r === 'string' ? r : r.friends_push_enabled)
   return out
 }
+
+export interface IncomingNudge { senderId: string; username: string | null }
+
+/** Kdo mi dnes poslal posla (pro in-app upozornění, hlavně bez push notifikací). */
+export async function getIncomingNudgesToday(): Promise<IncomingNudge[]> {
+  const { data } = await supabase.rpc('incoming_nudges_today')
+  return ((data ?? []) as Array<{ sender_id: string; username: string | null }>)
+    .map(r => ({ senderId: r.sender_id, username: r.username }))
+}
