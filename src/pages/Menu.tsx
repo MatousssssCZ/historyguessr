@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, type CSSProperties } from 'react'
 import { currentLocale } from '@/i18n'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -45,6 +45,26 @@ function Flame({ size = 13 }: { size?: number }) {
   )
 }
 
+// „X dní v sérii" — jednotka za velkým číslem (CZ pády, EN/DE jednoduše)
+function streakUnit(n: number, loc: string): string {
+  if (loc.startsWith('cs')) return `${n === 1 ? 'den' : (n >= 2 && n <= 4 ? 'dny' : 'dní')} v sérii`
+  if (loc.startsWith('de')) return 'Tage-Serie'
+  return 'day streak'
+}
+// Počet dní ve správném tvaru pro věty („41 dní", „1 den")
+function daysLabel(n: number, loc: string): string {
+  if (loc.startsWith('cs')) return `${n} ${n === 1 ? 'den' : (n >= 2 && n <= 4 ? 'dny' : 'dní')}`
+  if (loc.startsWith('de')) return `${n} ${n === 1 ? 'Tag' : 'Tage'}`
+  return `${n} ${n === 1 ? 'day' : 'days'}`
+}
+// „v pátek" / „on Friday" / „am Freitag" z JS getDay() indexu (0=ne … 6=so)
+function weekdayWhen(idx: number, loc: string): string {
+  const name = new Date(2024, 0, 7 + idx).toLocaleDateString(loc, { weekday: 'long' }) // 2024-01-07 = neděle
+  if (loc.startsWith('cs')) return ({ 0: 'v neděli', 1: 'v pondělí', 2: 'v úterý', 3: 've středu', 4: 've čtvrtek', 5: 'v pátek', 6: 'v sobotu' } as Record<number, string>)[idx] ?? name
+  if (loc.startsWith('de')) return `am ${name}`
+  return `on ${name}`
+}
+
 // Karta „Kampaně / další relikvie" — odznak relikvie + stav sbírky, klik → /campaigns
 function RelicCampaignCard({ card, t, onClick }: { card: MenuCampaignCard; t: (k: string, o?: Record<string, unknown>) => string; onClick: () => void }) {
   const n = card.next
@@ -79,6 +99,8 @@ interface MenuData {
   dailyState: DailyState
   dailyStreak: number
   dailyWeek: DayMark[]
+  prevStreak: number
+  breakDayIdx: number | null
   friendReqs: number
   world: { rank: number; total: number } | null
   rankDelta: number
@@ -121,6 +143,8 @@ export default function MenuPage() {
   const [, setDailyResult] = useState<DailyResult | null>(null)
   const [dailyStreak, setDailyStreak] = useState(0)
   const [dailyWeek, setDailyWeek] = useState<DayMark[]>([])
+  const [prevStreak, setPrevStreak] = useState(0)
+  const [breakDayIdx, setBreakDayIdx] = useState<number | null>(null)
   const [, setCountdown] = useState('')
   const [, setFriendReqs] = useState(0)
   const [world, setWorld] = useState<{ rank: number; total: number } | null>(null)
@@ -171,6 +195,8 @@ export default function MenuPage() {
       setDailyState(d.dailyState)
       setDailyStreak(d.dailyStreak)
       setDailyWeek(d.dailyWeek)
+      setPrevStreak(d.prevStreak)
+      setBreakDayIdx(d.breakDayIdx)
       setFriendReqs(d.friendReqs)
       setWorld(d.world)
       setRankDelta(d.rankDelta)
@@ -211,6 +237,23 @@ export default function MenuPage() {
         week.push({ played: played.has(iso), label, isToday: iso === todayIso })
       }
 
+      // Předchozí série + den přerušení: `d` teď ukazuje na první NEhraný den
+      // před aktuální sérií. To je den, kdy se série přerušila.
+      let prevStreak = 0
+      let breakDayIdx: number | null = null
+      {
+        const b = new Date(d)
+        const bIso = localDateISO(b)
+        // jen pokud ten den už měl padnout (není v budoucnu) a je po registraci
+        if ((!regIso || bIso >= regIso) && bIso < todayIso) {
+          breakDayIdx = b.getDay()
+          // přeskoč případné další nehrané dny a spočítej délku předchozí série
+          const p = new Date(b)
+          while (!played.has(localDateISO(p))) p.setDate(p.getDate() - 1)
+          while (played.has(localDateISO(p))) { prevStreak++; p.setDate(p.getDate() - 1) }
+        }
+      }
+
       // Denní posun v pořadí (baseline v localStorage; nastaví se na začátku dne)
       let rankDelta = 0
       if (w) {
@@ -231,6 +274,8 @@ export default function MenuPage() {
         dailyState: res ? 'done' : 'new',
         dailyStreak: streak,
         dailyWeek: week,
+        prevStreak,
+        breakDayIdx,
         friendReqs: reqs.length,
         world: w,
         rankDelta,
@@ -632,7 +677,15 @@ export default function MenuPage() {
             <span style={{ fontFamily: 'var(--font-serif)', fontSize: 17 }}>Historyguesser</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 10, background: 'rgba(251,247,240,.1)', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#E8C88A' }}><Flame size={12}/> {dailyStreak}</span>
+            {world && !isAnonymous && (
+              <button onClick={() => navigate('/leaderboard')} style={{ display: 'flex', alignItems: 'center', gap: 8, height: 34, padding: '0 11px', borderRadius: 999, border: '1px solid rgba(251,247,240,.14)', background: 'rgba(251,247,240,.07)', cursor: 'pointer', color: '#E8C88A' }}>
+                <Icon name="trophy" size={14}/>
+                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.05 }}>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 11.5, color: '#FBF7F0' }}>{t('menu.worldRankInline', { rank: world.rank.toLocaleString(menuLoc) })}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.08em', color: 'rgba(251,247,240,.55)' }}>LVL {lvl.level}</span>
+                </span>
+              </button>
+            )}
             {isEditor && !isAdmin && <button onClick={() => navigate('/editor')} aria-label="Editor" style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(251,247,240,.16)', cursor: 'pointer', background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="save" size={16}/></button>}
             {isAdmin && <button onClick={() => navigate('/admin')} aria-label={t('menu.admin')} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid rgba(251,247,240,.16)', cursor: 'pointer', background: 'rgba(251,247,240,.1)', color: '#FBF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="admin" size={16}/></button>}
             <LanguageSwitcher variant="glass"/>
@@ -644,57 +697,80 @@ export default function MenuPage() {
 
         {/* Hero obsah (dole) */}
         <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', padding: '0 20px calc(var(--nav-space) + 14px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'rgba(251,247,240,.7)' }}><Flame size={11}/> {t('menu.streakDays', { n: dailyStreak })}</span>
-            <span style={{ display: 'flex', gap: 4 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={mDot(d.played)}/>)}</span>
-          </div>
           <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: 'rgba(251,247,240,.75)', marginBottom: 6 }}>{greet}, {name}</div>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 16px' }}>{t('menu.heroQuestion')}</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, fontSize: 'clamp(28px, 7.5vw, 38px)', lineHeight: 1.06, letterSpacing: '-0.02em', margin: '0 0 18px' }}>{t('menu.heroQuestion')}</h1>
 
-          {/* Denní výzva — primární akce (jako na desktopu); po odehrání decentní zelená karta */}
-          {dailyState === 'done' ? (
-            <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 14px', borderRadius: 15, cursor: 'pointer', background: 'rgba(63,107,69,.16)', border: '1.5px solid rgba(95,157,104,.5)', color: '#FBF7F0', textAlign: 'left', marginBottom: 16 }}>
-              <span style={{ width: 40, height: 40, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(95,157,104,.22)', color: '#9fd6a6' }}><Icon name="chart" size={18}/></span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(159,214,166,.9)' }}>{t('menu.dailyLabel')} · {t('menu.done')}</span>
-                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, marginTop: 2 }}>{t('menu.showResults')}</span>
-              </span>
-              <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18, flexShrink: 0 }}>→</span>
-            </button>
-          ) : (
-            <>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E9A183', marginBottom: 8 }}>{t('menu.dailyLabel')} · {dateStr}</div>
-              <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, border: 'none', cursor: 'pointer', background: ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: '0 18px 40px -22px rgba(190,98,64,.95)', marginBottom: 16 }}>
-                <Icon name="bolt" size={17}/> {t('menu.playChallenge')}
-              </button>
-            </>
-          )}
+          {/* Denní výzva — bohatá karta: série, týdenní pruh, TOP %, hlavní akce */}
+          {(() => {
+            const done = dailyState === 'done'
+            const topPct = world ? Math.max(1, Math.round(world.rank / Math.max(1, world.total) * 100)) : null
+            return (
+              <div style={{ borderRadius: 20, padding: 16, marginBottom: 14, border: '1px solid rgba(233,161,131,.28)', background: 'linear-gradient(158deg, rgba(120,70,45,.42), rgba(38,26,19,.55))', boxShadow: '0 20px 48px -30px rgba(0,0,0,.8)' }}>
+                {/* Série */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 12 }}>
+                  <span style={{ width: 54, height: 54, borderRadius: 14, flexShrink: 0, background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 22px -12px rgba(190,98,64,.9)' }}><Flame size={26}/></span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 34, lineHeight: 1, color: '#FBF7F0' }}>{dailyStreak}</span>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 14, color: 'rgba(251,247,240,.82)' }}>{streakUnit(dailyStreak, menuLoc)}</span>
+                    </div>
+                    {prevStreak > 0 && breakDayIdx != null && (
+                      <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'rgba(251,247,240,.55)', marginTop: 4 }}>{t('menu.prevStreak', { days: daysLabel(prevStreak, menuLoc), day: weekdayWhen(breakDayIdx, menuLoc) })}</div>
+                    )}
+                  </div>
+                </div>
 
-          <button onClick={() => setShowQuick(true)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: 15, borderRadius: 15, cursor: 'pointer',
-            fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, marginBottom: 22,
-            ...(dailyState === 'done'
-              ? { background: ACCENT_GRAD, border: '1.6px solid transparent', color: '#FBF7F0', boxShadow: '0 18px 40px -22px rgba(190,98,64,.95)' }
-              : { background: 'transparent', border: '1.6px solid #d97757', color: '#eb9d7d' }),
-          }}>
-            <Icon name="bolt" size={17}/> {t('menu.quickBtn')}
+                {/* Týdenní pruh ✓ / ✗ / dnešek */}
+                {dailyWeek.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                    {dailyWeek.map((d, i) => {
+                      const status = (d.isToday && !d.played) ? 'today' : (d.played ? 'done' : 'missed')
+                      const box: CSSProperties = {
+                        height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        ...(status === 'done' ? { background: '#E6D6B6', color: '#3a2c1c' }
+                          : status === 'missed' ? { background: 'rgba(150,45,35,.3)', border: '1px solid rgba(196,86,66,.55)', color: '#e8a593' }
+                          : { background: 'transparent', border: '1px dashed rgba(232,200,138,.6)', color: '#E8C88A' }),
+                      }
+                      return (
+                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          <div style={{ ...box, width: '100%' }}>
+                            {status === 'done' ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                              : status === 'missed' ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                              : <Flame size={13}/>}
+                          </div>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8.5, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>{d.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* TOP % */}
+                {topPct != null && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14, fontFamily: 'var(--font-sans)', fontSize: 12.5, color: 'rgba(251,247,240,.72)' }}>
+                    <Icon name="chart" size={14}/>
+                    <span>{t('menu.streakTop', { pct: topPct })}</span>
+                  </div>
+                )}
+
+                {/* Hlavní akce */}
+                <button onClick={goDaily} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, borderRadius: 14, border: 'none', cursor: 'pointer', background: done ? SUCCESS_GRAD : ACCENT_GRAD, color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, boxShadow: done ? '0 18px 40px -22px rgba(63,107,69,.9)' : '0 18px 40px -22px rgba(190,98,64,.95)' }}>
+                  <Icon name={done ? 'chart' : 'calendar-check'} size={18}/> {done ? t('menu.showResults') : t('menu.playChallenge')}
+                </button>
+              </div>
+            )
+          })()}
+
+          {/* Rychlá hra — světlá karta */}
+          <button onClick={() => setShowQuick(true)} style={{ display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer', padding: '13px 14px', borderRadius: 16, marginBottom: 12, background: '#FBF7F0', border: 'none', boxShadow: '0 16px 36px -26px rgba(0,0,0,.7)' }}>
+            <span style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1C1813', color: '#E8C88A' }}><Icon name="bolt" size={20}/></span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15.5, color: '#1F1B16' }}>{t('menu.quickGame')}</span>
+              <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 12.5, color: '#6b6054', marginTop: 1 }}>{t('menu.quickSubMin')}</span>
+            </span>
+            <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: '50%', background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Icon name="play" size={16}/></span>
           </button>
 
-          {/* Pořadí ve světě + další relikvie z kampaní (dole) */}
-          {world && (
-            <button onClick={() => navigate('/leaderboard')} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', marginBottom: 12, padding: '8px 12px', borderRadius: 12, background: 'rgba(251,247,240,.05)', border: '1px solid rgba(251,247,240,.1)', cursor: 'pointer', textAlign: 'left' }}>
-              <span style={{ display: 'flex', color: 'rgba(251,247,240,.55)' }}><Icon name="globe" size={15}/></span>
-              <span style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(251,247,240,.5)' }}>{t('menu.worldRank')}</span>
-              {rankDelta !== 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: rankDelta > 0 ? '#7ec98a' : '#e5928c' }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">{rankDelta > 0 ? <path d="M12 4l9 14H3z"/> : <path d="M12 20L3 6h18z"/>}</svg>
-                  {Math.abs(rankDelta)}
-                </span>
-              )}
-              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, color: 'rgba(251,247,240,.9)' }}>#{world.rank.toLocaleString(menuLoc)}</span>
-              <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 14 }}>›</span>
-            </button>
-          )}
           {campaignCard && campaignCard.relicsTotal > 0 && (
             <div style={{ marginBottom: 12 }}><RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/></div>
           )}
