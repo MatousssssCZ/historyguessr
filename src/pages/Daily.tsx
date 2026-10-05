@@ -13,6 +13,7 @@ import {
   getFriends, type Friend,
 } from '@/lib/supabase'
 import { sendMessenger, getMessengersSentToday } from '@/lib/messenger'
+import { isPushSupported, pushPermission, isPushSubscribed, subscribePush } from '@/lib/push'
 import { computeDailyStreak } from '@/lib/streak'
 import { YEAR_MIN, YEAR_MAX, ZERO_PCT, yearToPos, posToYear } from '@/lib/yearAxis'
 import { streakUnlocks, type UnlockedTier } from '@/lib/achievements'
@@ -622,6 +623,52 @@ function YearPickerInline({ value, onChange }: { value: number; onChange: (y: nu
 // Modal distribuce — bottom sheet na mobilu, vycentrovaná karta na desktopu.
 
 // ── Výsledek denní výzvy (redesign 17e) ───────────────────
+// Připomínka denní výzvy — nenásilná nabídka zapnutí notifikací po dohrání.
+// Zmizí napořád, jakmile ji zapneš nebo zavřeš (localStorage), ať neotravuje.
+const NOTIFY_DISMISS_KEY = 'hg_daily_notify_dismissed'
+function DailyNotifyReminder({ userId }: { userId?: string }) {
+  const { t } = useTranslation()
+  const [show, setShow] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    if (!userId || !isPushSupported() || pushPermission() === 'denied') return
+    try { if (localStorage.getItem(NOTIFY_DISMISS_KEY)) return } catch { /* ignore */ }
+    isPushSubscribed().then(sub => { if (alive && !sub) setShow(true) }).catch(() => {})
+    return () => { alive = false }
+  }, [userId])
+
+  const dismiss = () => {
+    try { localStorage.setItem(NOTIFY_DISMISS_KEY, '1') } catch { /* ignore */ }
+    setShow(false)
+  }
+  const enable = async () => {
+    if (!userId) return
+    setBusy(true)
+    try {
+      const r = await subscribePush(userId)
+      if (r.ok) dismiss()           // povoleno → schovej napořád
+      else if (r.error === 'denied') dismiss()   // uživatel zakázal → už nenabízej
+    } finally { setBusy(false) }
+  }
+
+  if (!show) return null
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 13px', borderRadius: 14, background: 'rgba(217,119,87,0.1)', border: '1px solid rgba(217,119,87,0.32)' }}>
+      <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: 'rgba(217,119,87,0.18)', color: 'var(--accent, #d97757)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{t('daily.notifyTitle')}</span>
+        <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ink-3)', marginTop: 1 }}>{t('daily.notifySub')}</span>
+      </span>
+      <button type="button" onClick={enable} disabled={busy} style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 999, border: 'none', background: 'var(--accent, #d97757)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? '…' : t('daily.notifyCta')}</button>
+      <button type="button" onClick={dismiss} aria-label={t('common.close')} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 15 }}>✕</button>
+    </div>
+  )
+}
+
 // „Ještě nehráli" — přátelé, kteří dnes ještě nehráli denní výzvu; pošli jim posla (push).
 function MessengerSection({ playedTodayIds }: { playedTodayIds: Set<string> }) {
   const { t } = useTranslation()
@@ -829,7 +876,8 @@ function DailyResultView({ event, result, guessLat, guessLng, guessYear, leaderb
         onLearnMore={storyData ? () => setShowStory(true) : undefined} storyTeaser={storyData?.titulek}
         onChallenge={isMakeup ? undefined : doChallenge}
         ctaLabel={t('daily.menu')} onCta={onMenu}
-        secondaryActions={makeupAction}    />
+        secondaryActions={makeupAction}
+        banner={!isMakeup && userId ? <DailyNotifyReminder userId={userId}/> : undefined}    />
     </div>
     {showStory && <StoryModal eventTitle={eventTitle(event)} story={storyData} onClose={() => setShowStory(false)}/>}
     {showShare && <ShareResult data={shareData} shareText={shareText} onClose={() => setShowShare(false)}/>}

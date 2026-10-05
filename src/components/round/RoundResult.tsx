@@ -50,6 +50,7 @@ interface Props {
   ctaLabel: string
   onCta: () => void
   secondaryActions?: React.ReactNode   // sdílení/makeup (jen denní výzva)
+  banner?: React.ReactNode             // volitelný prvek nad CTA (např. připomínka notifikací)
   rating?: React.ReactNode             // hodnocení události (kompaktní)
   praise?: string | null               // chytrá pochvala dle skóre (jen denní výzva)
 }
@@ -142,6 +143,8 @@ export default function RoundResult(p: Props) {
             challengeLabel={t('challenge.friendBtn')}
           />
         )}
+
+        {p.banner && <div style={{ marginBottom: 10 }}>{p.banner}</div>}
 
         <button type="button" onClick={p.onCta} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 14, border: 0, borderRadius: 15, background: C.accent, color: '#fff', font: `700 14.5px ${F.ui}`, boxShadow: SHADOW_CTA, cursor: 'pointer' }}>
           {p.ctaLabel} <span style={{ fontSize: 15 }}>→</span>
