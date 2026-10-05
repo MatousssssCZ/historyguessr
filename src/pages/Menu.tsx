@@ -286,7 +286,12 @@ export default function MenuPage() {
       }
       menuCache = { key, ts: Date.now(), data }
       apply(data)
-    }).catch(() => {})
+    }).catch((e) => {
+      // Ať se UI nezasekne na skeletonu, když některý dotaz selže — zobraz aspoň
+      // to, co máme, a nech chybu vidět v konzoli pro diagnostiku.
+      console.error('[Menu] načtení dat selhalo:', e)
+      if (alive) setReady(true)
+    })
     return () => { alive = false }
   }, [user?.id, profile?.xp, profile?.created_at])
 
