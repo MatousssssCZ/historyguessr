@@ -768,28 +768,19 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
     } finally { setBusyKind(null) }
   }
 
-  // Automat: AI grafika (nebo stávající ikona) → nástroj vyrobí GLB všech 4 rarit → upload + DB
+  // Program (nástroj „3D export karet") postaví GLB všech 4 rarit Z OBRÁZKU relikvie.
+  // Žádná AI tady není — jen program. Obrázek musí existovat (ikona bez pozadí výše).
   async function generate3dModels() {
     if (!f.name.trim()) { setMsg('Nejdřív vyplň název relikvie.'); return }
     if (!slug) { setMsg('Nejdřív vyplň název (kvůli slug).'); return }
-    setBusyKind('glb-all'); setMsg('Připravuji grafiku relikvie…')
+    if (!iconUrl) { setMsg('Nejdřív vygeneruj nebo nahraj obrázek relikvie (bez pozadí) výše.'); return }
+    setBusyKind('glb-all'); setMsg('Načítám obrázek relikvie…')
     try {
-      // 1) grafika: použij stávající ikonu, jinak ji vygeneruj
-      let art = iconUrl
-      if (!art) {
-        const desc = iconPrompt || [f.name.trim(), f.year_label.trim(), f.description.trim()].filter(Boolean).join('. ')
-        const img = await generateIllustration({ title: f.name.trim(), description: desc, transparent: true })
-        const c = await compressIllustration(img, 512)
-        const up = await uploadRelicIcon(c, slug)
-        if (up.error || !up.url) { setMsg('Generování grafiky selhalo: ' + up.error); return }
-        art = up.url
-        await persistIcon(up.url)
-      }
-      const dataUrl = await urlToDataURL(art)
-      // 2) nástroj vyrobí GLB všech 4 rarit
-      setMsg('Nástroj staví 3D modely (4 rarity)…')
+      const dataUrl = await urlToDataURL(iconUrl)
+      // nástroj (program) vyrobí GLB všech 4 rarit z obrázku
+      setMsg('Nástroj staví 3D karty (4 rarity)…')
       const files = await buildRelicGlbs({ name: f.name.trim(), year: f.year_label.trim(), categorySlug: f.category, relicImgDataURL: dataUrl })
-      // 3) upload + zápis do DB
+      // upload + zápis do DB
       const patch: Partial<Relic> = { name: f.name.trim() || campaignTitle, slug }
       for (const k of ['common', 'rare', 'epic', 'legendary'] as const) {
         setMsg(`Nahrávám model „${k}"…`)
@@ -801,9 +792,9 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
       const { data, error: dbErr } = await upsertRelicForCampaign(campaignId, patch)
       if (dbErr) { setMsg('Uložení do DB selhalo: ' + dbErr); return }
       if (data) setRelic(data)
-      setMsg('3D modely vygenerovány a nahrány ✓')
+      setMsg('3D karty postaveny a nahrány ✓')
     } catch (e) {
-      setMsg('Generování 3D selhalo: ' + (e as Error).message)
+      setMsg('Stavba 3D karet selhala: ' + (e as Error).message)
     } finally { setBusyKind(null) }
   }
 
@@ -878,9 +869,9 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-3)' }}>3D modely (GLB) podle vzácnosti</div>
-          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'glb-all'} onClick={generate3dModels}>{busyKind === 'glb-all' ? '…' : '✨ Vygenerovat všechny (AI)'}</button>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busyKind === 'glb-all'} onClick={generate3dModels} title="Nástroj postaví karty z obrázku relikvie (nikoli AI)">{busyKind === 'glb-all' ? '…' : '⚙ Postavit 3D karty'}</button>
         </div>
-        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: -4 }}>Z grafiky relikvie (ikona výše, nebo se vygeneruje) postaví karty všech 4 rarit včetně holo folie u legendary.</div>
+        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: -4 }}>Program z obrázku relikvie (bez pozadí, výše) postaví karty všech 4 rarit včetně holo folie u legendary. Obrázek vytvoří AI tlačítko výše — samotné karty staví nástroj, ne AI.</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {RARITIES.map(r => (
             <div key={r.k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '9px 12px' }}>
