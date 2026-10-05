@@ -11,6 +11,7 @@ import {
 } from '@/lib/supabase'
 import { exportXLS } from '@/lib/xlsExport'
 import RelicViewer from '@/components/RelicViewer'
+import RelicViewer3D from '@/components/RelicViewer3D'
 import RelicBadge from '@/components/RelicBadge'
 import { compressIllustration } from '@/lib/imageCompression'
 import { slugify } from '@/lib/slugify'
@@ -649,6 +650,7 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
   const [saving, setSaving] = useState(false)
   const [busyKind, setBusyKind] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
+  const [preview, setPreview] = useState<{ url: string; label: string } | null>(null)
 
   useEffect(() => {
     getRelicForCampaign(campaignId).then(r => {
@@ -856,11 +858,15 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {RARITIES.map(r => (
             <div key={r.k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--paper-200)', border: '1px solid var(--line)', borderRadius: 10, padding: '9px 12px' }}>
-              <div style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#241d16', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {models[r.k]
-                  ? <RelicViewer modelUrl={models[r.k]} glow="gold" fallback="🏺"/>
-                  : <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 18 }}>🏺</span>}
-              </div>
+              {models[r.k] ? (
+                <button type="button" onClick={() => setPreview({ url: models[r.k], label: r.label })} title="Prohlédnout ve velkém" style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#241d16', border: 0, padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RelicViewer modelUrl={models[r.k]} glow="gold" fallback="🏺"/>
+                </button>
+              ) : (
+                <div style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#241d16', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: 'rgba(251,247,240,.4)', fontSize: 18 }}>🏺</span>
+                </div>
+              )}
               <span style={{ fontSize: 12.5, color: 'var(--ink-2)', flex: 1 }}>
                 🔄 <b style={{ fontWeight: 600 }}>{r.label}</b> <span style={{ color: 'var(--ink-3)' }}>({r.hint})</span>{models[r.k] ? ' · nahráno ✓' : ''}
               </span>
@@ -875,6 +881,19 @@ function RelicSection({ campaignId, campaignTitle }: { campaignId: string; campa
           <button className="btn btn-accent" disabled={saving} onClick={saveRelic} style={{ fontSize: 13 }}>{saving ? 'Ukládám…' : (relic ? 'Uložit relikvii' : 'Vytvořit relikvii')}</button>
         </div>
       </div>
+      {preview && (
+        <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(13,9,6,0.72)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, background: 'var(--paper-50)', borderRadius: 20, overflow: 'hidden', boxShadow: 'var(--shadow-xl)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>{(f.name.trim() || campaignTitle)} · {preview.label}</span>
+              <button type="button" onClick={() => setPreview(null)} aria-label="Zavřít" style={{ width: 30, height: 30, borderRadius: 9, border: '1px solid var(--line)', background: 'var(--paper-100)', color: 'var(--ink-2)', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ height: 420, background: 'radial-gradient(circle at 50% 42%, rgba(232,200,138,0.28), #1A1611 72%)' }}>
+              <RelicViewer3D modelUrl={preview.url} glow="gold" fallback="🏺"/>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
