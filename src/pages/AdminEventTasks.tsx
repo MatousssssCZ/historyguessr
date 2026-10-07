@@ -1,16 +1,16 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { EventForm } from '@/pages/Admin'
 import { CATEGORY_IDS } from '@/components/GameSettings'
 import {
   listTasks, createTask, createTasks, deleteTask, deleteAllTasks, approveTask, rejectTask, returnTask,
-  getEventById, setUserRole, releaseStaleTasks, attachDraftToTask, type EventTask,
+  getEventById, setUserRole, releaseStaleTasks, attachDraftToTask, findTaskDuplicates, type EventTask,
 } from '@/lib/editor'
 import EditorLeaderboard from '@/components/EditorLeaderboard'
 import { exportXLS } from '@/lib/xlsExport'
 import { generateEventDraft, generateStory } from '@/lib/ai'
-import { createEvent, updateEvent } from '@/lib/supabase'
+import { createEvent, updateEvent, getAdminEvents } from '@/lib/supabase'
 import type { Event, EventInsert } from '@/types/database'
 
 export default function AdminEventTasksPage() {
@@ -18,6 +18,7 @@ export default function AdminEventTasksPage() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'pool' | 'review'>('pool')
   const [tasks, setTasks] = useState<EventTask[]>([])
+  const [events, setEvents] = useState<Event[]>([])
   const [review, setReview] = useState<{ task: EventTask; event: Event | null } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [wiping, setWiping] = useState(false)
@@ -26,7 +27,15 @@ export default function AdminEventTasksPage() {
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
-  const load = useCallback(async () => { await releaseStaleTasks(); setTasks(await listTasks()) }, [])
+  const load = useCallback(async () => {
+    await releaseStaleTasks()
+    const [t, ev] = await Promise.all([listTasks(), getAdminEvents()])
+    setTasks(t)
+    setEvents((ev.data ?? []) as Event[])
+  }, [])
+
+  // Možné duplicity: zadání × už existující události (název + blízký rok)
+  const dupMap = useMemo(() => findTaskDuplicates(tasks, events), [tasks, events])
 
   async function doDeleteAll() {
     const n = tasks.length
@@ -220,6 +229,12 @@ export default function AdminEventTasksPage() {
               </div>
             )}
 
+            {dupMap.size > 0 && (
+              <div style={{ marginTop: 18, padding: '11px 14px', borderRadius: 12, background: 'rgba(192,57,43,.08)', border: '1px solid rgba(192,57,43,.3)', fontSize: 13, color: 'var(--ink-2)' }}>
+                ⚠ <strong>{dupMap.size}</strong> {dupMap.size === 1 ? 'zadání má' : (dupMap.size <= 4 ? 'zadání mají' : 'zadání má')} možný duplikát mezi už existujícími událostmi — zkontroluj je (označené červeně níže) před zpracováním přes AI.
+              </div>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '26px 0 12px' }}>
               <p className="eyebrow" style={{ margin: 0 }}>Zadání v číselníku ({tasks.length})</p>
               {tasks.length > 0 && (
@@ -239,6 +254,17 @@ export default function AdminEventTasksPage() {
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
                           {t.year ?? '—'}{t.category ? ' · ' + t.category : ''}{t.note ? ' · ' + t.note : ''}
                         </div>
+                        {dupMap.get(t.id) && (
+                          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--danger, #c0392b)' }}>
+                            <span style={{ fontWeight: 700 }}>⚠ Možný duplikát:</span>
+                            {dupMap.get(t.id)!.slice(0, 3).map(e => (
+                              <span key={e.id} style={{ padding: '1px 7px', borderRadius: 999, background: 'rgba(192,57,43,.1)', border: '1px solid rgba(192,57,43,.3)' }}>
+                                {e.title}{e.year != null ? ` · ${e.year}` : ''} · #{e.seq}{e.published ? '' : ' (nepubl.)'}
+                              </span>
+                            ))}
+                            {dupMap.get(t.id)!.length > 3 && <span>+{dupMap.get(t.id)!.length - 3}</span>}
+                          </div>
+                        )}
                       </div>
                       <span className={`badge ${t.status === 'in_progress' ? 'badge-warning' : 'badge-neutral'}`}>{t.status === 'in_progress' ? 'Zpracovává se' : 'Volné'}</span>
                       {t.status === 'todo' && (
