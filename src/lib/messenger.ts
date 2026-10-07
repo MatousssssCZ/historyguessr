@@ -16,11 +16,12 @@ export async function sendMessenger(targetId: string): Promise<MessengerResult> 
     body: JSON.stringify({ targetId }),
   })
   if (!res.ok) {
-    let detail = ''
-    try { const j = await res.json(); detail = j.error || j.detail || '' } catch { /* ignore */ }
-    if (res.status === 403 && detail === 'not_friends') throw new Error('S tímto hráčem nejste přátelé.')
-    if (res.status === 500 && detail === 'missing_vapid') throw new Error('Push není nastavený (chybí VAPID).')
-    throw new Error(`Posla se nepodařilo poslat (${res.status}). ${detail}`)
+    let code = '', detail = ''
+    try { const j = await res.json(); code = j.error || ''; detail = j.detail || '' } catch { /* ignore */ }
+    if (res.status === 403 && code === 'not_friends') throw new Error('S tímto hráčem nejste přátelé.')
+    if (res.status === 500 && code === 'missing_vapid') throw new Error('Push není nastavený (chybí VAPID klíče na serveru).')
+    if (res.status === 500 && code === 'missing_supabase_env') throw new Error('Na serveru chybí SUPABASE_SERVICE_ROLE_KEY.')
+    throw new Error(`Posla se nepodařilo poslat (${res.status}). ${[code, detail].filter(Boolean).join(' — ')}`)
   }
   return res.json()
 }
