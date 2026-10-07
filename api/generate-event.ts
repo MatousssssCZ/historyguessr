@@ -3,6 +3,8 @@
 //
 // ENV (Vercel): OPENAI_API_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
 
+export const config = { maxDuration: 60 }
+
 const CATEGORIES = ['war', 'moments', 'places', 'inventions', 'art', 'sports', 'mysteries', 'disasters']
 
 export default async function handler(req: any, res: any) {

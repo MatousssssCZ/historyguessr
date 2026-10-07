@@ -128,6 +128,8 @@ function cleanStory(obj: any): { titulek: string; odstavce: string[] } | null {
   return { titulek, odstavce }
 }
 
+export const config = { maxDuration: 60 }
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return }
 

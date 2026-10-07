@@ -21,7 +21,7 @@ export default function AdminEventTasksPage() {
   const [review, setReview] = useState<{ task: EventTask; event: Event | null } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [wiping, setWiping] = useState(false)
-  const [ai, setAi] = useState<{ running: boolean; done: number; total: number; ok: number; fail: number; current: string } | null>(null)
+  const [ai, setAi] = useState<{ running: boolean; done: number; total: number; ok: number; fail: number; current: string; lastErr?: string } | null>(null)
   const [aiCount, setAiCount] = useState('5')
   const aiStop = useRef(false)
 
@@ -44,8 +44,18 @@ export default function AdminEventTasksPage() {
   // ── AI: hromadné zpracování zásobníku ─────────────────────────────────────
   // Pro každé volné zadání AI doplní popis (CZ/EN/DE), příběh, místo a dataci,
   // vytvoří NEPUBLIKOVANÝ draft (panorama = „pending") a pošle ho ke schválení.
+  // Opakování při přechodné chybě (rate limit / timeout / výpadek sítě).
+  async function withRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+    let last: unknown
+    for (let i = 0; i < tries; i++) {
+      try { return await fn() }
+      catch (e) { last = e; if (i < tries - 1) await new Promise(r => setTimeout(r, 2000 * (i + 1))) }
+    }
+    throw last
+  }
+
   async function processTask(task: EventTask) {
-    const d = await generateEventDraft(task.title, task.year ?? '')
+    const d = await withRetry(() => generateEventDraft(task.title, task.year ?? ''))
     const titleCs = (d.title_cs || task.title).trim()
     const descCs = (d.description_cs || '').trim()
     const yFrom = d.year_from ?? task.year ?? 0
@@ -98,12 +108,14 @@ export default function AdminEventTasksPage() {
     setErr(null)
     setAi({ running: true, done: 0, total: todo.length, ok: 0, fail: 0, current: '' })
     let ok = 0, fail = 0
+    let lastErr = ''
     for (let i = 0; i < todo.length; i++) {
       if (aiStop.current) break
       setAi(s => s ? { ...s, done: i, current: todo[i].title } : s)
       try { await processTask(todo[i]); ok++ }
-      catch (e) { fail++; console.error('[AI zásobník]', todo[i].title, e) }
-      setAi(s => s ? { ...s, done: i + 1, ok, fail } : s)
+      catch (e) { fail++; lastErr = (e as Error).message || String(e); console.error('[AI zásobník]', todo[i].title, e) }
+      setAi(s => s ? { ...s, done: i + 1, ok, fail, lastErr } : s)
+      if (i < todo.length - 1) await new Promise(r => setTimeout(r, 700))   // šetrné tempo k OpenAI limitům
     }
     setAi(s => s ? { ...s, running: false } : s)
     await load()
@@ -227,6 +239,9 @@ export default function AdminEventTasksPage() {
                       {` · ✓ ${ai.ok}`}{ai.fail > 0 ? ` · ✕ ${ai.fail}` : ''}
                       {ai.running && ai.current ? ` · ${ai.current}` : ''}
                     </div>
+                    {!ai.running && ai.fail > 0 && ai.lastErr && (
+                      <div style={{ fontSize: 11.5, color: 'var(--danger, #c0392b)', marginTop: 4 }}>Poslední chyba: {ai.lastErr} — zbylá zadání zůstala v číselníku, zkus je pustit znovu (nejspíš dočasný limit OpenAI).</div>
+                    )}
                   </div>
                 )}
               </div>
