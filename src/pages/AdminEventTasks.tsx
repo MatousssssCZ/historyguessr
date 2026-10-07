@@ -5,11 +5,13 @@ import { EventForm } from '@/pages/Admin'
 import { CATEGORY_IDS } from '@/components/GameSettings'
 import {
   listTasks, createTask, createTasks, deleteTask, deleteAllTasks, approveTask, rejectTask, returnTask,
-  getEventById, setUserRole, releaseStaleTasks, type EventTask,
+  getEventById, setUserRole, releaseStaleTasks, attachDraftToTask, type EventTask,
 } from '@/lib/editor'
 import EditorLeaderboard from '@/components/EditorLeaderboard'
 import { exportXLS } from '@/lib/xlsExport'
-import type { Event } from '@/types/database'
+import { generateEventDraft, generateStory } from '@/lib/ai'
+import { createEvent, updateEvent } from '@/lib/supabase'
+import type { Event, EventInsert } from '@/types/database'
 
 export default function AdminEventTasksPage() {
   const { user, isAdmin, loading } = useAuth()
@@ -19,6 +21,8 @@ export default function AdminEventTasksPage() {
   const [review, setReview] = useState<{ task: EventTask; event: Event | null } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [wiping, setWiping] = useState(false)
+  const [ai, setAi] = useState<{ running: boolean; done: number; total: number; ok: number; fail: number; current: string } | null>(null)
+  const aiStop = useRef(false)
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
@@ -35,6 +39,72 @@ export default function AdminEventTasksPage() {
     await load()
   }
   useEffect(() => { load() }, [load])
+
+  // ── AI: hromadné zpracování zásobníku ─────────────────────────────────────
+  // Pro každé volné zadání AI doplní popis (CZ/EN/DE), příběh, místo a dataci,
+  // vytvoří NEPUBLIKOVANÝ draft (panorama = „pending") a pošle ho ke schválení.
+  async function processTask(task: EventTask) {
+    const d = await generateEventDraft(task.title, task.year ?? '')
+    const titleCs = (d.title_cs || task.title).trim()
+    const descCs = (d.description_cs || '').trim()
+    const yFrom = d.year_from ?? task.year ?? 0
+    const yTo = d.year_to ?? d.year_from ?? task.year ?? yFrom
+    const lat = d.lat ?? 0
+    const lng = d.lng ?? 0
+    const category = d.category ?? task.category ?? null
+    const payload: EventInsert = {
+      title: titleCs,
+      description: descCs,
+      title_en: d.title_en?.trim() || null,
+      title_de: d.title_de?.trim() || null,
+      description_en: d.description_en?.trim() || null,
+      description_de: d.description_de?.trim() || null,
+      year: Math.round((yFrom + yTo) / 2),
+      year_from: yFrom,
+      year_to: yTo,
+      year_range: Math.round(Math.abs(yTo - yFrom) / 2),
+      event_date: d.event_date || null,
+      lat, lng,
+      category,
+      difficulty: 2,
+      location_radius_km: 0,
+      panorama_url: 'pending',
+      published: false,
+      status: 'awaiting_panorama',
+      created_by: user?.id ?? null,
+    }
+    const { data: ev, error } = await createEvent(payload)
+    if (error || !ev) throw new Error(error?.message || 'Vytvoření události selhalo')
+    // Příběh (best-effort — nesmí shodit celé zpracování)
+    try {
+      const s = await generateStory({
+        title: titleCs, year: yFrom, event_date: d.event_date,
+        place: lat && lng ? `${lat}, ${lng}` : null, category, facts: descCs,
+      })
+      await updateEvent(ev.id, { story_cs: s.cs, story_en: s.en, story_de: s.de })
+    } catch (e) { console.warn('[AI zásobník] příběh selhal:', e) }
+    const { error: aErr } = await attachDraftToTask(task.id, ev.id)
+    if (aErr) throw new Error(aErr)
+  }
+
+  async function autoFillPool() {
+    const todo = tasks.filter(t => t.status === 'todo')
+    if (!todo.length) { setErr('V číselníku nejsou žádná volná zadání ke zpracování.'); return }
+    if (!window.confirm(`AI zpracuje ${todo.length} zadání (popis, příběh, místo, datace). Vznikne nepublikovaný draft — panorama doplníš ty při schvalování. Pokračovat?`)) return
+    aiStop.current = false
+    setErr(null)
+    setAi({ running: true, done: 0, total: todo.length, ok: 0, fail: 0, current: '' })
+    let ok = 0, fail = 0
+    for (let i = 0; i < todo.length; i++) {
+      if (aiStop.current) break
+      setAi(s => s ? { ...s, done: i, current: todo[i].title } : s)
+      try { await processTask(todo[i]); ok++ }
+      catch (e) { fail++; console.error('[AI zásobník]', todo[i].title, e) }
+      setAi(s => s ? { ...s, done: i + 1, ok, fail } : s)
+    }
+    setAi(s => s ? { ...s, running: false } : s)
+    await load()
+  }
 
   const pool = tasks.filter(t => t.status === 'todo' || t.status === 'in_progress')
   const submitted = tasks.filter(t => t.status === 'submitted')
@@ -123,6 +193,33 @@ export default function AdminEventTasksPage() {
             <BulkTaskImport onImported={load}/>
             <RoleGrant/>
             <div style={{ marginTop: 22 }}><EditorLeaderboard meId={user?.id}/></div>
+            {/* AI automatické zpracování zásobníku */}
+            {pool.some(t => t.status === 'todo') && (
+              <div className="card" style={{ padding: 14, marginTop: 22, background: 'rgba(217,119,87,.07)', border: '1px solid rgba(217,119,87,.3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>✨ Zpracovat zásobník přes AI</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>AI u volných zadání doplní popis (CZ/EN/DE), příběh, místo a dataci → vznikne draft ke schválení. Panorama doplníš ty.</div>
+                  </div>
+                  {ai?.running
+                    ? <button className="btn btn-ghost" onClick={() => { aiStop.current = true }} style={{ padding: '8px 14px', fontSize: 13 }}>■ Zastavit</button>
+                    : <button className="btn btn-accent" onClick={autoFillPool} style={{ padding: '8px 14px', fontSize: 13 }}>✨ Zpracovat ({pool.filter(t => t.status === 'todo').length})</button>}
+                </div>
+                {ai && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ height: 6, borderRadius: 999, background: 'var(--paper-300)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${ai.total ? Math.round(ai.done / ai.total * 100) : 0}%`, background: 'var(--accent)', transition: 'width 200ms' }}/>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 6 }}>
+                      {ai.running ? `Zpracovávám ${ai.done}/${ai.total}` : `Hotovo ${ai.done}/${ai.total}`}
+                      {` · ✓ ${ai.ok}`}{ai.fail > 0 ? ` · ✕ ${ai.fail}` : ''}
+                      {ai.running && ai.current ? ` · ${ai.current}` : ''}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '26px 0 12px' }}>
               <p className="eyebrow" style={{ margin: 0 }}>Zadání v číselníku ({tasks.length})</p>
               {tasks.length > 0 && (

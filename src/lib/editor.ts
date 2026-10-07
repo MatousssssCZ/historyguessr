@@ -122,6 +122,14 @@ export async function deleteTask(id: string) {
   return supabase.from('event_tasks').delete().eq('id', id)
 }
 
+// Admin: připojí AI vytvořený draft události k zadání a pošle ho ke schválení.
+export async function attachDraftToTask(taskId: string, eventId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('event_tasks')
+    .update({ event_id: eventId, status: 'submitted', updated_at: new Date().toISOString() })
+    .eq('id', taskId)
+  return { error: error ? error.message : null }
+}
+
 // ── Editor: zabrat / odeslat ────────────────────────────────────────────────
 export async function claimTask(id: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc('claim_event_task', { p_task: id })
