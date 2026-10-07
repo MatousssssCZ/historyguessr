@@ -1,16 +1,16 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { EventForm } from '@/pages/Admin'
 import { CATEGORY_IDS } from '@/components/GameSettings'
 import {
   listTasks, createTask, createTasks, deleteTask, deleteAllTasks, approveTask, rejectTask, returnTask,
-  getEventById, setUserRole, releaseStaleTasks, attachDraftToTask, findTaskDuplicates, type EventTask,
+  getEventById, setUserRole, releaseStaleTasks, attachDraftToTask, type EventTask,
 } from '@/lib/editor'
 import EditorLeaderboard from '@/components/EditorLeaderboard'
 import { exportXLS } from '@/lib/xlsExport'
 import { generateEventDraft, generateStory } from '@/lib/ai'
-import { createEvent, updateEvent, getAdminEvents } from '@/lib/supabase'
+import { createEvent, updateEvent } from '@/lib/supabase'
 import type { Event, EventInsert } from '@/types/database'
 
 export default function AdminEventTasksPage() {
@@ -18,24 +18,16 @@ export default function AdminEventTasksPage() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'pool' | 'review'>('pool')
   const [tasks, setTasks] = useState<EventTask[]>([])
-  const [events, setEvents] = useState<Event[]>([])
   const [review, setReview] = useState<{ task: EventTask; event: Event | null } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [wiping, setWiping] = useState(false)
   const [ai, setAi] = useState<{ running: boolean; done: number; total: number; ok: number; fail: number; current: string } | null>(null)
+  const [aiCount, setAiCount] = useState('5')
   const aiStop = useRef(false)
 
   useEffect(() => { if (!loading && !isAdmin) navigate('/menu') }, [loading, isAdmin])
 
-  const load = useCallback(async () => {
-    await releaseStaleTasks()
-    const [t, ev] = await Promise.all([listTasks(), getAdminEvents()])
-    setTasks(t)
-    setEvents((ev.data ?? []) as Event[])
-  }, [])
-
-  // Možné duplicity: zadání × už existující události (název + blízký rok)
-  const dupMap = useMemo(() => findTaskDuplicates(tasks, events), [tasks, events])
+  const load = useCallback(async () => { await releaseStaleTasks(); setTasks(await listTasks()) }, [])
 
   async function doDeleteAll() {
     const n = tasks.length
@@ -97,9 +89,11 @@ export default function AdminEventTasksPage() {
   }
 
   async function autoFillPool() {
-    const todo = tasks.filter(t => t.status === 'todo')
-    if (!todo.length) { setErr('V číselníku nejsou žádná volná zadání ke zpracování.'); return }
-    if (!window.confirm(`AI zpracuje ${todo.length} zadání (popis, příběh, místo, datace). Vznikne nepublikovaný draft — panorama doplníš ty při schvalování. Pokračovat?`)) return
+    const allTodo = tasks.filter(t => t.status === 'todo')
+    if (!allTodo.length) { setErr('V číselníku nejsou žádná volná zadání ke zpracování.'); return }
+    const n = Math.max(1, Math.min(parseInt(aiCount) || allTodo.length, allTodo.length))
+    const todo = allTodo.slice(0, n)
+    if (!window.confirm(`AI zpracuje ${todo.length} z ${allTodo.length} volných zadání (popis, příběh, místo, datace). Vznikne nepublikovaný draft — panorama doplníš ty při schvalování. Pokračovat?`)) return
     aiStop.current = false
     setErr(null)
     setAi({ running: true, done: 0, total: todo.length, ok: 0, fail: 0, current: '' })
@@ -208,11 +202,20 @@ export default function AdminEventTasksPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>✨ Zpracovat zásobník přes AI</div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>AI u volných zadání doplní popis (CZ/EN/DE), příběh, místo a dataci → vznikne draft ke schválení. Panorama doplníš ty.</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>AI doplní popis (CZ/EN/DE), příběh, místo a dataci → vznikne draft ke schválení. Panorama doplníš ty. Volných zadání: {pool.filter(t => t.status === 'todo').length} · zpracují se od nejnovějších.</div>
                   </div>
                   {ai?.running
                     ? <button className="btn btn-ghost" onClick={() => { aiStop.current = true }} style={{ padding: '8px 14px', fontSize: 13 }}>■ Zastavit</button>
-                    : <button className="btn btn-accent" onClick={autoFillPool} style={{ padding: '8px 14px', fontSize: 13 }}>✨ Zpracovat ({pool.filter(t => t.status === 'todo').length})</button>}
+                    : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10.5, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
+                          POČET
+                          <input className="input" type="number" min={1} max={pool.filter(t => t.status === 'todo').length} value={aiCount}
+                            onChange={e => setAiCount(e.target.value)} style={{ width: 72, padding: '6px 8px', fontSize: 13, marginTop: 2 }}/>
+                        </label>
+                        <button className="btn btn-accent" onClick={autoFillPool} style={{ padding: '8px 14px', fontSize: 13, alignSelf: 'flex-end' }}>✨ Zpracovat</button>
+                      </div>
+                    )}
                 </div>
                 {ai && (
                   <div style={{ marginTop: 12 }}>
@@ -226,12 +229,6 @@ export default function AdminEventTasksPage() {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {dupMap.size > 0 && (
-              <div style={{ marginTop: 18, padding: '11px 14px', borderRadius: 12, background: 'rgba(192,57,43,.08)', border: '1px solid rgba(192,57,43,.3)', fontSize: 13, color: 'var(--ink-2)' }}>
-                ⚠ <strong>{dupMap.size}</strong> {dupMap.size === 1 ? 'zadání má' : (dupMap.size <= 4 ? 'zadání mají' : 'zadání má')} možný duplikát mezi už existujícími událostmi — zkontroluj je (označené červeně níže) před zpracováním přes AI.
               </div>
             )}
 
@@ -254,17 +251,6 @@ export default function AdminEventTasksPage() {
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
                           {t.year ?? '—'}{t.category ? ' · ' + t.category : ''}{t.note ? ' · ' + t.note : ''}
                         </div>
-                        {dupMap.get(t.id) && (
-                          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--danger, #c0392b)' }}>
-                            <span style={{ fontWeight: 700 }}>⚠ Možný duplikát:</span>
-                            {dupMap.get(t.id)!.slice(0, 3).map(e => (
-                              <span key={e.id} style={{ padding: '1px 7px', borderRadius: 999, background: 'rgba(192,57,43,.1)', border: '1px solid rgba(192,57,43,.3)' }}>
-                                {e.title}{e.year != null ? ` · ${e.year}` : ''} · #{e.seq}{e.published ? '' : ' (nepubl.)'}
-                              </span>
-                            ))}
-                            {dupMap.get(t.id)!.length > 3 && <span>+{dupMap.get(t.id)!.length - 3}</span>}
-                          </div>
-                        )}
                       </div>
                       <span className={`badge ${t.status === 'in_progress' ? 'badge-warning' : 'badge-neutral'}`}>{t.status === 'in_progress' ? 'Zpracovává se' : 'Volné'}</span>
                       {t.status === 'todo' && (

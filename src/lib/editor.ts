@@ -166,36 +166,6 @@ export async function returnTask(taskId: string, note: string): Promise<{ error:
   return { error: error ? (error.message || 'error') : null }
 }
 
-// ── Detekce duplicit: zadání v zásobníku × už existující události ───────────
-function normTitle(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')  // bez diakritiky
-    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-}
-
-/** Pro každé zadání najde možné duplicity mezi existujícími událostmi
- *  (shoda názvu CZ/EN/DE + blízký rok). Vlastní draft zadání vynechá. */
-export function findTaskDuplicates(tasks: EventTask[], events: Event[]): Map<string, Event[]> {
-  const idx = events.map(e => ({
-    e,
-    keys: [e.title, e.title_en, e.title_de].filter(Boolean).map(t => normTitle(String(t))).filter(k => k.length >= 3),
-  }))
-  const out = new Map<string, Event[]>()
-  for (const t of tasks) {
-    const nt = normTitle(t.title)
-    if (nt.length < 3) continue
-    const matches: Event[] = []
-    for (const { e, keys } of idx) {
-      if (e.id === t.event_id) continue   // vlastní draft není duplikát
-      const yearOk = t.year == null || e.year == null || Math.abs(t.year - e.year) <= 2
-      if (!yearOk) continue
-      const titleOk = keys.some(k => k === nt || (k.length >= 5 && nt.length >= 5 && (k.includes(nt) || nt.includes(k))))
-      if (titleOk) matches.push(e)
-    }
-    if (matches.length) out.set(t.id, matches)
-  }
-  return out
-}
-
 // ── Načtení draftu události k zadání (pro prefill formuláře) ─────────────────
 export async function getEventById(id: string): Promise<Event | null> {
   const { data } = await supabase.from('events').select('*').eq('id', id).single()
