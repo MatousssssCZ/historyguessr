@@ -103,7 +103,11 @@ export default async function handler(req: any, res: any) {
     icon: '/icon-192.png', badge: '/icon-192.png',
   })
 
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUB, VAPID_PRIV)
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUB, VAPID_PRIV)
+  } catch (e: any) {
+    res.status(500).json({ error: 'vapid_setup_failed', detail: String(e?.message || e) }); return
+  }
   let delivered = 0
   const dead: string[] = []
   await Promise.all(subs.map(async (s) => {
