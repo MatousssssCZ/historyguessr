@@ -16,6 +16,7 @@ import { getNotifications, markNotifSeen, type AppNotification } from '@/lib/mes
 import { currentLocale } from '@/i18n'
 import { DownloadIcon } from '@/components/BrowserIcons'
 import FeedbackModal from '@/components/FeedbackModal'
+import SupportCoffee from '@/components/SupportCoffee'
 import { isPushSupported, isPushSubscribed, subscribePush, unsubscribePush } from '@/lib/push'
 
 const eyebrow: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-3)', margin: '0 0 13px' }
@@ -240,6 +241,9 @@ export default function AccountPage() {
           </span>
           <span style={{ fontSize: 18, color: 'var(--ink-3)' }}>›</span>
         </button>
+
+        {/* Pozvi nás na kávu — dobrovolný příspěvek (zobrazí se jen když je VITE_COFFEE_URL) */}
+        <SupportCoffee/>
 
         {/* Přidat na plochu — skryté, když už aplikace běží nainstalovaná */}
         {!isStandalone() && (
