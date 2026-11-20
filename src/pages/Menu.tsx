@@ -834,6 +834,11 @@ export default function MenuPage() {
           )}
 
           {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
+
+          {/* Tichý odkaz na podporu — vidět na úvodní ploše, ale nekonkuruje hlavním akcím */}
+          <button onClick={() => navigate('/podpora')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', marginTop: 14, padding: '9px 12px', borderRadius: 999, background: 'transparent', border: '1px solid rgba(251,247,240,.16)', color: 'rgba(251,247,240,.72)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}>
+            ☕ {t('support.homeLink')}
+          </button>
         </div>
       </section>
 
