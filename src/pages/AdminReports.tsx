@@ -156,6 +156,7 @@ export default function AdminReportsPage() {
               <Rate label="Podíl na 3 ★" value={`${perfectShare} %`} hint="z dokončení"/>
               <Rate label="Uloženo na plochu" value={nf(installs.installed_users)} hint={`${pct(installs.installed_users ?? 0, overview.registered ?? 0)} % registrovaných`}/>
               <Rate label="Notifikace zapnuté" value={nf(installs.push_enabled_users)} hint={`${pct(installs.push_enabled_users ?? 0, overview.registered ?? 0)} % registrovaných`}/>
+              <Rate label="Kliknutí na kávu ☕" value={nf(installs.coffee_clicks)} hint="celkem kliknutí na Ko-fi"/>
             </div>
           </Panel>
 
