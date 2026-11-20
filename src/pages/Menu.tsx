@@ -621,7 +621,10 @@ export default function MenuPage() {
                     <p style={{ fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.5, color: '#1F1B16', margin: '0 0 14px' }}>{t('menu.aboutP1')}</p>
                     <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 12px' }}>{t('menu.aboutP2')}</p>
                     <p style={{ fontSize: 14, lineHeight: 1.7, color: '#3E362C', margin: '0 0 16px' }}>{t('menu.aboutP3')}</p>
-                    <a href={`/${eloc}/${seg.ab}`} style={moreLink}>{t('menu.aboutMore')} →</a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                      <a href={`/${eloc}/${seg.ab}`} style={moreLink}>{t('menu.aboutMore')} →</a>
+                      <a href="/podpora" onClick={e => { e.preventDefault(); navigate('/podpora') }} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999, background: 'rgba(217,119,87,.12)', border: '1px solid rgba(217,119,87,.4)', color: '#b85a3e', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none' }}>☕ {t('support.ftLink')}</a>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -639,7 +642,7 @@ export default function MenuPage() {
                   {[
                     { h: t('menu.playShort'), items: [[t('menu.playShort'), '/play'], [t('menu.dailyLabel'), '/daily'], [t('menu.campaigns'), '/campaigns'], [t('menu.ftLeaderboard'), '/leaderboard']] as [string, string][] },
                     { h: t('menu.ftColDiscover'), items: [[t('menu.exploreHistory'), `/${eloc}/${seg.ex}`], [t('menu.ftCategories'), `/${eloc}/${seg.ex}`]] as [string, string][] },
-                    { h: 'Historyguesser', items: [[t('menu.howShort'), `/${eloc}/${seg.jk}`], [t('menu.aboutShort'), `/${eloc}/${seg.ab}`], [t('menu.ftContact'), 'mailto:historyguesser.net@gmail.com']] as [string, string][] },
+                    { h: 'Historyguesser', items: [[t('menu.howShort'), `/${eloc}/${seg.jk}`], [t('menu.aboutShort'), `/${eloc}/${seg.ab}`], [t('support.ftLink'), '/podpora'], [t('menu.ftContact'), 'mailto:historyguesser.net@gmail.com']] as [string, string][] },
                     { h: t('menu.ftColLegal'), items: [[t('menu.ftPrivacy'), '/privacy'], [t('menu.ftTerms'), '/terms']] as [string, string][] },
                   ].map((col, ci) => (
                     <div key={ci}>
@@ -884,7 +887,10 @@ export default function MenuPage() {
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.5, color: '#1F1B16', margin: '0 0 12px' }}>{t('menu.aboutP1')}</p>
             <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#3E362C', margin: '0 0 10px' }}>{t('menu.aboutP2')}</p>
             <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#3E362C', margin: '0 0 14px' }}>{t('menu.aboutP3')}</p>
-            <a href={`/${eloc}/${mSeg.ab}`} style={{ fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.aboutMore')} →</a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <a href={`/${eloc}/${mSeg.ab}`} style={{ fontWeight: 600, fontSize: 14, color: '#A34E30', textDecoration: 'none' }}>{t('menu.aboutMore')} →</a>
+              <button onClick={() => navigate('/podpora')} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 999, background: 'rgba(217,119,87,.12)', border: '1px solid rgba(217,119,87,.4)', color: '#A34E30', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, cursor: 'pointer' }}>☕ {t('support.ftLink')}</button>
+            </div>
           </div>
         </section>
       </main>

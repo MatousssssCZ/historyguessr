@@ -2,10 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { track } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
-// Odkaz na donační službu (Ko-fi / Buy Me a Coffee / Stripe Payment Link).
-// Nastav na Vercelu: VITE_COFFEE_URL=https://ko-fi.com/historyguesser (apod.)
-// Dokud není nastaveno, karta se nezobrazí (nic rozbitého v produkci).
-const COFFEE_URL = import.meta.env.VITE_COFFEE_URL as string | undefined
+// Odkaz na Ko-fi; přepsatelné přes VITE_COFFEE_URL na Vercelu.
+const COFFEE_URL = (import.meta.env.VITE_COFFEE_URL as string | undefined) || 'https://ko-fi.com/matousbahnik'
 
 function CoffeeIcon({ size = 22 }: { size?: number }) {
   return (

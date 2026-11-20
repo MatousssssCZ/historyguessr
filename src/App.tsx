@@ -32,6 +32,7 @@ import YearStreakPage from '@/pages/YearStreak'
 import FriendsPage from '@/pages/Friends'
 import PrivacyPage from '@/pages/Privacy'
 import TermsPage from '@/pages/Terms'
+import SupportPage from '@/pages/Support'
 
 // Líně načítané (těžké / méně časté) sekce — menší první bundle pro běžného hráče
 const AdminHubPage = lazy(() => import('@/pages/AdminHub'))
@@ -223,6 +224,7 @@ export default function App() {
               <Route path="/multiplayer/game/:roomId" element={<RequireAuth><MultiplayerGamePage/></RequireAuth>}/>
               <Route path="/privacy" element={<PrivacyPage/>}/>
               <Route path="/terms"   element={<TermsPage/>}/>
+              <Route path="/podpora" element={<SupportPage/>}/>
               <Route path="*"        element={<Navigate to="/" replace/>}/>
             </Routes>
           </Suspense>
