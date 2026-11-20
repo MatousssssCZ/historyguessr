@@ -446,6 +446,10 @@ export default function MenuPage() {
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.06em', color: 'rgba(251,247,240,.7)' }}><Flame size={12}/> {t('menu.streakDays', { n: dailyStreak })}</span>
                 <span style={{ display: 'flex', gap: 5 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
               </div>
+              {/* Tichý odkaz na podporu — na úvodní ploše, nekonkuruje hlavním akcím */}
+              <button onClick={() => navigate('/podpora')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 22, padding: '9px 16px', borderRadius: 999, background: 'transparent', border: '1px solid rgba(251,247,240,.18)', color: 'rgba(251,247,240,.75)', fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 13.5, cursor: 'pointer' }}>
+                ☕ {t('support.homeLink')}
+              </button>
             </div>
 
             {/* Pravý sloupec — karty */}
