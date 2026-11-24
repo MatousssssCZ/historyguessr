@@ -52,9 +52,20 @@ export default function SupportPage() {
             <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 2 }}>{t('support.leadSub')}</div>
           </div>
         </div>
-        <p style={{ margin: '0 0 14px', fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>{t('support.lead')}</p>
-        <CtaButton/>
+        <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>{t('support.lead')}</p>
       </div>
+
+      {/* Ko-fi widget — přispět přímo tady, bez odchodu z appky */}
+      <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid var(--line)', background: '#f9f9f9', marginBottom: 10 }}>
+        <iframe
+          title="Ko-fi matousbahnik"
+          src="https://ko-fi.com/matousbahnik/?hidefeed=true&widget=true&embed=true&preview=true"
+          style={{ border: 'none', width: '100%', height: 712, display: 'block', background: '#f9f9f9' }}
+        />
+      </div>
+      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-3)', margin: '0 0 14px' }}>
+        {COFFEE_URL && <a href={COFFEE_URL} target="_blank" rel="noopener noreferrer" onClick={onCta} style={{ color: 'var(--accent, #d97757)', textDecoration: 'none' }}>{t('support.openKofi')} →</a>}
+      </p>
 
       {/* Proč podpořit */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 18, padding: 16, marginBottom: 14 }}>
