@@ -503,19 +503,15 @@ export default function MenuPage() {
                 </div>
               </button>
 
-              {/* Kampaně / další relikvie */}
-              {campaignCard && campaignCard.relicsTotal > 0
-                ? <RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/>
-                : (
-                  <button onClick={() => navigate('/campaigns')} style={{ ...GLASS, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13, cursor: 'pointer', textAlign: 'left', color: '#FBF7F0' }}>
-                    <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.08)', color: '#E9A183' }}><Icon name="swords" size={19}/></span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ ...cardLabel, display: 'block' }}>{t('menu.contCampaign')}</span>
-                      <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, marginTop: 3 }}>{t('menu.campaigns')}</span>
-                    </span>
-                    <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18 }}>→</span>
-                  </button>
-                )}
+              {/* Kampaně */}
+              <button onClick={() => navigate('/campaigns')} style={{ ...GLASS, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 13, cursor: 'pointer', textAlign: 'left', color: '#FBF7F0' }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(251,247,240,.08)', color: '#E9A183' }}><Icon name="swords" size={19}/></span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ ...cardLabel, display: 'block' }}>{t('menu.contCampaign')}</span>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-serif)', fontSize: 17, marginTop: 3 }}>{t('menu.campaigns')}</span>
+                </span>
+                <span style={{ color: 'rgba(251,247,240,.5)', fontSize: 18 }}>→</span>
+              </button>
             </aside>
           </div>
 
@@ -815,9 +811,10 @@ export default function MenuPage() {
             <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: '50%', background: ACCENT_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Icon name="play" size={16}/></span>
           </button>
 
-          {campaignCard && campaignCard.relicsTotal > 0 && (
-            <div style={{ marginBottom: 12 }}><RelicCampaignCard card={campaignCard} t={t} onClick={() => navigate('/campaigns')}/></div>
-          )}
+          {/* Ko-fi — na místě bývalé dlaždice „další relikvie", výrazný teplý pill */}
+          <button onClick={() => navigate('/podpora')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginBottom: 12, padding: '13px 14px', borderRadius: 14, background: 'rgba(217,119,87,.2)', border: '1px solid rgba(233,161,131,.6)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>
+            <span style={{ fontSize: 17 }}>☕</span> {t('support.homeLink')}
+          </button>
 
           {/* Nainstalovat aplikaci (dokud není nainstalováno/skryto). Herní režimy
               (rychlá/klasická/multiplayer) jsou na mobilu skryté — jsou v dolní navigaci. */}
@@ -838,11 +835,6 @@ export default function MenuPage() {
           )}
 
           {resume && <div style={{ marginTop: 12 }}><ResumeBar resume={resume} onResume={goResume}/></div>}
-
-          {/* Odkaz na podporu — výrazný teplý pill, ale sekundární k hlavním akcím */}
-          <button onClick={() => navigate('/podpora')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 14, padding: '12px 14px', borderRadius: 14, background: 'rgba(217,119,87,.2)', border: '1px solid rgba(233,161,131,.6)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-            <span style={{ fontSize: 16 }}>☕</span> {t('support.homeLink')}
-          </button>
         </div>
       </section>
 
