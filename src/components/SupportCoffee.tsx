@@ -44,8 +44,8 @@ export default function SupportCoffee() {
       <a href={COFFEE_URL} target="_blank" rel="noopener noreferrer" onClick={onClick} style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', boxSizing: 'border-box',
         padding: 13, borderRadius: 13, textDecoration: 'none',
-        background: 'var(--accent, #d97757)', color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5,
-        boxShadow: '0 14px 30px -18px rgba(217,119,87,.9)',
+        background: 'linear-gradient(150deg,#F2C14E,#E0A32E)', color: '#2a1f17', fontFamily: 'var(--font-sans)', fontWeight: 800, fontSize: 14.5,
+        boxShadow: '0 14px 30px -18px rgba(240,190,70,.85)',
       }}>
         <CoffeeIcon size={18}/> {t('support.cta')}
       </a>

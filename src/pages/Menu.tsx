@@ -447,7 +447,7 @@ export default function MenuPage() {
                 <span style={{ display: 'flex', gap: 5 }}>{Array.from({ length: 7 }, (_, i) => dailyWeek[i] ?? { played: false }).map((d, i) => <span key={i} style={dot(d.played)}/>)}</span>
               </div>
               {/* Odkaz na podporu — výrazný teplý pill, sekundární k hlavním akcím */}
-              <button onClick={() => navigate('/podpora')} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginTop: 22, padding: '12px 20px', borderRadius: 14, background: 'rgba(217,119,87,.2)', border: '1px solid rgba(233,161,131,.6)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>
+              <button onClick={() => navigate('/podpora')} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginTop: 22, padding: '12px 20px', borderRadius: 14, background: 'linear-gradient(150deg,#F2C14E,#E0A32E)', border: 'none', color: '#2a1f17', boxShadow: '0 14px 30px -18px rgba(240,190,70,.85)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>
                 <span style={{ fontSize: 17 }}>☕</span> {t('support.homeLink')}
               </button>
             </div>
@@ -812,7 +812,7 @@ export default function MenuPage() {
           </button>
 
           {/* Ko-fi — na místě bývalé dlaždice „další relikvie", výrazný teplý pill */}
-          <button onClick={() => navigate('/podpora')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginBottom: 12, padding: '13px 14px', borderRadius: 14, background: 'rgba(217,119,87,.2)', border: '1px solid rgba(233,161,131,.6)', color: '#FBF7F0', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>
+          <button onClick={() => navigate('/podpora')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginBottom: 12, padding: '13px 14px', borderRadius: 14, background: 'linear-gradient(150deg,#F2C14E,#E0A32E)', border: 'none', color: '#2a1f17', boxShadow: '0 14px 30px -18px rgba(240,190,70,.85)', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14.5, cursor: 'pointer' }}>
             <span style={{ fontSize: 17 }}>☕</span> {t('support.homeLink')}
           </button>
 

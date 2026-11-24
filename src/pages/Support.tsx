@@ -31,8 +31,8 @@ export default function SupportPage() {
       <a href={COFFEE_URL} target="_blank" rel="noopener noreferrer" onClick={onCta} style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', boxSizing: 'border-box',
         padding: small ? 12 : 15, borderRadius: 14, textDecoration: 'none',
-        background: ACCENT, color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: small ? 14 : 15.5,
-        boxShadow: '0 16px 34px -18px rgba(217,119,87,.9)',
+        background: 'linear-gradient(150deg,#F2C14E,#E0A32E)', color: '#2a1f17', fontFamily: 'var(--font-sans)', fontWeight: 800, fontSize: small ? 14 : 15.5,
+        boxShadow: '0 16px 34px -18px rgba(240,190,70,.85)',
       }}><Cup size={small ? 17 : 19}/> {t('support.cta')}</a>
     ) : (
       <div style={{ padding: 13, borderRadius: 14, background: 'var(--paper-200)', border: '1px dashed var(--line-strong)', color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>{t('support.soon')}</div>
